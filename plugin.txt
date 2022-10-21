@@ -1,0 +1,1 @@
+<PLUGIN name="FabFilter Pro-Q 3" format="VST3" category="Fx|EQ" manufacturer="FabFilter" version="3.1.1.0" file="C:\Program Files\Common Files\VST3\FabFilter\FabFilter Pro-Q 3.vst3" uniqueId="ba5f7ab2" isInstrument="0" fileTime="175cbf6f1c0" infoUpdateTime="1804d3fb9b4" numInputs="4" numOutputs="2" isShell="0" uid="8c4652e9"/>
