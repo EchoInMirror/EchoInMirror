@@ -16,10 +16,10 @@ import androidx.compose.ui.window.WindowScope
 @Composable
 @Preview
 fun WindowScope.eimAppBar() = WindowDraggableArea {
-    CenterAlignedTopAppBar(
-        title = {
-            Row(verticalAlignment = Alignment.Bottom) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(end = 8.dp)) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth().padding(top = 10.dp)) {
+        Surface(modifier = Modifier.size(350.dp, 40.dp), shadowElevation = 2.dp, shape = Shapes.Full) {
+            NavigationBar {
+                NavigationBarItem(false, { }, {
                     Row(verticalAlignment = Alignment.Bottom) {
                         Text(
                             text = "00:00:",
@@ -35,13 +35,29 @@ fun WindowScope.eimAppBar() = WindowDraggableArea {
                             lineHeight = 0.sp
                         )
                     }
-                    Text(
-                        text = "秒",
-                        fontSize = 12.sp,
-                        lineHeight = 0.sp
+                })
+                NavigationBarItem(false, { }, {
+                    Icon(
+                        imageVector = Icons.Filled.PlayArrow,
+                        contentDescription = "Play"
                     )
-                }
-                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(end = 12.dp)) {
+                }, modifier = Modifier.weight(0.4F))
+
+                NavigationBarItem(false, { }, {
+                    Icon(
+                        imageVector = Icons.Filled.Stop,
+                        contentDescription = "Stop"
+                    )
+                }, modifier = Modifier.weight(0.4F))
+
+                NavigationBarItem(false, { }, {
+                    Icon(
+                        imageVector = Icons.Filled.FiberManualRecord,
+                        contentDescription = "Record"
+                    )
+                }, modifier = Modifier.weight(0.4F))
+
+                NavigationBarItem(false, { }, {
                     Row(verticalAlignment = Alignment.Bottom) {
                         Text(
                             text = "01:01:",
@@ -57,112 +73,85 @@ fun WindowScope.eimAppBar() = WindowDraggableArea {
                             lineHeight = 0.sp
                         )
                     }
-                    Text(
-                        text = "小节",
-                        fontSize = 12.sp,
-                        lineHeight = 0.sp
-                    )
-                }
-
-                IconButton(onClick = { /* doSomething() */ }) {
-                    Icon(
-                        imageVector = Icons.Filled.PlayArrow,
-                        modifier = Modifier.size(34.dp),
-                        contentDescription = "Play"
-                    )
-                }
-
-                IconButton(onClick = { /* doSomething() */ }) {
-                    Icon(
-                        imageVector = Icons.Filled.Stop,
-                        modifier = Modifier.size(34.dp),
-                        contentDescription = "Stop"
-                    )
-                }
-
-                IconButton(onClick = { /* doSomething() */ }) {
-                    Icon(
-                        imageVector = Icons.Filled.FiberManualRecord,
-                        modifier = Modifier.size(34.dp),
-                        contentDescription = "Record"
-                    )
-                }
-            }
-        },
-        navigationIcon = {
-            IconButton(onClick = { /* doSomething() */ }) {
-                Icon(
-                    imageVector = EIMLogo,
-                    modifier = Modifier.size(34.dp),
-                    contentDescription = "Localized description"
-                )
-            }
-        },
-        actions = {
-            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(end = 12.dp)) {
-                Text(
-                    text = "C",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = (-0.7F).sp,
-                    lineHeight = 0.sp
-                )
-                Text(
-                    text = "根音",
-                    fontSize = 12.sp,
-                    lineHeight = 0.sp
-                )
-            }
-            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(end = 12.dp)) {
-                Text(
-                    text = "自然大调",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = (-0.7F).sp,
-                    lineHeight = 0.sp
-                )
-                Text(
-                    text = "调式",
-                    fontSize = 12.sp,
-                    lineHeight = 0.sp
-                )
-            }
-            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(end = 12.dp)) {
-                Text(
-                    text = "4/4",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = (-0.7F).sp,
-                    lineHeight = 0.sp
-                )
-                Text(
-                    text = "拍号",
-                    fontSize = 12.sp,
-                    lineHeight = 0.sp
-                )
-            }
-            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(end = 12.dp)) {
-                Row(verticalAlignment = Alignment.Bottom) {
-                    Text(
-                        text = "120.",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = (-0.7F).sp,
-                        lineHeight = 0.sp
-                    )
-                    Text(
-                        text = "00",
-                        fontSize = 16.sp,
-                        letterSpacing = (-2).sp,
-                        lineHeight = 0.sp
-                    )
-                }
-                Text(
-                    text = "BPM",
-                    fontSize = 12.sp,
-                    lineHeight = 0.sp
-                )
+                })
             }
         }
-    )
+    }
+//    navigationIcon = {
+//        IconButton(onClick = { /* doSomething() */ }) {
+//            Icon(
+//                imageVector = EIMLogo,
+//                modifier = Modifier.size(34.dp),
+//                contentDescription = "Localized description"
+//            )
+//        }
+//    }
+//        title = {
+//        },
+//        actions = {
+//            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(end = 12.dp)) {
+//                Text(
+//                    text = "C",
+//                    fontSize = 20.sp,
+//                    fontWeight = FontWeight.Bold,
+//                    letterSpacing = (-0.7F).sp,
+//                    lineHeight = 0.sp
+//                )
+//                Text(
+//                    text = "根音",
+//                    fontSize = 12.sp,
+//                    lineHeight = 0.sp
+//                )
+//            }
+//            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(end = 12.dp)) {
+//                Text(
+//                    text = "自然大调",
+//                    fontSize = 20.sp,
+//                    fontWeight = FontWeight.Bold,
+//                    letterSpacing = (-0.7F).sp,
+//                    lineHeight = 0.sp
+//                )
+//                Text(
+//                    text = "调式",
+//                    fontSize = 12.sp,
+//                    lineHeight = 0.sp
+//                )
+//            }
+//            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(end = 12.dp)) {
+//                Text(
+//                    text = "4/4",
+//                    fontSize = 20.sp,
+//                    fontWeight = FontWeight.Bold,
+//                    letterSpacing = (-0.7F).sp,
+//                    lineHeight = 0.sp
+//                )
+//                Text(
+//                    text = "拍号",
+//                    fontSize = 12.sp,
+//                    lineHeight = 0.sp
+//                )
+//            }
+//            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(end = 12.dp)) {
+//                Row(verticalAlignment = Alignment.Bottom) {
+//                    Text(
+//                        text = "120.",
+//                        fontSize = 20.sp,
+//                        fontWeight = FontWeight.Bold,
+//                        letterSpacing = (-0.7F).sp,
+//                        lineHeight = 0.sp
+//                    )
+//                    Text(
+//                        text = "00",
+//                        fontSize = 16.sp,
+//                        letterSpacing = (-2).sp,
+//                        lineHeight = 0.sp
+//                    )
+//                }
+//                Text(
+//                    text = "BPM",
+//                    fontSize = 12.sp,
+//                    lineHeight = 0.sp
+//                )
+//            }
+//        }
 }

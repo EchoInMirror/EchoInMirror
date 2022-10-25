@@ -25,6 +25,9 @@ private fun Modifier.cursorForHorizontalResize(): Modifier =
 @Preview
 @OptIn(ExperimentalSplitPaneApi::class)
 fun eimApp(innerPadding: PaddingValues) {
+    Row {
+
+    }
     val splitterState = rememberSplitPaneState()
     val hSplitterState = rememberSplitPaneState()
     HorizontalSplitPane(

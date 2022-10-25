@@ -1,14 +1,15 @@
 package cn.apisium.eim
 
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import cn.apisium.eim.components.eimAppBar
-import cn.apisium.eim.components.eimApp
+import cn.apisium.eim.components.sideBar
+import cn.apisium.eim.components.statusBar
 import kotlinx.serialization.json.JsonPrimitive
 import java.io.InputStream
 import java.io.OutputStream
@@ -82,10 +83,18 @@ fun main() = application {
     val icon = painterResource("logo.png")
     Window(onCloseRequest = ::exitApplication, icon = icon, title = "Echo In Mirror") {
         MaterialTheme {
-            Scaffold(
-                topBar = { eimAppBar() },
-                content = { eimApp(it) }
-            )
+            Row {
+                sideBar()
+                Scaffold(
+                    topBar = { eimAppBar() },
+                    content = {
+                        Box(Modifier.fillMaxSize()) {
+
+                        }
+                    },
+                    bottomBar = { statusBar() }
+                )
+            }
         }
     }
 
