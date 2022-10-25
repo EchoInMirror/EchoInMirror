@@ -1,10 +1,14 @@
-import androidx.compose.desktop.ui.tooling.preview.Preview
-import androidx.compose.material.Button
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+package cn.apisium.eim
+
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
+import cn.apisium.eim.components.eimAppBar
+import cn.apisium.eim.components.eimApp
 import kotlinx.serialization.json.JsonPrimitive
 import java.io.InputStream
 import java.io.OutputStream
@@ -14,19 +18,7 @@ import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioSystem
 import kotlin.math.sin
 
-@Composable
-@Preview
-fun app() {
-    var text by remember { mutableStateOf("Hello, World!") }
-
-    MaterialTheme {
-        Button(onClick = {
-            text = "Hello, Desktop!"
-        }) {
-            Text(text)
-        }
-    }
-}
+var hz = 440.0
 
 const val bufferSize = 1024
 const val channels = 2
@@ -44,7 +36,7 @@ const val volume = 0.01F
 
 private val writeBuffer = ByteArray(8)
 fun InputStream.readInt() = if (isBigEndian) (read() shl 24) or (read() shl 16) or (read() shl 8) or read()
-    else read() or (read() shl 8) or (read() shl 16) or (read() shl 24)
+else read() or (read() shl 8) or (read() shl 16) or (read() shl 24)
 fun InputStream.readFloat() = Float.fromBits(readInt())
 fun OutputStream.writeInt(value: Int) {
     if (isBigEndian) {
@@ -85,9 +77,16 @@ fun OutputStream.writeLong(value: Long) {
 fun OutputStream.writeFloat(value: Float) = writeInt(java.lang.Float.floatToIntBits(value))
 fun OutputStream.writeDouble(value: Double) = writeLong(java.lang.Double.doubleToLongBits(value))
 
+@OptIn(ExperimentalMaterial3Api::class)
 fun main() = application {
-    Window(onCloseRequest = ::exitApplication) {
-        app()
+    val icon = painterResource("logo.png")
+    Window(onCloseRequest = ::exitApplication, icon = icon, title = "Echo In Mirror") {
+        MaterialTheme {
+            Scaffold(
+                topBar = { eimAppBar() },
+                content = { eimApp(it) }
+            )
+        }
     }
 
     val processBuilder = ProcessBuilder("D:\\Cpp\\EIMPluginScanner\\build\\EIMPluginHost_artefacts\\Debug\\EIMPluginHost.exe", " -l",
@@ -117,10 +116,10 @@ fun main() = application {
     fun processBlock() {
         for (i in 0 until bufferSize) {
             val samplePos = sin(currentAngle).toFloat() * volume
-            currentAngle += 2 * Math.PI * 440.0 / sampleRate
+            currentAngle += 2 * Math.PI * hz / sampleRate
 
             buffers[0][i] = samplePos
-            buffers[1][i] = samplePos
+            buffers[1][i] = (sin(currentAngle).toFloat() * 5).coerceAtLeast(1F) * volume
         }
 
         out.write(1)
