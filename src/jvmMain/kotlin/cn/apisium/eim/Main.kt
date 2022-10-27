@@ -7,6 +7,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
+import cn.apisium.eim.api.AudioPlayer
+import cn.apisium.eim.api.CurrentPosition
 import cn.apisium.eim.api.processor.PluginDescription
 import cn.apisium.eim.components.eimAppBar
 import cn.apisium.eim.components.sideBar
@@ -22,9 +24,27 @@ import kotlinx.serialization.json.Json
 import java.nio.file.Files
 import java.nio.file.Paths
 
+val currentPosition = CurrentPosition()
+val bus = BusImpl()
+private var player_: AudioPlayer = JvmAudioPlayer(currentPosition, bus)
+var sampleRate by mutableStateOf(44800F)
+var bufferSize by mutableStateOf(1024)
+var timeSigNumerator by mutableStateOf(4)
+var timeSigDenominator by mutableStateOf(4)
+var player: AudioPlayer
+    get() = player_
+    set(value) { player_ = value }
+
+@Composable
+fun checkSampleRateAndBufferSize(): Array<Any> {
+    SideEffect {
+        println("Changed: $sampleRate $bufferSize")
+    }
+    return arrayOf(sampleRate, bufferSize)
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 fun main() {
-    val bus = BusImpl()
     Runtime.getRuntime().addShutdownHook(Thread(bus::close))
 
     val track = TrackImpl("Track 1")
@@ -37,12 +57,11 @@ fun main() {
 
     bus.addTrack(track)
 
-    val player = JvmAudioPlayer()
-    player.processor = bus
-    player.open(44800F, 1024, 2)
+    player.open(sampleRate, bufferSize, 2)
 
     application {
         val icon = painterResource("logo.png")
+        checkSampleRateAndBufferSize()
         Window(onCloseRequest = ::exitApplication, icon = icon, title = "Echo In Mirror") {
             MaterialTheme {
                 Row {

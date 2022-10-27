@@ -23,8 +23,8 @@ open class TrackImpl(
         for (i in buffers[1].indices) buffers[1][i] *= calcPanRightChannel() * volume
     }
 
-    override fun prepareToPlay(sampleRate: Float, bufferSize: Int) {
-        _processorsChain.forEach { it.prepareToPlay(sampleRate, bufferSize) }
+    override fun prepareToPlay() {
+        _processorsChain.forEach { it.prepareToPlay() }
     }
 
     override fun close() {

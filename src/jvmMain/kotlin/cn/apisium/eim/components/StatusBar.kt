@@ -10,7 +10,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import cn.apisium.eim.currentPosition
 import cn.apisium.eim.icons.MetronomeTick
+import cn.apisium.eim.timeSigDenominator
+import cn.apisium.eim.timeSigNumerator
 
 @Composable
 fun StatusBarItem(id: String, icon: ImageVector? = null, modifier: Modifier = Modifier, child: @Composable () -> Unit) {
@@ -37,10 +40,10 @@ fun statusBar() {
                         }
                         Box(Modifier.weight(2F))
                         StatusBarItem("Pai", MetronomeTick) {
-                            Text("4/4")
+                            Text("$timeSigNumerator/$timeSigDenominator")
                         }
                         StatusBarItem("BPM") {
-                            Text("140.00")
+                            Text("%.2f".format(currentPosition.bpm))
                         }
                     }
                 }

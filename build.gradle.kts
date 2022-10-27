@@ -1,5 +1,8 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.compose.ExperimentalComposeLibrary
+import java.net.URL
+import java.net.HttpURLConnection
+import java.io.FileOutputStream
 
 plugins {
     kotlin("multiplatform")
@@ -48,4 +51,24 @@ compose.desktop {
             packageVersion = "1.0.0"
         }
     }
+}
+
+task<Copy>("downloadEIMHost") {
+    val file = File("EIMHost.exe")
+    if (file.exists()) {
+        println("File exists, skipping download.")
+        return@task
+    }
+    val connection = URL("https://github.com/EchoInMirror/EIMHost/releases/latest/download/EIMHost.exe").openConnection() as HttpURLConnection
+    connection.connect()
+    val input = connection.inputStream
+    val output = FileOutputStream(file)
+    input.copyTo(output)
+    input.close()
+    output.close()
+}
+
+// Run before build
+tasks.withType<GradleBuild>() {
+    dependsOn(":downloadEIMHost")
 }

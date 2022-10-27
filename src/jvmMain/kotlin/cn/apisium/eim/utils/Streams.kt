@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package cn.apisium.eim.utils
 
 import java.io.BufferedInputStream
@@ -14,6 +16,7 @@ class EIMInputStream(private val isBigEndian: Boolean, stream: InputStream): Buf
         read(arr)
         return arr.toString(Charsets.UTF_8)
     }
+    fun readBoolean() = read() != 0
 }
 
 class EIMOutputStream(private val isBigEndian: Boolean, stream: OutputStream): BufferedOutputStream(stream) {
@@ -56,4 +59,10 @@ class EIMOutputStream(private val isBigEndian: Boolean, stream: OutputStream): B
     }
     fun writeFloat(value: Float) = writeInt(java.lang.Float.floatToIntBits(value))
     fun writeDouble(value: Double) = writeLong(java.lang.Double.doubleToLongBits(value))
+    fun writeBoolean(value: Boolean) = write(if (value) 1 else 0)
+    fun writeString(value: String) {
+        val arr = value.toByteArray(Charsets.UTF_8)
+        writeInt(arr.size)
+        write(arr)
+    }
 }

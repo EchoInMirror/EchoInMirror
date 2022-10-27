@@ -1,16 +1,14 @@
 package cn.apisium.eim.impl.players
 
 import cn.apisium.eim.api.AudioPlayer
+import cn.apisium.eim.api.CurrentPosition
 import cn.apisium.eim.api.processor.AudioProcessor
-import cn.apisium.eim.impl.CurrentPositionImpl
 import java.util.*
 import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioSystem
 import javax.sound.sampled.SourceDataLine
 
-class JvmAudioPlayer : AudioPlayer, Runnable {
-    override var processor: AudioProcessor? = null
-    override val currentPosition = CurrentPositionImpl()
+class JvmAudioPlayer(currentPosition: CurrentPosition, processor: AudioProcessor?) : AudioPlayer(currentPosition, processor), Runnable {
     private var thread: Thread? = null
     private var sdl: SourceDataLine? = null
     private var sampleRate = 44800F
@@ -38,14 +36,10 @@ class JvmAudioPlayer : AudioPlayer, Runnable {
         sdl!!.open(af, outputBuffer.size)
         sdl!!.start()
 
-        if (processor != null) processor!!.prepareToPlay(sampleRate, bufferSize)
+        if (processor != null) processor!!.prepareToPlay()
 
         thread = Thread(this)
         thread!!.start()
-    }
-
-    override fun setCurrentTime(currentPosition: Long) {
-
     }
 
     override fun close() {
@@ -82,7 +76,7 @@ class JvmAudioPlayer : AudioPlayer, Runnable {
             }
             sdl!!.write(outputBuffer, 0, outputBuffer.size)
 
-            currentPosition.update(currentPosition.timeInSamples, sampleRate)
+            if (currentPosition.isPlaying) currentPosition.update(currentPosition.timeInSamples + bufferSize)
         }
     }
 }

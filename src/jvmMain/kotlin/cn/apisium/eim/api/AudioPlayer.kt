@@ -2,9 +2,6 @@ package cn.apisium.eim.api
 
 import cn.apisium.eim.api.processor.AudioProcessor
 
-interface AudioPlayer: AutoCloseable {
-    var processor: AudioProcessor?
-    val currentPosition: CurrentPosition
-    fun open(sampleRate: Float, bufferSize: Int, bits: Int)
-    fun setCurrentTime(currentPosition: Long)
+abstract class AudioPlayer(val currentPosition: CurrentPosition, var processor: AudioProcessor? = null): AutoCloseable {
+    abstract fun open(sampleRate: Float, bufferSize: Int, bits: Int)
 }

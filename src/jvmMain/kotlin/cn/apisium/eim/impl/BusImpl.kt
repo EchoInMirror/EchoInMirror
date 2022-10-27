@@ -20,9 +20,9 @@ class BusImpl: TrackImpl("Bus"), Bus {
         _tracks.clear()
     }
 
-    override fun prepareToPlay(sampleRate: Float, bufferSize: Int) {
-        super<TrackImpl>.prepareToPlay(sampleRate, bufferSize)
-        _tracks.forEach { it.prepareToPlay(sampleRate, bufferSize) }
+    override fun prepareToPlay() {
+        super<TrackImpl>.prepareToPlay()
+        _tracks.forEach { it.prepareToPlay() }
     }
 
     override fun addTrack(track: Track, index: Int) {

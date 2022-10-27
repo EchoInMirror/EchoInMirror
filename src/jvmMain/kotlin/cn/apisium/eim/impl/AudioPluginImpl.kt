@@ -4,6 +4,8 @@ import cn.apisium.eim.api.CurrentPosition
 import cn.apisium.eim.api.processor.AudioPlugin
 import cn.apisium.eim.api.processor.FailedToLoadAudioPluginException
 import cn.apisium.eim.api.processor.PluginDescription
+import cn.apisium.eim.bufferSize
+import cn.apisium.eim.sampleRate
 import cn.apisium.eim.utils.EIMInputStream
 import cn.apisium.eim.utils.EIMOutputStream
 import kotlinx.coroutines.Dispatchers
@@ -27,13 +29,12 @@ class AudioPluginImpl(
     private var process: Process? = null
     private var inputStream: EIMInputStream? = null
     private var outputStream: EIMOutputStream? = null
-    private var sampleRate = 44100F
-    private var bufferSize = 1024
 
     override fun processBlock(buffers: Array<FloatArray>, position: CurrentPosition, midiBuffer: ArrayList<Byte>?) {
         if (!_isLaunched) return
         val output = outputStream!!
         output.write(1)
+        output.writeBoolean(position.isPlaying)
         output.writeDouble(position.bpm)
         output.writeLong(position.timeInSamples)
         val inputChannels = _inputChannelsCount.coerceAtMost(buffers.size)
@@ -52,10 +53,7 @@ class AudioPluginImpl(
         }
     }
 
-    override fun prepareToPlay(sampleRate: Float, bufferSize: Int) {
-        this.sampleRate = sampleRate
-        this.bufferSize = bufferSize
-
+    override fun prepareToPlay() {
         val output = outputStream ?: return
         output.write(0)
         output.writeInt(sampleRate.toInt())
@@ -66,7 +64,7 @@ class AudioPluginImpl(
     override suspend fun launch(): Boolean {
         if (_isLaunched) return true
         return withContext(Dispatchers.IO) {
-            val pb = ProcessBuilder("D:\\Cpp\\EIMPluginScanner\\build\\EIMPluginHost_artefacts\\Debug\\EIMPluginHost.exe", " -l",
+            val pb = ProcessBuilder("D:\\Cpp\\EIMPluginScanner\\build\\EIMHost_artefacts\\Debug\\EIMHost.exe", " -l",
                 JsonPrimitive(Json.encodeToString(PluginDescription.serializer(), description)).toString())
 
             pb.redirectError(ProcessBuilder.Redirect.INHERIT)
