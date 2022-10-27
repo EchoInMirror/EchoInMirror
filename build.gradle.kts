@@ -1,11 +1,10 @@
-import org.jetbrains.compose.compose
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jetbrains.compose.ExperimentalComposeLibrary
 
 plugins {
     kotlin("multiplatform")
     id("org.jetbrains.compose")
+    kotlin("plugin.serialization") version "1.7.20"
 }
 
 group = "com.eimsound"
@@ -15,6 +14,7 @@ repositories {
     google()
     mavenCentral()
     maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
+    maven("https://s01.oss.sonatype.org/content/repositories/releases/")
 }
 
 kotlin {
@@ -25,7 +25,7 @@ kotlin {
         withJava()
     }
     sourceSets {
-        val jvmMain by getting {
+        @Suppress("UNUSED_VARIABLE", "OPT_IN_IS_NOT_ENABLED") val jvmMain by getting {
             dependencies {
                 implementation(compose.desktop.currentOs) {
                     exclude("org.jetbrains.compose.material")
