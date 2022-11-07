@@ -1,6 +1,6 @@
 package cn.apisium.eim.window
 
-import androidx.compose.foundation.background
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicText
@@ -11,12 +11,14 @@ import androidx.compose.material.icons.filled.SettingsInputComponent
 import androidx.compose.material.icons.filled.SettingsInputHdmi
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.api.window.SettingsTab
+import cn.apisium.eim.components.Filled
 import cn.apisium.eim.impl.processor.nativeAudioPluginManager
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
@@ -162,6 +164,7 @@ fun settingsWindow() {
         Surface(Modifier.fillMaxSize(), tonalElevation = 2.dp) {
             Row {
                 var selected by remember { mutableStateOf(settingsTabs.getOrNull(0)?.run { this::class.java.name } ?: "") }
+                val selectedTab = settingsTabs.find { it::class.java.name == selected }
                 NavigationRail {
                     settingsTabs.forEach {
                         key(it::class.java.name) {
@@ -174,15 +177,21 @@ fun settingsWindow() {
                         }
                     }
                 }
-                Column(Modifier.fillMaxSize().padding(14.dp)) {
-                    val selectedTab = settingsTabs.find { it::class.java.name == selected }
+                Column(Modifier.fillMaxSize()) {
+                    val stateVertical = rememberScrollState(0)
                     Box(Modifier.weight(1F)) {
-                        selectedTab?.content()
+                        Box(Modifier.fillMaxSize().verticalScroll(stateVertical)) {
+                            Box(Modifier.padding(14.dp)) { selectedTab?.content() }
+                        }
+                        VerticalScrollbar(
+                            modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
+                            adapter = rememberScrollbarAdapter(stateVertical)
+                        )
                     }
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Spacer(Modifier.weight(1F))
+                    Row(Modifier.padding(14.dp, 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Filled()
                         selectedTab?.buttons()
-                        Button({}) { Text("确认") }
+                        Button({ EchoInMirror.windowManager.settingsDialogOpen = false }) { Text("确认") }
                     }
                 }
             }

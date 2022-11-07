@@ -12,7 +12,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import cn.apisium.eim.Border
 import cn.apisium.eim.EchoInMirror
+import cn.apisium.eim.border
 import cn.apisium.eim.icons.MetronomeTick
 
 @Composable
@@ -31,8 +33,9 @@ fun StatusBarItem(id: String, icon: ImageVector? = null, modifier: Modifier = Mo
 @Composable
 fun statusBar() {
     Surface(tonalElevation = 2.dp) {
-        Row(modifier = Modifier.height(24.dp).fillMaxWidth()) {
-            Surface(modifier = Modifier.fillMaxHeight().width(1.dp), tonalElevation = 5.dp) { }
+        val border = Border(0.6.dp, MaterialTheme.colorScheme.onSurfaceVariant.copy(0.2F))
+        Row(modifier = Modifier.height(24.dp).fillMaxWidth().border(top = border, start = if (selectedItem == null) null else border)) {
+            if (selectedItem == null) Surface(modifier = Modifier.fillMaxHeight().width(1.dp), tonalElevation = 5.dp) { }
             CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurfaceVariant) {
                 ProvideTextStyle(MaterialTheme.typography.labelSmall) {
                     CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurfaceVariant) {

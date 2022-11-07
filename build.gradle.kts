@@ -36,7 +36,7 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
                 implementation(compose.materialIconsExtended)
                 @OptIn(ExperimentalComposeLibrary::class) implementation(compose.material3)
-                @OptIn(ExperimentalComposeLibrary::class) implementation(compose.desktop.components.splitPane)
+//                @OptIn(ExperimentalComposeLibrary::class) implementation(compose.desktop.components.splitPane)
 
                 implementation("org.pf4j:pf4j:3.8.0")
                 implementation("commons-io:commons-io:2.11.0")
