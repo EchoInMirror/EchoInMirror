@@ -60,10 +60,10 @@ private class NativeAudioPluginSettings: SettingsTab {
     @OptIn(DelicateCoroutinesApi::class)
     @Composable
     override fun buttons() {
-        Button({
+        TextButton({
             GlobalScope.launch { EchoInMirror.audioProcessorManager.nativeAudioPluginManager.scan() }
         }) {
-            Icon(Icons.Filled.Add, contentDescription = "Add")
+            Text("搜索")
         }
     }
 
@@ -160,7 +160,7 @@ fun settingsWindow() {
     Dialog({ EchoInMirror.windowManager.settingsDialogOpen = false }, title = "设置") {
         window.minimumSize = Dimension(800, 600)
         Surface(Modifier.fillMaxSize(), tonalElevation = 2.dp) {
-            Row() {
+            Row {
                 var selected by remember { mutableStateOf(settingsTabs.getOrNull(0)?.run { this::class.java.name } ?: "") }
                 NavigationRail {
                     settingsTabs.forEach {
@@ -179,8 +179,9 @@ fun settingsWindow() {
                     Box(Modifier.weight(1F)) {
                         selectedTab?.content()
                     }
-                    Row {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Spacer(Modifier.weight(1F))
+                        selectedTab?.buttons()
                         Button({}) { Text("确认") }
                     }
                 }
