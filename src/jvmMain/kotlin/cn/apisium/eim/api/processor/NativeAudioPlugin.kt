@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 import java.util.Date
 
 @Serializable
-data class PluginDescription(
+data class NativeAudioPluginDescription(
     val name: String,
     val pluginFormatName: String,
     val category: String,
@@ -26,8 +26,13 @@ data class PluginDescription(
 
 class FailedToLoadAudioPluginException(message: String) : RuntimeException(message)
 
-interface AudioPlugin: AudioProcessor {
-    val description: PluginDescription
-    val isLaunched: Boolean
-    suspend fun launch(): Boolean
+interface NativeAudioPlugin: ProcessAudioProcessor {
+    val description: NativeAudioPluginDescription
+}
+
+interface NativeAudioPluginFactory: AudioProcessorFactory<NativeAudioPlugin> {
+    val pluginDescriptions: Map<String, NativeAudioPluginDescription>
+    val scanPaths: MutableSet<String>
+    val skipList: MutableSet<String>
+    suspend fun scan()
 }

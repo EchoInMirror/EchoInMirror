@@ -37,6 +37,11 @@ kotlin {
                 implementation(compose.materialIconsExtended)
                 @OptIn(ExperimentalComposeLibrary::class) implementation(compose.material3)
                 @OptIn(ExperimentalComposeLibrary::class) implementation(compose.desktop.components.splitPane)
+
+                implementation("org.pf4j:pf4j:3.8.0")
+                implementation("commons-io:commons-io:2.11.0")
+                implementation("org.apache.commons:commons-lang3:3.12.0")
+                implementation("org.slf4j:slf4j-simple:2.0.3")
             }
         }
     }

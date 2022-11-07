@@ -17,7 +17,7 @@ open class TrackImpl(
     private val _processorsChain = arrayListOf<AudioProcessor>()
     override val processorsChain: List<AudioProcessor> = _processorsChain
 
-    override fun processBlock(buffers: Array<FloatArray>, position: CurrentPosition, midiBuffer: ArrayList<Byte>?) {
+    override suspend fun processBlock(buffers: Array<FloatArray>, position: CurrentPosition, midiBuffer: ArrayList<Byte>?) {
         _processorsChain.forEach { it.processBlock(buffers, position, midiBuffer) }
         for (i in buffers[0].indices) buffers[0][i] *= calcPanLeftChannel() * volume
         for (i in buffers[1].indices) buffers[1][i] *= calcPanRightChannel() * volume

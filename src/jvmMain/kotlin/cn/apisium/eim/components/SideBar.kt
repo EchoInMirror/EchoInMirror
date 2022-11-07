@@ -7,10 +7,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import cn.apisium.eim.icons.EIMLogo
 
-data class SideBarItem(val id: String, val name: String, val icon: @Composable () -> Unit)
+data class SideBarItem(val id: String, val name: String? = null, val icon: @Composable () -> Unit)
 
 val mainItems = mutableStateListOf(
+    SideBarItem("EIM", "EIM") { Icon(EIMLogo, "QuickLand") },
     SideBarItem("Favorite", "收藏") { Icon(Icons.Default.Favorite, "Favorite") },
     SideBarItem("Plugins", "插件") { Icon(Icons.Default.SettingsInputHdmi, "Plugins") },
     SideBarItem("Topic", "文件") { Icon(Icons.Default.Topic, "Topic") },
@@ -29,7 +31,7 @@ fun sideBar() {
             mainItems.forEach {
                 NavigationRailItem(
                     icon = { it.icon() },
-                    label = { Text(it.name) },
+                    label = if (it.name == null) null else ({ Text(it.name) }),
                     selected = selectedItem == it.id,
                     onClick = { selectedItem = it.id }
                 )
@@ -38,7 +40,7 @@ fun sideBar() {
             bottomItems.forEach {
                 NavigationRailItem(
                     icon = { it.icon() },
-                    label = { Text(it.name) },
+                    label = if (it.name == null) null else ({ Text(it.name) }),
                     selected = selectedItem == it.id,
                     onClick = { selectedItem = it.id }
                 )

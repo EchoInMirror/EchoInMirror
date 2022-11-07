@@ -1,8 +1,9 @@
-package cn.apisium.eim.impl.players
+package cn.apisium.eim.impl.processor.players
 
 import cn.apisium.eim.api.AudioPlayer
 import cn.apisium.eim.api.CurrentPosition
 import cn.apisium.eim.api.processor.AudioProcessor
+import kotlinx.coroutines.runBlocking
 import java.util.*
 import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioSystem
@@ -60,11 +61,15 @@ class JvmAudioPlayer(currentPosition: CurrentPosition, processor: AudioProcessor
                 continue
             }
             buffers.forEach { Arrays.fill(it, 0F) }
-            try {
-                processor?.processBlock(buffers, currentPosition)
-            } catch (e: Exception) {
-                e.printStackTrace()
+
+            runBlocking {
+                try {
+                    processor?.processBlock(buffers, currentPosition)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
             }
+
             for (j in 0 until channels) {
                 for (i in 0 until bufferSize) {
                     var value = (buffers[j][i] * 32767).toInt()
