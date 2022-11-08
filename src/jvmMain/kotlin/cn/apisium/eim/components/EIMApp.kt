@@ -18,7 +18,6 @@ import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.components.splitpane.ExperimentalSplitPaneApi
 import cn.apisium.eim.components.splitpane.HorizontalSplitPane
 import cn.apisium.eim.components.splitpane.VerticalSplitPane
-import cn.apisium.eim.components.splitpane.rememberSplitPaneState
 import cn.apisium.eim.impl.WindowManagerImpl
 import org.jetbrains.skiko.Cursor
 
@@ -52,25 +51,18 @@ fun eimApp() {
                             Column {
                                 Box(Modifier.weight(1F)) {
                                     HorizontalSplitPane(splitPaneState = sideBarWidthState) {
-                                        first(0.dp) {
-                                            sideBarContent()
-                                        }
+                                        first(0.dp) { sideBarContent() }
                                         second(400.dp) {
-                                            VerticalSplitPane(splitPaneState = rememberSplitPaneState()) {
-                                                first(50.dp) {
-                                                    Box(Modifier.fillMaxSize())
-                                                }
-                                                second(20.dp) {
-                                                    Box(Modifier.fillMaxSize())
-                                                }
+                                            VerticalSplitPane(splitPaneState = bottomBarHeightState) {
+                                                first(200.dp) { playList() }
+                                                second(0.dp) { bottomBarContent() }
                                             }
                                         }
                                     }
                                 }
                                 statusBar()
                             }
-                        },
-//                        bottomBar = {  }
+                        }
                     )
                 }
 

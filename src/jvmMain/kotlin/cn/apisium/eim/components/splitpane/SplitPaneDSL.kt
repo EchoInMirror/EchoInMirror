@@ -177,13 +177,11 @@ internal class SplitPaneScopeImpl(
 @ExperimentalSplitPaneApi
 @Composable
 fun rememberSplitPaneState(
-    initialPositionPercentage: Float = 0f,
+    initialPosition: Float = -1f,
     moveEnabled: Boolean = true
-): SplitPaneState {
-    return remember {
-        SplitPaneState(
-            moveEnabled = moveEnabled,
-            initialPositionPercentage = initialPositionPercentage
-        )
-    }
+) = remember {
+    SplitPaneState(
+        moveEnabled = moveEnabled,
+        initialPositionPercentage = initialPosition
+    )
 }

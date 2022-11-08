@@ -77,7 +77,7 @@ internal actual fun SplitPane(
                 val constrainedPosition =
                     (constraints.maxByDirection(isHorizontal) - (firstMinSizePx + secondMinSizePx)).let {
                         if (it > 0f) {
-                            position.coerceIn(constrainedMin, constrainedMax).roundToInt()
+                            calcPosition(it).coerceIn(constrainedMin, constrainedMax).roundToInt()
                         } else {
                             constrainedMin.roundToInt()
                         }

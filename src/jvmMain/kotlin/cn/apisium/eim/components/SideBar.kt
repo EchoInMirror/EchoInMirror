@@ -35,17 +35,19 @@ val bottomItems = mutableStateListOf(
     SideBarItem("Mixer", "混音台") { Icon(Icons.Default.Tune, "Mixer") },
 )
 
-internal var selectedItem by mutableStateOf<String?>(null)
-private var lastSelected: String? = null
+internal var sideBarSelectedItem by mutableStateOf<String?>(null)
+internal var bottomBarSelectedItem by mutableStateOf<String?>(null)
+private var sideBarLastSelected: String? = null
+private var bottomBarLastSelected: String? = null
 
-val sideBarWidthState = object : SplitPaneState(0F, true) {
+internal val sideBarWidthState = object : SplitPaneState() {
     override fun dispatchRawMovement(delta: Float) {
         val movableArea = maxPosition - minPosition
         if (movableArea <= 0) return
         val width = (position + delta).coerceIn(minPosition, maxPosition)
-        if (selectedItem == null) {
-            if (width >= 240 && lastSelected != null) {
-                selectedItem = lastSelected
+        if (sideBarSelectedItem == null) {
+            if (width >= 240 && sideBarLastSelected != null) {
+                sideBarSelectedItem = sideBarLastSelected
                 position = width
                 return
             }
@@ -55,11 +57,41 @@ val sideBarWidthState = object : SplitPaneState(0F, true) {
         if (width < 240) {
             if (width < 80) {
                 position = 0F
-                selectedItem = null
+                sideBarSelectedItem = null
             }
             return
         }
         position = width
+    }
+}
+
+internal val bottomBarHeightState = object : SplitPaneState() {
+    override fun dispatchRawMovement(delta: Float) {
+        val movableArea = maxPosition - minPosition
+        if (movableArea <= 0) return
+        val height = (position - delta).coerceIn(minPosition, maxPosition)
+        if (bottomBarSelectedItem == null) {
+            if (height >= 240 && bottomBarLastSelected != null) {
+                bottomBarSelectedItem = bottomBarLastSelected
+                position = height
+                return
+            }
+            if (position != 0F) position = 0F
+            return
+        }
+        if (height < 240) {
+            if (height < 80) {
+                position = 0F
+                bottomBarSelectedItem = null
+            }
+            return
+        }
+        position = height
+    }
+
+    override fun calcPosition(constraint: Float): Float {
+        super.calcPosition(constraint)
+        return maxPosition - position
     }
 }
 
@@ -71,15 +103,15 @@ fun sideBar() {
                 NavigationRailItem(
                     icon = { it.icon() },
                     label = if (it.name == null) null else ({ Text(it.name) }),
-                    selected = selectedItem == it.id,
+                    selected = sideBarSelectedItem == it.id,
                     onClick = {
-                        if (selectedItem == it.id) {
-                            selectedItem = null
+                        if (sideBarSelectedItem == it.id) {
+                            sideBarSelectedItem = null
                             sideBarWidthState.position = 0F
                         } else {
-                            selectedItem = it.id
+                            sideBarSelectedItem = it.id
                             if (sideBarWidthState.position == 0F) sideBarWidthState.position = 240F
-                            lastSelected = selectedItem
+                            sideBarLastSelected = sideBarSelectedItem
                         }
                     }
                 )
@@ -89,8 +121,17 @@ fun sideBar() {
                 NavigationRailItem(
                     icon = { it.icon() },
                     label = if (it.name == null) null else ({ Text(it.name) }),
-                    selected = false,
-                    onClick = {  }
+                    selected = bottomBarSelectedItem == it.id,
+                    onClick = {
+                        if (bottomBarSelectedItem == it.id) {
+                            bottomBarSelectedItem = null
+                            bottomBarHeightState.position = 0F
+                        } else {
+                            bottomBarSelectedItem = it.id
+                            if (bottomBarHeightState.position == 0F) bottomBarHeightState.position = 240F
+                            bottomBarLastSelected = bottomBarSelectedItem
+                        }
+                    }
                 )
             }
         }
@@ -102,7 +143,7 @@ fun sideBarContent() {
     Surface(
         tonalElevation = 2.dp,
         shadowElevation = 2.dp,
-        shape = RoundedCornerShape(0.dp, 16.dp, 16.dp, 0.dp)
+        shape = RoundedCornerShape(0.dp, 16.dp, if (bottomBarSelectedItem == null) 16.dp else 0.dp, 0.dp)
     ) {
         Box(Modifier.fillMaxSize().border(start = Border(0.6.dp, MaterialTheme.colorScheme.onSurfaceVariant.copy(0.2F)))) {
             val stateVertical = rememberScrollState(0)

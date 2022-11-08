@@ -5,15 +5,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 
 open class SplitPaneState(
-    initialPositionPercentage: Float,
-    moveEnabled: Boolean,
+    private var initialPositionPercentage: Float = -1F,
+    moveEnabled: Boolean = true,
 ) {
-
     var moveEnabled by mutableStateOf(moveEnabled)
-        internal set
 
-    var position by mutableStateOf(initialPositionPercentage)
-        internal set
+    var position by mutableStateOf(0F)
 
     internal var minPosition: Float = 0f
 
@@ -26,4 +23,11 @@ open class SplitPaneState(
         }
     }
 
+    open fun calcPosition(constraint: Float): Float {
+        if (initialPositionPercentage != -1F) {
+            position = initialPositionPercentage * constraint
+            initialPositionPercentage = -1F
+        }
+        return position
+    }
 }

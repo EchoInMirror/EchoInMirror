@@ -19,14 +19,11 @@ object EchoInMirror {
     @Suppress("MemberVisibilityCanBePrivate")
     val currentPosition = CurrentPosition()
     val bus: Bus = BusImpl()
-    private var player_: AudioPlayer = JvmAudioPlayer(currentPosition, bus)
     var sampleRate by mutableStateOf(44800F)
     var bufferSize by mutableStateOf(1024)
     var timeSigNumerator by mutableStateOf(4)
     var timeSigDenominator by mutableStateOf(4)
-    var player: AudioPlayer
-        get() = player_
-        set(value) { player_ = value }
+    var player: AudioPlayer = JvmAudioPlayer(currentPosition, bus)
 
     val pluginManager: PluginManager = EIMPluginManager()
     val windowManager: WindowManager = WindowManagerImpl()

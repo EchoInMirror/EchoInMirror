@@ -34,8 +34,8 @@ fun StatusBarItem(id: String, icon: ImageVector? = null, modifier: Modifier = Mo
 fun statusBar() {
     Surface(tonalElevation = 2.dp) {
         val border = Border(0.6.dp, MaterialTheme.colorScheme.onSurfaceVariant.copy(0.2F))
-        Row(modifier = Modifier.height(24.dp).fillMaxWidth().border(top = border, start = if (selectedItem == null) null else border)) {
-            if (selectedItem == null) Surface(modifier = Modifier.fillMaxHeight().width(1.dp), tonalElevation = 5.dp) { }
+        Row(modifier = Modifier.height(24.dp).fillMaxWidth().border(top = border, start = if (sideBarSelectedItem == null) null else border)) {
+            if (sideBarSelectedItem == null) Surface(modifier = Modifier.fillMaxHeight().width(1.dp), tonalElevation = 5.dp) { }
             CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurfaceVariant) {
                 ProvideTextStyle(MaterialTheme.typography.labelSmall) {
                     CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurfaceVariant) {
