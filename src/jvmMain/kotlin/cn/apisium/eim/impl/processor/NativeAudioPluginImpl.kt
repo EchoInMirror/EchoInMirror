@@ -1,7 +1,7 @@
 package cn.apisium.eim.impl.processor
 
 import androidx.compose.runtime.mutableStateMapOf
-import cn.apisium.eim.WORKING_PATH
+import cn.apisium.eim.ROOT_PATH
 import cn.apisium.eim.api.processor.NativeAudioPlugin
 import cn.apisium.eim.api.processor.NativeAudioPluginDescription
 import cn.apisium.eim.api.processor.NativeAudioPluginFactory
@@ -24,7 +24,7 @@ class NativeAudioPluginImpl(
 ) : NativeAudioPlugin, ProcessAudioProcessorImpl("D:\\Cpp\\EIMPluginScanner\\build\\EIMHost_artefacts\\Debug\\EIMHost.exe", " -l",
     JsonPrimitive(Json.encodeToString(NativeAudioPluginDescription.serializer(), description)).toString())
 
-private val NATIVE_AUDIO_PLUGIN_CONFIG = WORKING_PATH.resolve("nativeAudioPlugin.json")
+private val NATIVE_AUDIO_PLUGIN_CONFIG = ROOT_PATH.resolve("nativeAudioPlugin.json")
 
 @Serializable
 class NativeAudioPluginFactoryData {
