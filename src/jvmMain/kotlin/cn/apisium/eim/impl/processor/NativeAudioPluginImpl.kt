@@ -6,11 +6,18 @@ import cn.apisium.eim.api.processor.NativeAudioPlugin
 import cn.apisium.eim.api.processor.NativeAudioPluginDescription
 import cn.apisium.eim.api.processor.NativeAudioPluginFactory
 import cn.apisium.eim.utils.mutableStateSetOf
+import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.*
 import org.apache.commons.lang3.SystemUtils
+import java.nio.charset.StandardCharsets.UTF_8
+import java.nio.file.FileVisitResult
+import java.nio.file.Files
 import java.nio.file.Path
+import kotlin.io.path.*
 
 class NativeAudioPluginImpl(
     override val description: NativeAudioPluginDescription
@@ -18,6 +25,14 @@ class NativeAudioPluginImpl(
     JsonPrimitive(Json.encodeToString(NativeAudioPluginDescription.serializer(), description)).toString())
 
 private val NATIVE_AUDIO_PLUGIN_CONFIG = WORKING_PATH.resolve("nativeAudioPlugin.json")
+
+@Serializable
+class NativeAudioPluginFactoryData {
+    val name = "NativeAudioPluginFactory"
+    val pluginDescriptions: MutableMap<String, NativeAudioPluginDescription> = mutableStateMapOf()
+    val scanPaths: MutableSet<String> = mutableStateSetOf()
+    val skipList: MutableSet<String> = mutableStateSetOf()
+}
 
 @Serializable
 class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
@@ -29,10 +44,10 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
     init {
         if (NATIVE_AUDIO_PLUGIN_CONFIG.toFile().exists()) {
             val json = NATIVE_AUDIO_PLUGIN_CONFIG.toFile().readText()
-            val obj = Json.decodeFromString(serializer(), json)
-            pluginDescriptions.putAll(obj.pluginDescriptions)
-            scanPaths.addAll(obj.scanPaths)
-            skipList.addAll(obj.skipList)
+            val data = Json.decodeFromString(NativeAudioPluginFactoryData.serializer(), json)
+            pluginDescriptions.putAll(data.pluginDescriptions)
+            scanPaths.addAll(data.scanPaths)
+            skipList.addAll(data.skipList)
         } else {
             if (SystemUtils.IS_OS_WINDOWS) {
                 scanPaths.add("C:\\Program Files\\Common Files\\VST3")
@@ -47,8 +62,59 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
         }
     }
 
-    override suspend fun scan() {
-        TODO("Not yet implemented")
+    @OptIn(ExperimentalPathApi::class)
+    override suspend fun scan()  {
+        val pluginList : MutableList<String> = mutableListOf()
+        val scanVisitor = fileVisitor {
+            onPreVisitDirectory { directory, _ ->
+                // 跳过隐藏文件夹
+                if (directory.name.startsWith(".")) {
+                    FileVisitResult.SKIP_SUBTREE
+                } else {
+                    FileVisitResult.CONTINUE
+                }
+            }
+            onVisitFile { file, _ ->
+                if (file.extension == "dll" || file.extension == "vst3") {
+                    pluginList.add(file.toAbsolutePath().toString())
+                }
+                FileVisitResult.CONTINUE
+            }
+        }
+
+        scanPaths.forEach {
+            val path = Path(it)
+            if(!path.exists()) return@forEach
+            Files.walkFileTree(path, scanVisitor)
+        }
+
+        val processNum = 10
+        val scanSemaphore = Semaphore(processNum)
+
+        coroutineScope {
+            pluginList.map {
+                async {
+                    scanSemaphore.withPermit {
+                        val process = Runtime.getRuntime().exec((listOf("./EIMHost.exe") + "-s" + it).toTypedArray())
+                        val result = try {
+                            val stdout = async {
+                                runInterruptible {
+                                    String(process.inputStream.readAllBytes(), UTF_8)
+                                }
+                            }
+                            stdout.await()
+                        } finally {
+                            process.destroy()
+                        }
+                        if (result.isEmpty()) return@withPermit
+                        Json.decodeFromString<List<NativeAudioPluginDescription>>(result).forEach {
+                            pluginDescriptions[it.name] = it
+                        }
+                        save()
+                    }
+                }
+            }.awaitAll()
+        }
     }
 
     override fun createProcessor(identifier: String?, file: Path?): NativeAudioPlugin {
