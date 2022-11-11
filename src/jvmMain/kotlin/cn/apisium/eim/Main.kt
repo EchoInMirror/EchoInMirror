@@ -1,9 +1,11 @@
 package cn.apisium.eim
 
 import cn.apisium.eim.components.eimApp
+import javax.swing.UIManager
 
 fun main() {
-    createDirectory()
+    UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
+    createDirectories()
     Runtime.getRuntime().addShutdownHook(Thread(EchoInMirror.bus::close))
 
 //    val track = TrackImpl("Track 1")

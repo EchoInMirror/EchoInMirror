@@ -21,6 +21,7 @@ repositories {
 }
 
 kotlin {
+    jvmToolchain(17)
     jvm {
         compilations.all {
             kotlinOptions.jvmTarget = "17"
@@ -76,4 +77,8 @@ task<Copy>("downloadEIMHost") {
 // Run before build
 tasks.withType<GradleBuild>() {
     dependsOn(":downloadEIMHost")
+}
+
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+    kotlinOptions.languageVersion = "1.8"
 }

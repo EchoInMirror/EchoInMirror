@@ -27,7 +27,7 @@ class EIMPluginDescriptor(pluginId: String, pluginDescription: String?, pluginCl
     }
 
 class JSONPluginDescriptorFinder: PluginDescriptorFinder {
-    private val log = LoggerFactory.getLogger(JSONPluginDescriptorFinder::class.java)
+    private val logger = LoggerFactory.getLogger(JSONPluginDescriptorFinder::class.java)
 
     override fun isApplicable(pluginPath: Path) = Files.exists(pluginPath) &&
             (Files.isDirectory(pluginPath) || FileUtils.isZipOrJarFile(pluginPath))
@@ -67,7 +67,7 @@ class JSONPluginDescriptorFinder: PluginDescriptorFinder {
         // legacy (the path is something like "classes/META-INF/MANIFEST.MF")
         val json = FileUtils.findFile(pluginPath, "plugin.json")
             ?: throw PluginRuntimeException("Cannot find the manifest path")
-        log.debug("Lookup plugin descriptor in '{}'", json)
+        logger.debug("Lookup plugin descriptor in '{}'", json)
         if (Files.notExists(json)) {
             throw PluginRuntimeException("Cannot find '{}' path", json)
         }

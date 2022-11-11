@@ -34,5 +34,7 @@ interface NativeAudioPluginFactory: AudioProcessorFactory<NativeAudioPlugin> {
     val pluginDescriptions: Map<String, NativeAudioPluginDescription>
     val scanPaths: MutableSet<String>
     val skipList: MutableSet<String>
+    val pluginExtensions: Set<String>
     suspend fun scan()
+    fun save()
 }

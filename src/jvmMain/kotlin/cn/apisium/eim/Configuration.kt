@@ -8,6 +8,6 @@ val WORKING_PATH: Path = Path.of(if (SystemUtils.IS_OS_WINDOWS) System.getenv("A
     else System.getProperty("user.home") + "/Library/Application Support")
 val ROOT_PATH: Path = WORKING_PATH.resolve("EchoInMirror")
 
-internal fun createDirectory() {
+internal fun createDirectories() {
     if (!Files.exists(ROOT_PATH)) Files.createDirectory(ROOT_PATH)
 }
