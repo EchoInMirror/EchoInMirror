@@ -26,7 +26,7 @@ private var scanningJob by mutableStateOf<Job?>(null)
 internal class NativeAudioPluginSettings: SettingsTab {
     @Composable
     override fun label() {
-        Text("VST")
+        Text("原生音频插件")
     }
 
     @Composable
