@@ -9,31 +9,22 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import cn.apisium.eim.Border
+import cn.apisium.eim.EchoInMirror
+import cn.apisium.eim.api.window.PanelDirection
 import cn.apisium.eim.border
 import cn.apisium.eim.components.splitpane.SplitPaneState
 import cn.apisium.eim.icons.EIMLogo
+import cn.apisium.eim.impl.WindowManagerImpl
 
-data class SideBarItem(val id: String, val name: String? = null, val icon: @Composable () -> Unit)
-
-val mainItems = mutableStateListOf(
-    SideBarItem("EIM", "EIM") { Icon(EIMLogo, "QuickLand") },
-    SideBarItem("Favorite", "收藏") { Icon(Icons.Default.Favorite, "Favorite") },
-    SideBarItem("Plugins", "插件") { Icon(Icons.Default.SettingsInputHdmi, "Plugins") },
-    SideBarItem("Topic", "文件") { Icon(Icons.Default.Topic, "Topic") },
-)
-
-val bottomItems = mutableStateListOf(
-    SideBarItem("Editor", "钢琴窗") { Icon(Icons.Default.Piano, "Editor") },
-    SideBarItem("Mixer", "混音台") { Icon(Icons.Default.Tune, "Mixer") },
-)
+//    SideBarItem("Favorite", "收藏") { Icon(Icons.Default.Favorite, "Favorite") },
+//    SideBarItem("Plugins", "插件") { Icon(Icons.Default.SettingsInputHdmi, "Plugins") },
+//    SideBarItem("Topic", "文件") { Icon(Icons.Default.Topic, "Topic") },
 
 internal var sideBarSelectedItem by mutableStateOf<String?>(null)
 internal var bottomBarSelectedItem by mutableStateOf<String?>(null)
@@ -99,40 +90,50 @@ internal val bottomBarHeightState = object : SplitPaneState() {
 fun sideBar() {
     Surface(tonalElevation = 2.dp) {
         NavigationRail {
-            mainItems.forEach {
-                NavigationRailItem(
-                    icon = { it.icon() },
-                    label = if (it.name == null) null else ({ Text(it.name) }),
-                    selected = sideBarSelectedItem == it.id,
-                    onClick = {
-                        if (sideBarSelectedItem == it.id) {
-                            sideBarSelectedItem = null
-                            sideBarWidthState.position = 0F
-                        } else {
-                            sideBarSelectedItem = it.id
-                            if (sideBarWidthState.position == 0F) sideBarWidthState.position = 240F
-                            sideBarLastSelected = sideBarSelectedItem
+            NavigationRailItem(
+                icon = { Icon(EIMLogo, "QuickLand") },
+                label = { Text("快速加载") },
+                selected = false,
+                onClick = { }
+            )
+            (EchoInMirror.windowManager as WindowManagerImpl).panels.filter { it.direction != PanelDirection.Horizontal }.forEach {
+                key(it) {
+                    NavigationRailItem(
+                        icon = { it.icon() },
+                        label = { Text(it.name) },
+                        selected = sideBarSelectedItem == it::class.java.name,
+                        onClick = {
+                            if (sideBarSelectedItem == it::class.java.name) {
+                                sideBarSelectedItem = null
+                                sideBarWidthState.position = 0F
+                            } else {
+                                sideBarSelectedItem = it::class.java.name
+                                if (sideBarWidthState.position == 0F) sideBarWidthState.position = 240F
+                                sideBarLastSelected = sideBarSelectedItem
+                            }
                         }
-                    }
-                )
+                    )
+                }
             }
             Box(Modifier.weight(2F)) {}
-            bottomItems.forEach {
-                NavigationRailItem(
-                    icon = { it.icon() },
-                    label = if (it.name == null) null else ({ Text(it.name) }),
-                    selected = bottomBarSelectedItem == it.id,
-                    onClick = {
-                        if (bottomBarSelectedItem == it.id) {
-                            bottomBarSelectedItem = null
-                            bottomBarHeightState.position = 0F
-                        } else {
-                            bottomBarSelectedItem = it.id
-                            if (bottomBarHeightState.position == 0F) bottomBarHeightState.position = 240F
-                            bottomBarLastSelected = bottomBarSelectedItem
+            EchoInMirror.windowManager.panels.filter { it.direction == PanelDirection.Horizontal }.forEach {
+                key(it) {
+                    NavigationRailItem(
+                        icon = { it.icon() },
+                        label = { Text(it.name) },
+                        selected = bottomBarSelectedItem == it::class.java.name,
+                        onClick = {
+                            if (bottomBarSelectedItem == it::class.java.name) {
+                                bottomBarSelectedItem = null
+                                bottomBarHeightState.position = 0F
+                            } else {
+                                bottomBarSelectedItem = it::class.java.name
+                                if (bottomBarHeightState.position == 0F) bottomBarHeightState.position = 240F
+                                bottomBarLastSelected = bottomBarSelectedItem
+                            }
                         }
-                    }
-                )
+                    )
+                }
             }
         }
     }

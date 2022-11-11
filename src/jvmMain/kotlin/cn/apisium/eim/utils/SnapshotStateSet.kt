@@ -37,7 +37,7 @@ import androidx.compose.runtime.snapshots.StateObject
 class SnapshotStateSet<T> private constructor(
     private val delegateSnapshotStateMap: SnapshotStateMap<T, Unit>,
 ) : MutableSet<T> by delegateSnapshotStateMap.keys, StateObject by delegateSnapshotStateMap {
-    constructor() : this(delegateSnapshotStateMap = mutableStateMapOf())
+    constructor(vararg elements: T) : this(delegateSnapshotStateMap = mutableStateMapOf(*elements.map { it to Unit }.toTypedArray()))
 
     override fun add(element: T): Boolean =
         delegateSnapshotStateMap.put(element, Unit) == null
@@ -49,7 +49,7 @@ class SnapshotStateSet<T> private constructor(
 /**
  * Create a instance of [MutableSet]<T> that is observable and can be snapshot.
  */
-fun <T> mutableStateSetOf() = SnapshotStateSet<T>()
+fun <T> mutableStateSetOf(vararg elements: T) = SnapshotStateSet(*elements)
 
 /**
  * Create an instance of [MutableSet]<T> from a collection that is observable and can be
