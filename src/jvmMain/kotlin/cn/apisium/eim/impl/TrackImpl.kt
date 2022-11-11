@@ -14,26 +14,32 @@ open class TrackImpl(
     override var pan = 0F
     override var volume = 1F
 
-    private val _processorsChain = arrayListOf<AudioProcessor>()
-    override val processorsChain: List<AudioProcessor> = _processorsChain
+    override val processorsChain = arrayListOf<AudioProcessor>()
+    override val subTracks = arrayListOf<Track>()
 
     override suspend fun processBlock(buffers: Array<FloatArray>, position: CurrentPosition, midiBuffer: ArrayList<Byte>?) {
-        _processorsChain.forEach { it.processBlock(buffers, position, midiBuffer) }
+        processorsChain.forEach { it.processBlock(buffers, position, midiBuffer) }
+        subTracks.forEach { it.processBlock(buffers, position, midiBuffer) }
         for (i in buffers[0].indices) buffers[0][i] *= calcPanLeftChannel() * volume
         for (i in buffers[1].indices) buffers[1][i] *= calcPanRightChannel() * volume
     }
 
     override fun prepareToPlay() {
-        _processorsChain.forEach { it.prepareToPlay() }
+        processorsChain.forEach { it.prepareToPlay() }
     }
 
     override fun close() {
-        _processorsChain.forEach { it.close() }
-        _processorsChain.clear()
+        processorsChain.forEach { it.close() }
+        processorsChain.clear()
     }
 
     override fun addProcessor(processor: AudioProcessor, index: Int) {
-        if (index < 0) _processorsChain.add(processor)
-        else _processorsChain.add(index, processor)
+        if (index < 0) processorsChain.add(processor)
+        else processorsChain.add(index, processor)
+    }
+
+    override fun addSubTrack(track: Track, index: Int) {
+        if (index < 0) subTracks.add(track)
+        else subTracks.add(index, track)
     }
 }
