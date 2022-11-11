@@ -4,7 +4,6 @@ import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -16,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import cn.apisium.eim.Border
 import cn.apisium.eim.EchoInMirror
+import cn.apisium.eim.api.window.Panel
 import cn.apisium.eim.api.window.PanelDirection
 import cn.apisium.eim.border
 import cn.apisium.eim.components.splitpane.SplitPaneState
@@ -26,10 +26,10 @@ import cn.apisium.eim.impl.WindowManagerImpl
 //    SideBarItem("Plugins", "插件") { Icon(Icons.Default.SettingsInputHdmi, "Plugins") },
 //    SideBarItem("Topic", "文件") { Icon(Icons.Default.Topic, "Topic") },
 
-internal var sideBarSelectedItem by mutableStateOf<String?>(null)
-internal var bottomBarSelectedItem by mutableStateOf<String?>(null)
-private var sideBarLastSelected: String? = null
-private var bottomBarLastSelected: String? = null
+internal var sideBarSelectedItem by mutableStateOf<Panel?>(null)
+internal var bottomBarSelectedItem by mutableStateOf<Panel?>(EchoInMirror.windowManager.panels.first())
+private var sideBarLastSelected: Panel? = null
+private var bottomBarLastSelected: Panel? = bottomBarSelectedItem
 
 internal val sideBarWidthState = object : SplitPaneState() {
     override fun dispatchRawMovement(delta: Float) {
@@ -56,7 +56,7 @@ internal val sideBarWidthState = object : SplitPaneState() {
     }
 }
 
-internal val bottomBarHeightState = object : SplitPaneState() {
+internal val bottomBarHeightState = object : SplitPaneState(100F) {
     override fun dispatchRawMovement(delta: Float) {
         val movableArea = maxPosition - minPosition
         if (movableArea <= 0) return
@@ -101,13 +101,13 @@ fun sideBar() {
                     NavigationRailItem(
                         icon = { it.icon() },
                         label = { Text(it.name) },
-                        selected = sideBarSelectedItem == it::class.java.name,
+                        selected = sideBarSelectedItem == it,
                         onClick = {
-                            if (sideBarSelectedItem == it::class.java.name) {
+                            if (sideBarSelectedItem == it) {
                                 sideBarSelectedItem = null
                                 sideBarWidthState.position = 0F
                             } else {
-                                sideBarSelectedItem = it::class.java.name
+                                sideBarSelectedItem = it
                                 if (sideBarWidthState.position == 0F) sideBarWidthState.position = 240F
                                 sideBarLastSelected = sideBarSelectedItem
                             }
@@ -121,13 +121,13 @@ fun sideBar() {
                     NavigationRailItem(
                         icon = { it.icon() },
                         label = { Text(it.name) },
-                        selected = bottomBarSelectedItem == it::class.java.name,
+                        selected = bottomBarSelectedItem == it,
                         onClick = {
-                            if (bottomBarSelectedItem == it::class.java.name) {
+                            if (bottomBarSelectedItem == it) {
                                 bottomBarSelectedItem = null
                                 bottomBarHeightState.position = 0F
                             } else {
-                                bottomBarSelectedItem = it::class.java.name
+                                bottomBarSelectedItem = it
                                 if (bottomBarHeightState.position == 0F) bottomBarHeightState.position = 240F
                                 bottomBarLastSelected = bottomBarSelectedItem
                             }
@@ -149,7 +149,7 @@ fun sideBarContent() {
         Box(Modifier.fillMaxSize().border(start = Border(0.6.dp, MaterialTheme.colorScheme.onSurfaceVariant.copy(0.2F)))) {
             val stateVertical = rememberScrollState(0)
             Box(Modifier.fillMaxSize().verticalScroll(stateVertical)) {
-                Box(Modifier.padding(14.dp)) { }
+                sideBarSelectedItem?.content()
             }
             VerticalScrollbar(
                 modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),

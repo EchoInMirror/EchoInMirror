@@ -21,11 +21,11 @@ fun bottomBarContent() {
     ) {
         Box(Modifier.fillMaxSize().border(start = Border(0.6.dp, MaterialTheme.colorScheme.onSurfaceVariant.copy(0.2F)))) {
             val stateVertical = rememberScrollState(0)
-            Box(Modifier.fillMaxSize().horizontalScroll(stateVertical)) {
-                Box(Modifier.padding(14.dp)) { }
+            Box(Modifier.fillMaxSize().verticalScroll(stateVertical)) {
+                bottomBarSelectedItem?.content()
             }
-            HorizontalScrollbar(
-                modifier = Modifier.align(Alignment.CenterEnd).fillMaxWidth(),
+            VerticalScrollbar(
+                modifier = Modifier.align(Alignment.CenterEnd).padding(end = 4.dp).fillMaxHeight(),
                 adapter = rememberScrollbarAdapter(stateVertical)
             )
         }
