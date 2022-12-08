@@ -1,4 +1,6 @@
-package cn.apisium.eim.components
+@file:Suppress("DuplicatedCode")
+
+package cn.apisium.eim.components.app
 
 import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.layout.Box

@@ -1,4 +1,4 @@
-package cn.apisium.eim.components
+package cn.apisium.eim.components.app
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*

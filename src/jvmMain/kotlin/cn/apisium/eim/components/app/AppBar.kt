@@ -1,4 +1,4 @@
-package cn.apisium.eim.components
+package cn.apisium.eim.components.app
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -19,7 +19,6 @@ private fun RowScope.appBarIcons() {
             contentDescription = "PlayOrPause"
         )
     }, modifier = Modifier.weight(0.4F))
-
     NavigationBarItem(false, {
         EchoInMirror.currentPosition.isPlaying = false
         EchoInMirror.currentPosition.setPPQPosition(0.0)
@@ -29,7 +28,6 @@ private fun RowScope.appBarIcons() {
             contentDescription = "Stop"
         )
     }, modifier = Modifier.weight(0.4F))
-
     NavigationBarItem(false, { }, {
         Icon(
             imageVector = Icons.Filled.FiberManualRecord,
@@ -83,7 +81,7 @@ private fun RowScope.ppqText() {
 @Composable
 fun eimAppBar() {
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
-        Surface(modifier = Modifier.size(300.dp, 34.dp), shadowElevation = 3.dp, shape = Shapes.Full) {
+        Surface(modifier = Modifier.size(300.dp, 34.dp), shadowElevation = 3.dp, shape = ShapeDefaults.Large) {
             NavigationBar {
                 timeText()
                 appBarIcons()

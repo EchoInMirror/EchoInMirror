@@ -16,6 +16,7 @@ version = "1.0-SNAPSHOT"
 repositories {
     google()
     mavenCentral()
+//    maven("https://jitpack.io")
     maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
     maven("https://s01.oss.sonatype.org/content/repositories/releases/")
 }

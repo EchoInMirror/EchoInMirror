@@ -1,6 +1,6 @@
 package cn.apisium.eim
 
-import cn.apisium.eim.components.eimApp
+import cn.apisium.eim.components.app.eimApp
 import javax.swing.UIManager
 
 fun main() {

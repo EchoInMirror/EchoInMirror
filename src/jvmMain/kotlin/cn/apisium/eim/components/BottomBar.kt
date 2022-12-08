@@ -1,5 +1,6 @@
 package cn.apisium.eim.components
 
+import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -11,7 +12,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import cn.apisium.eim.Border
 import cn.apisium.eim.border
+import cn.apisium.eim.components.app.bottomBarSelectedItem
 
+@Preview
 @Composable
 fun bottomBarContent() {
     Surface(
