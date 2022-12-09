@@ -13,8 +13,9 @@ import cn.apisium.eim.utils.randomColor
 import cn.apisium.eim.utils.randomUUID
 
 open class TrackImpl(
-    override var name: String
+    trackName: String
 ) : Track {
+    override var name by mutableStateOf(trackName)
     override val inputChannelsCount = 2
     override val outputChannelsCount = 2
     override var pan by mutableStateOf(0F)
@@ -24,12 +25,19 @@ open class TrackImpl(
 
     override val levelPeak = LevelPeakImpl()
 
-    override val processorsChain = arrayListOf<AudioProcessor>()
+    override val preProcessorsChain = arrayListOf<AudioProcessor>()
+    override val postProcessorsChain = arrayListOf<AudioProcessor>()
     override val subTracks = arrayListOf<Track>()
+    private val pendingMidiBuffer = ArrayList<Byte>()
 
-    override suspend fun processBlock(buffers: Array<FloatArray>, position: CurrentPosition, midiBuffer: ArrayList<Byte>?) {
-        processorsChain.forEach { it.processBlock(buffers, position, midiBuffer) }
-        subTracks.forEach { it.processBlock(buffers, position, midiBuffer) }
+    override suspend fun processBlock(buffers: Array<FloatArray>, position: CurrentPosition, midiBuffer: ArrayList<Byte>) {
+        if (pendingMidiBuffer.isNotEmpty()) {
+            midiBuffer.addAll(pendingMidiBuffer)
+            pendingMidiBuffer.clear()
+        }
+        preProcessorsChain.forEach { it.processBlock(buffers, position, midiBuffer) }
+        subTracks.forEach { it.processBlock(buffers, position, ArrayList(midiBuffer)) }
+        postProcessorsChain.forEach { it.processBlock(buffers, position, midiBuffer) }
         levelPeak.left = 0F
         levelPeak.right = 0F
         for (i in buffers[0].indices) {
@@ -45,24 +53,17 @@ open class TrackImpl(
     }
 
     override fun prepareToPlay() {
-        processorsChain.forEach(AudioProcessor::prepareToPlay)
+        preProcessorsChain.forEach(AudioProcessor::prepareToPlay)
         subTracks.forEach(Track::prepareToPlay)
+        postProcessorsChain.forEach(AudioProcessor::prepareToPlay)
     }
 
     override fun close() {
-        processorsChain.forEach { it.close() }
-        processorsChain.clear()
+        preProcessorsChain.forEach { it.close() }
+        preProcessorsChain.clear()
         subTracks.forEach { it.close() }
         subTracks.clear()
-    }
-
-    override fun addProcessor(processor: AudioProcessor, index: Int) {
-        if (index < 0) processorsChain.add(processor)
-        else processorsChain.add(index, processor)
-    }
-
-    override fun addSubTrack(track: Track, index: Int) {
-        if (index < 0) subTracks.add(track)
-        else subTracks.add(index, track)
+        postProcessorsChain.forEach { it.close() }
+        postProcessorsChain.clear()
     }
 }

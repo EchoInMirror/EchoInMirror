@@ -6,9 +6,8 @@ import cn.apisium.eim.api.processor.AudioProcessor
 import cn.apisium.eim.api.processor.LevelPeak
 
 interface Track: AudioProcessor, Pan, Volume, Colorable {
-    val subTracks: List<Track>
-    val processorsChain: List<AudioProcessor>
+    val subTracks: MutableList<Track>
+    val preProcessorsChain: MutableList<AudioProcessor>
+    val postProcessorsChain: MutableList<AudioProcessor>
     val levelPeak: LevelPeak
-    fun addProcessor(processor: AudioProcessor, index: Int = -1)
-    fun addSubTrack(track: Track, index: Int = -1)
 }

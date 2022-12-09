@@ -1,5 +1,6 @@
 package cn.apisium.eim.window
 
+import androidx.compose.foundation.layout.Row
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Piano
 import androidx.compose.material3.Icon
@@ -18,6 +19,8 @@ class Editor: Panel {
 
     @Composable
     override fun content() {
-
+        Row {
+            
+        }
     }
 }

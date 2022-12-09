@@ -7,6 +7,7 @@ import cn.apisium.eim.utils.EIMInputStream
 import cn.apisium.eim.utils.EIMOutputStream
 import kotlinx.coroutines.runBlocking
 import java.util.*
+import kotlin.collections.ArrayList
 
 class NativeAudioPlayer(currentPosition: CurrentPosition, processor: AudioProcessor?, private val execFile: String,
                         private vararg val commands: String) : AudioPlayer(currentPosition, processor), Runnable {
@@ -65,7 +66,7 @@ class NativeAudioPlayer(currentPosition: CurrentPosition, processor: AudioProces
 
             runBlocking {
                 try {
-                    processor?.processBlock(buffers, currentPosition)
+                    processor?.processBlock(buffers, currentPosition, ArrayList(0))
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }

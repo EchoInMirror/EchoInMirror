@@ -55,6 +55,7 @@ class JvmAudioPlayer(currentPosition: CurrentPosition, processor: AudioProcessor
         }
     }
 
+    @Suppress("DuplicatedCode")
     override fun run() {
         while (thread?.isAlive == true) {
             if (sdl == null || processor == null) {
@@ -65,7 +66,7 @@ class JvmAudioPlayer(currentPosition: CurrentPosition, processor: AudioProcessor
 
             runBlocking {
                 try {
-                    processor?.processBlock(buffers, currentPosition)
+                    processor?.processBlock(buffers, currentPosition, ArrayList(0))
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }

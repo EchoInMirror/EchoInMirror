@@ -25,6 +25,7 @@ import cn.apisium.eim.components.Marquee
 import cn.apisium.eim.components.silder.DefaultTrack
 import cn.apisium.eim.components.silder.Slider
 import cn.apisium.eim.utils.toOnSurface
+import kotlin.math.log10
 import kotlin.math.pow
 import kotlin.math.sqrt
 
@@ -79,9 +80,10 @@ fun MixerTrack(track: Track, index: Int, isRound: Boolean = false, renderChildre
                         IconButton({ }, Modifier.size(20.dp)) {
                             Icon(Icons.Default.VolumeUp, "Volume")
                         }
-                        Gap(8)
+                        Gap(7)
                         Text(
-                            "-12.0",
+                            (log10(track.levelPeak.left.coerceAtLeast(track.levelPeak.right)) * 20)
+                                .let { if (it.isInfinite()) "-inf" else if (it > -0.01 && it < 0.01) "0.00" else "%.2f".format(it) },
                             fontSize = MaterialTheme.typography.labelMedium.fontSize,
                             letterSpacing = (-1).sp,
                             lineHeight = 12.sp
