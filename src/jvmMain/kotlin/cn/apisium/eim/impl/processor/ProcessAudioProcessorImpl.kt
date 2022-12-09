@@ -12,6 +12,7 @@ import kotlinx.coroutines.withContext
 
 @Suppress("MemberVisibilityCanBePrivate")
 open class ProcessAudioProcessorImpl(
+    protected val execFile: String,
     protected vararg val commands: String
 ) : ProcessAudioProcessor {
     override var inputChannelsCount = 0
@@ -54,7 +55,7 @@ open class ProcessAudioProcessorImpl(
     override fun prepareToPlay() {
         val output = outputStream ?: return
         output.write(0)
-        output.writeInt(EchoInMirror.sampleRate.toInt())
+        output.writeInt(EchoInMirror.sampleRate)
         output.writeInt(EchoInMirror.bufferSize)
         output.flush()
     }
@@ -62,7 +63,7 @@ open class ProcessAudioProcessorImpl(
     override suspend fun launch(): Boolean {
         if (isLaunched) return true
         return withContext(Dispatchers.IO) {
-            val pb = ProcessBuilder(*commands)
+            val pb = ProcessBuilder(execFile, *commands)
 
             pb.redirectError(ProcessBuilder.Redirect.INHERIT)
             val p = pb.start()

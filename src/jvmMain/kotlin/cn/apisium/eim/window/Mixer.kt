@@ -25,6 +25,8 @@ import cn.apisium.eim.components.Marquee
 import cn.apisium.eim.components.silder.DefaultTrack
 import cn.apisium.eim.components.silder.Slider
 import cn.apisium.eim.utils.toOnSurface
+import kotlin.math.pow
+import kotlin.math.sqrt
 
 @Composable
 fun MixerTrack(track: Track, index: Int, isRound: Boolean = false, renderChildren: Boolean = true) {
@@ -51,11 +53,9 @@ fun MixerTrack(track: Track, index: Int, isRound: Boolean = false, renderChildre
                 }
 
                 Column(Modifier.padding(4.dp)) {
-                    var stateSlider2 by remember { mutableStateOf(0f) }
-                    var stateSlider by remember { mutableStateOf(0f) }
                     Slider(
-                        stateSlider2,
-                        { stateSlider2 = it },
+                        track.pan,
+                        { track.pan = it },
                         valueRange = -1f..1f,
                         modifier = Modifier.fillMaxWidth(),
                         thumbSize = DpSize(14.dp, 14.dp),
@@ -93,8 +93,8 @@ fun MixerTrack(track: Track, index: Int, isRound: Boolean = false, renderChildre
                         horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically
                     ) {
                         Slider(
-                            stateSlider,
-                            { stateSlider = it },
+                            140 - sqrt(track.volume) * 100F,
+                            { track.volume = ((140 - it) / 100F).pow(2) },
                             valueRange = 0f..140f,
                             modifier = Modifier.height(150.dp),
                             thumbSize = DpSize(14.dp, 14.dp),
@@ -113,7 +113,7 @@ fun MixerTrack(track: Track, index: Int, isRound: Boolean = false, renderChildre
                             }
                         )
                         Gap(18)
-                        Level(0f, 0f, Modifier.height(136.dp))
+                        Level(track.levelPeak, Modifier.height(136.dp))
                     }
                 }
 
@@ -121,7 +121,7 @@ fun MixerTrack(track: Track, index: Int, isRound: Boolean = false, renderChildre
                     Divider(Modifier.padding(horizontal = 8.dp))
                     TextButton({ }, Modifier.height(30.dp).fillMaxWidth()) {
                         Text(
-                            "加载插件",
+                            "加载...",
                             fontSize = MaterialTheme.typography.labelMedium.fontSize,
                             maxLines = 1,
                             lineHeight = 7.sp

@@ -13,11 +13,10 @@ class SineWaveSynthesizer(private val frequency: Double): AudioProcessor {
     override val uuid = randomUUID()
 
     private var currentAngle = 0.0
-    private val volume = 0.01F
 
     override suspend fun processBlock(buffers: Array<FloatArray>, position: CurrentPosition, midiBuffer: ArrayList<Byte>?) {
         for (i in 0 until EchoInMirror.bufferSize) {
-            val samplePos = sin(currentAngle).toFloat() * volume
+            val samplePos = sin(currentAngle).toFloat()
             currentAngle += 2 * Math.PI * frequency / EchoInMirror.sampleRate
 
             buffers[0][i] = samplePos

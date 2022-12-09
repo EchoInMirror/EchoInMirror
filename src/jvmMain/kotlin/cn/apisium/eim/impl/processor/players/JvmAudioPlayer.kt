@@ -12,14 +12,14 @@ import javax.sound.sampled.SourceDataLine
 class JvmAudioPlayer(currentPosition: CurrentPosition, processor: AudioProcessor?) : AudioPlayer(currentPosition, processor), Runnable {
     private var thread: Thread? = null
     private var sdl: SourceDataLine? = null
-    private var sampleRate = 44800F
+    private var sampleRate = 44800
     private var bufferSize = 0
     private var bits = 2
     private var channels = 2
     private var buffers = arrayOf(FloatArray(bufferSize), FloatArray(bufferSize))
     private var outputBuffer = ByteArray(2 * bufferSize * bits)
 
-    override fun open(sampleRate: Float, bufferSize: Int, bits: Int) {
+    override fun open(sampleRate: Int, bufferSize: Int, bits: Int) {
         if (thread != null) return
         if (sdl != null) {
             sdl!!.close()
@@ -32,7 +32,8 @@ class JvmAudioPlayer(currentPosition: CurrentPosition, processor: AudioProcessor
         buffers = arrayOf(FloatArray(bufferSize), FloatArray(bufferSize))
         outputBuffer = ByteArray(channels * bufferSize * bits)
 
-        val af = AudioFormat(AudioFormat.Encoding.PCM_SIGNED, sampleRate, bits * 8, channels, bits * channels, sampleRate, false)
+        val af = AudioFormat(AudioFormat.Encoding.PCM_SIGNED, sampleRate.toFloat(), bits * 8, channels,
+            bits * channels, sampleRate.toFloat(), false)
         sdl = AudioSystem.getSourceDataLine(af)
         sdl!!.open(af, outputBuffer.size)
         sdl!!.start()

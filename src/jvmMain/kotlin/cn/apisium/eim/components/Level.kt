@@ -1,6 +1,5 @@
 package cn.apisium.eim.components
 
-import androidx.compose.animation.core.SpringSpec
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.height
@@ -13,22 +12,20 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.unit.dp
+import cn.apisium.eim.api.processor.LevelPeak
 import kotlin.math.*
-
-private val spec = SpringSpec<Float>(0.1f)
 
 @Composable
 fun Level(
-    left: Float,
-    right: Float,
+    peak: LevelPeak,
     modifier: Modifier = Modifier.height(80.dp),
     stroke: Float = 5f,
     gapWidth: Float = 4f,
     color: Color = MaterialTheme.colorScheme.primary,
     colorTrack: Color = color.copy(alpha = 0.3f)
 ) {
-    val aniLeft by animateFloatAsState(left, spec)
-    val aniRight by animateFloatAsState(right, spec)
+    val aniLeft by animateFloatAsState(peak.left)
+    val aniRight by animateFloatAsState(peak.right)
     val rightX = stroke + gapWidth
     Canvas(modifier.width((stroke * 2 + gapWidth).dp)) {
         val height = size.height
