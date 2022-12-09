@@ -1,18 +1,22 @@
 package cn.apisium.eim.impl
 
 import cn.apisium.eim.api.CurrentPosition
-import cn.apisium.eim.api.processor.AudioProcessor
 import cn.apisium.eim.api.Track
+import cn.apisium.eim.api.processor.AudioProcessor
 import cn.apisium.eim.api.processor.dsp.calcPanLeftChannel
 import cn.apisium.eim.api.processor.dsp.calcPanRightChannel
+import cn.apisium.eim.utils.randomColor
+import cn.apisium.eim.utils.randomUUID
 
 open class TrackImpl(
     override var name: String
-) : Track, AutoCloseable {
+) : Track {
     override val inputChannelsCount = 2
     override val outputChannelsCount = 2
     override var pan = 0F
     override var volume = 1F
+    override var color = randomColor()
+    override val uuid = randomUUID()
 
     override val processorsChain = arrayListOf<AudioProcessor>()
     override val subTracks = arrayListOf<Track>()

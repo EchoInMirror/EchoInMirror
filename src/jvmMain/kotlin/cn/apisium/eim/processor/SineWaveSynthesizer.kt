@@ -3,12 +3,14 @@ package cn.apisium.eim.processor
 import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.api.CurrentPosition
 import cn.apisium.eim.api.processor.AudioProcessor
+import cn.apisium.eim.utils.randomUUID
 import kotlin.math.sin
 
 class SineWaveSynthesizer(private val frequency: Double): AudioProcessor {
     override val inputChannelsCount = 0
     override val outputChannelsCount = 2
     override var name = "SineWaveSynthesizer"
+    override val uuid = randomUUID()
 
     private var currentAngle = 0.0
     private val volume = 0.01F

@@ -1,4 +1,4 @@
-package cn.apisium.eim
+package cn.apisium.eim.utils
 
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.Modifier
@@ -8,8 +8,11 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.unit.Dp
+import java.util.*
 
 fun lerp(start: Float, stop: Float, fraction: Float) = (1 - fraction) * start + fraction * stop
+
+fun randomUUID() = UUID.randomUUID().mostSignificantBits and Long.MAX_VALUE
 
 data class Border(val strokeWidth: Dp, val color: Color)
 

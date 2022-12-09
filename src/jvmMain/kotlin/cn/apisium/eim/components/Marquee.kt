@@ -19,7 +19,7 @@ fun Marquee(
 
     LaunchedEffect(textLayoutInfoState.value) {
         val textLayoutInfo = textLayoutInfoState.value ?: return@LaunchedEffect
-        if (textLayoutInfo.textWidth <= textLayoutInfo.containerWidth) return@LaunchedEffect
+        if (textLayoutInfo.containerWidth == 0 || textLayoutInfo.textWidth <= textLayoutInfo.containerWidth) return@LaunchedEffect
 
         val duration = 7500 * textLayoutInfo.textWidth / textLayoutInfo.containerWidth
 

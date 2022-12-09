@@ -10,8 +10,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import cn.apisium.eim.Border
-import cn.apisium.eim.border
+import cn.apisium.eim.utils.Border
+import cn.apisium.eim.utils.border
 import cn.apisium.eim.components.app.bottomBarSelectedItem
 
 @Preview

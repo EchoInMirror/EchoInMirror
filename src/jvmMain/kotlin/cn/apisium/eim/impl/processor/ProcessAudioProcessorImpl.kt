@@ -4,6 +4,7 @@ import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.api.CurrentPosition
 import cn.apisium.eim.api.processor.FailedToLoadAudioPluginException
 import cn.apisium.eim.api.processor.ProcessAudioProcessor
+import cn.apisium.eim.utils.randomUUID
 import cn.apisium.eim.utils.EIMInputStream
 import cn.apisium.eim.utils.EIMOutputStream
 import kotlinx.coroutines.Dispatchers
@@ -20,6 +21,7 @@ open class ProcessAudioProcessorImpl(
     override var isLaunched = false
         protected set
     override var name = "ProcessAudioProcessor"
+    override val uuid = randomUUID()
     private var process: Process? = null
     private var inputStream: EIMInputStream? = null
     private var outputStream: EIMOutputStream? = null
