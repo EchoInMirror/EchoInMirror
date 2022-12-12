@@ -9,6 +9,7 @@ import cn.apisium.eim.api.processor.AudioProcessor
 import cn.apisium.eim.api.processor.LevelPeakImpl
 import cn.apisium.eim.api.processor.dsp.calcPanLeftChannel
 import cn.apisium.eim.api.processor.dsp.calcPanRightChannel
+import cn.apisium.eim.data.midi.MidiEvent
 import cn.apisium.eim.utils.randomColor
 import cn.apisium.eim.utils.randomUUID
 
@@ -28,9 +29,9 @@ open class TrackImpl(
     override val preProcessorsChain = arrayListOf<AudioProcessor>()
     override val postProcessorsChain = arrayListOf<AudioProcessor>()
     override val subTracks = arrayListOf<Track>()
-    private val pendingMidiBuffer = ArrayList<Byte>()
+    private val pendingMidiBuffer = ArrayList<Int>()
 
-    override suspend fun processBlock(buffers: Array<FloatArray>, position: CurrentPosition, midiBuffer: ArrayList<Byte>) {
+    override suspend fun processBlock(buffers: Array<FloatArray>, position: CurrentPosition, midiBuffer: ArrayList<Int>) {
         if (pendingMidiBuffer.isNotEmpty()) {
             midiBuffer.addAll(pendingMidiBuffer)
             pendingMidiBuffer.clear()
@@ -65,5 +66,10 @@ open class TrackImpl(
         subTracks.clear()
         postProcessorsChain.forEach { it.close() }
         postProcessorsChain.clear()
+    }
+
+    override fun playMidiEvent(midiEvent: MidiEvent, time: Int) {
+        pendingMidiBuffer.add(midiEvent.rawData)
+        pendingMidiBuffer.add(time)
     }
 }

@@ -1,4 +1,4 @@
-package cn.apisium.eim.processor
+package cn.apisium.eim.processor.synthesizer
 
 import cn.apisium.eim.api.CurrentPosition
 import cn.apisium.eim.api.processor.AudioProcessor
@@ -10,6 +10,6 @@ class KarplusStrongSynthesizer: AudioProcessor {
     override var name = "KarplusStrongSynthesizer"
     override val uuid = randomUUID()
 
-    override suspend fun processBlock(buffers: Array<FloatArray>, position: CurrentPosition, midiBuffer: ArrayList<Byte>) {
+    override suspend fun processBlock(buffers: Array<FloatArray>, position: CurrentPosition, midiBuffer: ArrayList<Int>) {
     }
 }

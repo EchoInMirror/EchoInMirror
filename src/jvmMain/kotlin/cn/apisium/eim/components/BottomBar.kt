@@ -1,9 +1,7 @@
 package cn.apisium.eim.components
 
-import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -14,23 +12,26 @@ import cn.apisium.eim.utils.Border
 import cn.apisium.eim.utils.border
 import cn.apisium.eim.components.app.bottomBarSelectedItem
 
-@Preview
 @Composable
 fun bottomBarContent() {
     Surface(
         tonalElevation = 2.dp,
-        shadowElevation = 2.dp,
-        shape = RoundedCornerShape(0.dp, 16.dp, 0.dp, 0.dp)
+        shadowElevation = 2.dp
     ) {
         Box(Modifier.fillMaxSize().border(start = Border(0.6.dp, MaterialTheme.colorScheme.onSurfaceVariant.copy(0.2F)))) {
-            val stateVertical = rememberScrollState(0)
-            Box(Modifier.fillMaxSize().verticalScroll(stateVertical)) {
-                bottomBarSelectedItem?.content()
-            }
-            VerticalScrollbar(
-                modifier = Modifier.align(Alignment.CenterEnd).padding(end = 4.dp).fillMaxHeight(),
-                adapter = rememberScrollbarAdapter(stateVertical)
-            )
+            bottomBarSelectedItem?.content()
         }
+    }
+}
+
+@Composable
+fun BottomContentScrollable(content: @Composable () -> Unit) {
+    Box(Modifier.fillMaxSize()) {
+        val stateVertical = rememberScrollState(0)
+        Box(Modifier.fillMaxSize().verticalScroll(stateVertical)) { content() }
+        VerticalScrollbar(
+            modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
+            adapter = rememberScrollbarAdapter(stateVertical)
+        )
     }
 }

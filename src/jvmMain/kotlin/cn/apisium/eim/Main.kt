@@ -4,7 +4,7 @@ import cn.apisium.eim.api.processor.NativeAudioPluginDescription
 import cn.apisium.eim.components.app.eimApp
 import cn.apisium.eim.impl.TrackImpl
 import cn.apisium.eim.impl.processor.NativeAudioPluginImpl
-import cn.apisium.eim.processor.SineWaveSynthesizer
+import cn.apisium.eim.processor.synthesizer.SineWaveSynthesizer
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
@@ -19,7 +19,7 @@ fun main() {
     Runtime.getRuntime().addShutdownHook(Thread(EchoInMirror.player::close))
 
     val track = TrackImpl("Track 1")
-    track.preProcessorsChain.add(SineWaveSynthesizer(440.0))
+    track.preProcessorsChain.add(SineWaveSynthesizer())
     val plugin = NativeAudioPluginImpl(Json.decodeFromString(NativeAudioPluginDescription.serializer(), Files.readString(
         Paths.get("plugin.json"))))
     runBlocking {
@@ -32,6 +32,8 @@ fun main() {
     EchoInMirror.bus.subTracks.add(track)
 
     EchoInMirror.player.open(EchoInMirror.sampleRate, EchoInMirror.bufferSize, 2)
+
+    EchoInMirror.selectedTrack = track
 
     eimApp()
 }

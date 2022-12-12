@@ -12,7 +12,7 @@ private fun Modifier.cursorForHorizontalResize(isHorizontal: Boolean): Modifier 
     pointerHoverIcon(PointerIcon(Cursor(if (isHorizontal) Cursor.E_RESIZE_CURSOR else Cursor.S_RESIZE_CURSOR)))
 
 @Composable
-private fun DesktopHandle(
+fun DefaultHandle(
     isHorizontal: Boolean,
     splitPaneState: SplitPaneState
 ) = Box(
@@ -37,14 +37,19 @@ private fun DesktopHandle(
         }
 )
 
-@OptIn(ExperimentalSplitPaneApi::class)
-internal actual fun defaultSplitter(
+/**
+ * Internal implementation of default splitter
+ *
+ * @param isHorizontal describes is it horizontal or vertical split pane
+ * @param splitPaneState the state object to be used to control or observe the split pane state
+ */
+internal fun defaultSplitter(
     isHorizontal: Boolean,
     splitPaneState: SplitPaneState
 ): Splitter = Splitter(
     measuredPart = {},
     handlePart = {
-        DesktopHandle(isHorizontal, splitPaneState)
+        DefaultHandle(isHorizontal, splitPaneState)
     }
 )
 

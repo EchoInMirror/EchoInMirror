@@ -11,7 +11,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /** Receiver scope which is used by [HorizontalSplitPane] and [VerticalSplitPane] */
-@ExperimentalSplitPaneApi
 interface SplitPaneScope {
 
     /**
@@ -45,14 +44,12 @@ interface SplitPaneScope {
 }
 
 /** Receiver scope which is used by [SplitterScope] */
-@ExperimentalSplitPaneApi
 interface HandleScope {
     /** allow mark composable as movable handle */
     fun Modifier.markAsHandle(): Modifier
 }
 
 /** Receiver scope which is used by [SplitPaneScope] */
-@ExperimentalSplitPaneApi
 interface SplitterScope {
     /**
      * Set up visible part of splitter. This part will be measured and placed between split pane
@@ -81,7 +78,6 @@ interface SplitterScope {
     )
 }
 
-@OptIn(ExperimentalSplitPaneApi::class)
 internal class HandleScopeImpl(
     private val containerScope: SplitPaneScopeImpl
 ) : HandleScope {
@@ -95,7 +91,6 @@ internal class HandleScopeImpl(
     }
 }
 
-@OptIn(ExperimentalSplitPaneApi::class)
 internal class SplitterScopeImpl(
     private val containerScope: SplitPaneScopeImpl
 ) : SplitterScope {
@@ -115,7 +110,6 @@ internal class SplitterScopeImpl(
 
 private typealias ComposableSlot = @Composable () -> Unit
 
-@OptIn(ExperimentalSplitPaneApi::class)
 internal class SplitPaneScopeImpl(
     internal val isHorizontal: Boolean,
     internal val splitPaneState: SplitPaneState
@@ -133,12 +127,12 @@ internal class SplitPaneScopeImpl(
         private set
 
     internal lateinit var visiblePart: ComposableSlot
-    internal lateinit var handle: ComposableSlot
+    internal var handle: ComposableSlot? = null
     internal var alignment: SplitterHandleAlignment = SplitterHandleAlignment.ABOVE
     internal val splitter
         get() =
-            if (this::visiblePart.isInitialized && this::handle.isInitialized) {
-                Splitter(visiblePart, handle, alignment)
+            if (this::visiblePart.isInitialized && handle != null) {
+                Splitter(visiblePart, handle!!, alignment)
             } else {
                 defaultSplitter(isHorizontal, splitPaneState)
             }
@@ -161,6 +155,9 @@ internal class SplitPaneScopeImpl(
 
     override fun splitter(block: SplitterScope.() -> Unit) {
         SplitterScopeImpl(this).block()
+        if (handle == null) {
+            handle = { DefaultHandle(isHorizontal, splitPaneState) }
+        }
     }
 }
 
@@ -174,7 +171,6 @@ internal class SplitPaneScopeImpl(
  * @param moveEnabled the initial value for [SplitPaneState.moveEnabled]
  * @param interactionState the initial value for [SplitPaneState.interactionState]
  * */
-@ExperimentalSplitPaneApi
 @Composable
 fun rememberSplitPaneState(
     initialPosition: Float = -1f,

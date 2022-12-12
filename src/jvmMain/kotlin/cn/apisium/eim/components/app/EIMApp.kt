@@ -18,7 +18,6 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.components.*
-import cn.apisium.eim.components.splitpane.ExperimentalSplitPaneApi
 import cn.apisium.eim.components.splitpane.HorizontalSplitPane
 import cn.apisium.eim.components.splitpane.VerticalSplitPane
 import cn.apisium.eim.impl.CommandManagerImpl
@@ -40,7 +39,7 @@ fun checkSampleRateAndBufferSize() {
 @Suppress("unused")
 private fun Modifier.cursorForHorizontalResize() = pointerHoverIcon(PointerIcon(Cursor(Cursor.E_RESIZE_CURSOR)))
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalSplitPaneApi::class, ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 fun eimApp() {
     application {
         val icon = painterResource("logo.png")

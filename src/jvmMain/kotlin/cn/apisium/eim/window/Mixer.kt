@@ -2,6 +2,7 @@ package cn.apisium.eim.window
 
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Tune
@@ -19,6 +20,7 @@ import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.api.Track
 import cn.apisium.eim.api.window.Panel
 import cn.apisium.eim.api.window.PanelDirection
+import cn.apisium.eim.components.BottomContentScrollable
 import cn.apisium.eim.components.Gap
 import cn.apisium.eim.components.Level
 import cn.apisium.eim.components.Marquee
@@ -30,11 +32,18 @@ import kotlin.math.pow
 import kotlin.math.sqrt
 
 @Composable
-fun MixerTrack(track: Track, index: Int, isRound: Boolean = false, renderChildren: Boolean = true) {
-    Surface(shadowElevation = 1.dp, shape = if (isRound) MaterialTheme.shapes.medium else RectangleShape) {
+private fun MixerTrack(track: Track, index: Int, isRound: Boolean = false, renderChildren: Boolean = true) {
+    Surface(
+        shadowElevation = 1.dp,
+        shape = if (isRound) MaterialTheme.shapes.medium else RectangleShape
+    ) {
         Row {
             Column(Modifier.width(80.dp).background(MaterialTheme.colorScheme.surface)) {
-                Row(Modifier.background(track.color).padding(vertical = 2.5.dp)) {
+                Row(Modifier
+                    .background(track.color)
+                    .clickable { EchoInMirror.selectedTrack = track }
+                    .padding(vertical = 2.5.dp)
+                ) {
                     Text(
                         index.toString(),
                         Modifier.padding(start = 5.dp, end = 3.dp),
@@ -156,12 +165,14 @@ class Mixer: Panel {
     @Preview
     @Composable
     override fun content() {
-        Row(Modifier.padding(14.dp)) {
-            MixerTrack(EchoInMirror.bus, 0, true, renderChildren = false)
-            EchoInMirror.bus.subTracks.forEachIndexed { i, it ->
-                key(it) {
-                    Gap(8)
-                    MixerTrack(it, i + 1, true)
+        BottomContentScrollable {
+            Row(Modifier.padding(14.dp)) {
+                MixerTrack(EchoInMirror.bus, 0, true, renderChildren = false)
+                EchoInMirror.bus.subTracks.forEachIndexed { i, it ->
+                    key(it) {
+                        Gap(8)
+                        MixerTrack(it, i + 1, true)
+                    }
                 }
             }
         }

@@ -12,9 +12,19 @@ private fun Constraints.maxByDirection(isHorizontal: Boolean): Int = if (isHoriz
 private fun Constraints.minByDirection(isHorizontal: Boolean): Int = if (isHorizontal) minWidth else minHeight
 private fun Placeable.valueByDirection(isHorizontal: Boolean): Int = if (isHorizontal) width else height
 
-@OptIn(ExperimentalSplitPaneApi::class)
+/**
+ * Internal implementation of split pane that used in all public composable functions
+ *
+ * @param modifier the modifier to apply to this layout
+ * @param isHorizontal describes is it horizontal of vertical split pane
+ * @param splitPaneState the state object to be used to control or observe the split pane state
+ * @param minimalSizesConfiguration data class ([MinimalSizes]) that provides minimal size for split pane parts
+ * @param first first part of split pane, left or top according to [isHorizontal]
+ * @param second second part of split pane, right or bottom according to [isHorizontal]
+ * @param splitter separator composable, by default [Splitter] is used
+ * */
 @Composable
-internal actual fun SplitPane(
+internal fun SplitPane(
     modifier: Modifier,
     isHorizontal: Boolean,
     splitPaneState: SplitPaneState,

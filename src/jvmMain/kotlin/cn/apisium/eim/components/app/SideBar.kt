@@ -29,7 +29,7 @@ import cn.apisium.eim.impl.WindowManagerImpl
 //    SideBarItem("Topic", "文件") { Icon(Icons.Default.Topic, "Topic") },
 
 internal var sideBarSelectedItem by mutableStateOf<Panel?>(null)
-internal var bottomBarSelectedItem by mutableStateOf<Panel?>(EchoInMirror.windowManager.panels.first())
+internal var bottomBarSelectedItem by mutableStateOf<Panel?>(EchoInMirror.windowManager.panels[1])
 private var sideBarLastSelected: Panel? = null
 private var bottomBarLastSelected: Panel? = bottomBarSelectedItem
 

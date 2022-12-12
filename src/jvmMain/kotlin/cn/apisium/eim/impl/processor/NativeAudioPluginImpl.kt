@@ -31,7 +31,7 @@ class NativeAudioPluginImpl(
 private val NATIVE_AUDIO_PLUGIN_CONFIG = ROOT_PATH.resolve("nativeAudioPlugin.json")
 
 @Serializable
-data class NativeAudioPluginFactoryData(
+private data class NativeAudioPluginFactoryData(
     val pluginDescriptions: MutableMap<String, NativeAudioPluginDescription>,
     val scanPaths: MutableSet<String>,
     val skipList: MutableSet<String>
