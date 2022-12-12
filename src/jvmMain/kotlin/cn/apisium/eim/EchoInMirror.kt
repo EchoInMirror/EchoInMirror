@@ -10,6 +10,7 @@ import cn.apisium.eim.api.Track
 import cn.apisium.eim.api.processor.AudioProcessorManager
 import cn.apisium.eim.api.window.WindowManager
 import cn.apisium.eim.impl.CommandManagerImpl
+import cn.apisium.eim.impl.CurrentPositionImpl
 import cn.apisium.eim.impl.TrackImpl
 import cn.apisium.eim.impl.WindowManagerImpl
 import cn.apisium.eim.impl.processor.AudioProcessorManagerImpl
@@ -20,10 +21,8 @@ import org.pf4j.PluginManager
 
 object EchoInMirror {
     @Suppress("MemberVisibilityCanBePrivate")
-    val currentPosition = CurrentPosition()
+    val currentPosition: CurrentPosition = CurrentPositionImpl()
     val bus: Track = TrackImpl("Bus")
-    var sampleRate by mutableStateOf(44800)
-    var bufferSize by mutableStateOf(1024)
     var timeSigNumerator by mutableStateOf(4)
     var timeSigDenominator by mutableStateOf(4)
 //    var player: AudioPlayer = NativeAudioPlayer(currentPosition, bus, "D:\\Cpp\\EIMPluginScanner\\build\\EIMHost_artefacts\\Debug\\EIMHost.exe")

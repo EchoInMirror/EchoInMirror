@@ -28,11 +28,11 @@ import org.jetbrains.skiko.Cursor
 fun checkSampleRateAndBufferSize() {
     LaunchedEffect(Unit) {
         snapshotFlow {
-            EchoInMirror.sampleRate
-            EchoInMirror.bufferSize
+            EchoInMirror.currentPosition.sampleRate
+            EchoInMirror.currentPosition.bufferSize
         }
             .collect {
-                println("Changed: ${EchoInMirror.sampleRate} ${EchoInMirror.bufferSize}")
+                println("Changed: ${EchoInMirror.currentPosition.sampleRate} ${EchoInMirror.currentPosition.bufferSize}")
             }
     }
 }

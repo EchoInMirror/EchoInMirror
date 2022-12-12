@@ -5,24 +5,21 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import cn.apisium.eim.api.CurrentPosition
 import cn.apisium.eim.api.Track
+import cn.apisium.eim.api.processor.AbstractAudioProcessor
 import cn.apisium.eim.api.processor.AudioProcessor
 import cn.apisium.eim.api.processor.LevelPeakImpl
 import cn.apisium.eim.api.processor.dsp.calcPanLeftChannel
 import cn.apisium.eim.api.processor.dsp.calcPanRightChannel
 import cn.apisium.eim.data.midi.MidiEvent
 import cn.apisium.eim.utils.randomColor
-import cn.apisium.eim.utils.randomUUID
 
 open class TrackImpl(
     trackName: String
-) : Track {
+) : Track, AbstractAudioProcessor() {
     override var name by mutableStateOf(trackName)
-    override val inputChannelsCount = 2
-    override val outputChannelsCount = 2
     override var pan by mutableStateOf(0F)
     override var volume by mutableStateOf(1F)
     override var color by mutableStateOf(randomColor())
-    override val uuid = randomUUID()
 
     override val levelPeak = LevelPeakImpl()
 

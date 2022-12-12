@@ -2,9 +2,9 @@ package cn.apisium.eim.impl.processor
 
 import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.api.CurrentPosition
+import cn.apisium.eim.api.processor.AbstractAudioProcessor
 import cn.apisium.eim.api.processor.FailedToLoadAudioPluginException
 import cn.apisium.eim.api.processor.ProcessAudioProcessor
-import cn.apisium.eim.utils.randomUUID
 import cn.apisium.eim.utils.EIMInputStream
 import cn.apisium.eim.utils.EIMOutputStream
 import kotlinx.coroutines.Dispatchers
@@ -14,7 +14,7 @@ import kotlinx.coroutines.withContext
 open class ProcessAudioProcessorImpl(
     protected val execFile: String,
     protected vararg val commands: String
-) : ProcessAudioProcessor {
+) : ProcessAudioProcessor, AbstractAudioProcessor() {
     override var inputChannelsCount = 0
         protected set
     override var outputChannelsCount = 0
@@ -22,7 +22,6 @@ open class ProcessAudioProcessorImpl(
     override var isLaunched = false
         protected set
     override var name = "ProcessAudioProcessor"
-    override val uuid = randomUUID()
     private var process: Process? = null
     private var inputStream: EIMInputStream? = null
     private var outputStream: EIMOutputStream? = null
@@ -55,8 +54,8 @@ open class ProcessAudioProcessorImpl(
     override fun prepareToPlay() {
         val output = outputStream ?: return
         output.write(0)
-        output.writeInt(EchoInMirror.sampleRate)
-        output.writeInt(EchoInMirror.bufferSize)
+        output.writeInt(EchoInMirror.currentPosition.sampleRate)
+        output.writeInt(EchoInMirror.currentPosition.bufferSize)
         output.flush()
     }
 

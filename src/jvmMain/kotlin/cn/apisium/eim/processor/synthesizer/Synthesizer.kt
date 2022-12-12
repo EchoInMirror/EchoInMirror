@@ -1,9 +1,10 @@
 package cn.apisium.eim.processor.synthesizer
 
-import cn.apisium.eim.api.processor.AudioProcessor
+import cn.apisium.eim.api.processor.AbstractAudioProcessor
 import cn.apisium.eim.data.midi.MidiEvent
 
-abstract class Synthesizer : AudioProcessor {
+abstract class Synthesizer : AbstractAudioProcessor() {
+    override val inputChannelsCount = 0
     protected var notes1: Long = 0
     protected var notes2: Long = 0
     protected var notesData = IntArray(127)
@@ -21,7 +22,7 @@ abstract class Synthesizer : AudioProcessor {
     }
 
     @Suppress("DuplicatedCode")
-    protected inline fun forEachNoteOn(block: (MidiEvent) -> Unit) {
+    protected inline fun forEachNotes(block: (MidiEvent) -> Unit) {
         var i = 0
         var note = notes1
         if (note == 0L) i = 63

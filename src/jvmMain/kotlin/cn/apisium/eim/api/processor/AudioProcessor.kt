@@ -1,6 +1,7 @@
 package cn.apisium.eim.api.processor
 
 import cn.apisium.eim.api.CurrentPosition
+import cn.apisium.eim.utils.randomUUID
 
 interface AudioProcessor: AutoCloseable {
     val inputChannelsCount: Int
@@ -10,4 +11,11 @@ interface AudioProcessor: AutoCloseable {
     suspend fun processBlock(buffers: Array<FloatArray>, position: CurrentPosition, midiBuffer: ArrayList<Int>) { }
     fun prepareToPlay() { }
     override fun close() { }
+}
+
+abstract class AbstractAudioProcessor: AudioProcessor {
+    override val inputChannelsCount = 2
+    override val outputChannelsCount = 2
+    override val uuid = randomUUID()
+    override var name = this::class.simpleName ?: "AbstractAudioProcessor"
 }
