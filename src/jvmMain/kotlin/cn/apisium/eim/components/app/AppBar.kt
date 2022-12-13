@@ -62,14 +62,17 @@ private fun RowScope.ppqText() {
     NavigationBarItem(false, { }, {
         Row(verticalAlignment = Alignment.Bottom) {
             Text(
-                text = "${(1 + EchoInMirror.currentPosition.ppqPosition / EchoInMirror.timeSigNumerator).toInt().toString().padStart(2, '0')}:${(1 + EchoInMirror.currentPosition.ppqPosition.toInt() % EchoInMirror.timeSigNumerator).toString().padStart(2, '0')}:",
+                text = "${(1 + EchoInMirror.currentPosition.ppqPosition / EchoInMirror.currentPosition.timeSigNumerator)
+                    .toInt().toString().padStart(2, '0')}:${(1 + EchoInMirror.currentPosition.ppqPosition
+                    .toInt() % EchoInMirror.currentPosition.timeSigNumerator).toString().padStart(2, '0')}:",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = (-0.7F).sp,
                 lineHeight = 0.sp
             )
             Text(
-                text = (1 + (EchoInMirror.currentPosition.ppqPosition - EchoInMirror.currentPosition.ppqPosition.toInt()) * (16 / EchoInMirror.timeSigDenominator)).toInt().toString(),
+                text = (1 + (EchoInMirror.currentPosition.ppqPosition - EchoInMirror.currentPosition.ppqPosition.toInt()) *
+                        (16 / EchoInMirror.currentPosition.timeSigDenominator)).toInt().toString(),
                 fontSize = 14.sp,
                 letterSpacing = (-1.5).sp,
                 lineHeight = 0.sp

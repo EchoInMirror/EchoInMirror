@@ -4,12 +4,16 @@ interface CurrentPosition {
     var bpm: Double
     val timeInSamples: Long
     val timeInSeconds: Double
-    val ppq: Int
-    val ppqPosition: Double
+    var ppq: Int
+    val timeInPPQ: Long
+    var ppqPosition: Double
     var isPlaying: Boolean
-    val bufferSize: Int
-    val sampleRate: Int
+    var bufferSize: Int
+    var sampleRate: Int
+    var timeSigNumerator: Int
+    var timeSigDenominator: Int
 
     fun update(timeInSamples: Long)
     fun setPPQPosition(ppqPosition: Double)
+    fun setCurrentTime(timeInPPQ: Long)
 }

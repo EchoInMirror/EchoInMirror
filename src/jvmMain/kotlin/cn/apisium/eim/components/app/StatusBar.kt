@@ -48,7 +48,7 @@ fun statusBar() {
                         }
                         Box(Modifier.weight(2F))
                         StatusBarItem("Pai", MetronomeTick) {
-                            Text("${EchoInMirror.timeSigNumerator}/${EchoInMirror.timeSigDenominator}")
+                            Text("${EchoInMirror.currentPosition.timeSigNumerator}/${EchoInMirror.currentPosition.timeSigDenominator}")
                         }
                         StatusBarItem("BPM") {
                             Text("%.2f".format(EchoInMirror.currentPosition.bpm))

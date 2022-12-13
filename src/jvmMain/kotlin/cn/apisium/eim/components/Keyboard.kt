@@ -15,6 +15,7 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cn.apisium.eim.data.midi.KEY_NAMES
@@ -28,21 +29,22 @@ val scales = arrayOf(true, false, true, false, true, false, true, true, false, t
 fun Keyboard(
     onNoteOn: (key: Int) -> Unit,
     onNoteOff: (key: Int) -> Unit,
-    keyWidth: Int = 68,
-    keyHeight: Int = 16,
+    modifier: Modifier = Modifier,
+    keyHeight: Dp = 17.dp,
+    keyWidth: Dp = 68.dp,
     whiteKeyColor: Color = MaterialTheme.colorScheme.background,
     backKeyColor: Color = MaterialTheme.colorScheme.secondary
 ) {
-    Column(Modifier.width(keyWidth.dp)) {
+    Column(modifier.width(keyWidth)) {
         for (i in 131 downTo 0) {
             val name = KEY_NAMES[i % 12]
             val isWhite = scales[i % 12]
             val color = if (isWhite) whiteKeyColor else backKeyColor
-            var modifier = Modifier.fillMaxWidth().height(keyHeight.dp).background(color)
-            if (i <= 0x7F) modifier = modifier.clickable {  }
+            var modifier2 = Modifier.fillMaxWidth().height(keyHeight - 1.dp).background(color)
+            if (i <= 0x7F) modifier2 = modifier2.clickable {  }
                 .onPointerEvent(PointerEventType.Press) { onNoteOn(i) }
                 .onPointerEvent(PointerEventType.Release) { onNoteOff(i) }
-            Box(modifier) {
+            Box(modifier2) {
                 Text(name + (i / 12), Modifier.align(Alignment.CenterEnd).padding(horizontal = 5.dp),
                     fontSize = 11.sp,
                     letterSpacing = (-0.3).sp,
