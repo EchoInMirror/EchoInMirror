@@ -10,6 +10,7 @@ interface AudioProcessor: AutoCloseable {
     val uuid: Long
     suspend fun processBlock(buffers: Array<FloatArray>, position: CurrentPosition, midiBuffer: ArrayList<Int>) { }
     fun prepareToPlay() { }
+    fun onSuddenChange() { }
     override fun close() { }
 }
 

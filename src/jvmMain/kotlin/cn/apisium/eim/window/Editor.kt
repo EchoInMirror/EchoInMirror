@@ -26,8 +26,8 @@ import cn.apisium.eim.components.PlayHead
 import cn.apisium.eim.components.Timeline
 import cn.apisium.eim.components.splitpane.VerticalSplitPane
 import cn.apisium.eim.components.splitpane.rememberSplitPaneState
-import cn.apisium.eim.data.midi.midiOff
-import cn.apisium.eim.data.midi.midiOn
+import cn.apisium.eim.data.midi.noteOff
+import cn.apisium.eim.data.midi.noteOn
 
 @Composable
 private fun NotesEditorCanvas(
@@ -51,8 +51,6 @@ private fun NotesEditorCanvas(
         val startYNote = (verticalScrollValue / noteHeightPx).toInt()
         val endYNote = ((verticalScrollValue + size.height) / noteHeightPx).toInt()
         val beatsWidth = noteWidthPx * ppq
-//        val startXNote = (horizontalScrollValue / noteWidthPx).toInt()
-//        val endXNote = ((horizontalScrollValue + size.width) / noteWidthPx).toInt()
         for (i in startYNote..endYNote) {
             val y = i * noteHeightPx - verticalScrollValue
             if (y < 0) continue
@@ -72,7 +70,7 @@ private fun NotesEditorCanvas(
         }
         val drawBeats = noteWidthPx > 0.1F
         val horizontalDrawWidth = if (drawBeats) beatsWidth else beatsWidth * timeSigNumerator
-        val highlightWidth = if (drawBeats) timeSigDenominator * timeSigNumerator else timeSigDenominator
+        val highlightWidth = if (drawBeats) timeSigDenominator else timeSigDenominator * timeSigNumerator
         for (i in (horizontalScrollValue / horizontalDrawWidth).toInt()..((horizontalScrollValue + size.width) / horizontalDrawWidth).toInt()) {
             val x = i * horizontalDrawWidth - horizontalScrollState.value
             drawLine(
@@ -84,13 +82,13 @@ private fun NotesEditorCanvas(
         }
 
         EchoInMirror.selectedTrack?.let { track ->
-            track.notes.forEach {
+            for (it in track.notes) {
                 val y = (131 - it.note.note) * noteHeightPx - verticalScrollValue
-                if (y < -noteHeightPx) return@forEach
-                val x = it.time * noteWidthPx
+                val x = it.time * noteWidthPx - horizontalScrollValue
+                if (y < -noteHeightPx || y > size.height || x < 0 || x > size.width) continue
                 drawRoundRect(
                     track.color,
-                    Offset(x - horizontalScrollValue, y),
+                    Offset(x, y),
                     Size(it.duration * noteWidthPx, noteHeightPx),
                     CornerRadius(2f)
                 )
@@ -112,8 +110,8 @@ private fun editorContent(horizontalScrollState: ScrollState) {
                     Row(Modifier.fillMaxSize().zIndex(-1F)) {
                         Surface(Modifier.verticalScroll(verticalScrollState).zIndex(5f), shadowElevation = 4.dp) {
                             Keyboard(
-                                { EchoInMirror.selectedTrack?.playMidiEvent(midiOn(0, it)) },
-                                { EchoInMirror.selectedTrack?.playMidiEvent(midiOff(0, it)) },
+                                { EchoInMirror.selectedTrack?.playMidiEvent(noteOn(0, it)) },
+                                { EchoInMirror.selectedTrack?.playMidiEvent(noteOff(0, it)) },
                                 Modifier, noteHeight
                             )
                         }

@@ -4,14 +4,12 @@ import cn.apisium.eim.api.processor.dsp.Pan
 import cn.apisium.eim.api.processor.dsp.Volume
 import cn.apisium.eim.api.processor.AudioProcessor
 import cn.apisium.eim.api.processor.LevelPeak
-import cn.apisium.eim.data.midi.MidiEvent
 import cn.apisium.eim.data.midi.NoteMessage
 
-interface Track: AudioProcessor, Pan, Volume, Colorable {
+interface Track: AudioProcessor, Pan, Volume, MidiEventHandler, Colorable {
     val subTracks: MutableList<Track>
     val preProcessorsChain: MutableList<AudioProcessor>
     val postProcessorsChain: MutableList<AudioProcessor>
     val levelPeak: LevelPeak
     val notes: MutableList<NoteMessage>
-    fun playMidiEvent(midiEvent: MidiEvent, time: Int = 0)
 }

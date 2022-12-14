@@ -75,7 +75,10 @@ value class MidiEvent(val rawData: Int) {
     val metaLength get() = byte3Int
     val sysexLength get() = byte3Int
     val realTimeType get() = byte1Int and 0xF
+
+    fun toNoteOn() = MidiEvent(channel or 0x90, byte2Int, byte3Int)
+    fun toNoteOff() = MidiEvent(channel or 0x80, byte2Int, byte3Int)
 }
 
-fun midiOn(channel: Int, note: Int, velocity: Int = 70) = MidiEvent(0x90 or channel, note, velocity)
-fun midiOff(channel: Int, note: Int) = MidiEvent(0x80 or channel, note, 70)
+fun noteOn(channel: Int, note: Int, velocity: Int = 70) = MidiEvent(0x90 or channel, note, velocity)
+fun noteOff(channel: Int, note: Int) = MidiEvent(0x80 or channel, note, 70)

@@ -12,8 +12,10 @@ interface CurrentPosition {
     var sampleRate: Int
     var timeSigNumerator: Int
     var timeSigDenominator: Int
+    val ppqCountOfBlock: Int
 
     fun update(timeInSamples: Long)
     fun setPPQPosition(ppqPosition: Double)
     fun setCurrentTime(timeInPPQ: Int)
+    fun convertPPQToSamples(ppq: Int): Long
 }

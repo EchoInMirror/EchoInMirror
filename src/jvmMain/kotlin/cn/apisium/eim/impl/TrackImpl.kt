@@ -12,7 +12,9 @@ import cn.apisium.eim.api.processor.LevelPeakImpl
 import cn.apisium.eim.api.processor.dsp.calcPanLeftChannel
 import cn.apisium.eim.api.processor.dsp.calcPanRightChannel
 import cn.apisium.eim.data.midi.MidiEvent
+import cn.apisium.eim.data.midi.MidiNoteRecorder
 import cn.apisium.eim.data.midi.NoteMessage
+import cn.apisium.eim.data.midi.noteOff
 import cn.apisium.eim.utils.randomColor
 
 open class TrackImpl(
@@ -30,11 +32,42 @@ open class TrackImpl(
     override val postProcessorsChain = arrayListOf<AudioProcessor>()
     override val subTracks = arrayListOf<Track>()
     private val pendingMidiBuffer = ArrayList<Int>()
+    private var currentPlayedIndex = 0
+    private val pendingNoteOns = LongArray(128)
+    private val noteRecorder = MidiNoteRecorder()
 
     override suspend fun processBlock(buffers: Array<FloatArray>, position: CurrentPosition, midiBuffer: ArrayList<Int>) {
         if (pendingMidiBuffer.isNotEmpty()) {
             midiBuffer.addAll(pendingMidiBuffer)
             pendingMidiBuffer.clear()
+        }
+        if (position.isPlaying) {
+            val blockEndSample = position.timeInSamples + position.bufferSize
+            noteRecorder.forEachNotes {
+                pendingNoteOns[it] -= position.bufferSize.toLong()
+                if (pendingNoteOns[it] <= 0) {
+                    noteRecorder.unmarkNote(it)
+                    midiBuffer.add(noteOff(0, it).rawData)
+                    midiBuffer.add(pendingNoteOns[it].toInt().coerceAtLeast(0))
+                }
+            }
+            for (i in currentPlayedIndex until notes.size) {
+                val note = notes[i]
+                val startTimeInSamples = position.convertPPQToSamples(note.time)
+                val endTimeInSamples = position.convertPPQToSamples(note.time + note.duration)
+                if (startTimeInSamples < position.timeInSamples) continue
+                if (startTimeInSamples > blockEndSample) break
+                currentPlayedIndex = i + 1
+                midiBuffer.add(note.note.rawData)
+                midiBuffer.add((startTimeInSamples - position.timeInSamples).toInt().coerceAtLeast(0))
+                if (endTimeInSamples < position.timeInSamples || endTimeInSamples > blockEndSample) {
+                    pendingNoteOns[note.note.note] = endTimeInSamples
+                    noteRecorder.markNote(note.note.note)
+                } else {
+                    midiBuffer.add(note.note.toNoteOff().rawData)
+                    midiBuffer.add((endTimeInSamples - position.timeInSamples).toInt().coerceAtLeast(0))
+                }
+            }
         }
         preProcessorsChain.forEach { it.processBlock(buffers, position, midiBuffer) }
         subTracks.forEach { it.processBlock(buffers, position, ArrayList(midiBuffer)) }
@@ -71,5 +104,15 @@ open class TrackImpl(
     override fun playMidiEvent(midiEvent: MidiEvent, time: Int) {
         pendingMidiBuffer.add(midiEvent.rawData)
         pendingMidiBuffer.add(time)
+    }
+
+    override fun onSuddenChange() {
+        currentPlayedIndex = 0
+        stopAllNotes()
+        pendingNoteOns.clone()
+        noteRecorder.reset()
+        preProcessorsChain.forEach(AudioProcessor::onSuddenChange)
+        subTracks.forEach(Track::onSuddenChange)
+        postProcessorsChain.forEach(AudioProcessor::onSuddenChange)
     }
 }

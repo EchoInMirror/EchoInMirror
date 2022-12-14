@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.*
 import androidx.compose.ui.text.font.FontWeight
@@ -66,8 +67,7 @@ fun Timeline(modifier: Modifier = Modifier, noteWidth: Dp, scrollState: ScrollSt
 }
 
 @Composable
-fun PlayHead(noteWidth: Dp, scrollState: ScrollState, offsetX: Dp = 0.dp) {
-    val color = MaterialTheme.colorScheme.secondary
+fun PlayHead(noteWidth: Dp, scrollState: ScrollState, offsetX: Dp = 0.dp, color: Color = MaterialTheme.colorScheme.onBackground) {
     val currentPosition = EchoInMirror.currentPosition.ppqPosition * EchoInMirror.currentPosition.ppq
     var playHeadPosition = noteWidth * currentPosition.toFloat() - scrollState.value.dp
     if (playHeadPosition.value < 0) return
