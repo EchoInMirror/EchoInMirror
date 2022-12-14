@@ -141,6 +141,8 @@ fun sideBar() {
     }
 }
 
+val contentWindowColor @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant.copy(0.2F)
+
 @Composable
 fun sideBarContent() {
     Surface(
@@ -148,7 +150,7 @@ fun sideBarContent() {
         shadowElevation = 2.dp,
         shape = RoundedCornerShape(0.dp, 16.dp, if (bottomBarSelectedItem == null) 16.dp else 0.dp, 0.dp)
     ) {
-        Box(Modifier.fillMaxSize().border(start = Border(0.6.dp, MaterialTheme.colorScheme.onSurfaceVariant.copy(0.2F)))) {
+        Box(Modifier.fillMaxSize().border(start = Border(0.6.dp, contentWindowColor))) {
             val stateVertical = rememberScrollState(0)
             Box(Modifier.fillMaxSize().verticalScroll(stateVertical)) {
                 sideBarSelectedItem?.content()

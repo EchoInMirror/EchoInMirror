@@ -1,17 +1,17 @@
 package cn.apisium.eim.window
 
 import androidx.compose.foundation.*
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Piano
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.text.*
@@ -42,41 +42,59 @@ private fun NotesEditorCanvas(
     val highlightNoteColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.03F)
     val timeSigDenominator = EchoInMirror.currentPosition.timeSigDenominator
     val timeSigNumerator = EchoInMirror.currentPosition.timeSigNumerator
-    Canvas(modifier) {
+    val ppq = EchoInMirror.currentPosition.ppq
+    Canvas(modifier.scrollable(verticalScrollState, Orientation.Vertical, reverseDirection = true)) {
         val noteHeightPx = noteHeight.toPx()
         val noteWidthPx = noteWidth.toPx()
         val verticalScrollValue = verticalScrollState.value
         val horizontalScrollValue = horizontalScrollState.value
         val startYNote = (verticalScrollValue / noteHeightPx).toInt()
         val endYNote = ((verticalScrollValue + size.height) / noteHeightPx).toInt()
-        val beatsWidth = noteWidthPx * 16 / timeSigDenominator
+        val beatsWidth = noteWidthPx * ppq
 //        val startXNote = (horizontalScrollValue / noteWidthPx).toInt()
 //        val endXNote = ((horizontalScrollValue + size.width) / noteWidthPx).toInt()
         for (i in startYNote..endYNote) {
+            val y = i * noteHeightPx - verticalScrollValue
+            if (y < 0) continue
             drawLine(
                 color = outlineColor,
-                start = Offset(0f, i * noteHeightPx - verticalScrollValue),
-                end = Offset(size.width, i * noteHeightPx - verticalScrollValue),
+                start = Offset(0f, y),
+                end = Offset(size.width, y),
                 strokeWidth = 1F
             )
             if (cn.apisium.eim.components.scales[i % 12]) {
                 drawRect(
                     color = highlightNoteColor,
-                    topLeft = Offset(0f, i * noteHeightPx - verticalScrollValue),
+                    topLeft = Offset(0f, y),
                     size = Size(size.width, noteHeightPx)
                 )
             }
         }
-        val drawBeats = noteWidthPx > 9.6F
+        val drawBeats = noteWidthPx > 0.1F
         val horizontalDrawWidth = if (drawBeats) beatsWidth else beatsWidth * timeSigNumerator
         val highlightWidth = if (drawBeats) timeSigDenominator * timeSigNumerator else timeSigDenominator
-        for (i in (horizontalScrollValue / horizontalDrawWidth).toInt()..((horizontalScrollValue + horizontalScrollState.maxValue) / horizontalDrawWidth).toInt()) {
+        for (i in (horizontalScrollValue / horizontalDrawWidth).toInt()..((horizontalScrollValue + size.width) / horizontalDrawWidth).toInt()) {
+            val x = i * horizontalDrawWidth - horizontalScrollState.value
             drawLine(
                 color = if (i % highlightWidth == 0) barsOutlineColor else outlineColor,
-                start = Offset(i * horizontalDrawWidth - horizontalScrollState.value, 0f),
-                end = Offset(i * horizontalDrawWidth - horizontalScrollState.value, size.height),
+                start = Offset(x, 0f),
+                end = Offset(x, size.height),
                 strokeWidth = 1F
             )
+        }
+
+        EchoInMirror.selectedTrack?.let { track ->
+            track.notes.forEach {
+                val y = (131 - it.note.note) * noteHeightPx - verticalScrollValue
+                if (y < -noteHeightPx) return@forEach
+                val x = it.time * noteWidthPx
+                drawRoundRect(
+                    track.color,
+                    Offset(x - horizontalScrollValue, y),
+                    Size(it.duration * noteWidthPx, noteHeightPx),
+                    CornerRadius(2f)
+                )
+            }
         }
     }
 }
@@ -87,7 +105,7 @@ private fun editorContent(horizontalScrollState: ScrollState) {
         first(0.dp) {
             val verticalScrollState = rememberScrollState()
             val noteHeight by remember { mutableStateOf(16.dp) }
-            val noteWidth by remember { mutableStateOf(0.6.dp) }
+            val noteWidth by remember { mutableStateOf(0.4.dp) }
             Column(Modifier.fillMaxSize()) {
                 Timeline(Modifier.zIndex(3F), noteWidth, horizontalScrollState, 68.dp)
                 Box(Modifier.weight(1F)) {

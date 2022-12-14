@@ -20,7 +20,7 @@ import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.api.Track
 import cn.apisium.eim.api.window.Panel
 import cn.apisium.eim.api.window.PanelDirection
-import cn.apisium.eim.components.BottomContentScrollable
+import cn.apisium.eim.components.app.BottomContentScrollable
 import cn.apisium.eim.components.Gap
 import cn.apisium.eim.components.Level
 import cn.apisium.eim.components.Marquee

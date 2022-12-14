@@ -5,7 +5,7 @@ interface CurrentPosition {
     val timeInSamples: Long
     val timeInSeconds: Double
     var ppq: Int
-    val timeInPPQ: Long
+    val timeInPPQ: Int
     var ppqPosition: Double
     var isPlaying: Boolean
     var bufferSize: Int
@@ -15,5 +15,5 @@ interface CurrentPosition {
 
     fun update(timeInSamples: Long)
     fun setPPQPosition(ppqPosition: Double)
-    fun setCurrentTime(timeInPPQ: Long)
+    fun setCurrentTime(timeInPPQ: Int)
 }

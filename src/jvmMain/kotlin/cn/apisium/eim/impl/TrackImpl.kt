@@ -1,6 +1,7 @@
 package cn.apisium.eim.impl
 
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import cn.apisium.eim.api.CurrentPosition
@@ -11,6 +12,7 @@ import cn.apisium.eim.api.processor.LevelPeakImpl
 import cn.apisium.eim.api.processor.dsp.calcPanLeftChannel
 import cn.apisium.eim.api.processor.dsp.calcPanRightChannel
 import cn.apisium.eim.data.midi.MidiEvent
+import cn.apisium.eim.data.midi.NoteMessage
 import cn.apisium.eim.utils.randomColor
 
 open class TrackImpl(
@@ -22,6 +24,7 @@ open class TrackImpl(
     override var color by mutableStateOf(randomColor())
 
     override val levelPeak = LevelPeakImpl()
+    override val notes: MutableList<NoteMessage> = mutableStateListOf()
 
     override val preProcessorsChain = arrayListOf<AudioProcessor>()
     override val postProcessorsChain = arrayListOf<AudioProcessor>()

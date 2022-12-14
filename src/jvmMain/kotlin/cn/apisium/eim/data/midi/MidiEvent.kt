@@ -1,14 +1,46 @@
 package cn.apisium.eim.data.midi
 
+import cn.apisium.eim.EchoInMirror
+import kotlinx.serialization.Serializable
+import javax.sound.midi.MidiMessage
 import kotlin.math.pow
+import javax.sound.midi.Track
+import javax.sound.midi.Sequence
 
 val KEY_NAMES = arrayOf("C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B")
 
+fun Track.getMidiEvents(scale: Double): ArrayList<Int>{
+    val list = ArrayList<Int>()
+    for (i in 0 until size()) get(i).apply {
+        list.add(message.toInt())
+        list.add((tick * scale).toInt())
+    }
+    return list
+}
+
+fun Sequence.getMidiEvents(track: Int, destPPQ: Int = EchoInMirror.currentPosition.ppq) =
+    tracks[track].getMidiEvents(destPPQ.toDouble() / resolution)
+
+fun Int.toMidiEvent() = MidiEvent(this)
+
+@Suppress("unused")
+fun MidiMessage.toMidiEvent() = MidiEvent(this)
+fun MidiMessage.toInt(): Int {
+    var data = message[0].toUByte().toInt()
+    if (length > 1) data = data or (message[1].toUByte().toInt() shl 8)
+    if (length > 2) data = data or (message[2].toUByte().toInt() shl 16)
+    return data
+}
+
 @Suppress("MemberVisibilityCanBePrivate", "unused")
 @JvmInline
+@Serializable
 value class MidiEvent(val rawData: Int) {
-    constructor(byte1: Byte, byte2: Byte, byte3: Byte) : this(byte1.toInt() or (byte2.toInt() shl 8) or (byte3.toInt() shl 16))
+    constructor(byte1: Byte, byte2: Byte, byte3: Byte) : this(byte1.toUByte().toInt() or (byte2.toUByte().toInt() shl 8) or (byte3.toUByte().toInt() shl 16))
     constructor(byte1: Int, byte2: Int, byte3: Int) : this(byte1 or (byte2 shl 8) or (byte3 shl 16))
+    constructor(message: MidiMessage) : this(message.message[0].toUByte().toInt() and 0xFF,
+        if (message.length > 1) message.message[1].toUByte().toInt() and 0xFF else 0,
+        if (message.length > 2) message.message[2].toUByte().toInt() and 0xFF else 0)
     val byte1 get() = byte1Int.toByte()
     val byte2 get() = byte2Int.toByte()
     val byte3 get() = rawData.toByte()

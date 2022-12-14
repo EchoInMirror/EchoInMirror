@@ -1,8 +1,7 @@
-package cn.apisium.eim.components
+package cn.apisium.eim.components.app
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -10,7 +9,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import cn.apisium.eim.utils.Border
 import cn.apisium.eim.utils.border
-import cn.apisium.eim.components.app.bottomBarSelectedItem
 
 @Composable
 fun bottomBarContent() {
@@ -18,7 +16,7 @@ fun bottomBarContent() {
         tonalElevation = 2.dp,
         shadowElevation = 2.dp
     ) {
-        Box(Modifier.fillMaxSize().border(start = Border(0.6.dp, MaterialTheme.colorScheme.onSurfaceVariant.copy(0.2F)))) {
+        Box(Modifier.fillMaxSize().border(start = Border(0.6.dp, contentWindowColor))) {
             bottomBarSelectedItem?.content()
         }
     }

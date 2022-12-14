@@ -38,15 +38,15 @@ fun Timeline(modifier: Modifier = Modifier, noteWidth: Dp, scrollState: ScrollSt
         Canvas(Modifier.fillMaxSize().pointerInput(Unit) {
             detectDragGestures { change, _ ->
                 change.consume()
-                EchoInMirror.currentPosition.setCurrentTime(((change.position.x + scrollState.value - offsetX.value) / noteWidth.value * 1.5).toLong())
+                EchoInMirror.currentPosition.setCurrentTime(((change.position.x + scrollState.value - offsetX.value) / noteWidth.value).toInt())
             }
         }.pointerInput(Unit) {
             detectTapGestures {
-                EchoInMirror.currentPosition.setCurrentTime(((it.x + scrollState.value - offsetX.value) / noteWidth.value * 1.5).toLong())
+                EchoInMirror.currentPosition.setCurrentTime(((it.x + scrollState.value - offsetX.value) / noteWidth.value).toInt())
             }
         }) {
             val offsetXValue = offsetX.toPx()
-            val barWidth = noteWidth.toPx() * 16 * EchoInMirror.currentPosition.timeSigDenominator * EchoInMirror.currentPosition.timeSigNumerator
+            val barWidth = noteWidth.toPx() * EchoInMirror.currentPosition.ppq * EchoInMirror.currentPosition.timeSigNumerator
             val startBar = (scrollState.value / barWidth).toInt()
             val endBar = ((scrollState.value + size.width - offsetXValue) / barWidth).toInt()
             for (i in startBar..endBar) {
@@ -68,7 +68,7 @@ fun Timeline(modifier: Modifier = Modifier, noteWidth: Dp, scrollState: ScrollSt
 @Composable
 fun PlayHead(noteWidth: Dp, scrollState: ScrollState, offsetX: Dp = 0.dp) {
     val color = MaterialTheme.colorScheme.secondary
-    val currentPosition = EchoInMirror.currentPosition.ppqPosition * EchoInMirror.currentPosition.timeSigNumerator * 16
+    val currentPosition = EchoInMirror.currentPosition.ppqPosition * EchoInMirror.currentPosition.ppq
     var playHeadPosition = noteWidth * currentPosition.toFloat() - scrollState.value.dp
     if (playHeadPosition.value < 0) return
     playHeadPosition += offsetX

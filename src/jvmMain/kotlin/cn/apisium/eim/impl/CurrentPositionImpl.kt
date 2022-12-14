@@ -10,7 +10,7 @@ class CurrentPositionImpl: CurrentPosition {
     override var timeInSamples = 0L
     override var timeInSeconds by mutableStateOf(0.0)
     override var ppq by mutableStateOf(96)
-    override var timeInPPQ = 0L
+    override var timeInPPQ = 0
     override var ppqPosition by mutableStateOf(0.0)
     override var isPlaying by mutableStateOf(false)
     override var bufferSize by mutableStateOf(1024)
@@ -23,7 +23,7 @@ class CurrentPositionImpl: CurrentPosition {
         this.timeInSamples = timeInSamples
         timeInSeconds = timeInSamples.toDouble() / sampleRate
         ppqPosition = timeInSeconds / 60.0 * bpm
-        timeInPPQ = (ppqPosition * ppq).toLong()
+        timeInPPQ = (ppqPosition * ppq).toInt()
     }
 
     override fun setPPQPosition(ppqPosition: Double) {
@@ -31,10 +31,10 @@ class CurrentPositionImpl: CurrentPosition {
         this.ppqPosition = ppqPosition
         timeInSeconds = ppqPosition / bpm * 60.0
         timeInSamples = (timeInSeconds * sampleRate).toLong()
-        timeInPPQ = (ppqPosition * ppq * timeSigNumerator).toLong()
+        timeInPPQ = (ppqPosition * ppq * timeSigNumerator).toInt()
     }
 
-    override fun setCurrentTime(timeInPPQ: Long) {
+    override fun setCurrentTime(timeInPPQ: Int) {
         if (timeInPPQ < 0) return
         this.timeInPPQ = timeInPPQ
         ppqPosition = timeInPPQ.toDouble() / ppq
