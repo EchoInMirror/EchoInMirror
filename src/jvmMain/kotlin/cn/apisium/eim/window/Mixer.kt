@@ -26,7 +26,7 @@ import cn.apisium.eim.components.Level
 import cn.apisium.eim.components.Marquee
 import cn.apisium.eim.components.silder.DefaultTrack
 import cn.apisium.eim.components.silder.Slider
-import cn.apisium.eim.utils.toOnSurface
+import cn.apisium.eim.utils.toOnSurfaceColor
 import kotlin.math.log10
 import kotlin.math.pow
 import kotlin.math.sqrt
@@ -44,10 +44,11 @@ private fun MixerTrack(track: Track, index: Int, isRound: Boolean = false, rende
                     .clickable { EchoInMirror.selectedTrack = track }
                     .padding(vertical = 2.5.dp)
                 ) {
+                    val color = track.color.toOnSurfaceColor()
                     Text(
                         index.toString(),
                         Modifier.padding(start = 5.dp, end = 3.dp),
-                        color = track.color.toOnSurface,
+                        color = color,
                         fontSize = MaterialTheme.typography.labelLarge.fontSize,
                         lineHeight = 18.0.sp,
                         fontWeight = FontWeight.Bold
@@ -55,7 +56,7 @@ private fun MixerTrack(track: Track, index: Int, isRound: Boolean = false, rende
                     Marquee {
                         Text(
                             track.name,
-                            color = track.color.toOnSurface,
+                            color = color,
                             fontSize = MaterialTheme.typography.labelLarge.fontSize,
                             lineHeight = 18.0.sp,
                         )

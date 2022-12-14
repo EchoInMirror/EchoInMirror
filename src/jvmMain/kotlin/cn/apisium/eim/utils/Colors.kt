@@ -6,12 +6,18 @@ val colors = listOf(0xFFEBEE,0xFFCDD2,0xEF9A9A,0xE57373,0xEF5350,0xF44336,0xE539
 
 fun randomColor() = Color(colors.random() or (0xFF shl 24))
 
-val Color.toOnSurface
-    get() = if (luminance() > 0.5f) Color.Black else Color.White
+fun Color.toOnSurfaceColor() = if (luminance() > 0.5f) Color.Black else Color.White
 
 fun Color.luminance(value: Float): Color = Color(
-    red = lerp(red, value, 0.2126f),
-    green = lerp(green, value, 0.7152f),
-    blue = lerp(blue, value, 0.0722f),
+    red = lerp(red, value, 0.2126f).coerceIn(0F, 0F),
+    green = lerp(green, value, 0.7152f).coerceIn(0F, 0F),
+    blue = lerp(blue, value, 0.0722f).coerceIn(0F, 0F),
+    alpha = alpha
+)
+
+fun Color.inverts() = Color(
+    red = 1 - red,
+    green = 1 - green,
+    blue = 1 - blue,
     alpha = alpha
 )

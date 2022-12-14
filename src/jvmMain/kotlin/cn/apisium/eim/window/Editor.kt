@@ -14,7 +14,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.*
@@ -31,7 +30,7 @@ import cn.apisium.eim.components.splitpane.VerticalSplitPane
 import cn.apisium.eim.components.splitpane.rememberSplitPaneState
 import cn.apisium.eim.data.midi.noteOff
 import cn.apisium.eim.data.midi.noteOn
-import cn.apisium.eim.utils.luminance
+import cn.apisium.eim.utils.inverts
 
 @Composable
 private fun NotesEditorCanvas(
@@ -86,7 +85,7 @@ private fun NotesEditorCanvas(
         }
 
         EchoInMirror.selectedTrack?.let { track ->
-            val brighterColor = track.color.luminance((track.color.luminance() * 1.8F).coerceAtLeast(1F))
+            val invertsColor = track.color.inverts()
             val currentPPQ = EchoInMirror.currentPosition.timeInPPQ
             val isPlaying = EchoInMirror.currentPosition.isPlaying
             for (it in track.notes) {
@@ -95,7 +94,7 @@ private fun NotesEditorCanvas(
                 if (y < -noteHeightPx || y > size.height || x < 0 || x > size.width) continue
                 val isPlayingNote = isPlaying && it.time <= currentPPQ && it.time + it.duration >= currentPPQ
                 drawRoundRect(
-                    if (isPlayingNote) brighterColor else track.color,
+                    if (isPlayingNote) invertsColor else track.color,
                     Offset(x, y),
                     Size(it.duration * noteWidthPx, noteHeightPx),
                     CornerRadius(2f)

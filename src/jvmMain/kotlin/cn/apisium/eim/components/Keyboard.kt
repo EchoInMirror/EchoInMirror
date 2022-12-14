@@ -19,7 +19,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cn.apisium.eim.data.midi.KEY_NAMES
-import cn.apisium.eim.utils.toOnSurface
+import cn.apisium.eim.utils.toOnSurfaceColor
 
 val scales = arrayOf(true, false, true, false, true, false, true, true, false, true, false, true)
 
@@ -50,7 +50,7 @@ fun Keyboard(
                     letterSpacing = (-0.3).sp,
                     lineHeight = 11.sp,
                     fontWeight = if (i % 12 == 0) FontWeight.ExtraBold else null,
-                    color = color.toOnSurface,
+                    color = color.toOnSurfaceColor(),
                     fontStyle = if (isWhite) null else FontStyle.Italic,
                 )
             }
