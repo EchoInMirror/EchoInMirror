@@ -6,7 +6,6 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.unit.Dp
 import java.util.*
 
@@ -15,9 +14,6 @@ fun lerp(start: Float, stop: Float, fraction: Float) = (1 - fraction) * start + 
 fun randomUUID() = UUID.randomUUID().mostSignificantBits and Long.MAX_VALUE
 
 data class Border(val strokeWidth: Dp, val color: Color)
-
-val Color.toOnSurface
-    get() = if (luminance() > 0.5f) Color.Black else Color.White
 
 @Stable
 fun Modifier.border(

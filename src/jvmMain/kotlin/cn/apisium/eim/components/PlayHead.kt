@@ -67,10 +67,10 @@ fun Timeline(modifier: Modifier = Modifier, noteWidth: Dp, scrollState: ScrollSt
 }
 
 @Composable
-fun PlayHead(noteWidth: Dp, scrollState: ScrollState, offsetX: Dp = 0.dp, color: Color = MaterialTheme.colorScheme.onBackground) {
+fun PlayHead(noteWidth: Dp, scrollState: ScrollState, width: Dp? = null, offsetX: Dp = 0.dp, color: Color = MaterialTheme.colorScheme.onBackground) {
     val currentPosition = EchoInMirror.currentPosition.ppqPosition * EchoInMirror.currentPosition.ppq
     var playHeadPosition = noteWidth * currentPosition.toFloat() - scrollState.value.dp
-    if (playHeadPosition.value < 0) return
+    if (playHeadPosition.value < 0 || (width != null && playHeadPosition > width)) return
     playHeadPosition += offsetX
     Icon(Icons.Default.PlayArrow, null, Modifier.size(17.dp).offset(playHeadPosition - 8.dp, (-6).dp)
         .rotate(90F), tint = color)

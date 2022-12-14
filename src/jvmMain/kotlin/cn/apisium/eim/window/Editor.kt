@@ -14,6 +14,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.*
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -28,6 +31,7 @@ import cn.apisium.eim.components.splitpane.VerticalSplitPane
 import cn.apisium.eim.components.splitpane.rememberSplitPaneState
 import cn.apisium.eim.data.midi.noteOff
 import cn.apisium.eim.data.midi.noteOn
+import cn.apisium.eim.utils.luminance
 
 @Composable
 private fun NotesEditorCanvas(
@@ -82,12 +86,16 @@ private fun NotesEditorCanvas(
         }
 
         EchoInMirror.selectedTrack?.let { track ->
+            val brighterColor = track.color.luminance((track.color.luminance() * 1.8F).coerceAtLeast(1F))
+            val currentPPQ = EchoInMirror.currentPosition.timeInPPQ
+            val isPlaying = EchoInMirror.currentPosition.isPlaying
             for (it in track.notes) {
                 val y = (131 - it.note.note) * noteHeightPx - verticalScrollValue
                 val x = it.time * noteWidthPx - horizontalScrollValue
                 if (y < -noteHeightPx || y > size.height || x < 0 || x > size.width) continue
+                val isPlayingNote = isPlaying && it.time <= currentPPQ && it.time + it.duration >= currentPPQ
                 drawRoundRect(
-                    track.color,
+                    if (isPlayingNote) brighterColor else track.color,
                     Offset(x, y),
                     Size(it.duration * noteWidthPx, noteHeightPx),
                     CornerRadius(2f)
@@ -105,8 +113,10 @@ private fun editorContent(horizontalScrollState: ScrollState) {
             val noteHeight by remember { mutableStateOf(16.dp) }
             val noteWidth by remember { mutableStateOf(0.4.dp) }
             Column(Modifier.fillMaxSize()) {
+                val localDensity = LocalDensity.current
+                var contentWidth by remember { mutableStateOf(0.dp) }
                 Timeline(Modifier.zIndex(3F), noteWidth, horizontalScrollState, 68.dp)
-                Box(Modifier.weight(1F)) {
+                Box(Modifier.weight(1F).onGloballyPositioned { with(localDensity) { contentWidth = it.size.width.toDp() } }) {
                     Row(Modifier.fillMaxSize().zIndex(-1F)) {
                         Surface(Modifier.verticalScroll(verticalScrollState).zIndex(5f), shadowElevation = 4.dp) {
                             Keyboard(
@@ -123,7 +133,7 @@ private fun editorContent(horizontalScrollState: ScrollState) {
                             horizontalScrollState
                         )
                     }
-                    PlayHead(noteWidth, horizontalScrollState, 68.dp)
+                    PlayHead(noteWidth, horizontalScrollState, contentWidth, 68.dp)
                     VerticalScrollbar(
                         rememberScrollbarAdapter(verticalScrollState),
                         Modifier.align(Alignment.CenterEnd).fillMaxHeight()
