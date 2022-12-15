@@ -31,7 +31,6 @@ fun main() {
     }
     track.postProcessorsChain.add(plugin)
     val midi = MidiSystem.getSequence(File("E:\\Midis\\UTMR&C VOL 1-14 [MIDI FILES] for other DAWs FINAL by Hunter UT\\VOL 13\\13.Darren Porter - To Feel Again LD.mid"))
-    println(midi.resolution)
     track.notes.addAll(getNoteMessages(midi.getMidiEvents(1)))
 
     val subTrack = TrackImpl("SubTrack")

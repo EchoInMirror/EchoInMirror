@@ -64,12 +64,12 @@ class JvmAudioPlayer(currentPosition: CurrentPosition, processor: AudioProcessor
             }
             buffers.forEach { Arrays.fill(it, 0F) }
 
-            runBlocking {
-                try {
+            try {
+                runBlocking {
                     processor?.processBlock(buffers, currentPosition, ArrayList(0))
-                } catch (e: Exception) {
-                    e.printStackTrace()
                 }
+            } catch (ignored: InterruptedException) { } catch (e: Exception) {
+                e.printStackTrace()
             }
 
             for (j in 0 until channels) {

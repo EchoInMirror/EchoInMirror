@@ -8,6 +8,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
@@ -22,8 +24,12 @@ import cn.apisium.eim.components.app.APP_BAR_FULL_HEIGHT
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun TrackItem(track: Track) {
-    Row(Modifier.fillMaxWidth().padding(8.dp)) {
+private fun TrackItem(track: Track, height: Dp) {
+    Row(Modifier.height(height)) {
+        Canvas(Modifier.fillMaxHeight().width(8.dp).background(track.color.copy(alpha = 0.5F))) {
+            val y = size.height * (1F - track.levelMeter.maxLevel.toPercentage())
+            drawRect(track.color, Offset(0F, y), Size(size.width, size.height - y))
+        }
         ListItem(
             headlineText = { Text("Three line list item") },
             overlineText = { Text("OVERLINE") },
@@ -37,6 +43,8 @@ private fun TrackItem(track: Track) {
             trailingContent = { Text("meta") }
         )
     }
+    Divider()
+    track.subTracks.forEach { key(it.uuid) { TrackItem(it, height) } }
 }
 
 @Composable
@@ -57,11 +65,13 @@ val playlistVerticalScrollState = ScrollState(0)
 @Composable
 fun Playlist() {
     Row {
+        val trackHeight = 70.dp
         Surface(Modifier.width(200.dp).fillMaxHeight().zIndex(5f), shadowElevation = 2.dp, tonalElevation = 1.dp) {
-            Column {
+            Column(Modifier.padding(top = APP_BAR_FULL_HEIGHT).verticalScroll(playlistVerticalScrollState)) {
+                Divider()
                 EchoInMirror.bus.subTracks.forEach {
                     key(it.uuid) {
-                        TrackItem(it)
+                        TrackItem(it, trackHeight)
                     }
                 }
             }
@@ -73,7 +83,6 @@ fun Playlist() {
                 var contentWidth by remember { mutableStateOf(0.dp) }
                 var cursorOffsetY by remember { mutableStateOf(0.dp) }
                 val localDensity = LocalDensity.current
-                val trackHeight = 70.dp
                 Box(Modifier.weight(1f).onGloballyPositioned {
                     with(localDensity) {
                         contentWidth = it.size.width.toDp()
@@ -81,7 +90,9 @@ fun Playlist() {
                     }
                 }) {
                     val appBarHeight = with (localDensity) { APP_BAR_FULL_HEIGHT.toPx() }
-                    EditorGrid(noteWidth, horizontalScroll, (appBarHeight - playlistVerticalScrollState.value).coerceAtLeast(0f))
+                    val topPaddingHeight = (appBarHeight - playlistVerticalScrollState.value).coerceAtLeast(0f)
+                    val topPaddingHeightInDp = with (localDensity) { topPaddingHeight.toDp() }
+                    EditorGrid(noteWidth, horizontalScroll, topPaddingHeight)
                     Column(Modifier.horizontalScroll(horizontalScroll).verticalScroll(playlistVerticalScrollState)
                         .width(10000.dp).padding(top = APP_BAR_FULL_HEIGHT)) {
                         Divider()
@@ -89,7 +100,9 @@ fun Playlist() {
                             key(it.uuid) { TrackContent(trackHeight, it, noteWidth) }
                         }
                     }
-                    PlayHead(noteWidth, horizontalScroll, contentWidth, cursorOffsetY = cursorOffsetY)
+                    Box(Modifier.padding(top = topPaddingHeightInDp)) {
+                        PlayHead(noteWidth, horizontalScroll, contentWidth, cursorOffsetY = cursorOffsetY)
+                    }
                 }
                 Timeline(Modifier.zIndex(3f), noteWidth, horizontalScroll)
             }

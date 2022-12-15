@@ -8,7 +8,7 @@ import cn.apisium.eim.api.CurrentPosition
 import cn.apisium.eim.api.Track
 import cn.apisium.eim.api.processor.AbstractAudioProcessor
 import cn.apisium.eim.api.processor.AudioProcessor
-import cn.apisium.eim.api.processor.LevelPeakImpl
+import cn.apisium.eim.api.processor.LevelMeterImpl
 import cn.apisium.eim.api.processor.dsp.calcPanLeftChannel
 import cn.apisium.eim.api.processor.dsp.calcPanRightChannel
 import cn.apisium.eim.data.midi.MidiEvent
@@ -25,7 +25,7 @@ open class TrackImpl(
     override var volume by mutableStateOf(1F)
     override var color by mutableStateOf(randomColor())
 
-    override val levelPeak = LevelPeakImpl()
+    override val levelMeter = LevelMeterImpl()
     override val notes: MutableList<NoteMessage> = mutableStateListOf()
 
     override val preProcessorsChain = arrayListOf<AudioProcessor>()
@@ -72,18 +72,20 @@ open class TrackImpl(
         preProcessorsChain.forEach { it.processBlock(buffers, position, midiBuffer) }
         subTracks.forEach { it.processBlock(buffers, position, ArrayList(midiBuffer)) }
         postProcessorsChain.forEach { it.processBlock(buffers, position, midiBuffer) }
-        levelPeak.left = 0F
-        levelPeak.right = 0F
+        var leftPeak = 0F
+        var rightPeak = 0F
         for (i in buffers[0].indices) {
             buffers[0][i] *= calcPanLeftChannel() * volume
             val tmp = buffers[0][i]
-            if (tmp > levelPeak.left) levelPeak.left = tmp
+            if (tmp > leftPeak) leftPeak = tmp
         }
         for (i in buffers[1].indices) {
             buffers[1][i] *= calcPanRightChannel() * volume
             val tmp = buffers[1][i]
-            if (tmp > levelPeak.right) levelPeak.right = tmp
+            if (tmp > rightPeak) rightPeak = tmp
         }
+        levelMeter.left = levelMeter.left.update(leftPeak)
+        levelMeter.right = levelMeter.right.update(rightPeak)
     }
 
     override fun prepareToPlay() {

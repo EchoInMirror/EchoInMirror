@@ -35,7 +35,6 @@ fun Keyboard(
     whiteKeyColor: Color = MaterialTheme.colorScheme.background,
     backKeyColor: Color = MaterialTheme.colorScheme.secondary
 ) {
-    println(whiteKeyColor)
     Column(modifier.width(keyWidth)) {
         for (i in 131 downTo 0) {
             val name = KEY_NAMES[i % 12]

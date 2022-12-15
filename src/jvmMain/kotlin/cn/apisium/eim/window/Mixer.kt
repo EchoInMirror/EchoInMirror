@@ -27,7 +27,6 @@ import cn.apisium.eim.components.Marquee
 import cn.apisium.eim.components.silder.DefaultTrack
 import cn.apisium.eim.components.silder.Slider
 import cn.apisium.eim.utils.toOnSurfaceColor
-import kotlin.math.log10
 import kotlin.math.pow
 import kotlin.math.sqrt
 
@@ -92,8 +91,7 @@ private fun MixerTrack(track: Track, index: Int, isRound: Boolean = false, rende
                         }
                         Gap(7)
                         Text(
-                            (log10(track.levelPeak.left.coerceAtLeast(track.levelPeak.right)) * 20)
-                                .let { if (it.isInfinite()) "-inf" else if (it > -0.01 && it < 0.01) "0.00" else "%.2f".format(it) },
+                            track.levelMeter.maxLevel.toString(),
                             fontSize = MaterialTheme.typography.labelMedium.fontSize,
                             letterSpacing = (-1).sp,
                             lineHeight = 12.sp
@@ -125,7 +123,7 @@ private fun MixerTrack(track: Track, index: Int, isRound: Boolean = false, rende
                             }
                         )
                         Gap(18)
-                        Level(track.levelPeak, Modifier.height(136.dp))
+                        Level(track.levelMeter, Modifier.height(136.dp))
                     }
                 }
 

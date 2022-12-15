@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.Dp
 import java.util.*
 
 fun lerp(start: Float, stop: Float, fraction: Float) = (1 - fraction) * start + fraction * stop
+fun mapValue(value: Float, start1: Float, stop1: Float) = ((value - start1) / (stop1 - start1)).coerceIn(0f, 1f)
 
 fun randomUUID() = UUID.randomUUID().mostSignificantBits and Long.MAX_VALUE
 
