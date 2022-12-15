@@ -1,4 +1,4 @@
-# Echo In Mirror
+# Echo In Mirror ![Lines of code](https://img.shields.io/tokei/lines/github/EchoInMirror/EchoInMirror)
 
 ## Build
 
