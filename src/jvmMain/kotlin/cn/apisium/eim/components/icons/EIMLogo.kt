@@ -1,4 +1,4 @@
-package cn.apisium.eim.icons
+package cn.apisium.eim.components.icons
 
 import androidx.compose.material.icons.materialIcon
 import androidx.compose.material.icons.materialPath

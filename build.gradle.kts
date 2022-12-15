@@ -84,7 +84,7 @@ tasks.withType<GradleBuild> {
 }
 
 tasks.withType<KotlinCompile>().configureEach {
-    kotlinOptions.languageVersion = "1.9"
+    kotlinOptions.languageVersion = "1.8"
 }
 
 tasks.withType<Jar> {

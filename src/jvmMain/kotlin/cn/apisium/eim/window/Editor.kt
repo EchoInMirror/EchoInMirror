@@ -77,8 +77,9 @@ fun NotesEditorCanvas(
                 val isPlayingNote = isPlaying && it.time <= currentPPQ && it.time + it.duration >= currentPPQ
                 drawRoundRect(
                     if (isPlayingNote) invertsColor else track.color,
-                    Offset(x, y),
-                    Size(it.duration * noteWidthPx, noteHeightPx),
+                    Offset(x, y.coerceAtLeast(0F)),
+                    Size(it.duration * noteWidthPx, if (y < 0)
+                            (noteHeightPx + y).coerceAtLeast(0F) else noteHeightPx),
                     CornerRadius(2f)
                 )
             }

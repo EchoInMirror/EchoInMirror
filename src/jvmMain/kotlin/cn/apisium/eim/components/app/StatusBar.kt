@@ -15,7 +15,7 @@ import androidx.compose.ui.unit.dp
 import cn.apisium.eim.utils.Border
 import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.utils.border
-import cn.apisium.eim.icons.MetronomeTick
+import cn.apisium.eim.components.icons.MetronomeTick
 
 @Composable
 fun StatusBarItem(id: String, icon: ImageVector? = null, modifier: Modifier = Modifier, onClick: (() -> Unit)? = null, child: (@Composable () -> Unit)? = null) {

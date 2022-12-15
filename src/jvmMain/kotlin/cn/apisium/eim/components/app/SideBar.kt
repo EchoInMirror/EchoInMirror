@@ -23,7 +23,7 @@ import cn.apisium.eim.api.window.Panel
 import cn.apisium.eim.api.window.PanelDirection
 import cn.apisium.eim.utils.border
 import cn.apisium.eim.components.splitpane.SplitPaneState
-import cn.apisium.eim.icons.EIMLogo
+import cn.apisium.eim.components.icons.EIMLogo
 import cn.apisium.eim.impl.WindowManagerImpl
 
 //    SideBarItem("Favorite", "收藏") { Icon(Icons.Default.Favorite, "Favorite") },
