@@ -14,6 +14,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.dp
 import cn.apisium.eim.utils.Border
 import cn.apisium.eim.EchoInMirror
@@ -89,8 +91,12 @@ internal val bottomBarHeightState = object : SplitPaneState(100F) {
 }
 
 @Composable
-fun sideBar() {
-    Surface(tonalElevation = 2.dp) {
+internal fun SideBar() {
+    val lineColor = MaterialTheme.colorScheme.surfaceVariant
+    Surface(Modifier.drawWithContent {
+        drawContent()
+        drawLine(lineColor, Offset(size.width - 0.3f, 0F), Offset(size.width - 0.3f, size.height), 0.6f)
+    }, tonalElevation = 2.dp) {
         NavigationRail {
             NavigationRailItem(
                 icon = { Icon(EIMLogo, "QuickLand") },
@@ -144,7 +150,7 @@ fun sideBar() {
 val contentWindowColor @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant.copy(0.2F)
 
 @Composable
-fun sideBarContent() {
+internal fun SideBarContent() {
     Surface(
         tonalElevation = 2.dp,
         shadowElevation = 2.dp,

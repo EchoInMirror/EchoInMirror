@@ -7,18 +7,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import cn.apisium.eim.utils.Border
-import cn.apisium.eim.utils.border
 
 @Composable
-fun bottomBarContent() {
-    Surface(
-        tonalElevation = 2.dp,
-        shadowElevation = 2.dp
-    ) {
-        Box(Modifier.fillMaxSize().border(start = Border(0.6.dp, contentWindowColor))) {
-            bottomBarSelectedItem?.content()
-        }
+internal fun bottomBarContent() {
+    Surface(tonalElevation = 1.dp, shadowElevation = 2.dp) {
+        bottomBarSelectedItem?.content()
     }
 }
 

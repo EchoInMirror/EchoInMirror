@@ -81,7 +81,7 @@ class JvmAudioPlayer(currentPosition: CurrentPosition, processor: AudioProcessor
                     }
                 }
             }
-            sdl!!.write(outputBuffer, 0, outputBuffer.size)
+            sdl?.write(outputBuffer, 0, outputBuffer.size)
 
             if (currentPosition.isPlaying) {
                 currentPosition.update(currentPosition.timeInSamples + bufferSize)

@@ -31,7 +31,7 @@ fun StatusBarItem(id: String, icon: ImageVector? = null, modifier: Modifier = Mo
 }
 
 @Composable
-fun statusBar() {
+internal fun StatusBar() {
     Surface(tonalElevation = 2.dp) {
         val border = Border(0.6.dp, MaterialTheme.colorScheme.onSurfaceVariant.copy(0.2F))
         Row(modifier = Modifier.height(24.dp).fillMaxWidth().border(top = border, start = if (sideBarSelectedItem == null) null else border)) {

@@ -22,6 +22,9 @@ import cn.apisium.eim.components.splitpane.HorizontalSplitPane
 import cn.apisium.eim.components.splitpane.VerticalSplitPane
 import cn.apisium.eim.impl.CommandManagerImpl
 import cn.apisium.eim.impl.WindowManagerImpl
+import cn.apisium.eim.utils.Border
+import cn.apisium.eim.utils.border
+import cn.apisium.eim.window.Playlist
 import org.jetbrains.skiko.Cursor
 
 @Composable
@@ -56,23 +59,27 @@ fun eimApp() {
                 false
             }) {
                 Row {
-                    sideBar()
+                    SideBar()
                     Scaffold(
-                        topBar = { eimAppBar() },
+                        topBar = { EimAppBar() },
                         content = {
                             Column {
                                 Box(Modifier.weight(1F)) {
                                     HorizontalSplitPane(splitPaneState = sideBarWidthState) {
-                                        first(0.dp) { sideBarContent() }
+                                        first(0.dp) { SideBarContent() }
                                         second(400.dp) {
                                             VerticalSplitPane(splitPaneState = bottomBarHeightState) {
-                                                first(200.dp) { playList() }
+                                                first(200.dp) {
+                                                    Box(Modifier.fillMaxSize().border(start = Border(0.6.dp, contentWindowColor))) {
+                                                        Playlist()
+                                                    }
+                                                }
                                                 second(0.dp) { bottomBarContent() }
                                             }
                                         }
                                     }
                                 }
-                                statusBar()
+                                StatusBar()
                             }
                         }
                     )

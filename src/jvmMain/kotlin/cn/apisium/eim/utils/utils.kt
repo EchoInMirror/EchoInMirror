@@ -1,5 +1,9 @@
 package cn.apisium.eim.utils
 
+import androidx.compose.material3.LocalAbsoluteTonalElevation
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.surfaceColorAtElevation
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -14,6 +18,9 @@ fun lerp(start: Float, stop: Float, fraction: Float) = (1 - fraction) * start + 
 fun randomUUID() = UUID.randomUUID().mostSignificantBits and Long.MAX_VALUE
 
 data class Border(val strokeWidth: Dp, val color: Color)
+
+@Composable
+fun getSurfaceColor(elevation: Dp) = MaterialTheme.colorScheme.surfaceColorAtElevation(LocalAbsoluteTonalElevation.current + elevation)
 
 @Stable
 fun Modifier.border(

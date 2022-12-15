@@ -31,7 +31,7 @@ private val BOTTOM = ParagraphStyle(lineHeight = 16.sp, lineHeightStyle = LineHe
 @OptIn(ExperimentalTextApi::class)
 @Composable
 fun Timeline(modifier: Modifier = Modifier, noteWidth: Dp, scrollState: ScrollState, offsetX: Dp = 0.dp) {
-    Surface(modifier.height(18.dp).fillMaxWidth().zIndex(2F), shadowElevation = 5.dp) {
+    Surface(modifier.height(18.dp).fillMaxWidth().zIndex(2F), shadowElevation = 5.dp, tonalElevation = 1.dp) {
         val outlineColor = MaterialTheme.colorScheme.outlineVariant
         val textMeasure = rememberTextMeasurer()
         val boldText = SpanStyle(fontWeight = FontWeight.Bold, fontSize = MaterialTheme.typography.labelLarge.fontSize)
@@ -67,12 +67,14 @@ fun Timeline(modifier: Modifier = Modifier, noteWidth: Dp, scrollState: ScrollSt
 }
 
 @Composable
-fun PlayHead(noteWidth: Dp, scrollState: ScrollState, width: Dp? = null, offsetX: Dp = 0.dp, color: Color = MaterialTheme.colorScheme.onBackground) {
+fun PlayHead(noteWidth: Dp, scrollState: ScrollState, width: Dp? = null, offsetX: Dp = 0.dp,
+             cursorOffsetY: Dp? = null, color: Color = MaterialTheme.colorScheme.onBackground) {
     val currentPosition = EchoInMirror.currentPosition.ppqPosition * EchoInMirror.currentPosition.ppq
     var playHeadPosition = noteWidth * currentPosition.toFloat() - scrollState.value.dp
     if (playHeadPosition.value < 0 || (width != null && playHeadPosition > width)) return
     playHeadPosition += offsetX
-    Icon(Icons.Default.PlayArrow, null, Modifier.size(17.dp).offset(playHeadPosition - 8.dp, (-6).dp)
-        .rotate(90F), tint = color)
+    Icon(Icons.Default.PlayArrow, null, Modifier.size(17.dp)
+        .offset(playHeadPosition - 8.dp, if (cursorOffsetY == null) (-6).dp else cursorOffsetY - 11.dp)
+        .rotate(if (cursorOffsetY == null) 90F else -90F), tint = color)
     Box(Modifier.fillMaxHeight().width(1.dp).offset(playHeadPosition).background(color))
 }

@@ -27,9 +27,9 @@ open class ProcessAudioProcessorImpl(
     private var outputStream: EIMOutputStream? = null
 
     override suspend fun processBlock(buffers: Array<FloatArray>, position: CurrentPosition, midiBuffer: ArrayList<Int>) {
-        if (!isLaunched) return
+        val output = outputStream
+        if (!isLaunched || output == null) return
         withContext(Dispatchers.IO) {
-            val output = outputStream!!
             output.write(1)
             output.writeBoolean(position.isPlaying)
             output.writeDouble(position.bpm)

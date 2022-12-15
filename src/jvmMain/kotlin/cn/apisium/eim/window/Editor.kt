@@ -11,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -23,38 +24,31 @@ import androidx.compose.ui.zIndex
 import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.api.window.Panel
 import cn.apisium.eim.api.window.PanelDirection
-import cn.apisium.eim.components.Keyboard
-import cn.apisium.eim.components.PlayHead
-import cn.apisium.eim.components.Timeline
+import cn.apisium.eim.components.*
 import cn.apisium.eim.components.splitpane.VerticalSplitPane
 import cn.apisium.eim.components.splitpane.rememberSplitPaneState
 import cn.apisium.eim.data.midi.noteOff
 import cn.apisium.eim.data.midi.noteOn
+import cn.apisium.eim.utils.getSurfaceColor
 import cn.apisium.eim.utils.inverts
 
 @Composable
-private fun NotesEditorCanvas(
-    modifier: Modifier,
+fun NotesEditorCanvas(
     noteHeight: Dp,
     noteWidth: Dp,
     verticalScrollState: ScrollState,
-    horizontalScrollState: ScrollState
+    horizontalScrollState: ScrollState,
+    modifier: Modifier = Modifier
 ) {
-    val outlineColor = MaterialTheme.colorScheme.surfaceVariant
-    val barsOutlineColor = MaterialTheme.colorScheme.outlineVariant
     val highlightNoteColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.03F)
-    val timeSigDenominator = EchoInMirror.currentPosition.timeSigDenominator
-    val timeSigNumerator = EchoInMirror.currentPosition.timeSigNumerator
-    val ppq = EchoInMirror.currentPosition.ppq
-    Canvas(modifier.scrollable(verticalScrollState, Orientation.Vertical, reverseDirection = true)) {
-        val noteHeightPx = noteHeight.toPx()
-        val noteWidthPx = noteWidth.toPx()
+    val outlineColor = MaterialTheme.colorScheme.surfaceVariant
+    EditorGrid(noteWidth, horizontalScrollState, modifier = modifier.scrollable(verticalScrollState, Orientation.Vertical, reverseDirection = true)) {
         val verticalScrollValue = verticalScrollState.value
         val horizontalScrollValue = horizontalScrollState.value
-        val startYNote = (verticalScrollValue / noteHeightPx).toInt()
-        val endYNote = ((verticalScrollValue + size.height) / noteHeightPx).toInt()
-        val beatsWidth = noteWidthPx * ppq
-        for (i in startYNote..endYNote) {
+        val noteHeightPx = noteHeight.toPx()
+        val noteWidthPx = noteWidth.toPx()
+
+        for (i in (verticalScrollValue / noteHeightPx).toInt()..((verticalScrollValue + size.height) / noteHeightPx).toInt()) {
             val y = i * noteHeightPx - verticalScrollValue
             if (y < 0) continue
             drawLine(
@@ -63,25 +57,13 @@ private fun NotesEditorCanvas(
                 end = Offset(size.width, y),
                 strokeWidth = 1F
             )
-            if (cn.apisium.eim.components.scales[i % 12]) {
+            if (scales[i % 12]) {
                 drawRect(
                     color = highlightNoteColor,
                     topLeft = Offset(0f, y),
                     size = Size(size.width, noteHeightPx)
                 )
             }
-        }
-        val drawBeats = noteWidthPx > 0.1F
-        val horizontalDrawWidth = if (drawBeats) beatsWidth else beatsWidth * timeSigNumerator
-        val highlightWidth = if (drawBeats) timeSigDenominator else timeSigDenominator * timeSigNumerator
-        for (i in (horizontalScrollValue / horizontalDrawWidth).toInt()..((horizontalScrollValue + size.width) / horizontalDrawWidth).toInt()) {
-            val x = i * horizontalDrawWidth - horizontalScrollState.value
-            drawLine(
-                color = if (i % highlightWidth == 0) barsOutlineColor else outlineColor,
-                start = Offset(x, 0f),
-                end = Offset(x, size.height),
-                strokeWidth = 1F
-            )
         }
 
         EchoInMirror.selectedTrack?.let { track ->
@@ -114,7 +96,13 @@ private fun editorContent(horizontalScrollState: ScrollState) {
             Column(Modifier.fillMaxSize()) {
                 val localDensity = LocalDensity.current
                 var contentWidth by remember { mutableStateOf(0.dp) }
-                Timeline(Modifier.zIndex(3F), noteWidth, horizontalScrollState, 68.dp)
+                val surfaceColor = getSurfaceColor(1.dp)
+                Box(Modifier.drawWithContent {
+                    drawContent()
+                    drawRect(surfaceColor, Offset(0f, -8f), Size(size.width, 8F))
+                }) {
+                    Timeline(Modifier.zIndex(3F), noteWidth, horizontalScrollState, 68.dp)
+                }
                 Box(Modifier.weight(1F).onGloballyPositioned { with(localDensity) { contentWidth = it.size.width.toDp() } }) {
                     Row(Modifier.fillMaxSize().zIndex(-1F)) {
                         Surface(Modifier.verticalScroll(verticalScrollState).zIndex(5f), shadowElevation = 4.dp) {
@@ -125,11 +113,11 @@ private fun editorContent(horizontalScrollState: ScrollState) {
                             )
                         }
                         NotesEditorCanvas(
-                            Modifier.weight(1F).fillMaxHeight().background(MaterialTheme.colorScheme.background),
                             noteHeight,
                             noteWidth,
                             verticalScrollState,
-                            horizontalScrollState
+                            horizontalScrollState,
+                            Modifier.weight(1F).fillMaxHeight().background(MaterialTheme.colorScheme.background)
                         )
                     }
                     PlayHead(noteWidth, horizontalScrollState, contentWidth, 68.dp)
