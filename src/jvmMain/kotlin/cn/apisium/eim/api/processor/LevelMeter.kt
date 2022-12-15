@@ -9,7 +9,7 @@ import kotlin.math.sqrt
 
 @JvmInline
 @Suppress("unused")
-value class Level(val value: Float) {
+value class Level(val value: Float = 0F) {
     override fun toString() = toDB().let { if (it.isInfinite()) "-inf" else if (it > -0.01 && it < 0.01) "0.00" else "%.2f".format(it) }
     @Suppress("MemberVisibilityCanBePrivate")
     fun toDB() = 20 * log10(value)
@@ -55,9 +55,11 @@ interface LevelMeter {
     val center get() = (left + right) / 2F
     val side get() = left - right
     val maxLevel get() = left.coerceAtLeast(right)
+    val cachedMaxLevelString: String
 }
 
 class LevelMeterImpl : LevelMeter {
     override var left by mutableStateOf(Level(0F))
     override var right by mutableStateOf(Level(0F))
+    override var cachedMaxLevelString by mutableStateOf("-inf")
 }

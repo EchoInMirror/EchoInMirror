@@ -91,7 +91,7 @@ private fun MixerTrack(track: Track, index: Int, isRound: Boolean = false, rende
                         }
                         Gap(7)
                         Text(
-                            track.levelMeter.maxLevel.toString(),
+                            track.levelMeter.cachedMaxLevelString,
                             fontSize = MaterialTheme.typography.labelMedium.fontSize,
                             letterSpacing = (-1).sp,
                             lineHeight = 12.sp

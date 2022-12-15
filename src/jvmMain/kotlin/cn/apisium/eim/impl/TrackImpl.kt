@@ -35,6 +35,7 @@ open class TrackImpl(
     private var currentPlayedIndex = 0
     private val pendingNoteOns = LongArray(128)
     private val noteRecorder = MidiNoteRecorder()
+    private var lastUpdateTime = 0L
 
     override suspend fun processBlock(buffers: Array<FloatArray>, position: CurrentPosition, midiBuffer: ArrayList<Int>) {
         if (pendingMidiBuffer.isNotEmpty()) {
@@ -86,6 +87,11 @@ open class TrackImpl(
         }
         levelMeter.left = levelMeter.left.update(leftPeak)
         levelMeter.right = levelMeter.right.update(rightPeak)
+        lastUpdateTime += (1000.0 * position.bufferSize / position.sampleRate).toLong()
+        if (lastUpdateTime > 300) {
+            levelMeter.cachedMaxLevelString = levelMeter.maxLevel.toString()
+            lastUpdateTime = 0
+        }
     }
 
     override fun prepareToPlay() {
