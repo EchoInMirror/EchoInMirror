@@ -21,9 +21,9 @@ open class TrackImpl(
     trackName: String
 ) : Track, AbstractAudioProcessor() {
     override var name by mutableStateOf(trackName)
+    override var color by mutableStateOf(randomColor(true))
     override var pan by mutableStateOf(0F)
     override var volume by mutableStateOf(1F)
-    override var color by mutableStateOf(randomColor())
 
     override val levelMeter = LevelMeterImpl()
     override val notes: MutableList<NoteMessage> = mutableStateListOf()
@@ -37,7 +37,31 @@ open class TrackImpl(
     private val noteRecorder = MidiNoteRecorder()
     private var lastUpdateTime = 0L
 
+    private var _isMute by mutableStateOf(false)
+    private var _isSolo by mutableStateOf(false)
+    private var _isDisabled by mutableStateOf(false)
+
+    override var isMute get() = _isMute
+        set(value) {
+            if (_isMute == value) return
+            _isMute = value
+            stateChange()
+        }
+    override var isSolo get() = _isSolo
+        set(value) {
+            if (_isSolo == value) return
+            _isSolo = value
+            stateChange()
+        }
+    override var isDisabled get() = _isDisabled
+        set(value) {
+            if (_isDisabled == value) return
+            _isDisabled = value
+            stateChange()
+        }
+
     override suspend fun processBlock(buffers: Array<FloatArray>, position: CurrentPosition, midiBuffer: ArrayList<Int>) {
+        if (_isMute || _isDisabled) return
         if (pendingMidiBuffer.isNotEmpty()) {
             midiBuffer.addAll(pendingMidiBuffer)
             pendingMidiBuffer.clear()
@@ -71,7 +95,7 @@ open class TrackImpl(
             }
         }
         preProcessorsChain.forEach { it.processBlock(buffers, position, midiBuffer) }
-        subTracks.forEach { it.processBlock(buffers, position, ArrayList(midiBuffer)) }
+        subTracks.forEach { if (!it.isMute && !it.isDisabled) it.processBlock(buffers, position, ArrayList(midiBuffer)) }
         postProcessorsChain.forEach { it.processBlock(buffers, position, midiBuffer) }
         var leftPeak = 0F
         var rightPeak = 0F
@@ -122,5 +146,10 @@ open class TrackImpl(
         preProcessorsChain.forEach(AudioProcessor::onSuddenChange)
         subTracks.forEach(Track::onSuddenChange)
         postProcessorsChain.forEach(AudioProcessor::onSuddenChange)
+    }
+
+    override fun stateChange() {
+        levelMeter.reset()
+        subTracks.forEach(Track::stateChange)
     }
 }

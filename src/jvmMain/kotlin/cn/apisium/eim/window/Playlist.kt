@@ -3,7 +3,8 @@ package cn.apisium.eim.window
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.filled.VolumeOff
+import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -12,39 +13,59 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.api.Track
-import cn.apisium.eim.components.EditorGrid
-import cn.apisium.eim.components.PlayHead
-import cn.apisium.eim.components.Timeline
+import cn.apisium.eim.components.*
 import cn.apisium.eim.components.app.APP_BAR_FULL_HEIGHT
+import cn.apisium.eim.components.icons.Crown
+import cn.apisium.eim.components.icons.DebugStepOver
 
-@OptIn(ExperimentalMaterial3Api::class)
+private val TRACK_ITEM_ICON_SIZE = Modifier.size(16.dp)
+
 @Composable
-private fun TrackItem(track: Track, height: Dp) {
+private fun TrackItem(track: Track, height: Dp, index: Int) {
     Row(Modifier.height(height)) {
         Canvas(Modifier.fillMaxHeight().width(8.dp).background(track.color.copy(alpha = 0.5F))) {
             val y = size.height * (1F - track.levelMeter.maxLevel.toPercentage())
             drawRect(track.color, Offset(0F, y), Size(size.width, size.height - y))
         }
-        ListItem(
-            headlineText = { Text("Three line list item") },
-            overlineText = { Text("OVERLINE") },
-            supportingText = { Text("Secondary text") },
-            leadingContent = {
-                Icon(
-                    Icons.Outlined.Settings,
-                    contentDescription = null
+        Row(Modifier.padding(8.dp, 4.dp)) {
+            Text(index.toString(),
+                Modifier.width(20.dp),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1
+            )
+            Column(Modifier.fillMaxHeight(), Arrangement.SpaceBetween) {
+                Text(track.name,
+                    style = MaterialTheme.typography.labelLarge,
+                    overflow = TextOverflow.Ellipsis,
+                    maxLines = 1
                 )
-            },
-            trailingContent = { Text("meta") }
-        )
+                SegmentedButtons {
+                    SegmentedButton({ track.isMute = !track.isMute }, track.isMute, false) {
+                        Icon(if (track.isMute) Icons.Filled.VolumeOff else Icons.Filled.VolumeUp, null, TRACK_ITEM_ICON_SIZE)
+                    }
+                    SegmentedDivider()
+                    SegmentedButton({ track.isSolo = !track.isSolo }, track.isSolo, false) {
+                        Icon(Crown, null, TRACK_ITEM_ICON_SIZE)
+                    }
+                    SegmentedDivider()
+                    SegmentedButton({ track.isDisabled = !track.isDisabled }, track.isDisabled, false) {
+                        Icon(DebugStepOver, null, TRACK_ITEM_ICON_SIZE)
+                    }
+                }
+                VolumeSlider(track, Modifier.fillMaxWidth().offset((-4).dp), false)
+            }
+        }
     }
     Divider()
-    track.subTracks.forEach { key(it.uuid) { TrackItem(it, height) } }
+    track.subTracks.forEachIndexed { i, it -> key(it.uuid) { TrackItem(it, height, i + 1) } }
 }
 
 @Composable
@@ -69,9 +90,9 @@ fun Playlist() {
         Surface(Modifier.width(200.dp).fillMaxHeight().zIndex(5f), shadowElevation = 2.dp, tonalElevation = 1.dp) {
             Column(Modifier.padding(top = APP_BAR_FULL_HEIGHT).verticalScroll(playlistVerticalScrollState)) {
                 Divider()
-                EchoInMirror.bus.subTracks.forEach {
+                EchoInMirror.bus.subTracks.forEachIndexed { i, it ->
                     key(it.uuid) {
-                        TrackItem(it, trackHeight)
+                        TrackItem(it, trackHeight, i + 1)
                     }
                 }
             }

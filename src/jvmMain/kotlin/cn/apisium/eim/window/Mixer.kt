@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.VolumeOff
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -13,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -23,12 +25,11 @@ import cn.apisium.eim.api.window.PanelDirection
 import cn.apisium.eim.components.app.BottomContentScrollable
 import cn.apisium.eim.components.Gap
 import cn.apisium.eim.components.Level
+import cn.apisium.eim.components.VolumeSlider
 import cn.apisium.eim.components.Marquee
 import cn.apisium.eim.components.silder.DefaultTrack
 import cn.apisium.eim.components.silder.Slider
 import cn.apisium.eim.utils.toOnSurfaceColor
-import kotlin.math.pow
-import kotlin.math.sqrt
 
 @Composable
 private fun MixerTrack(track: Track, index: Int, isRound: Boolean = false, renderChildren: Boolean = true) {
@@ -86,15 +87,18 @@ private fun MixerTrack(track: Track, index: Int, isRound: Boolean = false, rende
                         Modifier.fillMaxWidth().padding(vertical = 4.dp),
                         horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically
                     ) {
-                        IconButton({ }, Modifier.size(20.dp)) {
-                            Icon(Icons.Default.VolumeUp, "Volume")
+                        IconButton({ track.isMute = !track.isMute }, Modifier.size(20.dp)) {
+                            if (track.isMute) Icon(Icons.Default.VolumeOff, null, tint = MaterialTheme.colorScheme.error)
+                            else Icon(Icons.Default.VolumeUp, null)
                         }
-                        Gap(7)
                         Text(
                             track.levelMeter.cachedMaxLevelString,
+                            Modifier.width(30.dp).padding(start = 2.dp),
                             fontSize = MaterialTheme.typography.labelMedium.fontSize,
+                            textAlign = TextAlign.Center,
                             letterSpacing = (-1).sp,
-                            lineHeight = 12.sp
+                            lineHeight = 12.sp,
+                            maxLines = 1
                         )
                     }
 
@@ -102,26 +106,7 @@ private fun MixerTrack(track: Track, index: Int, isRound: Boolean = false, rende
                         Modifier.fillMaxWidth().padding(bottom = 2.dp),
                         horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Slider(
-                            140 - sqrt(track.volume) * 100F,
-                            { track.volume = ((140 - it) / 100F).pow(2) },
-                            valueRange = 0f..140f,
-                            modifier = Modifier.height(150.dp),
-                            thumbSize = DpSize(14.dp, 14.dp),
-                            isVertical = true,
-                            track = { modifier, progress, interactionSource, tickFractions, enabled, isVertical ->
-                                DefaultTrack(
-                                    modifier,
-                                    progress,
-                                    interactionSource,
-                                    tickFractions,
-                                    enabled,
-                                    isVertical,
-                                    startPoint = 1f,
-                                    stroke = 3.dp
-                                )
-                            }
-                        )
+                        VolumeSlider(track)
                         Gap(18)
                         Level(track.levelMeter, Modifier.height(136.dp))
                     }

@@ -36,23 +36,21 @@ internal fun StatusBar() {
         val border = Border(0.6.dp, MaterialTheme.colorScheme.onSurfaceVariant.copy(0.2F))
         Row(modifier = Modifier.height(24.dp).fillMaxWidth().border(top = border, start = if (sideBarSelectedItem == null) null else border)) {
             if (sideBarSelectedItem == null) Surface(modifier = Modifier.fillMaxHeight().width(1.dp), tonalElevation = 5.dp) { }
-            CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurfaceVariant) {
-                ProvideTextStyle(MaterialTheme.typography.labelSmall) {
-                    CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurfaceVariant) {
-                        StatusBarItem("Settings", Icons.Default.Settings, onClick = { EchoInMirror.windowManager.settingsDialogOpen = true })
-                        StatusBarItem("Project", Icons.Default.Folder) {
-                            Text("临时工程")
-                        }
-                        StatusBarItem("TimeCost", Icons.Default.EventNote) {
-                            Text("大约19小时")
-                        }
-                        Box(Modifier.weight(2F))
-                        StatusBarItem("Pai", MetronomeTick) {
-                            Text("${EchoInMirror.currentPosition.timeSigNumerator}/${EchoInMirror.currentPosition.timeSigDenominator}")
-                        }
-                        StatusBarItem("BPM") {
-                            Text("%.2f".format(EchoInMirror.currentPosition.bpm))
-                        }
+            ProvideTextStyle(MaterialTheme.typography.labelSmall) {
+                CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurfaceVariant) {
+                    StatusBarItem("Settings", Icons.Default.Settings, onClick = { EchoInMirror.windowManager.settingsDialogOpen = true })
+                    StatusBarItem("Project", Icons.Default.Folder) {
+                        Text("临时工程")
+                    }
+                    StatusBarItem("TimeCost", Icons.Default.EventNote) {
+                        Text("大约19小时")
+                    }
+                    Box(Modifier.weight(2F))
+                    StatusBarItem("Pai", MetronomeTick) {
+                        Text("${EchoInMirror.currentPosition.timeSigNumerator}/${EchoInMirror.currentPosition.timeSigDenominator}")
+                    }
+                    StatusBarItem("BPM") {
+                        Text("%.2f".format(EchoInMirror.currentPosition.bpm))
                     }
                 }
             }
