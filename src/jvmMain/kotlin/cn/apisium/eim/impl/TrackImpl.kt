@@ -85,8 +85,9 @@ open class TrackImpl(
                 currentPlayedIndex = i + 1
                 midiBuffer.add(note.note.rawData)
                 midiBuffer.add((startTimeInSamples - position.timeInSamples).toInt().coerceAtLeast(0))
-                if (endTimeInSamples < position.timeInSamples || endTimeInSamples > blockEndSample) {
-                    pendingNoteOns[note.note.note] = endTimeInSamples
+                val endTime = endTimeInSamples - position.timeInSamples
+                if (endTimeInSamples > blockEndSample) {
+                    pendingNoteOns[note.note.note] = endTime
                     noteRecorder.markNote(note.note.note)
                 } else {
                     midiBuffer.add(note.note.toNoteOff().rawData)

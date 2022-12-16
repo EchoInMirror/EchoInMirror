@@ -21,6 +21,16 @@ class EIMInputStream(private val isBigEndian: Boolean, stream: InputStream): Buf
 
 class EIMOutputStream(private val isBigEndian: Boolean, stream: OutputStream): BufferedOutputStream(stream) {
     private val writeBuffer = ByteArray(8)
+    fun writeShort(value: Short) {
+        if (isBigEndian) {
+            writeBuffer[0] = (value.toInt() ushr 8).toByte()
+            writeBuffer[1] = value.toByte()
+        } else {
+            writeBuffer[1] = (value.toInt() ushr 8).toByte()
+            writeBuffer[0] = value.toByte()
+        }
+        write(writeBuffer, 0, 2)
+    }
     fun writeInt(value: Int) {
         if (isBigEndian) {
             writeBuffer[0] = (value ushr 24).toByte()

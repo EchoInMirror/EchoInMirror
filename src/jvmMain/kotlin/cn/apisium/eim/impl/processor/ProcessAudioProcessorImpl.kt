@@ -38,8 +38,11 @@ open class ProcessAudioProcessorImpl(
             val outputChannels = outputChannelsCount.coerceAtMost(buffers.size)
             output.write(inputChannels)
             output.write(outputChannels)
+            output.writeShort((midiBuffer.size / 2).toShort())
             for (i in 0 until inputChannels) buffers[i].forEach(output::writeFloat)
+            midiBuffer.forEach(output::writeInt)
             output.flush()
+            midiBuffer.clear()
 
             val input = inputStream!!
             input.read()

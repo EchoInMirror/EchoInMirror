@@ -1,18 +1,16 @@
 package cn.apisium.eim
 
-import cn.apisium.eim.api.processor.NativeAudioPluginDescription
 import cn.apisium.eim.components.app.eimApp
 import cn.apisium.eim.data.midi.getMidiEvents
 import cn.apisium.eim.data.midi.getNoteMessages
 import cn.apisium.eim.impl.TrackImpl
 import cn.apisium.eim.impl.processor.NativeAudioPluginImpl
+import cn.apisium.eim.impl.processor.nativeAudioPluginManager
 import cn.apisium.eim.processor.synthesizer.KarplusStrongSynthesizer
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.json.Json
 import java.io.File
-import java.nio.file.Files
-import java.nio.file.Paths
 import javax.sound.midi.MidiSystem
 import javax.swing.UIManager
 
@@ -34,13 +32,21 @@ fun main() {
     EchoInMirror.player.open(EchoInMirror.currentPosition.sampleRate, EchoInMirror.currentPosition.bufferSize, 2)
 
     Thread {
-        Thread.sleep(2000)
-        val plugin = NativeAudioPluginImpl(Json.decodeFromString(NativeAudioPluginDescription.serializer(), Files.readString(
-            Paths.get("plugin.json"))))
         runBlocking {
-            launch { plugin.launch() }
+            launch {
+                delay(2000)
+                var proQ: NativeAudioPluginImpl? = null
+                var spire: NativeAudioPluginImpl? = null
+                EchoInMirror.audioProcessorManager.nativeAudioPluginManager.descriptions.forEach {
+                    if (it.name == "FabFilter Pro-Q 3") proQ = NativeAudioPluginImpl(it)
+                    if (it.name == "Spire-1.5") spire = NativeAudioPluginImpl(it)
+                }
+                proQ!!.launch()
+                spire!!.launch()
+                track.postProcessorsChain.add(spire!!)
+                track.postProcessorsChain.add(proQ!!)
+            }
         }
-        track.postProcessorsChain.add(plugin)
     }.start()
 
     eimApp()

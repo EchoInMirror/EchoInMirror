@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import cn.apisium.eim.Configuration
 import cn.apisium.eim.ROOT_PATH
+import cn.apisium.eim.api.processor.AudioProcessorDescription
 import cn.apisium.eim.api.processor.NativeAudioPlugin
 import cn.apisium.eim.api.processor.NativeAudioPluginDescription
 import cn.apisium.eim.api.processor.NativeAudioPluginFactory
@@ -21,7 +22,6 @@ import org.apache.commons.lang3.SystemUtils
 import org.slf4j.LoggerFactory
 import java.nio.file.FileVisitResult
 import java.nio.file.Files
-import java.nio.file.Path
 import kotlin.io.path.*
 
 class NativeAudioPluginImpl(
@@ -34,15 +34,16 @@ private val NATIVE_AUDIO_PLUGIN_CONFIG = ROOT_PATH.resolve("nativeAudioPlugin.js
 
 @Serializable
 private data class NativeAudioPluginFactoryData(
-    val pluginDescriptions: MutableMap<String, NativeAudioPluginDescription>,
-    val scanPaths: MutableSet<String>,
-    val skipList: MutableSet<String>
+    val descriptions: Set<NativeAudioPluginDescription>,
+    val scanPaths: Set<String>,
+    val skipList: Set<String>
 )
 
 class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
     private val logger = LoggerFactory.getLogger(NativeAudioPluginFactoryImpl::class.java)
     override val name = "NativeAudioPluginFactory"
-    override val pluginDescriptions = mutableStateMapOf<String, NativeAudioPluginDescription>()
+
+    override val descriptions = mutableSetOf<NativeAudioPluginDescription>()
     override val scanPaths = mutableStateSetOf<String>()
     override val skipList = mutableStateSetOf<String>()
     override lateinit var pluginExtensions: Set<String>
@@ -54,7 +55,7 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
         if (NATIVE_AUDIO_PLUGIN_CONFIG.toFile().exists()) {
             val json = NATIVE_AUDIO_PLUGIN_CONFIG.toFile().readText()
             val data = Json.decodeFromString(NativeAudioPluginFactoryData.serializer(), json)
-            pluginDescriptions.putAll(data.pluginDescriptions)
+            descriptions.addAll(data.descriptions)
             scanPaths.addAll(data.scanPaths)
             skipList.addAll(data.skipList)
         } else {
@@ -80,7 +81,7 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
         val pluginList : MutableList<String> = mutableListOf()
         val scanned = hashSetOf<String>()
         scanned.addAll(skipList)
-        pluginDescriptions.forEach { (_, it) -> scanned.add(it.fileOrIdentifier) }
+        descriptions.forEach { scanned.add(it.identifier) }
         val scanVisitor = fileVisitor {
             onPreVisitDirectory { directory, _ ->
                 if (directory.name.startsWith(".")) {
@@ -119,9 +120,8 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
                         try {
                             result = process.inputStream.readAllBytes().decodeToString()
                                 .substringAfter("\$EIMHostScanner{{").substringBeforeLast("}}EIMHostScanner\$")
-                            Json.decodeFromString<List<NativeAudioPluginDescription>>(result).forEach {
-                                pluginDescriptions[it.fileOrIdentifier] = it
-                            }
+                            Json.decodeFromString<List<NativeAudioPluginDescription>>(result).forEach((descriptions::add))
+                            descriptions.distinctBy { it.identifier }
                         } catch (e: Throwable) {
                             logger.error("Failed to scan native audio plugin: $it, data: $result", e)
                             skipList.add(it)
@@ -138,12 +138,13 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
         scanningPlugins.clear()
     }
 
-    override fun createProcessor(identifier: String?, file: Path?): NativeAudioPlugin {
-        return NativeAudioPluginImpl(pluginDescriptions[identifier]!!)
+    override fun createProcessor(description: AudioProcessorDescription): NativeAudioPlugin {
+        if (description !is NativeAudioPluginDescription) throw IllegalArgumentException("description is not NativeAudioPluginDescription")
+        return NativeAudioPluginImpl(description)
     }
 
      override fun save() {
         NATIVE_AUDIO_PLUGIN_CONFIG.toFile().writeText(Json.encodeToString(NativeAudioPluginFactoryData.serializer(),
-            NativeAudioPluginFactoryData(pluginDescriptions, scanPaths, skipList)))
+            NativeAudioPluginFactoryData(descriptions, scanPaths, skipList)))
     }
 }

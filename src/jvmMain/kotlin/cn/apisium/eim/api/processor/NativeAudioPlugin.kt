@@ -6,13 +6,13 @@ import java.util.Date
 
 @Serializable
 data class NativeAudioPluginDescription(
-    val name: String,
+    override val name: String,
     val pluginFormatName: String,
-    val category: String,
-    val manufacturerName: String,
-    val version: String,
+    override val category: String,
+    override val manufacturerName: String,
+    override val version: String,
     val fileOrIdentifier: String,
-    val isInstrument: Boolean,
+    override val isInstrument: Boolean,
     @Serializable(DateAsLongSerializer::class)
     val lastFileModTime: Date,
     @Serializable(DateAsLongSerializer::class)
@@ -22,19 +22,22 @@ data class NativeAudioPluginDescription(
     val deprecatedUid: Int,
     val uniqueId: Int,
     val descriptiveName: String? = null
-)
+): AudioProcessorDescription {
+    override val identifier get() = fileOrIdentifier
+}
 
 class FailedToLoadAudioPluginException(message: String) : RuntimeException(message)
 
 interface NativeAudioPlugin: ProcessAudioProcessor {
-    val description: NativeAudioPluginDescription
+    override val description: NativeAudioPluginDescription
 }
 
 interface NativeAudioPluginFactory: AudioProcessorFactory<NativeAudioPlugin> {
-    val pluginDescriptions: Map<String, NativeAudioPluginDescription>
+    override val descriptions: Set<NativeAudioPluginDescription>
     val scanPaths: MutableSet<String>
     val skipList: MutableSet<String>
     val pluginExtensions: Set<String>
+    override fun createProcessor(description: AudioProcessorDescription): NativeAudioPlugin
     suspend fun scan()
     fun save()
 }

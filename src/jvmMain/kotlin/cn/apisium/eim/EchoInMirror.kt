@@ -14,7 +14,7 @@ import cn.apisium.eim.impl.CurrentPositionImpl
 import cn.apisium.eim.impl.TrackImpl
 import cn.apisium.eim.impl.WindowManagerImpl
 import cn.apisium.eim.impl.processor.AudioProcessorManagerImpl
-import cn.apisium.eim.impl.processor.players.JvmAudioPlayer
+import cn.apisium.eim.impl.processor.players.NativeAudioPlayer
 //import cn.apisium.eim.impl.processor.players.NativeAudioPlayer
 import cn.apisium.eim.plugin.EIMPluginManager
 import org.pf4j.PluginManager
@@ -23,9 +23,10 @@ object EchoInMirror {
     @Suppress("MemberVisibilityCanBePrivate")
     val currentPosition: CurrentPosition = CurrentPositionImpl()
     val bus: Track = TrackImpl("Bus")
-//    var player: AudioPlayer = NativeAudioPlayer(currentPosition, bus, Configuration.nativeHostPath)
-    var player: AudioPlayer = JvmAudioPlayer(currentPosition, bus)
+    var player: AudioPlayer = NativeAudioPlayer(currentPosition, bus, Configuration.nativeHostPath)
+//    var player: AudioPlayer = JvmAudioPlayer(currentPosition, bus)
 
+    @Suppress("unused")
     val pluginManager: PluginManager = EIMPluginManager()
     val windowManager: WindowManager = WindowManagerImpl()
     val audioProcessorManager: AudioProcessorManager = AudioProcessorManagerImpl()
