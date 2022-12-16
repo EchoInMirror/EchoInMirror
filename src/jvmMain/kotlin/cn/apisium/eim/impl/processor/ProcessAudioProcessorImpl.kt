@@ -62,7 +62,13 @@ open class ProcessAudioProcessorImpl(
     override suspend fun launch(): Boolean {
         if (isLaunched) return true
         return withContext(Dispatchers.IO) {
-            val pb = ProcessBuilder(execFile, *commands)
+            val args = ArrayList<String>()
+            EchoInMirror.windowManager.mainWindow.get()?.windowHandle?.let {
+                args.add("-H")
+                args.add(it.toString())
+            }
+            args.addAll(commands)
+            val pb = ProcessBuilder(execFile, *args.toTypedArray())
 
             pb.redirectError(ProcessBuilder.Redirect.INHERIT)
             val p = pb.start()
@@ -94,6 +100,8 @@ open class ProcessAudioProcessorImpl(
                 process = p
                 inputStream = input
                 outputStream = output
+
+                prepareToPlay()
                 isLaunched = true
             } catch (e: Throwable) {
                 p.destroy()

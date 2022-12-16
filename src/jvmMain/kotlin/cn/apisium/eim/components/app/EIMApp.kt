@@ -26,6 +26,7 @@ import cn.apisium.eim.utils.Border
 import cn.apisium.eim.utils.border
 import cn.apisium.eim.window.Playlist
 import org.jetbrains.skiko.Cursor
+import java.lang.ref.WeakReference
 
 @Composable
 fun checkSampleRateAndBufferSize() {
@@ -58,6 +59,7 @@ fun eimApp() {
                 (EchoInMirror.commandManager as CommandManagerImpl).commands[keys]?.execute()
                 false
             }) {
+                (EchoInMirror.windowManager as WindowManagerImpl).mainWindow = WeakReference(window)
                 Row {
                     SideBar()
                     Scaffold(
@@ -85,7 +87,7 @@ fun eimApp() {
                     )
                 }
 
-                if (EchoInMirror.windowManager is WindowManagerImpl) EchoInMirror.windowManager.dialogs()
+                EchoInMirror.windowManager.dialogs()
             }
         }
     }

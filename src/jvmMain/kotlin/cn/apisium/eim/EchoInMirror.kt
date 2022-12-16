@@ -23,7 +23,7 @@ object EchoInMirror {
     @Suppress("MemberVisibilityCanBePrivate")
     val currentPosition: CurrentPosition = CurrentPositionImpl()
     val bus: Track = TrackImpl("Bus")
-//    var player: AudioPlayer = NativeAudioPlayer(currentPosition, bus, "D:\\Cpp\\EIMPluginScanner\\build\\EIMHost_artefacts\\Debug\\EIMHost.exe")
+//    var player: AudioPlayer = NativeAudioPlayer(currentPosition, bus, Configuration.nativeHostPath)
     var player: AudioPlayer = JvmAudioPlayer(currentPosition, bus)
 
     val pluginManager: PluginManager = EIMPluginManager()

@@ -8,7 +8,8 @@ val MetronomeTick: ImageVector
     get() {
         if (mtronomeTick != null) { return mtronomeTick!! }
         mtronomeTick = materialIcon(name = "EIM.MetronomeTick") {
-            materialPath {moveTo(12.00000F, 1.75000F)
+            materialPath {
+                moveTo(12.00000F, 1.75000F)
                 lineTo(8.57000F, 2.67000F)
                 lineTo(4.07000F, 19.50000F)
                 curveTo(4.06000F, 19.50000F, 4.00000F, 19.84000F, 4.00000F, 20.00000F)

@@ -4,6 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import cn.apisium.eim.Configuration
 import cn.apisium.eim.ROOT_PATH
 import cn.apisium.eim.api.processor.NativeAudioPlugin
 import cn.apisium.eim.api.processor.NativeAudioPluginDescription
@@ -25,7 +26,8 @@ import kotlin.io.path.*
 
 class NativeAudioPluginImpl(
     override val description: NativeAudioPluginDescription
-) : NativeAudioPlugin, ProcessAudioProcessorImpl("D:\\Cpp\\EIMPluginScanner\\build\\EIMHost_artefacts\\Debug\\EIMHost.exe", " -L",
+) : NativeAudioPlugin, ProcessAudioProcessorImpl(
+    Configuration.nativeHostPath, " -L",
     JsonPrimitive(Json.encodeToString(NativeAudioPluginDescription.serializer(), description)).toString())
 
 private val NATIVE_AUDIO_PLUGIN_CONFIG = ROOT_PATH.resolve("nativeAudioPlugin.json")
