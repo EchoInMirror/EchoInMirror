@@ -98,7 +98,7 @@ fun eimApp() {
                         )
                     }
 
-                    EchoInMirror.windowManager.dialogs()
+                    EchoInMirror.windowManager.Dialogs()
                 }
             }
         }

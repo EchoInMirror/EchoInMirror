@@ -56,6 +56,7 @@ internal class NativeAudioPluginSettings: SettingsTab {
         }) { Text(if (scanningJob == null) "搜索" else "取消") }
     }
 
+    @Suppress("DuplicatedCode")
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun content() {
