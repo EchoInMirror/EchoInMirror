@@ -14,7 +14,7 @@ import kotlinx.coroutines.withContext
 open class ProcessAudioProcessorImpl(
     protected val execFile: String,
     protected vararg val commands: String
-) : ProcessAudioProcessor, AbstractAudioProcessor() {
+) : ProcessAudioProcessor, AbstractAudioProcessor("ProcessAudioProcessor") {
     override var inputChannelsCount = 0
         protected set
     override var outputChannelsCount = 0

@@ -87,7 +87,11 @@ fun eimApp() {
                                                             Playlist()
                                                         }
                                                     }
-                                                    second(0.dp) { bottomBarContent() }
+                                                    second(0.dp) {
+                                                        Surface(tonalElevation = 2.dp, shadowElevation = 2.dp) {
+                                                            bottomBarSelectedItem?.content()
+                                                        }
+                                                    }
                                                 }
                                             }
                                         }

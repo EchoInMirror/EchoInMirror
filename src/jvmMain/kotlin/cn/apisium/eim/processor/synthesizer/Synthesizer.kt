@@ -4,7 +4,7 @@ import cn.apisium.eim.api.processor.AbstractAudioProcessor
 import cn.apisium.eim.data.midi.MidiEvent
 import cn.apisium.eim.data.midi.MidiNoteRecorder
 
-abstract class Synthesizer : AbstractAudioProcessor() {
+abstract class Synthesizer(name: String = "Synthesizer") : AbstractAudioProcessor(name) {
     override val inputChannelsCount = 0
     protected val noteRecorder = MidiNoteRecorder()
     protected var notesData = IntArray(128)

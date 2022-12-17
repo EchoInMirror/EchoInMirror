@@ -88,8 +88,8 @@ fun Playlist() {
     Row {
         val trackHeight = 70.dp
         Surface(Modifier.width(200.dp).fillMaxHeight().zIndex(5f), shadowElevation = 2.dp, tonalElevation = 2.dp) {
-            Column(Modifier.padding(top = APP_BAR_FULL_HEIGHT).verticalScroll(playlistVerticalScrollState)) {
-                Divider()
+            Column(Modifier.verticalScroll(playlistVerticalScrollState)) {
+                Divider(Modifier.padding(top = APP_BAR_FULL_HEIGHT))
                 EchoInMirror.bus.subTracks.forEachIndexed { i, it ->
                     key(it.uuid) {
                         TrackItem(it, trackHeight, i + 1)

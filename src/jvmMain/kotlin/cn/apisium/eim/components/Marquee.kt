@@ -1,7 +1,6 @@
 package cn.apisium.eim.components
 
 import androidx.compose.animation.core.*
-import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
@@ -12,7 +11,7 @@ import kotlinx.coroutines.isActive
 @Composable
 fun Marquee(
     modifier: Modifier = Modifier,
-    content: @Composable (Modifier) -> Unit
+    content: @Composable () -> Unit
 ) {
     var xOffset by remember { mutableStateOf(0) }
     val textLayoutInfoState = remember { mutableStateOf<TextLayoutInfo?>(null) }
@@ -47,16 +46,12 @@ fun Marquee(
     ) { constraints ->
         val infiniteWidthConstraints = constraints.copy(maxWidth = Int.MAX_VALUE)
 
-        var mainText = subcompose(MarqueeLayers.MainText) {
-            content(Modifier)
-        }.first().measure(infiniteWidthConstraints)
+        var mainText = subcompose(MarqueeLayers.MainText, content).first().measure(infiniteWidthConstraints)
 
         var secondPlaceableWithOffset: Pair<Placeable, Int>? = null
 
         if (mainText.width <= constraints.maxWidth) {
-            mainText = subcompose(MarqueeLayers.SecondaryText) {
-                content(Modifier.fillMaxWidth())
-            }.first().measure(constraints)
+            mainText = subcompose(MarqueeLayers.SecondaryText, content).first().measure(constraints)
             textLayoutInfoState.value = null
         } else {
             val spacing = constraints.maxWidth * 2 / 3
@@ -67,9 +62,8 @@ fun Marquee(
             val secondTextSpace = constraints.maxWidth - secondTextOffset
 
             if (secondTextSpace > 0) {
-                secondPlaceableWithOffset = subcompose(MarqueeLayers.SecondaryText) {
-                    content(Modifier)
-                }.first().measure(infiniteWidthConstraints) to secondTextOffset
+                secondPlaceableWithOffset = subcompose(MarqueeLayers.SecondaryText, content)
+                    .first().measure(infiniteWidthConstraints) to secondTextOffset
             }
         }
 

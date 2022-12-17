@@ -4,7 +4,7 @@ import cn.apisium.eim.api.CurrentPosition
 import cn.apisium.eim.data.midi.MidiEvent
 import kotlin.math.sin
 
-class SineWaveSynthesizer: Synthesizer() {
+class SineWaveSynthesizer: Synthesizer("SineWaveSynthesizer") {
     private val angels = DoubleArray(127)
 
     override suspend fun processBlock(buffers: Array<FloatArray>, position: CurrentPosition, midiBuffer: ArrayList<Int>) {

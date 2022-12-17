@@ -13,7 +13,7 @@ interface AudioProcessorDescription {
 }
 
 interface AudioProcessor: AutoCloseable {
-    val name: String get() = description.name
+    val name: String get() =  description.name
     val description: AudioProcessorDescription
     val inputChannelsCount: Int
     val outputChannelsCount: Int
@@ -30,6 +30,8 @@ abstract class AbstractAudioProcessor(
     override val inputChannelsCount = 2
     override val outputChannelsCount = 2
     override val uuid = randomUUID()
+
+    constructor(name: String): this(AudioProcessorDescriptionImpl(name))
 }
 
 open class AudioProcessorDescriptionImpl(

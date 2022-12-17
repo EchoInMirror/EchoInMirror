@@ -4,7 +4,7 @@ import cn.apisium.eim.api.CurrentPosition
 import cn.apisium.eim.api.processor.AbstractAudioProcessor
 import cn.apisium.eim.data.midi.MidiEvent
 
-class KarplusStrongSynthesizer: AbstractAudioProcessor() {
+class KarplusStrongSynthesizer: AbstractAudioProcessor("KarplusStrongSynthesizer") {
     private val cacheBuffers = FloatArray(1024000)
     private var cacheSize = 0
     private val alpha = 0.995
