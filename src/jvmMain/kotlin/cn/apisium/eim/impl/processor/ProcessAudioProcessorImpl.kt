@@ -40,7 +40,10 @@ open class ProcessAudioProcessorImpl(
             output.write(outputChannels)
             output.writeShort((midiBuffer.size / 2).toShort())
             for (i in 0 until inputChannels) buffers[i].forEach(output::writeFloat)
-            midiBuffer.forEach(output::writeInt)
+            for (i in 0 until midiBuffer.size step 2) {
+                output.writeInt(midiBuffer[i])
+                output.writeShort(midiBuffer[i + 1].toShort())
+            }
             output.flush()
             midiBuffer.clear()
 

@@ -21,3 +21,5 @@ object Configuration {
         if (!Files.exists(Path.of(nativeHostPath))) nativeHostPath = "EIMHost.exe"
     }
 }
+
+val IS_DEBUG = System.getProperty("cn.apisium.eim.debug") == "true"

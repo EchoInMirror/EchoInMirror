@@ -49,5 +49,6 @@ class KarplusStrongSynthesizer: AbstractAudioProcessor() {
             }
             if (cacheSize2 > cacheSize) cacheSize = cacheSize2
         }
+        midiBuffer.clear()
     }
 }

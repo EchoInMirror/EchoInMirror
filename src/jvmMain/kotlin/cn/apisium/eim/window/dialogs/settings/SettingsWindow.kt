@@ -1,4 +1,4 @@
-package cn.apisium.eim.window.settings
+package cn.apisium.eim.window.dialogs.settings
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -37,11 +37,13 @@ private class AudioSettings: SettingsTab {
 }
 
 val settingsTabs = mutableStateListOf(NativeAudioPluginSettings(), AudioSettings())
+private fun closeSettingWindow() {
+    EchoInMirror.windowManager.dialogs[SettingsWindow] = false
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun settingsWindow() {
-    Dialog({ EchoInMirror.windowManager.settingsDialogOpen = false }, title = "设置") {
+val SettingsWindow: @Composable () -> Unit = @Composable {
+    Dialog(::closeSettingWindow, title = "设置") {
         window.minimumSize = Dimension(860, 700)
         window.isModal = false
         Surface(Modifier.fillMaxSize(), tonalElevation = 2.dp) {
@@ -75,7 +77,7 @@ fun settingsWindow() {
                     Row(Modifier.padding(14.dp, 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Filled()
                         selectedTab?.buttons()
-                        Button({ EchoInMirror.windowManager.settingsDialogOpen = false }) { Text("确认") }
+                        Button(::closeSettingWindow) { Text("确认") }
                     }
                 }
             }

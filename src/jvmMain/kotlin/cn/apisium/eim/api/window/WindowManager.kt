@@ -1,10 +1,11 @@
 package cn.apisium.eim.api.window
 
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.awt.ComposeWindow
 import java.lang.ref.WeakReference
 
 interface WindowManager {
-    var settingsDialogOpen: Boolean
+    val dialogs: MutableMap<@Composable () -> Unit, Boolean>
     val panels: List<Panel>
     val mainWindow: WeakReference<ComposeWindow>
 

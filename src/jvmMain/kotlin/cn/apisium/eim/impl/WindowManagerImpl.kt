@@ -6,13 +6,19 @@ import cn.apisium.eim.api.window.Panel
 import cn.apisium.eim.api.window.WindowManager
 import cn.apisium.eim.window.Editor
 import cn.apisium.eim.window.Mixer
-import cn.apisium.eim.window.settings.settingsWindow
+import cn.apisium.eim.window.dialogs.QuickLoadDialog
+import cn.apisium.eim.window.dialogs.settings.SettingsWindow
 import java.lang.ref.WeakReference
 
 class WindowManagerImpl: WindowManager {
-    override var settingsDialogOpen by mutableStateOf(false)
+    override val dialogs = mutableStateMapOf<@Composable () -> Unit, Boolean>()
     override val panels = mutableStateListOf(Mixer(), Editor())
     override var mainWindow: WeakReference<ComposeWindow> = WeakReference(null)
+
+    init {
+        dialogs[SettingsWindow] = false
+        dialogs[QuickLoadDialog] = false
+    }
 
     override fun registerPanel(panel: Panel) {
         panels.add(panel)
@@ -24,6 +30,8 @@ class WindowManagerImpl: WindowManager {
 
     @Composable
     fun dialogs() {
-        if (settingsDialogOpen) settingsWindow()
+        for ((dialog, visible) in dialogs) {
+            if (visible) dialog()
+        }
     }
 }

@@ -1,4 +1,4 @@
-package cn.apisium.eim.window.settings
+package cn.apisium.eim.window.dialogs.settings
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*

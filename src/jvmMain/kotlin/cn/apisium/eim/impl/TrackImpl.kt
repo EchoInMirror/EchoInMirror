@@ -4,6 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.api.CurrentPosition
 import cn.apisium.eim.api.Track
 import cn.apisium.eim.api.processor.AbstractAudioProcessor
@@ -40,6 +41,8 @@ open class TrackImpl(
     private var _isMute by mutableStateOf(false)
     private var _isSolo by mutableStateOf(false)
     private var _isDisabled by mutableStateOf(false)
+    private var tempBuffer = arrayOf(FloatArray(1024), FloatArray(1024))
+    private var tempBuffer2 = arrayOf(FloatArray(1024), FloatArray(1024))
 
     override var isMute get() = _isMute
         set(value) {
@@ -102,7 +105,28 @@ open class TrackImpl(
             }
         }
         preProcessorsChain.forEach { it.processBlock(buffers, position, midiBuffer) }
-        subTracks.forEach { if (!it.isMute && !it.isDisabled) it.processBlock(buffers, position, ArrayList(midiBuffer)) }
+        subTracks.filter { !it.isDisabled && !it.isMute }.let { tracks ->
+            if (tracks.size == 1) tracks.first().processBlock(buffers, position, ArrayList(midiBuffer))
+            else if (tracks.isNotEmpty()) {
+                buffers[0].copyInto(tempBuffer[0])
+                buffers[1].copyInto(tempBuffer[1])
+                tracks.first().processBlock(buffers, position, ArrayList(midiBuffer))
+                for (j in 2 until tracks.size) {
+                    tempBuffer[0].copyInto(tempBuffer2[0])
+                    tempBuffer[1].copyInto(tempBuffer2[1])
+                    tracks[j].processBlock(tempBuffer2, position, ArrayList(midiBuffer))
+                    for (i in 0 until position.bufferSize) {
+                        buffers[0][i] += tempBuffer2[0][i]
+                        buffers[1][i] += tempBuffer2[1][i]
+                    }
+                }
+                tracks[1].processBlock(tempBuffer, position, ArrayList(midiBuffer))
+                for (i in 0 until position.bufferSize) {
+                    buffers[0][i] += tempBuffer[0][i]
+                    buffers[1][i] += tempBuffer[1][i]
+                }
+            }
+        }
         postProcessorsChain.forEach { it.processBlock(buffers, position, midiBuffer) }
         var leftPeak = 0F
         var rightPeak = 0F
@@ -126,6 +150,8 @@ open class TrackImpl(
     }
 
     override fun prepareToPlay() {
+        val size = EchoInMirror.currentPosition.bufferSize
+        tempBuffer = arrayOf(FloatArray(size), FloatArray(size))
         preProcessorsChain.forEach(AudioProcessor::prepareToPlay)
         subTracks.forEach(Track::prepareToPlay)
         postProcessorsChain.forEach(AudioProcessor::prepareToPlay)

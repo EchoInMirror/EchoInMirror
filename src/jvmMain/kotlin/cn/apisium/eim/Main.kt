@@ -21,17 +21,21 @@ fun main() {
     Runtime.getRuntime().addShutdownHook(Thread(EchoInMirror.player::close))
 
     val track = TrackImpl("Track 1")
+    val subTrack1 = TrackImpl("SubTrack 1")
+    val subTrack2 = TrackImpl("SubTrack 2")
+    subTrack1.preProcessorsChain.add(KarplusStrongSynthesizer())
     EchoInMirror.selectedTrack = track
-    track.preProcessorsChain.add(KarplusStrongSynthesizer())
-    val midi = MidiSystem.getSequence(File("E:\\Midis\\UTMR&C VOL 1-14 [MIDI FILES] for other DAWs FINAL by Hunter UT\\VOL 13\\13.Darren Porter - To Feel Again LD.mid"))
-    track.notes.addAll(getNoteMessages(midi.getMidiEvents(1)))
+    if (IS_DEBUG) {
+        val midi = MidiSystem.getSequence(File("E:\\Midis\\UTMR&C VOL 1-14 [MIDI FILES] for other DAWs FINAL by Hunter UT\\VOL 13\\13.Darren Porter - To Feel Again LD.mid"))
+        track.notes.addAll(getNoteMessages(midi.getMidiEvents(1)))
+    }
 
-    val subTrack = TrackImpl("SubTrack")
-    track.subTracks.add(subTrack)
+    track.subTracks.add(subTrack1)
+    track.subTracks.add(subTrack2)
     EchoInMirror.bus.subTracks.add(track)
     EchoInMirror.player.open(EchoInMirror.currentPosition.sampleRate, EchoInMirror.currentPosition.bufferSize, 2)
 
-    Thread {
+    if (IS_DEBUG) Thread {
         runBlocking {
             launch {
                 delay(2000)
@@ -43,7 +47,7 @@ fun main() {
                 }
                 proQ!!.launch()
                 spire!!.launch()
-                track.postProcessorsChain.add(spire!!)
+                subTrack2.preProcessorsChain.add(spire!!)
                 track.postProcessorsChain.add(proQ!!)
             }
         }

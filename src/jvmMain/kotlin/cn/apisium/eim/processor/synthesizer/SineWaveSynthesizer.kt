@@ -21,5 +21,6 @@ class SineWaveSynthesizer: Synthesizer() {
                 buffers[1][i] += sample.toFloat()
             }
         }
+        midiBuffer.clear()
     }
 }

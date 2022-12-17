@@ -5,6 +5,7 @@ import androidx.compose.ui.input.key.Key
 import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.api.Command
 import cn.apisium.eim.api.CommandManager
+import cn.apisium.eim.window.dialogs.settings.SettingsWindow
 
 @OptIn(ExperimentalComposeUiApi::class)
 class CommandManagerImpl: CommandManager {
@@ -14,7 +15,7 @@ class CommandManagerImpl: CommandManager {
         registerCommand(object: Command {
             override val name: String = "EIM:Open Settings"
             override fun execute() {
-                EchoInMirror.windowManager.settingsDialogOpen = true
+                EchoInMirror.windowManager.dialogs[SettingsWindow] = true
             }
             override val keyBindings = arrayOf(Key.CtrlLeft, Key.Comma)
             override val activeWhen: Array<String>? = null

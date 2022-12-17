@@ -25,6 +25,7 @@ import cn.apisium.eim.utils.border
 import cn.apisium.eim.components.splitpane.SplitPaneState
 import cn.apisium.eim.components.icons.EIMLogo
 import cn.apisium.eim.impl.WindowManagerImpl
+import cn.apisium.eim.window.dialogs.QuickLoadDialog
 
 //    SideBarItem("Favorite", "收藏") { Icon(Icons.Default.Favorite, "Favorite") },
 //    SideBarItem("Plugins", "插件") { Icon(Icons.Default.SettingsInputHdmi, "Plugins") },
@@ -102,7 +103,7 @@ internal fun SideBar() {
                 icon = { Icon(EIMLogo, "QuickLand") },
                 label = { Text("快速加载") },
                 selected = false,
-                onClick = { }
+                onClick = { EchoInMirror.windowManager.dialogs[QuickLoadDialog] = true }
             )
             (EchoInMirror.windowManager as WindowManagerImpl).panels.filter { it.direction != PanelDirection.Horizontal }.forEach {
                 key(it) {

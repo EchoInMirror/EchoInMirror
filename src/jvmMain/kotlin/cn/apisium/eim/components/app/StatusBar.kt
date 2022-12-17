@@ -16,6 +16,7 @@ import cn.apisium.eim.utils.Border
 import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.utils.border
 import cn.apisium.eim.components.icons.MetronomeTick
+import cn.apisium.eim.window.dialogs.settings.SettingsWindow
 
 @Composable
 fun StatusBarItem(id: String, icon: ImageVector? = null, modifier: Modifier = Modifier, onClick: (() -> Unit)? = null, child: (@Composable () -> Unit)? = null) {
@@ -38,7 +39,7 @@ internal fun StatusBar() {
             if (sideBarSelectedItem == null) Surface(modifier = Modifier.fillMaxHeight().width(1.dp), tonalElevation = 5.dp) { }
             ProvideTextStyle(MaterialTheme.typography.labelSmall) {
                 CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurfaceVariant) {
-                    StatusBarItem("Settings", Icons.Default.Settings, onClick = { EchoInMirror.windowManager.settingsDialogOpen = true })
+                    StatusBarItem("Settings", Icons.Default.Settings, onClick = { EchoInMirror.windowManager.dialogs[SettingsWindow] = true })
                     StatusBarItem("Project", Icons.Default.Folder) {
                         Text("临时工程")
                     }
