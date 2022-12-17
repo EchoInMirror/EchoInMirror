@@ -8,6 +8,7 @@ interface WindowManager {
     val dialogs: MutableMap<@Composable () -> Unit, Boolean>
     val panels: List<Panel>
     val mainWindow: WeakReference<ComposeWindow>
+    var isDarkTheme: Boolean
 
     fun registerPanel(panel: Panel)
     fun unregisterPanel(panel: Panel)

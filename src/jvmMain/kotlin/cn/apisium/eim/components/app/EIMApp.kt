@@ -2,10 +2,11 @@
 
 package cn.apisium.eim.components.app
 
+import androidx.compose.foundation.LocalScrollbarStyle
+import androidx.compose.foundation.ScrollbarStyle
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -48,46 +49,57 @@ fun eimApp() {
     application {
         val icon = painterResource("logo.png")
         checkSampleRateAndBufferSize()
-        MaterialTheme {
-            Window(onCloseRequest = ::exitApplication, icon = icon, title = "Echo In Mirror", onKeyEvent = {
-                if (it.type != KeyEventType.KeyUp) return@Window false
-                var keys = it.key.keyCode.toString()
-                if (it.isCtrlPressed) keys = "${Key.CtrlLeft.keyCode} $keys"
-                if (it.isShiftPressed) keys = "${Key.ShiftLeft.keyCode} $keys"
-                if (it.isAltPressed) keys = "${Key.AltLeft.keyCode} $keys"
-                if (it.isMetaPressed) keys = "${Key.MetaLeft.keyCode} $keys"
-                (EchoInMirror.commandManager as CommandManagerImpl).commands[keys]?.execute()
-                false
-            }) {
-                (EchoInMirror.windowManager as WindowManagerImpl).mainWindow = WeakReference(window)
-                Row {
-                    SideBar()
-                    Scaffold(
-                        topBar = { EimAppBar() },
-                        content = {
-                            Column {
-                                Box(Modifier.weight(1F)) {
-                                    HorizontalSplitPane(splitPaneState = sideBarWidthState) {
-                                        first(0.dp) { SideBarContent() }
-                                        second(400.dp) {
-                                            VerticalSplitPane(splitPaneState = bottomBarHeightState) {
-                                                first(200.dp) {
-                                                    Box(Modifier.fillMaxSize().border(start = Border(0.6.dp, contentWindowColor))) {
-                                                        Playlist()
+        MaterialTheme(
+            if (EchoInMirror.windowManager.isDarkTheme) darkColorScheme() else lightColorScheme()
+        ) {
+            CompositionLocalProvider(LocalScrollbarStyle provides ScrollbarStyle(
+                minimalHeight = 16.dp,
+                thickness = 8.dp,
+                shape = RoundedCornerShape(4.dp),
+                hoverDurationMillis = 300,
+                unhoverColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.26f),
+                hoverColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.60f)
+            )) {
+                Window(onCloseRequest = ::exitApplication, icon = icon, title = "Echo In Mirror", onKeyEvent = {
+                    if (it.type != KeyEventType.KeyUp) return@Window false
+                    var keys = it.key.keyCode.toString()
+                    if (it.isCtrlPressed) keys = "${Key.CtrlLeft.keyCode} $keys"
+                    if (it.isShiftPressed) keys = "${Key.ShiftLeft.keyCode} $keys"
+                    if (it.isAltPressed) keys = "${Key.AltLeft.keyCode} $keys"
+                    if (it.isMetaPressed) keys = "${Key.MetaLeft.keyCode} $keys"
+                    (EchoInMirror.commandManager as CommandManagerImpl).commands[keys]?.execute()
+                    false
+                }) {
+                    (EchoInMirror.windowManager as WindowManagerImpl).mainWindow = WeakReference(window)
+                    Row {
+                        SideBar()
+                        Scaffold(
+                            topBar = { EimAppBar() },
+                            content = {
+                                Column {
+                                    Box(Modifier.weight(1F)) {
+                                        HorizontalSplitPane(splitPaneState = sideBarWidthState) {
+                                            first(0.dp) { SideBarContent() }
+                                            second(400.dp) {
+                                                VerticalSplitPane(splitPaneState = bottomBarHeightState) {
+                                                    first(200.dp) {
+                                                        Box(Modifier.fillMaxSize().border(start = Border(0.6.dp, contentWindowColor))) {
+                                                            Playlist()
+                                                        }
                                                     }
+                                                    second(0.dp) { bottomBarContent() }
                                                 }
-                                                second(0.dp) { bottomBarContent() }
                                             }
                                         }
                                     }
+                                    StatusBar()
                                 }
-                                StatusBar()
                             }
-                        }
-                    )
-                }
+                        )
+                    }
 
-                EchoInMirror.windowManager.dialogs()
+                    EchoInMirror.windowManager.dialogs()
+                }
             }
         }
     }

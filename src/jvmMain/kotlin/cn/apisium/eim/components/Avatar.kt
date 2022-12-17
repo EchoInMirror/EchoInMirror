@@ -26,11 +26,11 @@ fun Avatar(color: Color? = null, modifier: Modifier = Modifier, shape: Shape = C
            content: @Composable BoxScope.() -> Unit) {
     ProvideTextStyle(TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp, textAlign = TextAlign.Center)) {
         if (color == null) {
-            Surface(modifier.size(40.dp, 40.dp), shape = shape, tonalElevation = 2.dp) {
+            Surface(modifier.size(40.dp, 40.dp), shape = shape, tonalElevation = 4.dp) {
                 Box(Modifier.fillMaxSize(), Alignment.Center, content = content)
             }
         } else {
-            Surface(modifier.size(40.dp, 40.dp), shape = shape, tonalElevation = 2.dp, color = color) {
+            Surface(modifier.size(40.dp, 40.dp), shape = shape, tonalElevation = 6.dp, color = color) {
                 CompositionLocalProvider(LocalContentColor provides color.toOnSurfaceColor()) {
                     Box(Modifier.fillMaxSize(), Alignment.Center, content = content)
                 }

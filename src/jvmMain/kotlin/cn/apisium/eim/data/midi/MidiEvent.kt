@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package cn.apisium.eim.data.midi
 
 import cn.apisium.eim.EchoInMirror
@@ -32,7 +34,7 @@ fun MidiMessage.toInt(): Int {
     return data
 }
 
-@Suppress("MemberVisibilityCanBePrivate", "unused")
+@Suppress("MemberVisibilityCanBePrivate")
 @JvmInline
 @Serializable
 value class MidiEvent(val rawData: Int) {
@@ -82,3 +84,11 @@ value class MidiEvent(val rawData: Int) {
 
 fun noteOn(channel: Int, note: Int, velocity: Int = 70) = MidiEvent(0x90 or channel, note, velocity)
 fun noteOff(channel: Int, note: Int) = MidiEvent(0x80 or channel, note, 70)
+fun controllerEvent(channel: Int, controller: Int, value: Int) = MidiEvent(0xB0 or channel, controller, value)
+fun allNotesOff(channel: Int) = controllerEvent(channel, 123, 0)
+fun allSoundOff(channel: Int) = controllerEvent(channel, 120, 0)
+fun programChange(channel: Int, program: Int) = MidiEvent(0xC0 or channel, program, 0)
+fun pitchBend(channel: Int, value: Int) = MidiEvent(0xE0 or channel, value and 0x7F, value ushr 7 and 0x7F)
+fun metaEvent(type: Int, length: Int) = MidiEvent(0xFF, type, length)
+fun sysexEvent(length: Int) = MidiEvent(0xF0, 0, length)
+fun realTimeEvent(type: Int) = MidiEvent(0xF8 or type, 0, 0)

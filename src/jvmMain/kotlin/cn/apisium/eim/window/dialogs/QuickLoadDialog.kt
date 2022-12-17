@@ -17,7 +17,7 @@ val QuickLoadDialog = @Composable {
     Dialog(::closeQuickLoadWindow, title = "快速加载") {
         window.minimumSize = Dimension(860, 700)
         window.isModal = false
-        Surface(Modifier.fillMaxSize(), tonalElevation = 2.dp) {
+        Surface(Modifier.fillMaxSize(), tonalElevation = 4.dp) {
             // TODO:
         }
     }

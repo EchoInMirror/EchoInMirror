@@ -98,7 +98,7 @@ internal fun EimAppBar() {
         .onGloballyPositioned { screenWidth = it.size.width }) {
         val isFloat = playlistVerticalScrollState.value > 8 || screenWidth < 800
         val color by animateColorAsState(
-            if (isFloat) MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp) else MaterialTheme.colorScheme.background,
+            if (isFloat) MaterialTheme.colorScheme.surfaceColorAtElevation(5.dp) else MaterialTheme.colorScheme.background,
             tween(durationMillis = 250)
         )
         val shadow by animateFloatAsState(if (isFloat) 3F else 0F, tween(durationMillis = 250))

@@ -46,7 +46,7 @@ val SettingsWindow: @Composable () -> Unit = @Composable {
     Dialog(::closeSettingWindow, title = "设置") {
         window.minimumSize = Dimension(860, 700)
         window.isModal = false
-        Surface(Modifier.fillMaxSize(), tonalElevation = 2.dp) {
+        Surface(Modifier.fillMaxSize(), tonalElevation = 4.dp) {
             Row {
                 var selected by remember { mutableStateOf(settingsTabs.getOrNull(0)?.run { this::class.java.name } ?: "") }
                 val selectedTab = settingsTabs.find { it::class.java.name == selected }

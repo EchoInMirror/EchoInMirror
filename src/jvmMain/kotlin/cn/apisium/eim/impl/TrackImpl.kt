@@ -17,6 +17,8 @@ import cn.apisium.eim.data.midi.MidiNoteRecorder
 import cn.apisium.eim.data.midi.NoteMessage
 import cn.apisium.eim.data.midi.noteOff
 import cn.apisium.eim.utils.randomColor
+import java.util.*
+import kotlin.collections.ArrayList
 
 open class TrackImpl(
     trackName: String
@@ -32,7 +34,7 @@ open class TrackImpl(
     override val preProcessorsChain = mutableStateListOf<AudioProcessor>()
     override val postProcessorsChain = mutableStateListOf<AudioProcessor>()
     override val subTracks = mutableStateListOf<Track>()
-    private val pendingMidiBuffer = ArrayList<Int>()
+    private val pendingMidiBuffer = Collections.synchronizedList(ArrayList<Int>())
     private var currentPlayedIndex = 0
     private val pendingNoteOns = LongArray(128)
     private val noteRecorder = MidiNoteRecorder()

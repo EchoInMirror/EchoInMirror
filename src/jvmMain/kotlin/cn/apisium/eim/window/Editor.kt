@@ -97,7 +97,7 @@ private fun editorContent(horizontalScrollState: ScrollState) {
             Column(Modifier.fillMaxSize()) {
                 val localDensity = LocalDensity.current
                 var contentWidth by remember { mutableStateOf(0.dp) }
-                val surfaceColor = getSurfaceColor(1.dp)
+                val surfaceColor = getSurfaceColor(2.dp)
                 Box(Modifier.drawWithContent {
                     drawContent()
                     drawRect(surfaceColor, Offset(0f, -8f), Size(size.width, 8F))

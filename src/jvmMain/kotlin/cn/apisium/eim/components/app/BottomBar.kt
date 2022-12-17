@@ -10,7 +10,7 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 internal fun bottomBarContent() {
-    Surface(tonalElevation = 1.dp, shadowElevation = 2.dp) {
+    Surface(tonalElevation = 2.dp, shadowElevation = 2.dp) {
         bottomBarSelectedItem?.content()
     }
 }

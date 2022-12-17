@@ -87,7 +87,7 @@ val playlistVerticalScrollState = ScrollState(0)
 fun Playlist() {
     Row {
         val trackHeight = 70.dp
-        Surface(Modifier.width(200.dp).fillMaxHeight().zIndex(5f), shadowElevation = 2.dp, tonalElevation = 1.dp) {
+        Surface(Modifier.width(200.dp).fillMaxHeight().zIndex(5f), shadowElevation = 2.dp, tonalElevation = 2.dp) {
             Column(Modifier.padding(top = APP_BAR_FULL_HEIGHT).verticalScroll(playlistVerticalScrollState)) {
                 Divider()
                 EchoInMirror.bus.subTracks.forEachIndexed { i, it ->
@@ -122,7 +122,7 @@ fun Playlist() {
                         }
                     }
                     Box(Modifier.padding(top = topPaddingHeightInDp)) {
-                        PlayHead(noteWidth, horizontalScroll, contentWidth, cursorOffsetY = cursorOffsetY)
+                        PlayHead(noteWidth, horizontalScroll, contentWidth, isCursorOnBottom = true)
                     }
                 }
                 Timeline(Modifier.zIndex(3f), noteWidth, horizontalScroll)

@@ -18,6 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.data.midi.KEY_NAMES
 import cn.apisium.eim.utils.toOnSurfaceColor
 
@@ -32,8 +33,10 @@ fun Keyboard(
     modifier: Modifier = Modifier,
     keyHeight: Dp = 17.dp,
     keyWidth: Dp = 68.dp,
-    whiteKeyColor: Color = MaterialTheme.colorScheme.background,
-    backKeyColor: Color = MaterialTheme.colorScheme.secondary
+    whiteKeyColor: Color = if (EchoInMirror.windowManager.isDarkTheme) MaterialTheme.colorScheme.secondary
+        else MaterialTheme.colorScheme.background,
+    backKeyColor: Color = if (EchoInMirror.windowManager.isDarkTheme) MaterialTheme.colorScheme.background
+        else MaterialTheme.colorScheme.secondary
 ) {
     Column(modifier.width(keyWidth)) {
         for (i in 131 downTo 0) {
