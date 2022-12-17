@@ -7,7 +7,7 @@ import cn.apisium.eim.data.midi.MidiNoteRecorder
 abstract class Synthesizer : AbstractAudioProcessor() {
     override val inputChannelsCount = 0
     protected val noteRecorder = MidiNoteRecorder()
-    protected var notesData = IntArray(127)
+    protected var notesData = IntArray(128)
 
     protected fun markNoteEvent(midi: MidiEvent) {
         if (midi.isNoteOn) {

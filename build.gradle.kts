@@ -9,7 +9,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     kotlin("multiplatform")
     id("org.jetbrains.compose")
-    kotlin("plugin.serialization") version "1.7.21"
+    kotlin("plugin.serialization") version "1.7.20"
     id("com.github.johnrengelman.shadow") version "7.1.2"
 }
 
@@ -32,8 +32,9 @@ kotlin {
         }
         withJava()
     }
+    @Suppress("UNUSED_VARIABLE", "OPT_IN_IS_NOT_ENABLED")
     sourceSets {
-        @Suppress("UNUSED_VARIABLE", "OPT_IN_IS_NOT_ENABLED") val jvmMain by getting {
+        val jvmMain by getting {
             dependencies {
                 implementation(compose.desktop.currentOs) {
                     exclude("org.jetbrains.compose.material")
@@ -47,6 +48,13 @@ kotlin {
                 implementation("commons-io:commons-io:2.11.0")
                 implementation("org.apache.commons:commons-lang3:3.12.0")
                 implementation("org.slf4j:slf4j-simple:2.0.3")
+            }
+        }
+
+        val jvmTest by getting {
+            dependencies {
+                implementation(kotlin("test-junit"))
+
             }
         }
     }

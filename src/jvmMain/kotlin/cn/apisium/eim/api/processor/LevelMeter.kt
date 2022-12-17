@@ -18,7 +18,7 @@ value class Level(val value: Float = 0F) {
     fun toDecibel() = 20 * log10(value)
     fun toPercentage(maxDB: Float = 0F) = mapValue(toDecibel(), -60f, maxDB)
     fun toDisplayPercentage() = (sqrt(value) / 1.4f).coerceIn(0f, 1f)
-    fun update(other: Float) = Level(if (other > value) other else if (value > 0.001F) (value * 0.92F).coerceAtLeast(other) else 0F)
+    fun update(other: Float) = Level(if (other > value) other else if (value > 0.001F) (value * 0.8F).coerceAtLeast(other) else 0F)
     @ExperimentalEIMApi
     fun getLevelColor(defaultColor: Color, warningColor: Color, errorColor: Color) =
         if (value > 1) errorColor else if (value > 0.51187F) warningColor else defaultColor
