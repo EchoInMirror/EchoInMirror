@@ -28,8 +28,8 @@ val scales = arrayOf(true, false, true, false, true, false, true, true, false, t
 @Preview
 @Composable
 fun Keyboard(
-    onNoteOn: (key: Int) -> Unit,
-    onNoteOff: (key: Int) -> Unit,
+    onNoteOn: (key: Int, position: Float) -> Unit,
+    onNoteOff: (key: Int, position: Float) -> Unit,
     modifier: Modifier = Modifier,
     keyHeight: Dp = 17.dp,
     keyWidth: Dp = 68.dp,
@@ -45,8 +45,12 @@ fun Keyboard(
             val color = if (isWhite) whiteKeyColor else backKeyColor
             var modifier2 = Modifier.fillMaxWidth().height(keyHeight - 1.dp).background(color)
             if (i <= 0x7F) modifier2 = modifier2.clickable {  }
-                .onPointerEvent(PointerEventType.Press) { onNoteOn(i) }
-                .onPointerEvent(PointerEventType.Release) { onNoteOff(i) }
+                .onPointerEvent(PointerEventType.Press) {
+                    onNoteOn(i, if (it.changes.isEmpty()) 0F else it.changes.first().position.x / keyWidth.toPx())
+                }
+                .onPointerEvent(PointerEventType.Release) {
+                    onNoteOff(i, if (it.changes.isEmpty()) 0F else it.changes.first().position.x / keyWidth.toPx())
+                }
             Box(modifier2) {
                 Text(name + (i / 12), Modifier.align(Alignment.CenterEnd).padding(horizontal = 5.dp),
                     fontSize = 11.sp,

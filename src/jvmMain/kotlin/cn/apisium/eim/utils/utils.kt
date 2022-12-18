@@ -11,6 +11,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import java.util.*
 
 fun lerp(start: Float, stop: Float, fraction: Float) = (1 - fraction) * start + fraction * stop
@@ -18,7 +19,7 @@ fun mapValue(value: Float, start1: Float, stop1: Float) = ((value - start1) / (s
 
 fun randomUUID() = UUID.randomUUID().mostSignificantBits and Long.MAX_VALUE
 
-data class Border(val strokeWidth: Dp, val color: Color)
+data class Border(val strokeWidth: Dp, val color: Color, val offset: Dp = 0.dp)
 
 @Composable
 fun getSurfaceColor(elevation: Dp) = MaterialTheme.colorScheme.surfaceColorAtElevation(LocalAbsoluteTonalElevation.current + elevation)
@@ -92,14 +93,15 @@ private fun DrawScope.drawStartBorder(
     shareBottom: Boolean = true
 ) {
     val strokeWidthPx = border.strokeWidth.toPx()
+    val offset = border.offset.toPx()
     if (strokeWidthPx == 0f) return
     drawPath(
         Path().apply {
-            moveTo(0f, 0f)
-            lineTo(strokeWidthPx, if (shareTop) strokeWidthPx else 0f)
+            moveTo(offset, 0f)
+            lineTo(strokeWidthPx + offset, if (shareTop) strokeWidthPx else 0f)
             val height = size.height
-            lineTo(strokeWidthPx, if (shareBottom) height - strokeWidthPx else height)
-            lineTo(0f, height)
+            lineTo(strokeWidthPx + offset, if (shareBottom) height - strokeWidthPx else height)
+            lineTo(offset, height)
             close()
         },
         color = border.color

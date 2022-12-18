@@ -76,13 +76,13 @@ open class ProcessAudioProcessorImpl(
             args.addAll(commands)
             val pb = ProcessBuilder(execFile, *args.toTypedArray())
 
-            pb.redirectError(ProcessBuilder.Redirect.INHERIT)
+            pb.redirectOutput(ProcessBuilder.Redirect.INHERIT)
             val p = pb.start()
 
-            val flag1 = p.inputStream.read() == 1
-            val flag2 = p.inputStream.read() == 2
+            val flag1 = p.errorStream.read() == 1
+            val flag2 = p.errorStream.read() == 2
             val isBigEndian = flag1 && flag2
-            val input = EIMInputStream(isBigEndian, p.inputStream)
+            val input = EIMInputStream(isBigEndian, p.errorStream)
 
             val id = input.read()
             if (id == 127) {
@@ -96,6 +96,7 @@ open class ProcessAudioProcessorImpl(
             p.onExit().thenAccept {
                 isLaunched = false
                 process = null
+                println("Exit $name")
             }
 
             try {
@@ -118,7 +119,10 @@ open class ProcessAudioProcessorImpl(
     }
 
     override fun close() {
+        println("Closing $name")
         if (process != null) {
+            inputStream?.close()
+            outputStream?.close()
             process!!.destroyForcibly()
             process = null
             inputStream = null

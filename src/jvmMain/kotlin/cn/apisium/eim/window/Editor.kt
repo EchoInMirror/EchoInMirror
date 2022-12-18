@@ -108,8 +108,8 @@ private fun editorContent(horizontalScrollState: ScrollState) {
                     Row(Modifier.fillMaxSize().zIndex(-1F)) {
                         Surface(Modifier.verticalScroll(verticalScrollState).zIndex(5f), shadowElevation = 4.dp) {
                             Keyboard(
-                                { EchoInMirror.selectedTrack?.playMidiEvent(noteOn(0, it)) },
-                                { EchoInMirror.selectedTrack?.playMidiEvent(noteOff(0, it)) },
+                                { it, p -> EchoInMirror.selectedTrack?.playMidiEvent(noteOn(0, it, (127 * p).toInt())) },
+                                { it, _ -> EchoInMirror.selectedTrack?.playMidiEvent(noteOff(0, it)) },
                                 Modifier, noteHeight
                             )
                         }

@@ -28,8 +28,8 @@ import cn.apisium.eim.components.icons.DebugStepOver
 private val TRACK_ITEM_ICON_SIZE = Modifier.size(16.dp)
 
 @Composable
-private fun TrackItem(track: Track, height: Dp, index: Int) {
-    Row(Modifier.height(height)) {
+private fun TrackItem(track: Track, height: Dp, index: Int, depth: Int = 0) {
+    Row(Modifier.height(height).padding(start = (depth * 8).dp)) {
         Canvas(Modifier.fillMaxHeight().width(8.dp).background(track.color.copy(alpha = 0.5F))) {
             val y = size.height * (1F - track.levelMeter.maxLevel.toPercentage())
             drawRect(track.color, Offset(0F, y), Size(size.width, size.height - y))
@@ -64,8 +64,10 @@ private fun TrackItem(track: Track, height: Dp, index: Int) {
             }
         }
     }
-    Divider()
-    track.subTracks.forEachIndexed { i, it -> key(it.uuid) { TrackItem(it, height, i + 1) } }
+    track.subTracks.forEachIndexed { i, it -> key(it.uuid) {
+        Divider(Modifier.offset(8.dp * (depth + 1)))
+        TrackItem(it, height, i + 1, depth + 1)
+    } }
 }
 
 @Composable
@@ -95,6 +97,7 @@ fun Playlist() {
                         TrackItem(it, trackHeight, i + 1)
                     }
                 }
+                Divider()
             }
         }
         Box(Modifier.fillMaxSize()) {

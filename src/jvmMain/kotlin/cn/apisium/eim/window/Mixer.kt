@@ -3,6 +3,8 @@ package cn.apisium.eim.window
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CornerSize
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.VolumeOff
@@ -22,6 +24,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.api.Track
 import cn.apisium.eim.api.window.Panel
@@ -29,6 +32,8 @@ import cn.apisium.eim.api.window.PanelDirection
 import cn.apisium.eim.components.*
 import cn.apisium.eim.components.silder.DefaultTrack
 import cn.apisium.eim.components.silder.Slider
+import cn.apisium.eim.utils.Border
+import cn.apisium.eim.utils.border
 import cn.apisium.eim.utils.toOnSurfaceColor
 
 @Composable
@@ -43,15 +48,23 @@ fun MixerProcessorButton(title: String, useMarquee: Boolean = false, fontStyle: 
 }
 
 @Composable
-private fun MixerTrack(track: Track, index: Int, height: MutableState<Dp>?, modifier: Modifier = Modifier, isRound: Boolean = false, renderChildren: Boolean = true) {
+private fun MixerTrack(track: Track, index: String, height: MutableState<Dp>?, modifier: Modifier = Modifier,
+                       isLastTrack: Boolean = false, drawSplitter: Boolean = true, isRound: Boolean = false,
+                       renderChildren: Boolean = true) {
     Row(if (isRound) modifier.shadow(1.dp, MaterialTheme.shapes.medium, clip = false)
         .background(MaterialTheme.colorScheme.surface, MaterialTheme.shapes.medium).clip(MaterialTheme.shapes.medium)
     else modifier) {
-        Column(Modifier.width(80.dp)) {
-            Row(Modifier.background(track.color).clickable { EchoInMirror.selectedTrack = track }.padding(vertical = 2.5.dp)) {
+        val selectedTrack = EchoInMirror.selectedTrack
+        Column(if (selectedTrack == track && height != null) Modifier.width(80.dp).height(height.value)
+            .border(1.dp, track.color, RoundedCornerShape(
+                CornerSize(0.dp), CornerSize(0.dp), MaterialTheme.shapes.medium.bottomEnd, MaterialTheme.shapes.medium.bottomStart)
+            )
+        else Modifier.width(80.dp).let { if (drawSplitter) it.border(start = Border(1.dp, MaterialTheme.colorScheme.outlineVariant)) else it }) {
+            Row(Modifier.background(track.color).clickable { if (track != EchoInMirror.bus) EchoInMirror.selectedTrack = track }
+                .padding(vertical = 2.5.dp).zIndex(2f)) {
                 val color = track.color.toOnSurfaceColor()
                 Text(
-                    index.toString(),
+                    index,
                     Modifier.padding(start = 5.dp, end = 3.dp),
                     color = color,
                     fontSize = MaterialTheme.typography.labelLarge.fontSize,
@@ -126,11 +139,13 @@ private fun MixerTrack(track: Track, index: Int, height: MutableState<Dp>?, modi
         }
 
         if (renderChildren && track.subTracks.isNotEmpty()) {
+            var lastTrack = track
+            val size = track.subTracks.size - 1
             track.subTracks.forEachIndexed { i, it ->
                 key(it) {
-                    if (height != null) Spacer(Modifier.width(1.dp).height(height.value - 8.dp)
-                        .background(MaterialTheme.colorScheme.outlineVariant))
-                    MixerTrack(it, i + 1, height = height)
+                    MixerTrack(it, "$index.${i + 1}", height = height, isLastTrack = isLastTrack && size == i,
+                        drawSplitter = lastTrack != selectedTrack && it != selectedTrack)
+                    lastTrack = it
                 }
             }
         }
@@ -151,15 +166,15 @@ class Mixer: Panel {
     override fun content() {
         Scrollable {
             Row(Modifier.padding(14.dp)) {
-                MixerTrack(EchoInMirror.bus, 0, null, Modifier, true, renderChildren = false)
+                MixerTrack(EchoInMirror.bus, "0", null, Modifier, isRound = true, renderChildren = false)
                 val localDensity = LocalDensity.current
                 EchoInMirror.bus.subTracks.forEachIndexed { i, it ->
                     key(it) {
                         Gap(8)
                         val state = remember { mutableStateOf(0.dp) }
-                        MixerTrack(it, i + 1, state, Modifier.onGloballyPositioned {
-                            with (localDensity) { state.value = it.size.height.toDp()  }
-                        }, true)
+                        MixerTrack(it, (i + 1).toString(), state, Modifier.onGloballyPositioned {
+                            with (localDensity) { state.value = it.size.height.toDp() }
+                        }, isRound = true)
                     }
                 }
             }

@@ -17,7 +17,7 @@ internal fun createDirectories() {
 object Configuration {
     var nativeHostPath: String
     init {
-        nativeHostPath = "D:\\Cpp\\EIMPluginScanner\\build\\EIMHost_artefacts\\Debug\\EIMHost.exe"
+        nativeHostPath = "D:\\Cpp\\EIMPluginScanner\\build\\EIMHost_artefacts\\MinSizeRel\\EIMHost.exe"
         if (!Files.exists(Path.of(nativeHostPath))) nativeHostPath = "EIMHost.exe"
     }
 }
