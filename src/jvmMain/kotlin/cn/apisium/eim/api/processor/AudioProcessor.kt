@@ -21,6 +21,7 @@ interface AudioProcessor: AutoCloseable {
     suspend fun processBlock(buffers: Array<FloatArray>, position: CurrentPosition, midiBuffer: ArrayList<Int>) { }
     fun prepareToPlay() { }
     fun onSuddenChange() { }
+    fun onClick() { }
     override fun close() { }
 }
 

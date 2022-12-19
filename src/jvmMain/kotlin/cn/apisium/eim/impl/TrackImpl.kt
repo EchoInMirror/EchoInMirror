@@ -17,6 +17,7 @@ import cn.apisium.eim.data.midi.MidiNoteRecorder
 import cn.apisium.eim.data.midi.NoteMessage
 import cn.apisium.eim.data.midi.noteOff
 import cn.apisium.eim.utils.randomColor
+import kotlinx.coroutines.*
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -44,7 +45,6 @@ open class TrackImpl(
     private var _isSolo by mutableStateOf(false)
     private var _isDisabled by mutableStateOf(false)
     private var tempBuffer = arrayOf(FloatArray(1024), FloatArray(1024))
-    private var tempBuffer2 = arrayOf(FloatArray(1024), FloatArray(1024))
 
     override var isMute get() = _isMute
         set(value) {
@@ -107,27 +107,28 @@ open class TrackImpl(
             }
         }
         preProcessorsChain.forEach { it.processBlock(buffers, position, midiBuffer) }
-        subTracks.filter { !it.isDisabled && !it.isMute }.let { tracks ->
-            if (tracks.size == 1) tracks.first().processBlock(buffers, position, ArrayList(midiBuffer))
-            else if (tracks.isNotEmpty()) {
-                buffers[0].copyInto(tempBuffer[0])
-                buffers[1].copyInto(tempBuffer[1])
-                tracks.first().processBlock(buffers, position, ArrayList(midiBuffer))
-                for (j in 2 until tracks.size) {
-                    tempBuffer[0].copyInto(tempBuffer2[0])
-                    tempBuffer[1].copyInto(tempBuffer2[1])
-                    tracks[j].processBlock(tempBuffer2, position, ArrayList(midiBuffer))
-                    for (i in 0 until position.bufferSize) {
-                        buffers[0][i] += tempBuffer2[0][i]
-                        buffers[1][i] += tempBuffer2[1][i]
+        if (subTracks.size == 1) {
+            val track = subTracks.first()
+            if (!track.isMute && !track.isDisabled) track.processBlock(buffers, position, ArrayList(midiBuffer))
+        } else {
+            tempBuffer[0].fill(0F)
+            tempBuffer[1].fill(0F)
+            withContext(Dispatchers.Default) {
+                subTracks.filter { !it.isMute && !it.isDisabled }.map {
+                    async {
+                        val buffer = arrayOf(buffers[0].clone(), buffers[1].clone())
+                        it.processBlock(buffer, position, ArrayList(midiBuffer))
+                        for (i in 0 until position.bufferSize) {
+                            tempBuffer[0][i] += buffer[0][i]
+                            tempBuffer[1][i] += buffer[1][i]
+                        }
                     }
-                }
-                tracks[1].processBlock(tempBuffer, position, ArrayList(midiBuffer))
-                for (i in 0 until position.bufferSize) {
-                    buffers[0][i] += tempBuffer[0][i]
-                    buffers[1][i] += tempBuffer[1][i]
-                }
+                }.awaitAll()
             }
+            tempBuffer[0].copyInto(buffers[0])
+            tempBuffer[1].copyInto(buffers[1])
+//            buffers[0] = tempBuffer[0]
+//            buffers[1] = tempBuffer[1]
         }
         postProcessorsChain.forEach { it.processBlock(buffers, position, midiBuffer) }
         var leftPeak = 0F

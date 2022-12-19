@@ -62,7 +62,7 @@ class NativeAudioPlayer(currentPosition: CurrentPosition, processor: AudioProces
                 continue
             }
 
-            buffers.forEach { Arrays.fill(it, 0F) }
+            buffers.forEach { it.fill(0F) }
 
             runBlocking {
                 try {

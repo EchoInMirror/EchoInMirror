@@ -62,7 +62,7 @@ class JvmAudioPlayer(currentPosition: CurrentPosition, processor: AudioProcessor
                 Thread.sleep(10)
                 continue
             }
-            buffers.forEach { Arrays.fill(it, 0F) }
+            buffers.forEach { it.fill(0F) }
 
             try {
                 runBlocking {

@@ -7,8 +7,9 @@ import cn.apisium.eim.api.processor.FailedToLoadAudioPluginException
 import cn.apisium.eim.api.processor.ProcessAudioProcessor
 import cn.apisium.eim.utils.EIMInputStream
 import cn.apisium.eim.utils.EIMOutputStream
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 @Suppress("MemberVisibilityCanBePrivate")
 open class ProcessAudioProcessorImpl(
@@ -25,11 +26,12 @@ open class ProcessAudioProcessorImpl(
     private var process: Process? = null
     private var inputStream: EIMInputStream? = null
     private var outputStream: EIMOutputStream? = null
+    private val mutex = Mutex()
 
     override suspend fun processBlock(buffers: Array<FloatArray>, position: CurrentPosition, midiBuffer: ArrayList<Int>) {
         val output = outputStream
         if (!isLaunched || output == null) return
-        withContext(Dispatchers.IO) {
+        mutex.withLock {
             output.write(1)
             output.writeBoolean(position.isPlaying)
             output.writeDouble(position.bpm)
@@ -52,6 +54,19 @@ open class ProcessAudioProcessorImpl(
             for (i in 0 until outputChannels) {
                 for (j in 0 until buffers[i].size) {
                     buffers[i][j] = input.readFloat()
+                }
+            }
+        }
+    }
+
+    @OptIn(DelicateCoroutinesApi::class)
+    override fun onClick() {
+        if (!isLaunched) return
+        GlobalScope.launch {
+            mutex.withLock {
+                outputStream?.apply {
+                    write(2)
+                    flush()
                 }
             }
         }
@@ -96,7 +111,6 @@ open class ProcessAudioProcessorImpl(
             p.onExit().thenAccept {
                 isLaunched = false
                 process = null
-                println("Exit $name")
             }
 
             try {
@@ -119,7 +133,6 @@ open class ProcessAudioProcessorImpl(
     }
 
     override fun close() {
-        println("Closing $name")
         if (process != null) {
             inputStream?.close()
             outputStream?.close()

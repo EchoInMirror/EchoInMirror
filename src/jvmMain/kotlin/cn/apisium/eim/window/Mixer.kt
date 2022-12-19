@@ -125,13 +125,13 @@ private fun MixerTrack(track: Track, index: String, height: MutableState<Dp>?, m
             Column {
                 Divider(Modifier.padding(horizontal = 8.dp))
                 track.preProcessorsChain.forEach {
-                    MixerProcessorButton(it.name, true) { }
+                    MixerProcessorButton(it.name, true, onClick = it::onClick)
                     Divider(Modifier.padding(horizontal = 8.dp))
                 }
                 MixerProcessorButton("...", fontWeight = FontWeight.Bold) { }
                 Divider(Modifier.padding(horizontal = 6.dp), 2.dp, MaterialTheme.colorScheme.primary)
                 track.postProcessorsChain.forEach {
-                    MixerProcessorButton(it.name, true) { }
+                    MixerProcessorButton(it.name, true, onClick = it::onClick)
                     Divider(Modifier.padding(horizontal = 8.dp))
                 }
                 MixerProcessorButton("...", fontWeight = FontWeight.Bold) { }

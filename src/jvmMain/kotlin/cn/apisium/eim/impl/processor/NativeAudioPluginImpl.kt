@@ -28,7 +28,8 @@ class NativeAudioPluginImpl(
     override val description: NativeAudioPluginDescription
 ) : NativeAudioPlugin, ProcessAudioProcessorImpl(
     Configuration.nativeHostPath, " -L",
-    JsonPrimitive(Json.encodeToString(NativeAudioPluginDescription.serializer(), description)).toString()) {
+    JsonPrimitive(Json.encodeToString(NativeAudioPluginDescription.serializer(), description)).toString()
+) {
     override var name = description.name
 }
 
