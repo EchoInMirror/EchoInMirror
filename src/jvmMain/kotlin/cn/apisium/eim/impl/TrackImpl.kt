@@ -45,6 +45,7 @@ open class TrackImpl(
     private var _isSolo by mutableStateOf(false)
     private var _isDisabled by mutableStateOf(false)
     private var tempBuffer = arrayOf(FloatArray(1024), FloatArray(1024))
+    private var tempBuffer2 = arrayOf(FloatArray(1024), FloatArray(1024))
 
     override var isMute get() = _isMute
         set(value) {
@@ -110,25 +111,27 @@ open class TrackImpl(
         if (subTracks.size == 1) {
             val track = subTracks.first()
             if (!track.isMute && !track.isDisabled) track.processBlock(buffers, position, ArrayList(midiBuffer))
-        } else {
+        } else if (subTracks.isNotEmpty()) {
             tempBuffer[0].fill(0F)
             tempBuffer[1].fill(0F)
-            withContext(Dispatchers.Default) {
-                subTracks.filter { !it.isMute && !it.isDisabled }.map {
-                    async {
-                        val buffer = arrayOf(buffers[0].clone(), buffers[1].clone())
+            runBlocking {
+                subTracks.forEach {
+                    if (it.isMute || it.isDisabled) return@forEach
+                    launch {
+                        val buffer = if (it is TrackImpl) it.tempBuffer2.apply {
+                            buffers[0].copyInto(this[0])
+                            buffers[1].copyInto(this[1])
+                        } else arrayOf(buffers[0].clone(), buffers[1].clone())
                         it.processBlock(buffer, position, ArrayList(midiBuffer))
                         for (i in 0 until position.bufferSize) {
                             tempBuffer[0][i] += buffer[0][i]
                             tempBuffer[1][i] += buffer[1][i]
                         }
                     }
-                }.awaitAll()
+                }
             }
             tempBuffer[0].copyInto(buffers[0])
             tempBuffer[1].copyInto(buffers[1])
-//            buffers[0] = tempBuffer[0]
-//            buffers[1] = tempBuffer[1]
         }
         postProcessorsChain.forEach { it.processBlock(buffers, position, midiBuffer) }
         var leftPeak = 0F
@@ -155,6 +158,7 @@ open class TrackImpl(
     override fun prepareToPlay() {
         val size = EchoInMirror.currentPosition.bufferSize
         tempBuffer = arrayOf(FloatArray(size), FloatArray(size))
+        tempBuffer2 = arrayOf(FloatArray(size), FloatArray(size))
         preProcessorsChain.forEach(AudioProcessor::prepareToPlay)
         subTracks.forEach(Track::prepareToPlay)
         postProcessorsChain.forEach(AudioProcessor::prepareToPlay)
