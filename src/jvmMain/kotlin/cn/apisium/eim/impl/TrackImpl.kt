@@ -46,7 +46,7 @@ open class TrackImpl(
     private var _isDisabled by mutableStateOf(false)
     private var tempBuffer = arrayOf(FloatArray(1024), FloatArray(1024))
     private var tempBuffer2 = arrayOf(FloatArray(1024), FloatArray(1024))
-
+    private var _isRendering by mutableStateOf(false)
     override var isMute get() = _isMute
         set(value) {
             if (_isMute == value) return
@@ -63,6 +63,13 @@ open class TrackImpl(
         set(value) {
             if (_isDisabled == value) return
             _isDisabled = value
+            stateChange()
+        }
+
+    override var isRendering get() = _isRendering
+        set(value) {
+            if(_isRendering == value) return
+            _isRendering = value
             stateChange()
         }
 
@@ -191,5 +198,13 @@ open class TrackImpl(
     override fun stateChange() {
         levelMeter.reset()
         subTracks.forEach(Track::stateChange)
+    }
+
+    override fun onRenderStart() {
+        isRendering = true
+    }
+
+    override fun onRenderEnd() {
+        isRendering = false
     }
 }
