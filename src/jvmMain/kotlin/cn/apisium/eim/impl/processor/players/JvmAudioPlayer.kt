@@ -3,6 +3,7 @@ package cn.apisium.eim.impl.processor.players
 import cn.apisium.eim.api.AudioPlayer
 import cn.apisium.eim.api.CurrentPosition
 import cn.apisium.eim.api.processor.AudioProcessor
+import cn.apisium.eim.utils.getSampleBits
 import kotlinx.coroutines.runBlocking
 import java.util.*
 import javax.sound.sampled.AudioFormat
@@ -38,7 +39,7 @@ class JvmAudioPlayer(currentPosition: CurrentPosition, processor: AudioProcessor
         sdl!!.open(af, outputBuffer.size)
         sdl!!.start()
 
-        if (processor != null) processor!!.prepareToPlay()
+        if (processor != null) processor!!.prepareToPlay(sampleRate, bufferSize)
 
         thread = Thread(this)
         thread!!.start()
@@ -57,6 +58,7 @@ class JvmAudioPlayer(currentPosition: CurrentPosition, processor: AudioProcessor
 
     @Suppress("DuplicatedCode")
     override fun run() {
+        val sampleBits = getSampleBits(bits)
         while (thread?.isAlive == true) {
             if (sdl == null || processor == null) {
                 Thread.sleep(10)
@@ -74,7 +76,7 @@ class JvmAudioPlayer(currentPosition: CurrentPosition, processor: AudioProcessor
 
             for (j in 0 until channels) {
                 for (i in 0 until bufferSize) {
-                    var value = (buffers[j][i] * 32767).toInt()
+                    var value = (buffers[j][i] * sampleBits).toInt()
                     for (k in 0 until bits) {
                         outputBuffer[i * channels * bits + j * bits + k] = value.toByte()
                         value = value shr 8

@@ -3,41 +3,30 @@ package cn.apisium.eim.impl
 import cn.apisium.eim.api.CurrentPosition
 import cn.apisium.eim.api.Renderable
 import cn.apisium.eim.api.Renderer
-import javax.sound.sampled.*
-import java.io.*
-import java.nio.ByteBuffer
+import cn.apisium.eim.data.CachedBufferInputStream
+import cn.apisium.eim.utils.getSampleBits
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
+import java.io.File
+import javax.sound.sampled.AudioFileFormat
+import javax.sound.sampled.AudioFormat
+import javax.sound.sampled.AudioInputStream
+import javax.sound.sampled.AudioSystem
 
-class RenderPosition : CurrentPosition {
+class RenderPosition(override var ppq: Int, override var sampleRate: Int, override var timeInPPQ: Int) : CurrentPosition {
     override var bpm = 140.0
     override var timeInSamples = 0L
     override var timeInSeconds = 0.0
-    override var ppq = 96
-    override var timeInPPQ = 0
     override var ppqPosition = 0.0
     override var bufferSize = 1024
-    override var sampleRate = 44800
     override var timeSigNumerator = 4
     override var timeSigDenominator = 4
-    override var isPlaying: Boolean = false
+    override var isPlaying = true
+        set(_) { throw UnsupportedOperationException() }
+    override val isRealtime = false
 
-    constructor(other: CurrentPosition) {
-        bpm = other.bpm
-        timeInSamples = other.timeInSamples
-        timeInSeconds = other.timeInSeconds
-        ppq = other.ppq
-        timeInPPQ = other.timeInPPQ
-        ppqPosition = other.ppqPosition
-        bufferSize = other.bufferSize
-        sampleRate = other.sampleRate
-        timeSigNumerator = other.timeSigNumerator
-        timeSigDenominator = other.timeSigDenominator
-        isPlaying = other.isPlaying
-    }
-
-    constructor(ppq: Int, sampleRate: Int, timeInPPQ: Int) {
-        this.ppq = ppq
-        this.sampleRate = sampleRate
-        this.timeInPPQ = timeInPPQ
+    init {
         this.timeInSamples = this.convertPPQToSamples(timeInPPQ)
     }
 
@@ -54,16 +43,11 @@ class RenderPosition : CurrentPosition {
     }
 
     override fun update(timeInSamples: Long) {
-        this.timeInSamples = timeInSamples.coerceAtLeast(0).toLong()
-        this.timeInSeconds =
-            this.timeInSamples.toDouble() / this.sampleRate
-        this.ppqPosition = this.timeInSeconds / 60.0 * this.bpm
-        this.timeInPPQ = (this.ppqPosition * this.ppq).toInt()
+        throw UnsupportedOperationException()
     }
 }
 
-class RendererImpl(renderTarget: Renderable) :
-    Renderer(renderTarget) {
+class RendererImpl(private val renderTarget: Renderable) : Renderer {
     override suspend fun start(
         startPosition: Int,
         endPosition: Int,
@@ -74,48 +58,52 @@ class RendererImpl(renderTarget: Renderable) :
         audioType: AudioFileFormat.Type,
         callback: (Float) -> Unit
     ) {
-        this.renderTarget.onRenderStart()
+        if (endPosition <= startPosition) throw IllegalArgumentException("endPosition must be greater than startPosition")
+        renderTarget.onRenderStart()
         val channels = 2
         val bits = 2
-        val currentRenderPosition = RenderPosition(ppq, sampleRate, startPosition)
-        val format = AudioFormat(
-            AudioFormat.Encoding.PCM_SIGNED, sampleRate.toFloat(), bits * 8, channels,
-            bits * channels, sampleRate.toFloat(), false
-        )
-        val resbuffer = ByteBuffer.allocate(100000000)
-        while (currentRenderPosition.timeInPPQ <= endPosition) {
-            val buffers =
-                arrayOf(FloatArray(currentRenderPosition.bufferSize), FloatArray(currentRenderPosition.bufferSize))
-            val midiBuffer = ArrayList<Int>()
-            this.renderTarget.processBlock(buffers, currentRenderPosition, midiBuffer)
+        val position = RenderPosition(ppq, sampleRate, startPosition)
+        val fullLength = channels * bits *
+                position.convertPPQToSamples(endPosition - startPosition)
+        val buffers =
+            arrayOf(FloatArray(position.bufferSize), FloatArray(position.bufferSize))
+        val sampleBits = getSampleBits(bits)
+        val outputStream = CachedBufferInputStream(channels * bits * position.bufferSize, fullLength) { buffer ->
+            if (position.timeInPPQ > endPosition) return@CachedBufferInputStream
 
-            currentRenderPosition.update(currentRenderPosition.timeInSamples+currentRenderPosition.bufferSize)
+            buffers.forEach { it.fill(0F) }
+            try {
+                runBlocking { renderTarget.processBlock(buffers, position, ArrayList()) }
+            } catch (e: Throwable) {
+                e.printStackTrace()
+            }
 
-            callback(((currentRenderPosition.timeInPPQ - startPosition) / (endPosition - startPosition)).toFloat())
-
-            val outBuffer = ByteArray(channels * currentRenderPosition.bufferSize * bits)
-            // TODO value of channels will change in future
             for (j in 0 until channels) {
-                for (i in 0 until currentRenderPosition.bufferSize) {
-                    var value = (buffers[j][i] * 32767).toInt()
+                for (i in 0 until position.bufferSize) {
+                    var value = (buffers[j][i] * sampleBits).toInt()
                     for (k in 0 until bits) {
-                        outBuffer[i * channels * bits + j * bits + k] = value.toByte()
+                        buffer[i * channels * bits + j * bits + k] = value.toByte()
                         value = value shr 8
                     }
                 }
             }
-            resbuffer.put(outBuffer)
+
+            position.timeInSamples += position.bufferSize
+            position.timeInSeconds =
+                position.timeInSamples.toDouble() / position.sampleRate
+            position.ppqPosition = position.timeInSeconds / 60.0 * position.bpm
+            position.timeInPPQ = (position.ppqPosition * position.ppq).toInt()
+
+            callback(((position.timeInPPQ - startPosition).toFloat() / (endPosition - startPosition)).coerceAtMost(0.9999F))
         }
-        resbuffer.flip()
-        val outByte = ByteArray(resbuffer.limit()-resbuffer.position())
-        resbuffer.get(outByte,0,outByte.size)
-        val bais = ByteArrayInputStream(outByte)
-        val ais = AudioInputStream(
-            bais, format,
-            outByte.size.toLong()
+        val format = AudioFormat(
+            AudioFormat.Encoding.PCM_SIGNED, sampleRate.toFloat(), bits * 8, channels,
+            bits * channels, sampleRate.toFloat(), false
         )
-        AudioFileFormat.Type.WAVE
-        AudioSystem.write(ais, audioType, file)
+        withContext(Dispatchers.IO) {
+            AudioSystem.write(AudioInputStream(outputStream, format, fullLength), audioType, file)
+        }
         this.renderTarget.onRenderEnd()
+        callback(1F)
     }
 }

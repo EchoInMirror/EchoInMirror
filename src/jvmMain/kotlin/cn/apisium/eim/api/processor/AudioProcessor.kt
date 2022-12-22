@@ -19,7 +19,7 @@ interface AudioProcessor: AutoCloseable {
     val outputChannelsCount: Int
     val uuid: Long
     suspend fun processBlock(buffers: Array<FloatArray>, position: CurrentPosition, midiBuffer: ArrayList<Int>) { }
-    fun prepareToPlay() { }
+    fun prepareToPlay(sampleRate: Int, bufferSize: Int) { }
     fun onSuddenChange() { }
     fun onClick() { }
     override fun close() { }

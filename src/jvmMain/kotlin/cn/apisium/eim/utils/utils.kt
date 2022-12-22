@@ -128,3 +128,5 @@ private fun DrawScope.drawEndBorder(
         color = border.color
     )
 }
+
+fun getSampleBits(bits: Int) = (1 shl ((8 shl (bits - 1)) - 1)) - 1

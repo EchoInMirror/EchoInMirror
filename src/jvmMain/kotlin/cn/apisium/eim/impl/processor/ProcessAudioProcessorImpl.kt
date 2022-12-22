@@ -27,11 +27,13 @@ open class ProcessAudioProcessorImpl(
     private var inputStream: EIMInputStream? = null
     private var outputStream: EIMOutputStream? = null
     private val mutex = Mutex()
+    private var parpared = false
 
     override suspend fun processBlock(buffers: Array<FloatArray>, position: CurrentPosition, midiBuffer: ArrayList<Int>) {
         val output = outputStream
         if (!isLaunched || output == null) return
         mutex.withLock {
+            if (!parpared) prepareToPlay(position.sampleRate, position.bufferSize)
             output.write(1)
             output.writeBoolean(position.isPlaying)
             output.writeDouble(position.bpm)
@@ -72,11 +74,12 @@ open class ProcessAudioProcessorImpl(
         }
     }
 
-    override fun prepareToPlay() {
+    override fun prepareToPlay(sampleRate: Int, bufferSize: Int) {
+        parpared = true
         val output = outputStream ?: return
         output.write(0)
-        output.writeInt(EchoInMirror.currentPosition.sampleRate)
-        output.writeInt(EchoInMirror.currentPosition.bufferSize)
+        output.writeInt(sampleRate)
+        output.writeInt(bufferSize)
         output.flush()
     }
 
@@ -122,7 +125,6 @@ open class ProcessAudioProcessorImpl(
                 inputStream = input
                 outputStream = output
 
-                prepareToPlay()
                 isLaunched = true
             } catch (e: Throwable) {
                 p.destroy()

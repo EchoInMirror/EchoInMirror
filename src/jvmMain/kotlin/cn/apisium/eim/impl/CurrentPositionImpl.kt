@@ -20,6 +20,8 @@ class CurrentPositionImpl: CurrentPosition {
     override val ppqCountOfBlock get() = (bufferSize / sampleRate / 60.0 * bpm * ppq).toInt()
 
     private var _isPlaying by mutableStateOf(false)
+    override val isRealtime = true
+
     override var isPlaying
         get() = _isPlaying
         set(value) {

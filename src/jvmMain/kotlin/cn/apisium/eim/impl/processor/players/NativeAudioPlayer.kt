@@ -37,7 +37,7 @@ class NativeAudioPlayer(currentPosition: CurrentPosition, processor: AudioProces
         p.onExit().thenAccept { process = null }
         process = p
 
-        if (processor != null) processor!!.prepareToPlay()
+        if (processor != null) processor!!.prepareToPlay(sampleRate, bufferSize)
 
         thread = Thread(this)
         thread!!.start()

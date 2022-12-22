@@ -4,7 +4,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.api.CurrentPosition
 import cn.apisium.eim.api.Track
 import cn.apisium.eim.api.processor.AbstractAudioProcessor
@@ -162,13 +161,12 @@ open class TrackImpl(
         }
     }
 
-    override fun prepareToPlay() {
-        val size = EchoInMirror.currentPosition.bufferSize
-        tempBuffer = arrayOf(FloatArray(size), FloatArray(size))
-        tempBuffer2 = arrayOf(FloatArray(size), FloatArray(size))
-        preProcessorsChain.forEach(AudioProcessor::prepareToPlay)
-        subTracks.forEach(Track::prepareToPlay)
-        postProcessorsChain.forEach(AudioProcessor::prepareToPlay)
+    override fun prepareToPlay(sampleRate: Int, bufferSize: Int) {
+        tempBuffer = arrayOf(FloatArray(bufferSize), FloatArray(bufferSize))
+        tempBuffer2 = arrayOf(FloatArray(bufferSize), FloatArray(bufferSize))
+        preProcessorsChain.forEach { it.prepareToPlay(sampleRate, bufferSize) }
+        subTracks.forEach { it.prepareToPlay(sampleRate, bufferSize) }
+        postProcessorsChain.forEach { it.prepareToPlay(sampleRate, bufferSize) }
     }
 
     override fun close() {

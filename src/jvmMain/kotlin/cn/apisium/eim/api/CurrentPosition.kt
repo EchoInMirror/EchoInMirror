@@ -13,6 +13,7 @@ interface CurrentPosition {
     var timeSigNumerator: Int
     var timeSigDenominator: Int
     val ppqCountOfBlock: Int
+    val isRealtime: Boolean
 
     fun update(timeInSamples: Long)
     fun setPPQPosition(ppqPosition: Double)
