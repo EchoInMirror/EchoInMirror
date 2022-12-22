@@ -19,9 +19,11 @@ class CurrentPositionImpl: CurrentPosition {
     override var timeSigDenominator by mutableStateOf(4)
     override val ppqCountOfBlock get() = (bufferSize / sampleRate / 60.0 * bpm * ppq).toInt()
 
-    private var _isPlaying by mutableStateOf(false)
+    override var isLooping by mutableStateOf(false)
+    override var isRecording by mutableStateOf(false)
     override val isRealtime = true
 
+    private var _isPlaying by mutableStateOf(false)
     override var isPlaying
         get() = _isPlaying
         set(value) {

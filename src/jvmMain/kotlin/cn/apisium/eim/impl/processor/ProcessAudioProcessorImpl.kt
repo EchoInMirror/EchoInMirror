@@ -5,6 +5,7 @@ import cn.apisium.eim.api.CurrentPosition
 import cn.apisium.eim.api.processor.AbstractAudioProcessor
 import cn.apisium.eim.api.processor.FailedToLoadAudioPluginException
 import cn.apisium.eim.api.processor.ProcessAudioProcessor
+import cn.apisium.eim.api.processor.toFlags
 import cn.apisium.eim.utils.EIMInputStream
 import cn.apisium.eim.utils.EIMOutputStream
 import kotlinx.coroutines.*
@@ -27,15 +28,15 @@ open class ProcessAudioProcessorImpl(
     private var inputStream: EIMInputStream? = null
     private var outputStream: EIMOutputStream? = null
     private val mutex = Mutex()
-    private var parpared = false
+    private var prepared = false
 
     override suspend fun processBlock(buffers: Array<FloatArray>, position: CurrentPosition, midiBuffer: ArrayList<Int>) {
         val output = outputStream
         if (!isLaunched || output == null) return
+        if (!prepared) prepareToPlay(position.sampleRate, position.bufferSize)
         mutex.withLock {
-            if (!parpared) prepareToPlay(position.sampleRate, position.bufferSize)
             output.write(1)
-            output.writeBoolean(position.isPlaying)
+            output.write(position.toFlags())
             output.writeDouble(position.bpm)
             output.writeLong(position.timeInSamples)
             val inputChannels = inputChannelsCount.coerceAtMost(buffers.size)
@@ -75,7 +76,7 @@ open class ProcessAudioProcessorImpl(
     }
 
     override fun prepareToPlay(sampleRate: Int, bufferSize: Int) {
-        parpared = true
+        prepared = true
         val output = outputStream ?: return
         output.write(0)
         output.writeInt(sampleRate)

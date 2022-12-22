@@ -8,12 +8,14 @@ interface CurrentPosition {
     val timeInPPQ: Int
     var ppqPosition: Double
     var isPlaying: Boolean
+    var isLooping: Boolean
+    var isRecording: Boolean
+    val isRealtime: Boolean
     var bufferSize: Int
     var sampleRate: Int
     var timeSigNumerator: Int
     var timeSigDenominator: Int
     val ppqCountOfBlock: Int
-    val isRealtime: Boolean
 
     fun update(timeInSamples: Long)
     fun setPPQPosition(ppqPosition: Double)

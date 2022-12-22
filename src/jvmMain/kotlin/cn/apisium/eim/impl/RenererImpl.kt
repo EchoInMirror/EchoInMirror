@@ -24,6 +24,8 @@ class RenderPosition(override var ppq: Int, override var sampleRate: Int, overri
     override var timeSigDenominator = 4
     override var isPlaying = true
         set(_) { throw UnsupportedOperationException() }
+    override var isLooping = false
+    override var isRecording = false
     override val isRealtime = false
 
     init {
