@@ -46,27 +46,34 @@ open class TrackImpl(
     private var _isDisabled by mutableStateOf(false)
     private var tempBuffer = arrayOf(FloatArray(1024), FloatArray(1024))
     private var tempBuffer2 = arrayOf(FloatArray(1024), FloatArray(1024))
-
-    override var isMute get() = _isMute
+    override var isRendering: Boolean by mutableStateOf(false)
+    override var isMute
+        get() = _isMute
         set(value) {
             if (_isMute == value) return
             _isMute = value
             stateChange()
         }
-    override var isSolo get() = _isSolo
+    override var isSolo
+        get() = _isSolo
         set(value) {
             if (_isSolo == value) return
             _isSolo = value
             stateChange()
         }
-    override var isDisabled get() = _isDisabled
+    override var isDisabled
+        get() = _isDisabled
         set(value) {
             if (_isDisabled == value) return
             _isDisabled = value
             stateChange()
         }
 
-    override suspend fun processBlock(buffers: Array<FloatArray>, position: CurrentPosition, midiBuffer: ArrayList<Int>) {
+    override suspend fun processBlock(
+        buffers: Array<FloatArray>,
+        position: CurrentPosition,
+        midiBuffer: ArrayList<Int>
+    ) {
         if (_isMute || _isDisabled) return
         if (pendingMidiBuffer.isNotEmpty()) {
             midiBuffer.addAll(pendingMidiBuffer)
@@ -191,5 +198,13 @@ open class TrackImpl(
     override fun stateChange() {
         levelMeter.reset()
         subTracks.forEach(Track::stateChange)
+    }
+
+    override fun onRenderStart() {
+        isRendering = true
+    }
+
+    override fun onRenderEnd() {
+        isRendering = false
     }
 }
