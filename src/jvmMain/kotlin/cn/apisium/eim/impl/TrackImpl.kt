@@ -11,10 +11,7 @@ import cn.apisium.eim.api.processor.AudioProcessor
 import cn.apisium.eim.api.processor.LevelMeterImpl
 import cn.apisium.eim.api.processor.dsp.calcPanLeftChannel
 import cn.apisium.eim.api.processor.dsp.calcPanRightChannel
-import cn.apisium.eim.data.midi.MidiEvent
-import cn.apisium.eim.data.midi.MidiNoteRecorder
-import cn.apisium.eim.data.midi.NoteMessage
-import cn.apisium.eim.data.midi.noteOff
+import cn.apisium.eim.data.midi.*
 import cn.apisium.eim.utils.randomColor
 import kotlinx.coroutines.*
 import java.util.*
@@ -29,7 +26,7 @@ open class TrackImpl(
     override var volume by mutableStateOf(1F)
 
     override val levelMeter = LevelMeterImpl()
-    override val notes: MutableList<NoteMessage> = mutableStateListOf()
+    override val notes = NoteMessageListImpl()
 
     override val preProcessorsChain = mutableStateListOf<AudioProcessor>()
     override val postProcessorsChain = mutableStateListOf<AudioProcessor>()
@@ -96,19 +93,19 @@ open class TrackImpl(
                 if (startTimeInSamples > blockEndSample) break
                 currentPlayedIndex = i + 1
                 val noteOnTime = (startTimeInSamples - position.timeInSamples).toInt().coerceAtLeast(0)
-                if (noteRecorder.isMarked(note.note.note)) {
-                    noteRecorder.unmarkNote(note.note.note)
-                    midiBuffer.add(note.note.toNoteOff().rawData)
+                if (noteRecorder.isMarked(note.note)) {
+                    noteRecorder.unmarkNote(note.note)
+                    midiBuffer.add(note.toNoteOffRawData())
                     midiBuffer.add(noteOnTime)
                 }
-                midiBuffer.add(note.note.rawData)
+                midiBuffer.add(note.toNoteOnRawData())
                 midiBuffer.add(noteOnTime)
                 val endTime = endTimeInSamples - position.timeInSamples
                 if (endTimeInSamples > blockEndSample) {
-                    pendingNoteOns[note.note.note] = endTime
-                    noteRecorder.markNote(note.note.note)
+                    pendingNoteOns[note.note] = endTime
+                    noteRecorder.markNote(note.note)
                 } else {
-                    midiBuffer.add(note.note.toNoteOff().rawData)
+                    midiBuffer.add(note.toNoteOffRawData())
                     midiBuffer.add((endTimeInSamples - position.timeInSamples).toInt().coerceAtLeast(0))
                 }
             }
@@ -122,7 +119,7 @@ open class TrackImpl(
             tempBuffer[1].fill(0F)
             runBlocking {
                 subTracks.forEach {
-                    if (it.isMute || it.isDisabled) return@forEach
+                    if (it.isMute || it.isDisabled || it.isRendering) return@forEach
                     launch {
                         val buffer = if (it is TrackImpl) it.tempBuffer2.apply {
                             buffers[0].copyInto(this[0])

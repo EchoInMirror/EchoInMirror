@@ -21,8 +21,11 @@ import androidx.compose.ui.unit.sp
 import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.data.midi.KEY_NAMES
 import cn.apisium.eim.utils.toOnSurfaceColor
+import cn.apisium.eim.utils.x
+import cn.apisium.eim.utils.y
 
 val scales = arrayOf(true, false, true, false, true, false, true, true, false, true, false, true)
+const val KEYBOARD_KEYS = 132
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Preview
@@ -39,17 +42,17 @@ fun Keyboard(
         else MaterialTheme.colorScheme.secondary
 ) {
     Column(modifier.width(keyWidth)) {
-        for (i in 131 downTo 0) {
+        for (i in (KEYBOARD_KEYS - 1) downTo 0) {
             val name = KEY_NAMES[i % 12]
             val isWhite = scales[i % 12]
             val color = if (isWhite) whiteKeyColor else backKeyColor
             var modifier2 = Modifier.fillMaxWidth().height(keyHeight - 1.dp).background(color)
             if (i <= 0x7F) modifier2 = modifier2.clickable {  }
                 .onPointerEvent(PointerEventType.Press) {
-                    onNoteOn(i, if (it.changes.isEmpty()) 0F else it.changes.first().position.x / keyWidth.toPx())
+                    onNoteOn(i, it.x / keyWidth.toPx())
                 }
                 .onPointerEvent(PointerEventType.Release) {
-                    onNoteOff(i, if (it.changes.isEmpty()) 0F else it.changes.first().position.x / keyWidth.toPx())
+                    onNoteOff(i, it.y / keyWidth.toPx())
                 }
             Box(modifier2) {
                 Text(name + (i / 12), Modifier.align(Alignment.CenterEnd).padding(horizontal = 5.dp),

@@ -4,7 +4,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.awt.ComposeWindow
 import cn.apisium.eim.api.window.Panel
 import cn.apisium.eim.api.window.WindowManager
-import cn.apisium.eim.window.Editor
+import cn.apisium.eim.window.editor.Editor
 import cn.apisium.eim.window.Mixer
 import cn.apisium.eim.window.dialogs.QuickLoadDialog
 import cn.apisium.eim.window.dialogs.settings.SettingsWindow

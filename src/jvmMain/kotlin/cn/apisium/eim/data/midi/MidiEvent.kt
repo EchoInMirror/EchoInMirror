@@ -82,8 +82,8 @@ value class MidiEvent(val rawData: Int) {
     fun toNoteOff() = MidiEvent(channel or 0x80, byte2Int, byte3Int)
 }
 
-fun noteOn(channel: Int, note: Int, velocity: Int = 70): MidiEvent = MidiEvent(0x90 or channel, note, velocity)
-fun noteOff(channel: Int, note: Int) = MidiEvent(0x80 or channel, note, 70)
+fun noteOn(channel: Int = 0, note: Int, velocity: Int = 70): MidiEvent = MidiEvent(0x90 or channel, note, velocity)
+fun noteOff(channel: Int = 0, note: Int) = MidiEvent(0x80 or channel, note, 70)
 fun controllerEvent(channel: Int, controller: Int, value: Int) = MidiEvent(0xB0 or channel, controller, value)
 fun allNotesOff(channel: Int) = controllerEvent(channel, 123, 0)
 fun allSoundOff(channel: Int) = controllerEvent(channel, 120, 0)

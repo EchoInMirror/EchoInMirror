@@ -73,9 +73,10 @@ private fun TrackItem(track: Track, height: Dp, index: Int, depth: Int = 0) {
 @Composable
 private fun TrackContent(height: Dp = 70.dp, track: Track, noteWidth: Dp, modifier: Modifier = Modifier) {
     Box(modifier.fillMaxWidth().height(height)) {
+        track.notes.read()
         track.notes.forEach {
             Box(Modifier.height(height / 128).width(noteWidth * it.duration)
-                .offset(x = noteWidth * it.time, y = height - height / 128 * it.note.note)
+                .offset(x = noteWidth * it.time, y = height - height / 128 * it.note)
                 .background(track.color))
         }
     }

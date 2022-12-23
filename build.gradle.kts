@@ -25,10 +25,10 @@ repositories {
 }
 
 kotlin {
-    jvmToolchain(18)
+    jvmToolchain(17)
     jvm {
         compilations.all {
-            kotlinOptions.jvmTarget = "18"
+            kotlinOptions.jvmTarget = "17"
         }
         withJava()
     }
@@ -108,4 +108,11 @@ tasks.withType<Jar> {
 tasks.withType<ShadowJar> {
     archiveClassifier.set("")
     archiveVersion.set("")
+    minimize {
+        exclude(dependency(org.jetbrains.compose.ComposePlugin.DesktopDependencies.currentOs))
+        exclude(dependency("org.jetbrains.kotlin:kotlin-stdlib-jdk8"))
+        exclude(dependency("org.jetbrains.kotlinx:kotlinx-serialization-json"))
+        exclude(dependency("org.pf4j:pf4j"))
+        exclude(dependency("org.pf4j:pf4j-simple"))
+    }
 }

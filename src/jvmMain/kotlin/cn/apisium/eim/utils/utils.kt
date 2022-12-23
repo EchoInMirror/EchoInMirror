@@ -10,6 +10,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import java.util.*
@@ -130,3 +131,6 @@ private fun DrawScope.drawEndBorder(
 }
 
 fun getSampleBits(bits: Int) = (1 shl (8 * bits - 1)) - 1
+
+val PointerEvent.x get() = if (changes.isEmpty()) 0f else changes[0].position.x
+val PointerEvent.y get() = if (changes.isEmpty()) 0f else changes[0].position.y

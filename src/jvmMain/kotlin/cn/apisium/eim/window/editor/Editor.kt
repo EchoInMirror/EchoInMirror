@@ -1,4 +1,4 @@
-package cn.apisium.eim.window
+package cn.apisium.eim.window.editor
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.Orientation
@@ -10,11 +10,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.*
@@ -27,11 +29,19 @@ import cn.apisium.eim.api.window.PanelDirection
 import cn.apisium.eim.components.*
 import cn.apisium.eim.components.splitpane.VerticalSplitPane
 import cn.apisium.eim.components.splitpane.rememberSplitPaneState
+import cn.apisium.eim.data.midi.NoteMessage
+import cn.apisium.eim.data.midi.defaultNoteMessage
 import cn.apisium.eim.data.midi.noteOff
 import cn.apisium.eim.data.midi.noteOn
-import cn.apisium.eim.utils.getSurfaceColor
-import cn.apisium.eim.utils.inverts
+import cn.apisium.eim.utils.*
+import kotlin.math.roundToInt
 
+object EditorSingleton {
+    val selectedNotes = mutableStateSetOf<NoteMessage>()
+    var startNoteIndex = 0
+}
+
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun NotesEditorCanvas(
     noteHeight: Dp,
@@ -42,7 +52,29 @@ fun NotesEditorCanvas(
 ) {
     val highlightNoteColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.03F)
     val outlineColor = MaterialTheme.colorScheme.surfaceVariant
-    EditorGrid(noteWidth, horizontalScrollState, modifier = modifier.scrollable(verticalScrollState, Orientation.Vertical, reverseDirection = true)) {
+    val primaryColor = MaterialTheme.colorScheme.primary
+    EditorGrid(noteWidth, horizontalScrollState,
+        modifier = modifier.scrollable(verticalScrollState, Orientation.Vertical, reverseDirection = true)
+            .onPointerEvent(PointerEventType.Press) {
+                EchoInMirror.selectedTrack?.let { track ->
+                    val currentNote = KEYBOARD_KEYS - ((it.y + verticalScrollState.value) / noteHeight.value).toInt() - 1
+                    val x = ((it.x + horizontalScrollState.value) / noteWidth.value).roundToInt()
+                    for (i in EditorSingleton.startNoteIndex until track.notes.size) {
+                        val note = track.notes[i]
+                        if (note.note == currentNote && note.time <= x && note.time + note.duration >= x) {
+                            EditorSingleton.selectedNotes.add(note)
+                            return@let
+                        }
+                    }
+                    val note = defaultNoteMessage(currentNote, x, 96)
+                    val time = System.nanoTime()
+                    track.notes.add(note)
+                    track.notes.sort()
+                    track.notes.update()
+                    println((System.nanoTime() - time) / 1e6)
+                }
+            }
+    ) {
         val verticalScrollValue = verticalScrollState.value
         val horizontalScrollValue = horizontalScrollState.value
         val noteHeightPx = noteHeight.toPx()
@@ -70,19 +102,26 @@ fun NotesEditorCanvas(
             val invertsColor = track.color.inverts()
             val currentPPQ = EchoInMirror.currentPosition.timeInPPQ
             val isPlaying = EchoInMirror.currentPosition.isPlaying
-            for (it in track.notes) {
-                val y = (131 - it.note.note) * noteHeightPx - verticalScrollValue
+            var startNoteIndex = 0
+            track.notes.read()
+            for ((index, it) in track.notes.withIndex()) {
+                val y = (KEYBOARD_KEYS - 1 - it.note) * noteHeightPx - verticalScrollValue
                 val x = it.time * noteWidthPx - horizontalScrollValue
-                if (y < -noteHeightPx || y > size.height || x < 0 || x > size.width) continue
+                if (y < -noteHeightPx || y > size.height) continue
+                val width = it.duration * noteWidthPx
+                if (x < 0 && width < -x) continue
+                if (x > size.width) break
+                if (startNoteIndex == 0) startNoteIndex = index
                 val isPlayingNote = isPlaying && it.time <= currentPPQ && it.time + it.duration >= currentPPQ
-                drawRoundRect(
-                    if (isPlayingNote) invertsColor else track.color,
-                    Offset(x, y.coerceAtLeast(0F)),
-                    Size(it.duration * noteWidthPx, if (y < 0)
-                            (noteHeightPx + y).coerceAtLeast(0F) else noteHeightPx),
-                    CornerRadius(2f)
-                )
+                val pos = Offset(x, y.coerceAtLeast(0F))
+                val size = Size(width, if (y < 0)
+                    (noteHeightPx + y).coerceAtLeast(0F) else noteHeightPx)
+                drawRoundRect(if (isPlayingNote) invertsColor else track.color, pos, size, BorderCornerRadius2PX)
+                if (EditorSingleton.selectedNotes.contains(it)) {
+                    drawRoundRect(primaryColor, pos, size, BorderCornerRadius2PX, Stroke1PX)
+                }
             }
+            EditorSingleton.startNoteIndex = startNoteIndex
         }
     }
 }
