@@ -38,6 +38,7 @@ import cn.apisium.eim.window.editor.EditAction.*
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import java.awt.Cursor
 import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
 
@@ -65,6 +66,7 @@ private var deltaX by mutableStateOf(0)
 private var deltaY by mutableStateOf(0)
 private var action by mutableStateOf(NONE)
 private var resizeDirectionRight = false
+private var cursor by mutableStateOf(Cursor.DEFAULT_CURSOR)
 
 private data class NoteDrawObject(val note: NoteMessage, val offset: Offset, val size: Size)
 
@@ -73,15 +75,33 @@ private suspend fun PointerInputScope.handleDrag() {
     forEachGesture {
         awaitPointerEventScope {
             var event: PointerEvent
-            val currentNote: Int
-            val currentX: Int
+            var currentNote: Int
+            var currentX: Int
             var selectedNotesLeft = Int.MAX_VALUE
             var selectedNotesTop = 0
             var selectedNotesBottom = Int.MAX_VALUE
             var minNoteDuration = Int.MAX_VALUE
-            do {
+            loop@do {
                 event = awaitPointerEvent(PointerEventPass.Main)
                 val track = EchoInMirror.selectedTrack ?: continue
+                if (event.type == PointerEventType.Move) {
+                    currentNote = KEYBOARD_KEYS - ((event.y + verticalScrollState.value) / noteHeight.value).toInt() - 1
+                    currentX = ((event.x + horizontalScrollState.value) / noteWidth.value).roundToInt()
+                    for (i in startNoteIndex until track.notes.size) {
+                        val note = track.notes[i]
+                        if (note.time > currentX) break
+                        if (note.note == currentNote && note.time <= currentX && note.time + note.duration >= currentX) {
+                            val startX = note.time * noteWidth.value - horizontalScrollState.value
+                            val endX = (note.time + note.duration) * noteWidth.value - horizontalScrollState.value
+                            cursor = if ((event.x < startX + 4 && event.x > startX - 4) ||
+                                (event.x < endX + 4 && event.x > endX - 4)) Cursor.E_RESIZE_CURSOR
+                            else Cursor.MOVE_CURSOR
+                            continue@loop
+                        }
+                    }
+                    cursor = Cursor.DEFAULT_CURSOR
+                    continue
+                }
 
                 if (event.buttons.isPrimaryPressed) {
                     if (event.keyboardModifiers.isCtrlPressed) {
@@ -239,7 +259,8 @@ private suspend fun PointerInputScope.handleDrag() {
 private fun NotesEditorCanvas() {
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
         .scrollable(verticalScrollState, Orientation.Vertical, reverseDirection = true)
-        .pointerInput(Unit) { handleDrag() }) {
+        .pointerInput(Unit) { handleDrag() }
+    ) {
         val highlightNoteColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.03F)
         val outlineColor = MaterialTheme.colorScheme.surfaceVariant
         val primaryColor = MaterialTheme.colorScheme.primary
@@ -316,7 +337,9 @@ private fun NotesEditorCanvas() {
                 }
             }
         })
-        Canvas(Modifier.fillMaxSize()) {
+        Canvas(Modifier.fillMaxSize().pointerHoverIcon(PointerIcon(Cursor(
+            when (action) { MOVE -> Cursor.MOVE_CURSOR; RESIZE -> Cursor.E_RESIZE_CURSOR; else -> cursor }
+        )))) {
             if (selectionX == 0F && selectionStartX == 0F) return@Canvas
             val scrollX = horizontalScrollState.value
             val scrollY = verticalScrollState.value
