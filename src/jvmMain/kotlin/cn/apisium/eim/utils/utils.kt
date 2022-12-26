@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import java.util.*
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.contract
+import kotlin.math.roundToInt
 
 fun lerp(start: Float, stop: Float, fraction: Float) = (1 - fraction) * start + fraction * stop
 fun mapValue(value: Float, start1: Float, stop1: Float) = ((value - start1) / (stop1 - start1)).coerceIn(0f, 1f)
@@ -156,3 +157,5 @@ inline fun <T> List<T>.fastAll(predicate: (T) -> Boolean): Boolean {
 }
 
 fun Int.fitInUnit(unit: Int) = this / unit * unit
+
+fun Float.fitInUnit(unit: Int) = (this / unit).roundToInt() * unit
