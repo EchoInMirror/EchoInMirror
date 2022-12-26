@@ -1,6 +1,7 @@
 package cn.apisium.eim.plugin
 
-import kotlinx.serialization.json.*
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.ObjectMapper
 import org.pf4j.*
 import org.pf4j.util.FileUtils
 import org.slf4j.LoggerFactory
@@ -38,32 +39,32 @@ class JSONPluginDescriptorFinder: PluginDescriptorFinder {
         else readManifestFromDirectory(pluginPath)
     )
 
-    private fun createPluginDescriptor(json: JsonObject) = EIMPluginDescriptor(
-        json[PLUGIN_ID]!!.jsonPrimitive.content,
-        json[PLUGIN_DESCRIPTION]?.jsonPrimitive?.content,
-        json[PLUGIN_CLASS]?.jsonPrimitive?.content,
-        json[PLUGIN_VERSION]?.jsonPrimitive?.content,
-        json[PLUGIN_REQUIRES]?.jsonPrimitive?.content,
-        json[PLUGIN_PROVIDER]?.jsonPrimitive?.content,
-        json[PLUGIN_LICENSE]?.jsonPrimitive?.content,
-        json[PLUGIN_DEPENDENCIES]?.jsonPrimitive?.content
+    private fun createPluginDescriptor(json: JsonNode) = EIMPluginDescriptor(
+        json[PLUGIN_ID]!!.textValue(),
+        json[PLUGIN_DESCRIPTION]?.textValue(),
+        json[PLUGIN_CLASS]?.textValue(),
+        json[PLUGIN_VERSION]?.textValue(),
+        json[PLUGIN_REQUIRES]?.textValue(),
+        json[PLUGIN_PROVIDER]?.textValue(),
+        json[PLUGIN_LICENSE]?.textValue(),
+        json[PLUGIN_DEPENDENCIES]?.textValue()
     )
 
-    private fun readFromStream(stream: InputStream) = Json.parseToJsonElement(stream.reader().readText())
+    private fun readFromStream(stream: InputStream) = ObjectMapper().readTree(stream)
 
     private fun readManifestFromJar(jarPath: Path) = try {
-        JarFile(jarPath.toFile()).use { readFromStream(it.getInputStream(it.getJarEntry("plugin.json"))).jsonObject }
+        JarFile(jarPath.toFile()).use { readFromStream(it.getInputStream(it.getJarEntry("plugin.json"))) }
     } catch (e: IOException) {
         throw PluginRuntimeException(e, "Cannot read manifest from {}", jarPath)
     }
 
     private fun readManifestFromZip(zipPath: Path) = try {
-        ZipFile(zipPath.toFile()).use { readFromStream(it.getInputStream(it.getEntry("plugin.json"))).jsonObject }
+        ZipFile(zipPath.toFile()).use { readFromStream(it.getInputStream(it.getEntry("plugin.json"))) }
     } catch (e: IOException) {
         throw PluginRuntimeException(e, "Cannot read manifest from {}", zipPath)
     }
 
-    private fun readManifestFromDirectory(pluginPath: Path?): JsonObject {
+    private fun readManifestFromDirectory(pluginPath: Path?): JsonNode {
         // legacy (the path is something like "classes/META-INF/MANIFEST.MF")
         val json = FileUtils.findFile(pluginPath, "plugin.json")
             ?: throw PluginRuntimeException("Cannot find the manifest path")
@@ -72,7 +73,7 @@ class JSONPluginDescriptorFinder: PluginDescriptorFinder {
             throw PluginRuntimeException("Cannot find '{}' path", json)
         }
         try {
-            return Files.newInputStream(json).use(::readFromStream).jsonObject
+            return Files.newInputStream(json).use(::readFromStream)
         } catch (e: IOException) {
             throw PluginRuntimeException(e, "Cannot read manifest from {}", pluginPath)
         }

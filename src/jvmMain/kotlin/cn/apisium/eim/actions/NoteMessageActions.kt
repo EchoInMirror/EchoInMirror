@@ -6,9 +6,9 @@ import cn.apisium.eim.api.Track
 import cn.apisium.eim.data.midi.NoteMessage
 import kotlinx.coroutines.runBlocking
 
-fun Track.doNoteAmountAction(noteMessage: Array<NoteMessage>, isDelete: Boolean) {
+fun Track.doNoteAmountAction(noteMessage: Collection<NoteMessage>, isDelete: Boolean = false) {
     val track = this
-    runBlocking { EchoInMirror.undoManager.execute(NoteAmountAction(track, noteMessage, isDelete)) }
+    runBlocking { EchoInMirror.undoManager.execute(NoteAmountAction(track, noteMessage.toSet(), isDelete)) }
 }
 
 fun Track.doNoteMessageEditAction(noteMessage: Array<NoteMessage>, deltaX: Int, deltaY: Int, deltaDuration: Int) {
@@ -16,7 +16,7 @@ fun Track.doNoteMessageEditAction(noteMessage: Array<NoteMessage>, deltaX: Int, 
     runBlocking { EchoInMirror.undoManager.execute(NoteMessageEditAction(track, noteMessage, deltaX, deltaY, deltaDuration)) }
 }
 
-class NoteAmountAction(private val track: Track, private val notes: Array<NoteMessage>, isDelete: Boolean) :
+class NoteAmountAction(private val track: Track, private val notes: Set<NoteMessage>, isDelete: Boolean) :
     ReversibleAction(isDelete) {
     override val name = if (isDelete) "音符删除" else "音符添加"
     override suspend fun perform(isForward: Boolean): Boolean {
@@ -24,7 +24,7 @@ class NoteAmountAction(private val track: Track, private val notes: Array<NoteMe
             track.notes.addAll(notes)
             track.notes.sort()
             track.onSuddenChange()
-        } else track.notes.removeAll(notes.toSet())
+        } else track.notes.removeAll(notes)
         track.notes.update()
         return true
     }

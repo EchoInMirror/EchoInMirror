@@ -9,7 +9,6 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     kotlin("multiplatform")
     id("org.jetbrains.compose")
-    kotlin("plugin.serialization") version "1.7.20"
     id("com.github.johnrengelman.shadow") version "7.1.2"
 }
 
@@ -39,7 +38,7 @@ kotlin {
                 implementation(compose.desktop.currentOs) {
                     exclude("org.jetbrains.compose.material")
                 }
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
+                implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.14.+")
                 implementation(compose.materialIconsExtended)
                 @OptIn(ExperimentalComposeLibrary::class) implementation(compose.material3)
 //                @OptIn(ExperimentalComposeLibrary::class) implementation(compose.desktop.components.splitPane)

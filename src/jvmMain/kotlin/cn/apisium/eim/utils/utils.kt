@@ -11,12 +11,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.input.pointer.*
+import androidx.compose.ui.platform.ClipboardManager
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import java.util.*
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.contract
 import kotlin.math.roundToInt
+
+val OBJECT_MAPPER = jacksonObjectMapper()
+var CLIPBOARD_MANAGER: ClipboardManager? = null
 
 fun lerp(start: Float, stop: Float, fraction: Float) = (1 - fraction) * start + fraction * stop
 fun mapValue(value: Float, start1: Float, stop1: Float) = ((value - start1) / (stop1 - start1)).coerceIn(0f, 1f)

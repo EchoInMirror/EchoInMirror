@@ -1,10 +1,8 @@
 package cn.apisium.eim.api.processor
 
-import cn.apisium.eim.utils.DateAsLongSerializer
-import kotlinx.serialization.Serializable
+import com.fasterxml.jackson.annotation.JsonFormat
 import java.util.Date
 
-@Serializable
 data class NativeAudioPluginDescription(
     override val name: String,
     val pluginFormatName: String,
@@ -13,9 +11,9 @@ data class NativeAudioPluginDescription(
     override val version: String,
     val fileOrIdentifier: String,
     override val isInstrument: Boolean,
-    @Serializable(DateAsLongSerializer::class)
+    @JsonFormat(shape = JsonFormat.Shape.NUMBER)
     val lastFileModTime: Date,
-    @Serializable(DateAsLongSerializer::class)
+    @JsonFormat(shape = JsonFormat.Shape.NUMBER)
     val lastInfoUpdateTime: Date,
     val hasSharedContainer: Boolean,
     val hasARAExtension: Boolean,

@@ -13,9 +13,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
+import androidx.compose.ui.window.WindowExceptionHandler
 import androidx.compose.ui.window.application
 import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.components.*
@@ -23,6 +25,7 @@ import cn.apisium.eim.components.splitpane.HorizontalSplitPane
 import cn.apisium.eim.components.splitpane.VerticalSplitPane
 import cn.apisium.eim.impl.WindowManagerImpl
 import cn.apisium.eim.utils.Border
+import cn.apisium.eim.utils.CLIPBOARD_MANAGER
 import cn.apisium.eim.utils.border
 import cn.apisium.eim.window.Playlist
 import org.jetbrains.skiko.Cursor
@@ -69,7 +72,11 @@ fun eimApp() {
                     EchoInMirror.commandManager.executeCommand(keys)
                     false
                 }) {
+                    CLIPBOARD_MANAGER = LocalClipboardManager.current
                     (EchoInMirror.windowManager as WindowManagerImpl).mainWindow = WeakReference(window)
+                    window.exceptionHandler = WindowExceptionHandler {
+                        it.printStackTrace()
+                    }
                     Row {
                         SideBar()
                         Scaffold(

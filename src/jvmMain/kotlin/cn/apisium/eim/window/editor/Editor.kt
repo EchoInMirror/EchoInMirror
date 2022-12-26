@@ -23,16 +23,13 @@ import androidx.compose.ui.zIndex
 import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.actions.doNoteAmountAction
 import cn.apisium.eim.actions.doNoteMessageEditAction
-import cn.apisium.eim.api.DeleteCommand
 import cn.apisium.eim.api.window.Panel
 import cn.apisium.eim.api.window.PanelDirection
+import cn.apisium.eim.commands.*
 import cn.apisium.eim.components.*
 import cn.apisium.eim.components.splitpane.VerticalSplitPane
 import cn.apisium.eim.components.splitpane.rememberSplitPaneState
-import cn.apisium.eim.data.midi.NoteMessage
-import cn.apisium.eim.data.midi.defaultNoteMessage
-import cn.apisium.eim.data.midi.noteOff
-import cn.apisium.eim.data.midi.noteOn
+import cn.apisium.eim.data.midi.*
 import cn.apisium.eim.utils.*
 import cn.apisium.eim.window.editor.EditAction.*
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -43,7 +40,7 @@ import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
 
 private enum class EditAction {
-    NONE, MOVE, RESIZE, SELECT;
+    NONE, MOVE, RESIZE, SELECT, DELETE;
     fun isLazy() = this == MOVE || this == RESIZE
 }
 
@@ -67,39 +64,46 @@ private var deltaY by mutableStateOf(0)
 private var action by mutableStateOf(NONE)
 private var resizeDirectionRight = false
 private var cursor by mutableStateOf(Cursor.DEFAULT_CURSOR)
+private var currentNote = 0
+private var currentX = 0
+private val deletionList = mutableStateSetOf<NoteMessage>()
 
 private data class NoteDrawObject(val note: NoteMessage, val offset: Offset, val size: Size)
+
+private fun getClickedNotes(x: Float, y: Float, notes: NoteMessageList, block: (NoteMessage) -> Boolean = { true }): NoteMessage? {
+    currentNote = KEYBOARD_KEYS - ((y + verticalScrollState.value) / noteHeight.value).toInt() - 1
+    currentX = ((x + horizontalScrollState.value) / noteWidth.value).roundToInt()
+    for (i in startNoteIndex until notes.size) {
+        val note = notes[i]
+        if (note.time > currentX) break
+        if (note.note == currentNote && note.time <= currentX && note.time + note.duration >= currentX && block(note))
+            return note
+    }
+    return null
+}
 
 @OptIn(DelicateCoroutinesApi::class)
 private suspend fun PointerInputScope.handleDrag() {
     forEachGesture {
         awaitPointerEventScope {
             var event: PointerEvent
-            var currentNote: Int
-            var currentX: Int
             var selectedNotesLeft = Int.MAX_VALUE
             var selectedNotesTop = 0
             var selectedNotesBottom = Int.MAX_VALUE
             var minNoteDuration = Int.MAX_VALUE
-            loop@do {
+            do {
                 event = awaitPointerEvent(PointerEventPass.Main)
                 val track = EchoInMirror.selectedTrack ?: continue
                 if (event.type == PointerEventType.Move) {
-                    currentNote = KEYBOARD_KEYS - ((event.y + verticalScrollState.value) / noteHeight.value).toInt() - 1
-                    currentX = ((event.x + horizontalScrollState.value) / noteWidth.value).roundToInt()
-                    for (i in startNoteIndex until track.notes.size) {
-                        val note = track.notes[i]
-                        if (note.time > currentX) break
-                        if (note.note == currentNote && note.time <= currentX && note.time + note.duration >= currentX) {
-                            val startX = note.time * noteWidth.value - horizontalScrollState.value
-                            val endX = (note.time + note.duration) * noteWidth.value - horizontalScrollState.value
-                            cursor = if ((event.x < startX + 4 && event.x > startX - 4) ||
-                                (event.x < endX + 4 && event.x > endX - 4)) Cursor.E_RESIZE_CURSOR
-                            else Cursor.MOVE_CURSOR
-                            continue@loop
-                        }
+                    var cursor0 = Cursor.DEFAULT_CURSOR
+                    getClickedNotes(event.x, event.y, track.notes)?.let {
+                        val startX = it.time * noteWidth.value - horizontalScrollState.value
+                        val endX = (it.time + it.duration) * noteWidth.value - horizontalScrollState.value
+                        cursor0 = if ((event.x < startX + 4 && event.x > startX - 4) ||
+                            (event.x < endX + 4 && event.x > endX - 4)) Cursor.E_RESIZE_CURSOR
+                        else Cursor.MOVE_CURSOR
                     }
-                    cursor = Cursor.DEFAULT_CURSOR
+                    cursor = cursor0
                     continue
                 }
 
@@ -108,22 +112,11 @@ private suspend fun PointerInputScope.handleDrag() {
                         action = SELECT
                         break
                     }
-                    currentNote = KEYBOARD_KEYS - ((event.y + verticalScrollState.value) / noteHeight.value).toInt() - 1
-                    currentX = ((event.x + horizontalScrollState.value) / noteWidth.value).roundToInt()
-                    var currentSelectNote = kotlin.run {
-                        for (i in startNoteIndex until track.notes.size) {
-                            val note = track.notes[i]
-                            if (note.time > currentX) break
-                            if (note.note == currentNote && note.time <= currentX && note.time + note.duration >= currentX) {
-                                return@run note
-                            }
-                        }
-                        return@run null
-                    }
+                    var currentSelectNote = getClickedNotes(event.x, event.y, track.notes)
                     if (currentSelectNote == null) {
                         selectedNotes.clear()
                         currentSelectNote = defaultNoteMessage(currentNote, currentX.fitInUnit(noteUnit), noteUnit)
-                        track.doNoteAmountAction(arrayOf(currentSelectNote), false)
+                        track.doNoteAmountAction(listOf(currentSelectNote), false)
                         track.notes.sort()
                         track.notes.update()
                         selectedNotes.add(currentSelectNote)
@@ -146,6 +139,7 @@ private suspend fun PointerInputScope.handleDrag() {
                         resizeDirectionRight = true
                         action = RESIZE
                     } else action = MOVE
+
                     // calc bound of all selected notes
                     selectedNotes.forEach {
                         val top = KEYBOARD_KEYS - it.note - 1
@@ -157,6 +151,11 @@ private suspend fun PointerInputScope.handleDrag() {
                     break
                 } else if (event.buttons.isForwardPressed) {
                     action = SELECT
+                    break
+                } else if (event.buttons.isTertiaryPressed) {
+                    selectedNotes.clear()
+                    getClickedNotes(event.x, event.y, track.notes) ?.let(deletionList::add)
+                    action = DELETE
                     break
                 }
             } while (!event.changes.fastAll(PointerInputChange::changedToDownIgnoreConsumed))
@@ -170,7 +169,12 @@ private suspend fun PointerInputScope.handleDrag() {
                 drag = awaitPointerSlopOrCancellation(down.id, down.type,
                     triggerOnMainAxisSlop = false) { change, _ -> change.consume() }
             } while (drag != null && !drag.isConsumed)
+            val track = EchoInMirror.selectedTrack
             if (drag == null) {
+                if (action == DELETE) {
+                    track?.doNoteAmountAction(deletionList, true)
+                    deletionList.clear()
+                }
                 action = NONE
                 return@awaitPointerEventScope
             }
@@ -183,42 +187,42 @@ private suspend fun PointerInputScope.handleDrag() {
             }
 
             drag(drag.id) {
-                apply {
-                    if (action == SELECT) {
+                when (action) {
+                    SELECT -> {
                         selectionX = (it.position.x.coerceAtMost(size.width.toFloat()) + horizontalScrollState.value).coerceAtLeast(0F)
                         selectionY = ((it.position.y.coerceAtMost(size.height.toFloat()) + verticalScrollState.value) / noteHeight.value).roundToInt()
-                    } else when (action) {
-                        MOVE, RESIZE -> {
-                            // calc delta in noteUnit, then check all move notes are in bound
-                            deltaX = (((it.position.x + horizontalScrollState.value).coerceAtLeast(0F) - downX) /
-                                    noteWidth.value).fitInUnit(noteUnit)
-                            deltaY = (((it.position.y + verticalScrollState.value).coerceAtLeast(0F) - downY) /
-                                    noteHeight.value).roundToInt()
-                            if (action == MOVE) {
-                                if (selectedNotesLeft + deltaX < 0) deltaX = -selectedNotesLeft
-                                if (selectedNotesTop + deltaY > KEYBOARD_KEYS - 1) deltaY = KEYBOARD_KEYS - 1 - selectedNotesTop
-                                if (selectedNotesBottom + deltaY < 0) deltaY = -selectedNotesBottom
+                    }
+                    DELETE -> if (track != null) getClickedNotes(it.position.x, it.position.y, track.notes)
+                        { note -> !deletionList.contains(note) }?.let(deletionList::add)
+                    MOVE, RESIZE -> {
+                        // calc delta in noteUnit, then check all move notes are in bound
+                        deltaX = (((it.position.x + horizontalScrollState.value).coerceAtLeast(0F) - downX) /
+                                noteWidth.value).fitInUnit(noteUnit)
+                        deltaY = (((it.position.y + verticalScrollState.value).coerceAtLeast(0F) - downY) /
+                                noteHeight.value).roundToInt()
+                        if (action == MOVE) {
+                            if (selectedNotesLeft + deltaX < 0) deltaX = -selectedNotesLeft
+                            if (selectedNotesTop + deltaY > KEYBOARD_KEYS - 1) deltaY = KEYBOARD_KEYS - 1 - selectedNotesTop
+                            if (selectedNotesBottom + deltaY < 0) deltaY = -selectedNotesBottom
+                        } else {
+                            if (resizeDirectionRight) {
+                                if (minNoteDuration + deltaX < noteUnit) deltaX = noteUnit - minNoteDuration
                             } else {
-                                if (resizeDirectionRight) {
-                                    if (minNoteDuration + deltaX < noteUnit) deltaX = noteUnit - minNoteDuration
-                                } else {
-                                    if (deltaX > 0) deltaX = 0
-                                    if (selectedNotesLeft + deltaX < 0) deltaX = -selectedNotesLeft
-                                }
+                                if (deltaX > 0) deltaX = 0
+                                if (selectedNotesLeft + deltaX < 0) deltaX = -selectedNotesLeft
                             }
                         }
-                        else -> { }
                     }
-                    // detect out of frame then auto scroll
-                    if (it.position.x < 0) GlobalScope.launch { horizontalScrollState.scrollBy(-1F) }
-                    if (it.position.x > size.width - 5) GlobalScope.launch { horizontalScrollState.scrollBy(1F) }
-                    if (it.position.y < 0) GlobalScope.launch { verticalScrollState.scrollBy(-1F) }
-                    if (it.position.y > size.height) GlobalScope.launch { verticalScrollState.scrollBy(1F) }
+                    else -> { }
                 }
+                // detect out of frame then auto scroll
+                if (it.position.x < 0) GlobalScope.launch { horizontalScrollState.scrollBy(-1F) }
+                if (it.position.x > size.width - 5) GlobalScope.launch { horizontalScrollState.scrollBy(1F) }
+                if (it.position.y < 0) GlobalScope.launch { verticalScrollState.scrollBy(-1F) }
+                if (it.position.y > size.height) GlobalScope.launch { verticalScrollState.scrollBy(1F) }
                 it.consume()
             }
             // calc selected notes
-            val track = EchoInMirror.selectedTrack
             if (track != null) when (action) {
                 SELECT -> {
                     val startX = (selectionStartX / noteWidth.value).roundToInt()
@@ -229,20 +233,24 @@ private suspend fun PointerInputScope.handleDrag() {
                     val maxX = maxOf(startX, endX)
                     val minY = minOf(startY, endY)
                     val maxY = maxOf(startY, endY)
+                    val list = arrayListOf<NoteMessage>()
                     for (i in startNoteIndex until track.notes.size) {
                         val note = track.notes[i]
                         if (note.time > maxX) break
-                        if (note.time + note.duration >= minX && note.note in minY..maxY) {
-                            selectedNotes.add(note)
-                        }
+                        if (note.time + note.duration >= minX && note.note in minY..maxY) list.add(note)
                     }
+                    selectedNotes.addAll(list)
+                }
+                DELETE -> {
+                    track.doNoteAmountAction(deletionList, true)
+                    deletionList.clear()
                 }
                 MOVE -> track.doNoteMessageEditAction(selectedNotes.toTypedArray(), deltaX, -deltaY, 0)
                 RESIZE -> {
                     if (resizeDirectionRight) track.doNoteMessageEditAction(selectedNotes.toTypedArray(), 0, 0, deltaX)
                     else track.doNoteMessageEditAction(selectedNotes.toTypedArray(), deltaX, 0, -deltaX)
                 }
-                NONE -> { }
+                else -> { }
             }
             selectionStartY = 0
             selectionStartX = 0F
@@ -274,16 +282,20 @@ private fun NotesEditorCanvas() {
             val isLazy = action.isLazy()
             EchoInMirror.selectedTrack?.let { track ->
                 startNoteIndex = 0
+                var flag = true
                 track.notes.read()
                 manualState.read()
                 for ((index, it) in track.notes.withIndex()) {
                     val y = (KEYBOARD_KEYS - 1 - it.note) * noteHeightPx - verticalScrollValue
                     val x = it.time * noteWidthPx - horizontalScrollValue
-                    if (y < -noteHeightPx || y > size.height) continue
+                    if (y < -noteHeightPx || y > size.height || deletionList.contains(it)) continue
                     val width = it.duration * noteWidthPx
                     if (x < 0 && width < -x) continue
                     if (x > size.width) break
-                    if (startNoteIndex == 0) startNoteIndex = index
+                    if (flag) {
+                        startNoteIndex = index
+                        flag = false
+                    }
                     if (isLazy && selectedNotes.contains(it)) continue
                     notes.add(NoteDrawObject(it, Offset(x, y.coerceAtLeast(0F)), Size(width, if (y < 0)
                         (noteHeightPx + y).coerceAtLeast(0F) else noteHeightPx)))
@@ -299,12 +311,11 @@ private fun NotesEditorCanvas() {
                 }
 
                 val track = EchoInMirror.selectedTrack ?: return@onDrawBehind
-                val invertsColor = track.color.inverts()
                 val currentPPQ = EchoInMirror.currentPosition.timeInPPQ
                 val isPlaying = EchoInMirror.currentPosition.isPlaying
                 notes.forEach {
                     val color = if (isPlaying && it.note.time <= currentPPQ &&
-                        it.note.time + it.note.duration >= currentPPQ) invertsColor else track.color
+                        it.note.time + it.note.duration >= currentPPQ) primaryColor else track.color
                     drawRoundRect(color, it.offset, it.size, BorderCornerRadius2PX)
                 }
                 selectedNotes.forEach {
@@ -312,7 +323,7 @@ private fun NotesEditorCanvas() {
                     val x = it.time * noteWidthPx - horizontalScrollValue
                     val width = it.duration * noteWidthPx
                     val color = if (isPlaying && it.time <= currentPPQ &&
-                        it.time + it.duration >= currentPPQ) invertsColor else track.color
+                        it.time + it.duration >= currentPPQ) primaryColor else track.color
                     val offset: Offset
                     val size: Size
                     when (action) {
@@ -332,13 +343,19 @@ private fun NotesEditorCanvas() {
                             size = Size(width, if (y < 0) (noteHeightPx + y).coerceAtLeast(0F) else noteHeightPx)
                         }
                     }
+                    if (size.height <= 0 || size.width <= 0) return@forEach
                     drawRoundRect(color, offset, size, BorderCornerRadius2PX)
                     drawRoundRect(primaryColor, offset, size, BorderCornerRadius2PX, Stroke1_5PX)
                 }
             }
         })
         Canvas(Modifier.fillMaxSize().pointerHoverIcon(PointerIcon(Cursor(
-            when (action) { MOVE -> Cursor.MOVE_CURSOR; RESIZE -> Cursor.E_RESIZE_CURSOR; else -> cursor }
+            when (action) {
+                MOVE -> Cursor.MOVE_CURSOR
+                RESIZE -> Cursor.E_RESIZE_CURSOR
+                DELETE -> Cursor.DEFAULT_CURSOR
+                else -> cursor
+            }
         )))) {
             if (selectionX == 0F && selectionStartX == 0F) return@Canvas
             val scrollX = horizontalScrollState.value
@@ -417,14 +434,7 @@ object Editor: Panel {
     override val name = "编辑器"
     override val direction = PanelDirection.Horizontal
 
-    init {
-        EchoInMirror.commandManager.registerCommandHandler(DeleteCommand) {
-            if (EchoInMirror.windowManager.activePanel != Editor || selectedNotes.isEmpty()) return@registerCommandHandler
-            val track = EchoInMirror.selectedTrack ?: return@registerCommandHandler
-            track.doNoteAmountAction(selectedNotes.toTypedArray(), true)
-            selectedNotes.clear()
-        }
-    }
+    init { registerCommandHandlers() }
 
     @Composable
     override fun icon() {

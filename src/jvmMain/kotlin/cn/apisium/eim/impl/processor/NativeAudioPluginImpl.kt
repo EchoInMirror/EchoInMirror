@@ -10,14 +10,13 @@ import cn.apisium.eim.api.processor.AudioProcessorDescription
 import cn.apisium.eim.api.processor.NativeAudioPlugin
 import cn.apisium.eim.api.processor.NativeAudioPluginDescription
 import cn.apisium.eim.api.processor.NativeAudioPluginFactory
+import cn.apisium.eim.utils.OBJECT_MAPPER
 import cn.apisium.eim.utils.mutableStateSetOf
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.*
 import org.apache.commons.lang3.SystemUtils
 import org.slf4j.LoggerFactory
 import java.nio.file.FileVisitResult
@@ -28,14 +27,13 @@ class NativeAudioPluginImpl(
     override val description: NativeAudioPluginDescription
 ) : NativeAudioPlugin, ProcessAudioProcessorImpl(
     Configuration.nativeHostPath, " -L",
-    JsonPrimitive(Json.encodeToString(NativeAudioPluginDescription.serializer(), description)).toString()
+    OBJECT_MAPPER.run { writeValueAsString(writeValueAsString(description)) }
 ) {
     override var name = description.name
 }
 
 private val NATIVE_AUDIO_PLUGIN_CONFIG = ROOT_PATH.resolve("nativeAudioPlugin.json")
 
-@Serializable
 private data class NativeAudioPluginFactoryData(
     val descriptions: Set<NativeAudioPluginDescription>,
     val scanPaths: Set<String>,
@@ -56,8 +54,7 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
 
     init {
         if (NATIVE_AUDIO_PLUGIN_CONFIG.toFile().exists()) {
-            val json = NATIVE_AUDIO_PLUGIN_CONFIG.toFile().readText()
-            val data = Json.decodeFromString(NativeAudioPluginFactoryData.serializer(), json)
+            val data = OBJECT_MAPPER.readValue<NativeAudioPluginFactoryData>(NATIVE_AUDIO_PLUGIN_CONFIG.toFile())
             descriptions.addAll(data.descriptions)
             scanPaths.addAll(data.scanPaths)
             skipList.addAll(data.skipList)
@@ -117,13 +114,15 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
                 async {
                     scanSemaphore.withPermit {
                         logger.info("Scanning native audio plugin: {}", it)
-                        val process = Runtime.getRuntime().exec(arrayOf("./EIMHost.exe",  " -S ", Json.encodeToString(it)))
+                        val process = Runtime.getRuntime()
+                            .exec(arrayOf("./EIMHost.exe",  " -S ", ObjectMapper().writeValueAsString(it)))
                         scanningPlugins[it] = process
                         var result = ""
                         try {
                             result = process.inputStream.readAllBytes().decodeToString()
                                 .substringAfter("\$EIMHostScanner{{").substringBeforeLast("}}EIMHostScanner\$")
-                            Json.decodeFromString<List<NativeAudioPluginDescription>>(result).forEach((descriptions::add))
+                            OBJECT_MAPPER.readValue<List<NativeAudioPluginDescription>>(result)
+                                .forEach((descriptions::add))
                             descriptions.distinctBy { it.identifier }
                         } catch (e: Throwable) {
                             logger.error("Failed to scan native audio plugin: $it, data: $result", e)
@@ -147,7 +146,7 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
     }
 
      override fun save() {
-        NATIVE_AUDIO_PLUGIN_CONFIG.toFile().writeText(Json.encodeToString(NativeAudioPluginFactoryData.serializer(),
-            NativeAudioPluginFactoryData(descriptions, scanPaths, skipList)))
+         OBJECT_MAPPER.writeValue(NATIVE_AUDIO_PLUGIN_CONFIG.toFile(),
+             NativeAudioPluginFactoryData(descriptions, scanPaths, skipList))
     }
 }

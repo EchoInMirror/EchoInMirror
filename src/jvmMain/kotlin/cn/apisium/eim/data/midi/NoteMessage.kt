@@ -1,7 +1,6 @@
 package cn.apisium.eim.data.midi
 
 import androidx.compose.runtime.mutableStateOf
-import kotlinx.serialization.Serializable
 import kotlin.collections.ArrayList
 
 interface NoteMessage {
@@ -11,9 +10,10 @@ interface NoteMessage {
     var duration: Int
 }
 
+data class NoteMessageWithInfo(val ppq: Int, val notes: Collection<NoteMessage>)
+
 fun defaultNoteMessage(note: Int, time: Int, duration: Int = 0, velocity: Int = 70) = NoteMessageImpl(note, time, duration, velocity)
 
-@Serializable
 open class NoteMessageImpl(override var note: Int, override var time: Int, override var duration: Int = 0,
                            override var velocity: Int = 70) : NoteMessage {
     override fun toString(): String {
@@ -68,7 +68,11 @@ inline fun NoteMessageList.updateWith(block: NoteMessageList.() -> Unit) {
 
 class NoteMessageListImpl : NoteMessageList, ArrayList<NoteMessage>() {
     private var modification = mutableStateOf(0)
-    override fun sort() = sortWith { o1, o2 -> o1.time - o2.time }
+    override fun sort() = sortWith { o1, o2 ->
+        if (o1.time == o2.time)
+            if (o1.duration == o2.duration) o1.note - o2.note else o1.duration - o2.duration
+        else o1.time - o2.time
+    }
     override fun update() { modification.value++ }
     override fun read() { modification.value }
 }

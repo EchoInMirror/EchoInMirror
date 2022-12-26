@@ -3,7 +3,6 @@
 package cn.apisium.eim.data.midi
 
 import cn.apisium.eim.EchoInMirror
-import kotlinx.serialization.Serializable
 import javax.sound.midi.MidiMessage
 import kotlin.math.pow
 import javax.sound.midi.Track
@@ -36,7 +35,6 @@ fun MidiMessage.toInt(): Int {
 
 @Suppress("MemberVisibilityCanBePrivate")
 @JvmInline
-@Serializable
 value class MidiEvent(val rawData: Int) {
     constructor(byte1: Byte, byte2: Byte, byte3: Byte) : this(byte1.toUByte().toInt() or (byte2.toUByte().toInt() shl 8) or (byte3.toUByte().toInt() shl 16))
     constructor(byte1: Int, byte2: Int, byte3: Int) : this(byte1 or (byte2 shl 8) or (byte3 shl 16))

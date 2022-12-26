@@ -1,6 +1,5 @@
 package cn.apisium.eim
 
-import kotlinx.serialization.Serializable
 import org.apache.commons.lang3.SystemUtils
 import java.nio.file.Files
 import java.nio.file.Path
@@ -13,7 +12,6 @@ internal fun createDirectories() {
     if (!Files.exists(ROOT_PATH)) Files.createDirectory(ROOT_PATH)
 }
 
-@Serializable
 object Configuration {
     var nativeHostPath: String
     init {
