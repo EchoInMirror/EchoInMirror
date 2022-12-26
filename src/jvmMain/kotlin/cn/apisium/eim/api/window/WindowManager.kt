@@ -10,6 +10,7 @@ interface WindowManager {
     val panels: List<Panel>
     val mainWindow: WeakReference<ComposeWindow>
     var isDarkTheme: Boolean
+    var activePanel: Panel?
 
     fun registerPanel(panel: Panel)
     fun unregisterPanel(panel: Panel)

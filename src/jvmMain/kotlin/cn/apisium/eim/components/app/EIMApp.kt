@@ -21,7 +21,6 @@ import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.components.*
 import cn.apisium.eim.components.splitpane.HorizontalSplitPane
 import cn.apisium.eim.components.splitpane.VerticalSplitPane
-import cn.apisium.eim.impl.CommandManagerImpl
 import cn.apisium.eim.impl.WindowManagerImpl
 import cn.apisium.eim.utils.Border
 import cn.apisium.eim.utils.border
@@ -67,7 +66,7 @@ fun eimApp() {
                     if (it.isShiftPressed) keys = "${Key.ShiftLeft.keyCode} $keys"
                     if (it.isAltPressed) keys = "${Key.AltLeft.keyCode} $keys"
                     if (it.isMetaPressed) keys = "${Key.MetaLeft.keyCode} $keys"
-                    (EchoInMirror.commandManager as CommandManagerImpl).commands[keys]?.execute()
+                    EchoInMirror.commandManager.executeCommand(keys)
                     false
                 }) {
                     (EchoInMirror.windowManager as WindowManagerImpl).mainWindow = WeakReference(window)

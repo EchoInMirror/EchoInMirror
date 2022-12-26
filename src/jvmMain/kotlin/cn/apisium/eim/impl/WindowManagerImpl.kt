@@ -12,9 +12,10 @@ import java.lang.ref.WeakReference
 
 class WindowManagerImpl: WindowManager {
     override val dialogs = mutableStateMapOf<@Composable () -> Unit, Boolean>()
-    override val panels = mutableStateListOf(Mixer(), Editor())
+    override val panels = mutableStateListOf(Mixer, Editor)
     override var mainWindow: WeakReference<ComposeWindow> = WeakReference(null)
     override var isDarkTheme by mutableStateOf(false)
+    override var activePanel: Panel? = null
 
     init {
         dialogs[SettingsWindow] = false

@@ -152,7 +152,7 @@ private fun MixerTrack(track: Track, index: String, height: MutableState<Dp>?, m
     }
 }
 
-class Mixer: Panel {
+object Mixer: Panel {
     override val name = "混音台"
     override val direction = PanelDirection.Horizontal
 

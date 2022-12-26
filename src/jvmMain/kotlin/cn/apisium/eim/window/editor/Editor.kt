@@ -8,6 +8,7 @@ import androidx.compose.material.icons.filled.Piano
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.drawWithContent
@@ -20,6 +21,8 @@ import androidx.compose.ui.text.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import cn.apisium.eim.EchoInMirror
+import cn.apisium.eim.actions.doAddNoteMessage
+import cn.apisium.eim.api.DeleteCommand
 import cn.apisium.eim.api.window.Panel
 import cn.apisium.eim.api.window.PanelDirection
 import cn.apisium.eim.components.*
@@ -61,13 +64,17 @@ private suspend fun PointerInputScope.handleDrag() {
             var event: PointerEvent
             val currentNote: Int
             val currentX: Int
+            var isSelection = false
             do {
                 event = awaitPointerEvent(PointerEventPass.Main)
-                if (EchoInMirror.selectedTrack == null) continue
+                val track = EchoInMirror.selectedTrack ?: continue
 
                 if (event.buttons.isPrimaryPressed) {
-                    val track = EchoInMirror.selectedTrack ?: continue
                     selectedNotes.clear()
+                    if (event.keyboardModifiers.isCtrlPressed) {
+                        isSelection = true
+                        break
+                    }
                     currentNote = KEYBOARD_KEYS - ((event.y + verticalScrollState.value) / noteHeight.value).toInt() - 1
                     currentX = ((event.x + horizontalScrollState.value) / noteWidth.value).roundToInt()
                     for (i in startNoteIndex until track.notes.size) {
@@ -79,8 +86,8 @@ private suspend fun PointerInputScope.handleDrag() {
                         }
                     }
                     if (selectedNotes.isEmpty()) {
-                        val note = defaultNoteMessage(currentNote, currentX, noteUnit)
-                        track.notes.add(note)
+                        val note = defaultNoteMessage(currentNote, currentX.fitInUnit(noteUnit), noteUnit)
+                        track.doAddNoteMessage(arrayOf(note), false)
                         track.notes.sort()
                         track.notes.update()
                         selectedNotes.add(note)
@@ -100,14 +107,14 @@ private suspend fun PointerInputScope.handleDrag() {
                     triggerOnMainAxisSlop = false) {change, _ -> change.consume() }
             } while (drag != null && !drag.isConsumed)
             if (drag == null) return@awaitPointerEventScope
-            if (event.buttons.isForwardPressed) {
+            if (isSelection || event.buttons.isForwardPressed) {
                 selectionStartX = event.x + horizontalScrollState.value
                 selectionStartY = ((event.y + verticalScrollState.value) / noteHeight.value).toInt()
             }
 
             drag(drag.id) {
                 apply {
-                    if (event.buttons.isForwardPressed) {
+                    if (isSelection || event.buttons.isForwardPressed) {
                         selectionX = (it.position.x.coerceAtMost(size.width.toFloat()) + horizontalScrollState.value).coerceAtLeast(0F)
                         selectionY = ((it.position.y.coerceAtMost(size.height.toFloat()) + verticalScrollState.value) / noteHeight.value).roundToInt()
                         // detect out of frame then auto scroll
@@ -119,8 +126,29 @@ private suspend fun PointerInputScope.handleDrag() {
                 }
                 it.consume()
             }
-            selectionX = 0F
+            // calc selected notes
+            val track = EchoInMirror.selectedTrack
+            if (track != null && (isSelection || event.buttons.isForwardPressed)) {
+                val startX = (selectionStartX / noteWidth.value).roundToInt()
+                val endX = (selectionX / noteWidth.value).roundToInt()
+                val startY = KEYBOARD_KEYS - selectionStartY - 1
+                val endY = KEYBOARD_KEYS - selectionY - 1
+                val minX = minOf(startX, endX)
+                val maxX = maxOf(startX, endX)
+                val minY = minOf(startY, endY)
+                val maxY = maxOf(startY, endY)
+                for (i in startNoteIndex until track.notes.size) {
+                    val note = track.notes[i]
+                    if (note.time > maxX) break
+                    if (note.time + note.duration >= minX && note.note in minY..maxY) {
+                        selectedNotes.add(note)
+                    }
+                }
+            }
+            selectionStartY = 0
             selectionStartX = 0F
+            selectionX = 0F
+            selectionY = 0
         }
     }
 }
@@ -214,11 +242,14 @@ private fun NotesEditorCanvas() {
     }
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun editorContent() {
     VerticalSplitPane(splitPaneState = rememberSplitPaneState(100F)) {
         first(0.dp) {
-            Column(Modifier.fillMaxSize()) {
+            Column(Modifier.fillMaxSize().onPointerEvent(PointerEventType.Press) {
+                EchoInMirror.windowManager.activePanel = Editor
+            }) {
                 val localDensity = LocalDensity.current
                 var contentWidth by remember { mutableStateOf(0.dp) }
                 val surfaceColor = getSurfaceColor(2.dp)
@@ -262,9 +293,18 @@ private fun editorContent() {
 
 }
 
-class Editor: Panel {
+object Editor: Panel {
     override val name = "编辑器"
     override val direction = PanelDirection.Horizontal
+
+    init {
+        EchoInMirror.commandManager.registerCommandHandler(DeleteCommand) {
+            if (EchoInMirror.windowManager.activePanel != Editor || selectedNotes.isEmpty()) return@registerCommandHandler
+            val track = EchoInMirror.selectedTrack ?: return@registerCommandHandler
+            track.doAddNoteMessage(selectedNotes.toTypedArray(), true)
+            selectedNotes.clear()
+        }
+    }
 
     @Composable
     override fun icon() {

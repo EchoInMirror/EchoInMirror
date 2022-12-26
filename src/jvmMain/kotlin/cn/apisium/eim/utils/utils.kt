@@ -154,3 +154,5 @@ inline fun <T> List<T>.fastAll(predicate: (T) -> Boolean): Boolean {
     fastForEach { if (!predicate(it)) return false }
     return true
 }
+
+fun Int.fitInUnit(unit: Int) = this / unit * unit
