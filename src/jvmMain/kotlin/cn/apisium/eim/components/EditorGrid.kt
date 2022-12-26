@@ -7,7 +7,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.unit.Dp
 import cn.apisium.eim.EchoInMirror
 
@@ -16,8 +15,7 @@ fun EditorGrid(
     noteWidth: Dp,
     horizontalScrollState: ScrollState,
     topPadding: Float? = null,
-    modifier: Modifier = Modifier.fillMaxSize(),
-    onDraw: (DrawScope.() -> Unit)? = null
+    modifier: Modifier = Modifier.fillMaxSize()
 ) {
     val outlineColor = MaterialTheme.colorScheme.surfaceVariant
     val barsOutlineColor = MaterialTheme.colorScheme.outlineVariant
@@ -40,7 +38,5 @@ fun EditorGrid(
                 strokeWidth = 1F
             )
         }
-
-        if (onDraw != null) onDraw()
     }
 }

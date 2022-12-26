@@ -10,10 +10,12 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.input.pointer.PointerEvent
+import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import java.util.*
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.contract
 
 fun lerp(start: Float, stop: Float, fraction: Float) = (1 - fraction) * start + fraction * stop
 fun mapValue(value: Float, start1: Float, stop1: Float) = ((value - start1) / (stop1 - start1)).coerceIn(0f, 1f)
@@ -134,3 +136,21 @@ fun getSampleBits(bits: Int) = (1 shl (8 * bits - 1)) - 1
 
 val PointerEvent.x get() = if (changes.isEmpty()) 0f else changes[0].position.x
 val PointerEvent.y get() = if (changes.isEmpty()) 0f else changes[0].position.y
+
+@Suppress("BanInlineOptIn")
+@OptIn(ExperimentalContracts::class)
+inline fun <T> List<T>.fastForEach(action: (T) -> Unit) {
+    contract { callsInPlace(action) }
+    for (index in indices) {
+        val item = get(index)
+        action(item)
+    }
+}
+
+@Suppress("BanInlineOptIn")
+@OptIn(ExperimentalContracts::class)
+inline fun <T> List<T>.fastAll(predicate: (T) -> Boolean): Boolean {
+    contract { callsInPlace(predicate) }
+    fastForEach { if (!predicate(it)) return false }
+    return true
+}

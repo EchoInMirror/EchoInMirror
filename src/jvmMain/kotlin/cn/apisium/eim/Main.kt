@@ -4,12 +4,12 @@ import cn.apisium.eim.components.app.eimApp
 import cn.apisium.eim.data.midi.getMidiEvents
 import cn.apisium.eim.data.midi.getNoteMessages
 import cn.apisium.eim.impl.TrackImpl
-import cn.apisium.eim.impl.processor.NativeAudioPluginImpl
-import cn.apisium.eim.impl.processor.nativeAudioPluginManager
 import cn.apisium.eim.processor.synthesizer.KarplusStrongSynthesizer
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+//import kotlinx.coroutines.delay
+//import kotlinx.coroutines.launch
+//import kotlinx.coroutines.runBlocking
+//import cn.apisium.eim.impl.processor.NativeAudioPluginImpl
+//import cn.apisium.eim.impl.processor.nativeAudioPluginManager
 import java.io.File
 import javax.sound.midi.MidiSystem
 import javax.swing.UIManager
@@ -54,24 +54,24 @@ fun main() {
 //    }
 
 
-    if (IS_DEBUG) Thread {
-        runBlocking {
-            launch {
-                delay(2000)
-                var proQ: NativeAudioPluginImpl? = null
-                var spire: NativeAudioPluginImpl? = null
-                EchoInMirror.audioProcessorManager.nativeAudioPluginManager.descriptions.forEach {
-                    if (it.name == "FabFilter Pro-Q 3") proQ = NativeAudioPluginImpl(it)
-                    if (it.name == "Spire-1.5") spire = NativeAudioPluginImpl(it)
-                }
-                proQ!!.launch()
-                spire!!.launch()
-                subTrack2.preProcessorsChain.add(spire!!)
-                track.postProcessorsChain.add(proQ!!)
-
-            }
-        }
-    }.start()
+//    if (IS_DEBUG) Thread {
+//        runBlocking {
+//            launch {
+//                delay(2000)
+//                var proQ: NativeAudioPluginImpl? = null
+//                var spire: NativeAudioPluginImpl? = null
+//                EchoInMirror.audioProcessorManager.nativeAudioPluginManager.descriptions.forEach {
+//                    if (it.name == "FabFilter Pro-Q 3") proQ = NativeAudioPluginImpl(it)
+//                    if (it.name == "Spire-1.5") spire = NativeAudioPluginImpl(it)
+//                }
+//                proQ!!.launch()
+//                spire!!.launch()
+//                subTrack2.preProcessorsChain.add(spire!!)
+//                track.postProcessorsChain.add(proQ!!)
+//
+//            }
+//        }
+//    }.start()
 
     eimApp()
 }
