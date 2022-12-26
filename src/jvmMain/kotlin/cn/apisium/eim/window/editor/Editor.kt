@@ -21,7 +21,8 @@ import androidx.compose.ui.text.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import cn.apisium.eim.EchoInMirror
-import cn.apisium.eim.actions.doAddNoteMessage
+import cn.apisium.eim.actions.doNoteAmountAction
+import cn.apisium.eim.actions.doNoteMessageEditAction
 import cn.apisium.eim.api.DeleteCommand
 import cn.apisium.eim.api.window.Panel
 import cn.apisium.eim.api.window.PanelDirection
@@ -83,7 +84,6 @@ private suspend fun PointerInputScope.handleDrag() {
                 val track = EchoInMirror.selectedTrack ?: continue
 
                 if (event.buttons.isPrimaryPressed) {
-                    selectedNotes.clear()
                     if (event.keyboardModifiers.isCtrlPressed) {
                         action = SELECT
                         break
@@ -101,8 +101,9 @@ private suspend fun PointerInputScope.handleDrag() {
                         return@run null
                     }
                     if (currentSelectNote == null) {
+                        selectedNotes.clear()
                         currentSelectNote = defaultNoteMessage(currentNote, currentX.fitInUnit(noteUnit), noteUnit)
-                        track.doAddNoteMessage(arrayOf(currentSelectNote), false)
+                        track.doNoteAmountAction(arrayOf(currentSelectNote), false)
                         track.notes.sort()
                         track.notes.update()
                         selectedNotes.add(currentSelectNote)
@@ -181,6 +182,7 @@ private suspend fun PointerInputScope.handleDrag() {
                                 if (resizeDirectionRight) {
                                     if (minNoteDuration + deltaX < noteUnit) deltaX = noteUnit - minNoteDuration
                                 } else {
+                                    if (deltaX > 0) deltaX = 0
                                     if (selectedNotesLeft + deltaX < 0) deltaX = -selectedNotesLeft
                                 }
                             }
@@ -197,22 +199,30 @@ private suspend fun PointerInputScope.handleDrag() {
             }
             // calc selected notes
             val track = EchoInMirror.selectedTrack
-            if (track != null && (action == SELECT)) {
-                val startX = (selectionStartX / noteWidth.value).roundToInt()
-                val endX = (selectionX / noteWidth.value).roundToInt()
-                val startY = KEYBOARD_KEYS - selectionStartY - 1
-                val endY = KEYBOARD_KEYS - selectionY - 1
-                val minX = minOf(startX, endX)
-                val maxX = maxOf(startX, endX)
-                val minY = minOf(startY, endY)
-                val maxY = maxOf(startY, endY)
-                for (i in startNoteIndex until track.notes.size) {
-                    val note = track.notes[i]
-                    if (note.time > maxX) break
-                    if (note.time + note.duration >= minX && note.note in minY..maxY) {
-                        selectedNotes.add(note)
+            if (track != null) when (action) {
+                SELECT -> {
+                    val startX = (selectionStartX / noteWidth.value).roundToInt()
+                    val endX = (selectionX / noteWidth.value).roundToInt()
+                    val startY = KEYBOARD_KEYS - selectionStartY - 1
+                    val endY = KEYBOARD_KEYS - selectionY - 1
+                    val minX = minOf(startX, endX)
+                    val maxX = maxOf(startX, endX)
+                    val minY = minOf(startY, endY)
+                    val maxY = maxOf(startY, endY)
+                    for (i in startNoteIndex until track.notes.size) {
+                        val note = track.notes[i]
+                        if (note.time > maxX) break
+                        if (note.time + note.duration >= minX && note.note in minY..maxY) {
+                            selectedNotes.add(note)
+                        }
                     }
                 }
+                MOVE -> track.doNoteMessageEditAction(selectedNotes.toTypedArray(), deltaX, -deltaY, 0)
+                RESIZE -> {
+                    if (resizeDirectionRight) track.doNoteMessageEditAction(selectedNotes.toTypedArray(), 0, 0, deltaX)
+                    else track.doNoteMessageEditAction(selectedNotes.toTypedArray(), deltaX, 0, -deltaX)
+                }
+                NONE -> { }
             }
             selectionStartY = 0
             selectionStartX = 0F
@@ -275,10 +285,8 @@ private fun NotesEditorCanvas() {
                     val color = if (isPlaying && it.note.time <= currentPPQ &&
                         it.note.time + it.note.duration >= currentPPQ) invertsColor else track.color
                     drawRoundRect(color, it.offset, it.size, BorderCornerRadius2PX)
-                    if (!isLazy && selectedNotes.contains(it.note))
-                        drawRoundRect(primaryColor, it.offset, it.size, BorderCornerRadius2PX, Stroke1_5PX)
                 }
-                if (isLazy) selectedNotes.forEach {
+                selectedNotes.forEach {
                     var y = (KEYBOARD_KEYS - 1 - it.note) * noteHeightPx - verticalScrollValue
                     val x = it.time * noteWidthPx - horizontalScrollValue
                     val width = it.duration * noteWidthPx
@@ -390,7 +398,7 @@ object Editor: Panel {
         EchoInMirror.commandManager.registerCommandHandler(DeleteCommand) {
             if (EchoInMirror.windowManager.activePanel != Editor || selectedNotes.isEmpty()) return@registerCommandHandler
             val track = EchoInMirror.selectedTrack ?: return@registerCommandHandler
-            track.doAddNoteMessage(selectedNotes.toTypedArray(), true)
+            track.doNoteAmountAction(selectedNotes.toTypedArray(), true)
             selectedNotes.clear()
         }
     }

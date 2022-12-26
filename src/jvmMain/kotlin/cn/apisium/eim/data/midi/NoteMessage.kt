@@ -16,24 +16,6 @@ fun defaultNoteMessage(note: Int, time: Int, duration: Int = 0, velocity: Int = 
 @Serializable
 open class NoteMessageImpl(override var note: Int, override var time: Int, override var duration: Int = 0,
                            override var velocity: Int = 70) : NoteMessage {
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is NoteMessageImpl) return false
-
-        if (note != other.note) return false
-        if (time != other.time) return false
-        if (duration != other.duration) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        var result = note.hashCode()
-        result = 31 * result + time
-        result = 31 * result + duration
-        return result
-    }
-
     override fun toString(): String {
         return "NoteMessageImpl(note=$note, time=$time, duration=$duration)"
     }
