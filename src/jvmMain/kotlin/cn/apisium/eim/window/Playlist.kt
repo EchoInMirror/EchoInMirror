@@ -21,7 +21,6 @@ import androidx.compose.ui.zIndex
 import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.api.Track
 import cn.apisium.eim.components.*
-import cn.apisium.eim.components.app.APP_BAR_FULL_HEIGHT
 import cn.apisium.eim.components.icons.Crown
 import cn.apisium.eim.components.icons.DebugStepOver
 
@@ -91,8 +90,8 @@ fun Playlist() {
     Row {
         val trackHeight = 70.dp
         Surface(Modifier.width(200.dp).fillMaxHeight().zIndex(5f), shadowElevation = 2.dp, tonalElevation = 2.dp) {
-            Column(Modifier.verticalScroll(playlistVerticalScrollState)) {
-                Divider(Modifier.padding(top = APP_BAR_FULL_HEIGHT))
+            Column(Modifier.padding(top = TIMELINE_HEIGHT).verticalScroll(playlistVerticalScrollState)) {
+                Divider()
                 EchoInMirror.bus.subTracks.forEachIndexed { i, it ->
                     key(it.uuid) {
                         TrackItem(it, trackHeight, i + 1)
@@ -108,28 +107,23 @@ fun Playlist() {
                 var contentWidth by remember { mutableStateOf(0.dp) }
                 var cursorOffsetY by remember { mutableStateOf(0.dp) }
                 val localDensity = LocalDensity.current
+                Timeline(Modifier.zIndex(3f), noteWidth, horizontalScroll, true)
                 Box(Modifier.weight(1f).onGloballyPositioned {
                     with(localDensity) {
                         contentWidth = it.size.width.toDp()
                         cursorOffsetY = it.size.height.toDp()
                     }
                 }) {
-                    val appBarHeight = with (localDensity) { APP_BAR_FULL_HEIGHT.toPx() }
-                    val topPaddingHeight = (appBarHeight - playlistVerticalScrollState.value).coerceAtLeast(0f)
-                    val topPaddingHeightInDp = with (localDensity) { topPaddingHeight.toDp() }
-                    EditorGrid(noteWidth, horizontalScroll, topPaddingHeight)
+                    EditorGrid(noteWidth, horizontalScroll)
                     Column(Modifier.horizontalScroll(horizontalScroll).verticalScroll(playlistVerticalScrollState)
-                        .width(10000.dp).padding(top = APP_BAR_FULL_HEIGHT)) {
+                        .width(10000.dp)) {
                         Divider()
                         EchoInMirror.bus.subTracks.forEach {
                             key(it.uuid) { TrackContent(trackHeight, it, noteWidth) }
                         }
                     }
-                    Box(Modifier.padding(top = topPaddingHeightInDp)) {
-                        PlayHead(noteWidth, horizontalScroll, contentWidth, isCursorOnBottom = true)
-                    }
+                    PlayHead(noteWidth, horizontalScroll, contentWidth)
                 }
-                Timeline(Modifier.zIndex(3f), noteWidth, horizontalScroll)
             }
             HorizontalScrollbar(
                 modifier = Modifier.align(Alignment.TopStart).fillMaxWidth(),

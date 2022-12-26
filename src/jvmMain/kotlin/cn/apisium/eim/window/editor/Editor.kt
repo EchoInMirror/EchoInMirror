@@ -307,7 +307,7 @@ private fun NotesEditorCanvas() {
                     val y = i * noteHeightPx - verticalScrollValue
                     if (y < 0) continue
                     drawLine(outlineColor, Offset(0f, y), Offset(size.width, y), 1F)
-                    if (scales[i % 12]) drawRect(highlightNoteColor, Offset(0f, y), Size(size.width, noteHeightPx))
+                    if (!scales[11 - i % 12]) drawRect(highlightNoteColor, Offset(0f, y), Size(size.width, noteHeightPx))
                 }
 
                 val track = EchoInMirror.selectedTrack ?: return@onDrawBehind
@@ -394,7 +394,7 @@ private fun editorContent() {
                     drawContent()
                     drawRect(surfaceColor, Offset(0f, -8f), Size(size.width, 8F))
                 }) {
-                    Timeline(Modifier.zIndex(3F), noteWidth, horizontalScrollState, 68.dp)
+                    Timeline(Modifier.zIndex(3F), noteWidth, horizontalScrollState, false, 68.dp)
                 }
                 Box(Modifier.weight(1F).onGloballyPositioned { with(localDensity) { contentWidth = it.size.width.toDp() } }) {
                     Row(Modifier.fillMaxSize().zIndex(-1F)) {
@@ -450,7 +450,7 @@ object Editor: Panel {
             Surface(Modifier.fillMaxSize(), shadowElevation = 2.dp) {
                 Column {
                     Box {
-                        Column(Modifier.padding(top = 8.dp).fillMaxSize()) { editorContent() }
+                        Column(Modifier.fillMaxSize()) { editorContent() }
                         HorizontalScrollbar(
                             modifier = Modifier.align(Alignment.TopStart).fillMaxWidth(),
                             adapter = rememberScrollbarAdapter(horizontalScrollState)

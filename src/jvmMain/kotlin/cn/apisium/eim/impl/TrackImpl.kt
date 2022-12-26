@@ -17,9 +17,7 @@ import kotlinx.coroutines.*
 import java.util.*
 import kotlin.collections.ArrayList
 
-open class TrackImpl(
-    trackName: String
-) : Track, AbstractAudioProcessor() {
+open class TrackImpl(trackName: String) : Track, AbstractAudioProcessor() {
     override var name by mutableStateOf(trackName)
     override var color by mutableStateOf(randomColor(true))
     override var pan by mutableStateOf(0F)

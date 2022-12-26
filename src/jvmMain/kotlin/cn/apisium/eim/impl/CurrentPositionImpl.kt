@@ -17,6 +17,8 @@ class CurrentPositionImpl: CurrentPosition {
     override var sampleRate by mutableStateOf(44800)
     override var timeSigNumerator by mutableStateOf(4)
     override var timeSigDenominator by mutableStateOf(4)
+    override var loopingRange by mutableStateOf(0..0)
+    override var projectRange by mutableStateOf(0..ppq * timeSigNumerator * 16)
     override val ppqCountOfBlock get() = (bufferSize / sampleRate / 60.0 * bpm * ppq).toInt()
 
     override var isLooping by mutableStateOf(false)
@@ -37,6 +39,7 @@ class CurrentPositionImpl: CurrentPosition {
         timeInSeconds = this.timeInSamples.toDouble() / sampleRate
         ppqPosition = timeInSeconds / 60.0 * bpm
         timeInPPQ = (ppqPosition * ppq).toInt()
+        if (timeInPPQ !in projectRange) setCurrentTime(projectRange.first)
     }
 
     override fun setPPQPosition(ppqPosition: Double) {
@@ -44,11 +47,12 @@ class CurrentPositionImpl: CurrentPosition {
         timeInSeconds = this.ppqPosition / bpm * 60.0
         timeInSamples = (timeInSeconds * sampleRate).toLong()
         timeInPPQ = (this.ppqPosition * ppq * timeSigNumerator).toInt()
+        if (timeInPPQ !in projectRange) setCurrentTime(projectRange.first)
         EchoInMirror.bus.onSuddenChange()
     }
 
     override fun setCurrentTime(timeInPPQ: Int) {
-        this.timeInPPQ = timeInPPQ.coerceAtLeast(0)
+        this.timeInPPQ = timeInPPQ.coerceIn(projectRange).coerceAtLeast(0)
         ppqPosition = this.timeInPPQ.toDouble() / ppq
         timeInSeconds = ppqPosition / bpm * 60.0
         timeInSamples = (timeInSeconds * sampleRate).toLong()

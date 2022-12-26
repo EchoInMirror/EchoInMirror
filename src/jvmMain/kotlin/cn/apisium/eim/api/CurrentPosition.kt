@@ -15,6 +15,8 @@ interface CurrentPosition {
     var sampleRate: Int
     var timeSigNumerator: Int
     var timeSigDenominator: Int
+    var projectRange: IntRange
+    var loopingRange: IntRange
     val ppqCountOfBlock: Int
 
     fun update(timeInSamples: Long)

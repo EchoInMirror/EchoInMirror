@@ -83,7 +83,7 @@ fun eimApp() {
                             topBar = { EimAppBar() },
                             content = {
                                 Column {
-                                    Box(Modifier.weight(1F)) {
+                                    Box(Modifier.weight(1F).padding(top = APP_BAR_HEIGHT)) {
                                         HorizontalSplitPane(splitPaneState = sideBarWidthState) {
                                             first(0.dp) { SideBarContent() }
                                             second(400.dp) {

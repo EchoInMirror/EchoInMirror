@@ -12,8 +12,7 @@ interface Renderable {
 
 interface Renderer {
     suspend fun start(
-        startPosition: Int,
-        endPosition: Int,
+        range: IntRange,
         sampleRate: Int,
         ppq: Int,
         bpm: Double,

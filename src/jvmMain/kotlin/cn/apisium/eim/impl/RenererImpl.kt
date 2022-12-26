@@ -14,23 +14,24 @@ import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioInputStream
 import javax.sound.sampled.AudioSystem
 
-class RenderPosition(override var ppq: Int, override var sampleRate: Int, override var timeInPPQ: Int) : CurrentPosition {
+class RenderPosition(override var ppq: Int, override var sampleRate: Int, range: IntRange) : CurrentPosition {
     override var bpm = 140.0
-    override var timeInSamples = 0L
     override var timeInSeconds = 0.0
     override var ppqPosition = 0.0
     override var bufferSize = 1024
     override var timeSigNumerator = 4
     override var timeSigDenominator = 4
+    override var projectRange = range
+        set(_) { throw UnsupportedOperationException() }
+    override var loopingRange = range
+        set(_) { throw UnsupportedOperationException() }
     override var isPlaying = true
         set(_) { throw UnsupportedOperationException() }
     override var isLooping = false
     override var isRecording = false
     override val isRealtime = false
-
-    init {
-        this.timeInSamples = this.convertPPQToSamples(timeInPPQ)
-    }
+    override var timeInPPQ = range.first
+    override var timeInSamples = this.convertPPQToSamples(timeInPPQ)
 
     override val ppqCountOfBlock: Int
         get() = (bufferSize / sampleRate / 60.0 * bpm * ppq).toInt()
@@ -51,8 +52,7 @@ class RenderPosition(override var ppq: Int, override var sampleRate: Int, overri
 
 class RendererImpl(private val renderTarget: Renderable) : Renderer {
     override suspend fun start(
-        startPosition: Int,
-        endPosition: Int,
+        range: IntRange,
         sampleRate: Int,
         ppq: Int,
         bpm: Double,
@@ -60,18 +60,19 @@ class RendererImpl(private val renderTarget: Renderable) : Renderer {
         audioType: AudioFileFormat.Type,
         callback: (Float) -> Unit
     ) {
-        if (endPosition <= startPosition) throw IllegalArgumentException("endPosition must be greater than startPosition")
+        if (range.first <= range.last) throw IllegalArgumentException("end position must be greater than start position")
+        if (range.step != 1) throw IllegalArgumentException("step must be 1")
         renderTarget.onRenderStart()
         val channels = 2
         val bits = 2
-        val position = RenderPosition(ppq, sampleRate, startPosition)
-        val fullLength = channels * bits *
-                position.convertPPQToSamples(endPosition - startPosition)
+        val position = RenderPosition(ppq, sampleRate, range)
+        val fullLengthInPPQ = range.first - range.last
+        val fullLength = channels * bits * position.convertPPQToSamples(fullLengthInPPQ)
         val buffers =
             arrayOf(FloatArray(position.bufferSize), FloatArray(position.bufferSize))
         val sampleBits = getSampleBits(bits)
         val outputStream = CachedBufferInputStream(channels * bits * position.bufferSize, fullLength) { buffer ->
-            if (position.timeInPPQ > endPosition) return@CachedBufferInputStream
+            if (position.timeInPPQ > range.last) return@CachedBufferInputStream
 
             buffers.forEach { it.fill(0F) }
             try {
@@ -96,7 +97,7 @@ class RendererImpl(private val renderTarget: Renderable) : Renderer {
             position.ppqPosition = position.timeInSeconds / 60.0 * position.bpm
             position.timeInPPQ = (position.ppqPosition * position.ppq).toInt()
 
-            callback(((position.timeInPPQ - startPosition).toFloat() / (endPosition - startPosition)).coerceAtMost(0.9999F))
+            callback(((position.timeInPPQ - range.first).toFloat() / fullLengthInPPQ).coerceAtMost(0.9999F))
         }
         val format = AudioFormat(
             AudioFormat.Encoding.PCM_SIGNED, sampleRate.toFloat(), bits * 8, channels,
