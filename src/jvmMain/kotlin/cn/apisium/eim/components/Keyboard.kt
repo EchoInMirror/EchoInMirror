@@ -26,6 +26,7 @@ import cn.apisium.eim.utils.y
 
 val scales = arrayOf(true, false, true, false, true, false, true, true, false, true, false, true)
 const val KEYBOARD_KEYS = 132
+val KEYBOARD_DEFAULT_WIDTH = 68.dp
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Preview
@@ -35,7 +36,7 @@ fun Keyboard(
     onNoteOff: (key: Int, position: Float) -> Unit,
     modifier: Modifier = Modifier,
     keyHeight: Dp = 17.dp,
-    keyWidth: Dp = 68.dp,
+    keyWidth: Dp = KEYBOARD_DEFAULT_WIDTH,
     whiteKeyColor: Color = if (EchoInMirror.windowManager.isDarkTheme) MaterialTheme.colorScheme.secondary
         else MaterialTheme.colorScheme.background,
     backKeyColor: Color = if (EchoInMirror.windowManager.isDarkTheme) MaterialTheme.colorScheme.background

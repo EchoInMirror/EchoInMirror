@@ -3,6 +3,7 @@ package cn.apisium.eim.actions
 import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.api.ReversibleAction
 import cn.apisium.eim.api.Track
+import cn.apisium.eim.api.UndoableAction
 import cn.apisium.eim.data.midi.NoteMessage
 import kotlinx.coroutines.runBlocking
 
@@ -14,6 +15,11 @@ fun Track.doNoteAmountAction(noteMessage: Collection<NoteMessage>, isDelete: Boo
 fun Track.doNoteMessageEditAction(noteMessage: Array<NoteMessage>, deltaX: Int, deltaY: Int, deltaDuration: Int) {
     val track = this
     runBlocking { EchoInMirror.undoManager.execute(NoteMessageEditAction(track, noteMessage, deltaX, deltaY, deltaDuration)) }
+}
+
+fun Track.doNoteVelocityAction(noteMessage: Array<NoteMessage>, deltaVelocity: Int) {
+    val track = this
+    runBlocking { EchoInMirror.undoManager.execute(NoteVelocityAction(track, noteMessage, deltaVelocity)) }
 }
 
 class NoteAmountAction(private val track: Track, private val notes: Set<NoteMessage>, isDelete: Boolean) :
@@ -45,6 +51,23 @@ class NoteMessageEditAction(private val track: Track, private val notes: Array<N
         }
         track.notes.sort()
         track.onSuddenChange()
+        track.notes.update()
+        return true
+    }
+}
+
+class NoteVelocityAction(private val track: Track, private val notes: Array<NoteMessage>,
+                                    private val deltaVelocity: Int) : UndoableAction {
+    private val oldVelocities = notes.map { it.velocity }.toIntArray()
+    override val name = "音符力度编辑"
+    override suspend fun undo(): Boolean {
+        notes.forEachIndexed { index, noteMessage -> noteMessage.velocity = oldVelocities[index] }
+        track.notes.update()
+        return true
+    }
+
+    override suspend fun execute(): Boolean {
+        notes.forEach { it.velocity += deltaVelocity }
         track.notes.update()
         return true
     }

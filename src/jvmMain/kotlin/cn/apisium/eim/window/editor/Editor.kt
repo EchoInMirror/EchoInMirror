@@ -10,6 +10,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
@@ -39,7 +40,7 @@ import java.awt.Cursor
 import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
 
-private enum class EditAction {
+internal enum class EditAction {
     NONE, MOVE, RESIZE, SELECT, DELETE;
     fun isLazy() = this == MOVE || this == RESIZE
 }
@@ -59,14 +60,15 @@ private var selectionStartX = 0F
 private var selectionStartY = 0
 private var selectionX by mutableStateOf(0F)
 private var selectionY by mutableStateOf(0)
-private var deltaX by mutableStateOf(0)
+internal var deltaX by mutableStateOf(0)
 private var deltaY by mutableStateOf(0)
-private var action by mutableStateOf(NONE)
+internal var action by mutableStateOf(NONE)
 private var resizeDirectionRight = false
 private var cursor by mutableStateOf(Cursor.DEFAULT_CURSOR)
 private var currentNote = 0
 private var currentX = 0
 private val deletionList = mutableStateSetOf<NoteMessage>()
+internal var notesInView by mutableStateOf(arrayListOf<NoteMessage>())
 
 private data class NoteDrawObject(val note: NoteMessage, val offset: Offset, val size: Size)
 
@@ -265,7 +267,7 @@ private suspend fun PointerInputScope.handleDrag() {
 
 @Composable
 private fun NotesEditorCanvas() {
-    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
+    Box(Modifier.fillMaxSize().clipToBounds().background(MaterialTheme.colorScheme.background)
         .scrollable(verticalScrollState, Orientation.Vertical, reverseDirection = true)
         .pointerInput(Unit) { handleDrag() }
     ) {
@@ -285,13 +287,15 @@ private fun NotesEditorCanvas() {
                 var flag = true
                 track.notes.read()
                 manualState.read()
+                val notesInViewList = arrayListOf<NoteMessage>()
                 for ((index, it) in track.notes.withIndex()) {
                     val y = (KEYBOARD_KEYS - 1 - it.note) * noteHeightPx - verticalScrollValue
                     val x = it.time * noteWidthPx - horizontalScrollValue
+                    if (x > size.width) break
+                    notesInViewList.add(it)
                     if (y < -noteHeightPx || y > size.height || deletionList.contains(it)) continue
                     val width = it.duration * noteWidthPx
                     if (x < 0 && width < -x) continue
-                    if (x > size.width) break
                     if (flag) {
                         startNoteIndex = index
                         flag = false
@@ -300,6 +304,7 @@ private fun NotesEditorCanvas() {
                     notes.add(NoteDrawObject(it, Offset(x, y.coerceAtLeast(0F)), Size(width, if (y < 0)
                         (noteHeightPx + y).coerceAtLeast(0F) else noteHeightPx)))
                 }
+                notesInView = notesInViewList
             }
 
             onDrawBehind {
@@ -415,17 +420,9 @@ private fun editorContent() {
                 }
             }
         }
-        second(0.dp) {
-            Row {
+        second(20.dp) { EventEditor() }
 
-            }
-        }
-
-        splitter {
-            visiblePart {
-                Divider()
-            }
-        }
+        splitter { visiblePart { Divider() } }
     }
 
 }
