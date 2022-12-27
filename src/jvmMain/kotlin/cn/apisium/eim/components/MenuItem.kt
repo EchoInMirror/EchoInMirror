@@ -21,11 +21,10 @@ fun MenuItem(
                 onClick = onClick,
             )
             .run { if (selected) background(MaterialTheme.colorScheme.secondary.copy(0.2F)) else this }
-            .fillMaxWidth()
             .sizeIn(
-                minWidth = 112.dp,
+                minWidth = 100.dp,
                 maxWidth = 280.dp,
-                minHeight = 28.dp
+                minHeight = 38.dp
             )
             .padding(
                 PaddingValues(

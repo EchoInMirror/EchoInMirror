@@ -41,12 +41,12 @@ internal fun EventEditor() {
                 notesInView.forEach {
                     val isSelected = selectedNotes.contains(it)
                     val x = it.time * noteWidthPx - scrollX + 2 + (if (isSelected) offsetX else 0f)
-                    val y = size.height * it.velocity / 127 + (if (isSelected || selectedNote == it) offsetOfDelta else 0f)
+                    val y = size.height * (1 - it.velocity / 127F) + (if (isSelected || selectedNote == it) offsetOfDelta else 0f)
                     drawLine(track.color, Offset(x, y.coerceIn(0f, size.height - 1)), Offset(x, size.height), 4f)
                 }
                 selectedNotes.forEach {
                     val x = it.time * noteWidthPx - scrollX + offsetX
-                    val y = (size.height * it.velocity / 127 + offsetOfDelta).coerceIn(0f, size.height - 1)
+                    val y = (size.height * (1 - it.velocity / 127F) + offsetOfDelta).coerceIn(0f, size.height - 1)
                     drawRect(primaryColor, Offset(x, y),
                         Size(4f, size.height - y), style = Stroke1_5PX)
                 }

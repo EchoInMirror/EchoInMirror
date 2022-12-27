@@ -8,14 +8,27 @@ interface NoteMessage {
     var velocity: Int
     var time: Int
     var duration: Int
+    var disabled: Boolean
+    fun copy(note: Int = this.note, velocity: Int = this.velocity, time: Int = this.time,
+             duration: Int = this.duration, disabled: Boolean = this.disabled): NoteMessage
 }
 
 data class NoteMessageWithInfo(val ppq: Int, val notes: Collection<NoteMessage>)
 
-fun defaultNoteMessage(note: Int, time: Int, duration: Int = 0, velocity: Int = 70) = NoteMessageImpl(note, time, duration, velocity)
+fun defaultNoteMessage(note: Int, time: Int, duration: Int = 0, velocity: Int = 70, disabled: Boolean = false) =
+    NoteMessageImpl(note, time, duration, velocity, disabled)
 
-open class NoteMessageImpl(override var note: Int, override var time: Int, override var duration: Int = 0,
-                           override var velocity: Int = 70) : NoteMessage {
+open class NoteMessageImpl(note: Int, time: Int, duration: Int = 0, override var velocity: Int = 70,
+                           override var disabled: Boolean = false) : NoteMessage {
+    override var note = note.coerceIn(0, 127)
+        set(value) { field = value.coerceIn(0, 127) }
+    override var time = time.coerceAtLeast(0)
+        set(value) { field = value.coerceAtLeast(0) }
+    override var duration = duration.coerceAtLeast(0)
+        set(value) { field = value.coerceAtLeast(0) }
+    override fun copy(note: Int, velocity: Int, time: Int, duration: Int, disabled: Boolean) =
+        NoteMessageImpl(note, time, duration, velocity, disabled)
+
     override fun toString(): String {
         return "NoteMessageImpl(note=$note, time=$time, duration=$duration)"
     }

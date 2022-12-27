@@ -29,7 +29,7 @@ class KarplusStrongSynthesizer: AbstractAudioProcessor("KarplusStrongSynthesizer
             val event = MidiEvent(midiBuffer[i])
             if (!event.isNoteOn) continue
             val noteStartTime = midiBuffer[i + 1]
-            val noteLength = (position.sampleRate / event.noteFrequency).toInt()
+            val noteLength = (position.sampleRate / event.noteFrequency).toInt().coerceAtLeast(1)
             val noteData = FloatArray(noteLength)
             for (j in 0 until noteLength) {
                 noteData[j] = ((Math.random() * 2 - 1) * event.velocity / 127.0).toFloat()

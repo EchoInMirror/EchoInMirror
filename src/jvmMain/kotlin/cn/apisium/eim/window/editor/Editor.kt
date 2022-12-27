@@ -12,7 +12,6 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawWithCache
-import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.input.pointer.*
@@ -55,6 +54,8 @@ val horizontalScrollState = ScrollState(0).apply {
     @Suppress("INVISIBLE_SETTER")
     maxValue = 10000
 }
+var playOnEdit by mutableStateOf(true)
+var defaultVelocity by mutableStateOf(70)
 private var selectionStartX = 0F
 private var selectionStartY = 0
 private var selectionX by mutableStateOf(0F)
@@ -67,6 +68,8 @@ private var cursor by mutableStateOf(Cursor.DEFAULT_CURSOR)
 private var currentNote = 0
 private var currentX = 0
 private val deletionList = mutableStateSetOf<NoteMessage>()
+private val playingNotes = arrayListOf<MidiEvent>()
+internal var currentSelectedNote by mutableStateOf<NoteMessage?>(null)
 internal var notesInView by mutableStateOf(arrayListOf<NoteMessage>())
 
 private data class NoteDrawObject(val note: NoteMessage, val offset: Offset, val size: Size)
@@ -81,6 +84,22 @@ private fun getClickedNotes(x: Float, y: Float, notes: NoteMessageList, block: (
             return note
     }
     return null
+}
+
+private fun playNote(note: NoteMessage) {
+    if (!playOnEdit) return
+    val track = EchoInMirror.selectedTrack
+    if (EchoInMirror.currentPosition.isPlaying || track == null) return
+    playingNotes.add(note.toNoteOffEvent())
+    track.playMidiEvent(note.toNoteOnEvent())
+}
+
+private fun stopAllNotes() {
+    val track = EchoInMirror.selectedTrack
+    if (playingNotes.isNotEmpty() && track != null) {
+        if (!EchoInMirror.currentPosition.isPlaying) playingNotes.forEach { track.playMidiEvent(it) }
+        playingNotes.clear()
+    }
 }
 
 @OptIn(DelicateCoroutinesApi::class)
@@ -116,7 +135,7 @@ private suspend fun PointerInputScope.handleDrag() {
                     var currentSelectNote = getClickedNotes(event.x, event.y, track.notes)
                     if (currentSelectNote == null) {
                         selectedNotes.clear()
-                        currentSelectNote = defaultNoteMessage(currentNote, currentX.fitInUnit(noteUnit), noteUnit)
+                        currentSelectNote = defaultNoteMessage(currentNote, currentX.fitInUnit(noteUnit), noteUnit, defaultVelocity)
                         track.doNoteAmountAction(listOf(currentSelectNote), false)
                         track.notes.sort()
                         track.notes.update()
@@ -126,6 +145,9 @@ private suspend fun PointerInputScope.handleDrag() {
                         selectedNotes.add(currentSelectNote)
                         action = MOVE
                     }
+                    currentSelectedNote = currentSelectNote
+
+                    playNote(currentSelectNote)
 
                     // check is move or resize
                     // if user click on start 4px and end -4px is resize
@@ -158,6 +180,10 @@ private suspend fun PointerInputScope.handleDrag() {
                     getClickedNotes(event.x, event.y, track.notes) ?.let(deletionList::add)
                     action = DELETE
                     break
+                } else if (event.buttons.isSecondaryPressed) {
+                    selectedNotes.clear()
+                    action = NONE
+                    break
                 }
             } while (!event.changes.fastAll(PointerInputChange::changedToDownIgnoreConsumed))
             val down = event.changes[0]
@@ -176,6 +202,7 @@ private suspend fun PointerInputScope.handleDrag() {
                     track?.doNoteAmountAction(deletionList, true)
                     deletionList.clear()
                 }
+                stopAllNotes()
                 action = NONE
                 return@awaitPointerEventScope
             }
@@ -199,12 +226,18 @@ private suspend fun PointerInputScope.handleDrag() {
                         // calc delta in noteUnit, then check all move notes are in bound
                         deltaX = (((it.position.x + horizontalScrollState.value).coerceAtLeast(0F) - downX) /
                                 noteWidth.value).fitInUnit(noteUnit)
+                        val prevDeltaY = deltaY
                         deltaY = (((it.position.y + verticalScrollState.value).coerceAtLeast(0F) - downY) /
                                 noteHeight.value).roundToInt()
                         if (action == MOVE) {
                             if (selectedNotesLeft + deltaX < 0) deltaX = -selectedNotesLeft
                             if (selectedNotesTop + deltaY > KEYBOARD_KEYS - 1) deltaY = KEYBOARD_KEYS - 1 - selectedNotesTop
                             if (selectedNotesBottom + deltaY < 0) deltaY = -selectedNotesBottom
+                            if (deltaY != prevDeltaY) {
+                                stopAllNotes()
+                                val note = currentSelectedNote
+                                if (note != null) playNote(note.copy(note = note.note - deltaY))
+                            }
                         } else {
                             if (resizeDirectionRight) {
                                 if (minNoteDuration + deltaX < noteUnit) deltaX = noteUnit - minNoteDuration
@@ -260,6 +293,7 @@ private suspend fun PointerInputScope.handleDrag() {
             deltaX = 0
             deltaY = 0
             action = NONE
+            stopAllNotes()
         }
     }
 }
@@ -313,23 +347,16 @@ private fun NotesEditorCanvas() {
                     val y = i * noteHeightPx - verticalScrollValue
                     if (y < 0) continue
                     drawLine(outlineColor, Offset(0f, y), Offset(size.width, y), 1F)
-                    if (!scales[11 - i % 12]) drawRect(highlightNoteColor, Offset(0f, y), Size(size.width, noteHeightPx))
+                    if (!scales[11 - (i + 4) % 12]) drawRect(highlightNoteColor, Offset(0f, y), Size(size.width, noteHeightPx))
                 }
 
                 val track = EchoInMirror.selectedTrack ?: return@onDrawBehind
-                val currentPPQ = EchoInMirror.currentPosition.timeInPPQ
-                val isPlaying = EchoInMirror.currentPosition.isPlaying
-                notes.forEach {
-                    val color = if (isPlaying && it.note.time <= currentPPQ &&
-                        it.note.time + it.note.duration >= currentPPQ) primaryColor else track.color
-                    drawRoundRect(color, it.offset, it.size, BorderCornerRadius2PX)
-                }
+                val trackColor = track.color
+                notes.forEach { drawRoundRect(trackColor, it.offset, it.size, BorderCornerRadius2PX) }
                 selectedNotes.forEach {
                     var y = (KEYBOARD_KEYS - 1 - it.note) * noteHeightPx - verticalScrollValue
                     val x = it.time * noteWidthPx - horizontalScrollValue
                     val width = it.duration * noteWidthPx
-                    val color = if (isPlaying && it.time <= currentPPQ &&
-                        it.time + it.duration >= currentPPQ) primaryColor else track.color
                     val offset: Offset
                     val size: Size
                     when (action) {
@@ -350,7 +377,7 @@ private fun NotesEditorCanvas() {
                         }
                     }
                     if (size.height <= 0 || size.width <= 0) return@forEach
-                    drawRoundRect(color, offset, size, BorderCornerRadius2PX)
+                    drawRoundRect(trackColor, offset, size, BorderCornerRadius2PX)
                     drawRoundRect(primaryColor, offset, size, BorderCornerRadius2PX, Stroke1_5PX)
                 }
             }
@@ -395,13 +422,7 @@ private fun editorContent() {
             }) {
                 val localDensity = LocalDensity.current
                 var contentWidth by remember { mutableStateOf(0.dp) }
-                val surfaceColor = getSurfaceColor(2.dp)
-                Box(Modifier.drawWithContent {
-                    drawContent()
-                    drawRect(surfaceColor, Offset(0f, -8f), Size(size.width, 8F))
-                }) {
-                    Timeline(Modifier.zIndex(3F), noteWidth, horizontalScrollState, false, 68.dp)
-                }
+                Timeline(Modifier.zIndex(3F), noteWidth, horizontalScrollState, false, 68.dp)
                 Box(Modifier.weight(1F).onGloballyPositioned { with(localDensity) { contentWidth = it.size.width.toDp() } }) {
                     Row(Modifier.fillMaxSize().zIndex(-1F)) {
                         Surface(Modifier.verticalScroll(verticalScrollState).zIndex(5f), shadowElevation = 4.dp) {

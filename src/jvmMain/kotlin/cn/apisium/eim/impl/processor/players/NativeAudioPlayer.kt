@@ -67,7 +67,7 @@ class NativeAudioPlayer(currentPosition: CurrentPosition, processor: AudioProces
             runBlocking {
                 try {
                     processor?.processBlock(buffers, currentPosition, ArrayList(0))
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     e.printStackTrace()
                 }
             }

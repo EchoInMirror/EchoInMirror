@@ -25,7 +25,7 @@ import cn.apisium.eim.utils.x
 import cn.apisium.eim.utils.y
 
 val scales = arrayOf(true, false, true, false, true, false, true, true, false, true, false, true)
-const val KEYBOARD_KEYS = 132
+const val KEYBOARD_KEYS = 128
 val KEYBOARD_DEFAULT_WIDTH = 68.dp
 
 @OptIn(ExperimentalComposeUiApi::class)

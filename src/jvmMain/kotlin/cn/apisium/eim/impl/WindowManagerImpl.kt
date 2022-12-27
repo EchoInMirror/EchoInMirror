@@ -65,7 +65,9 @@ class WindowManagerImpl: WindowManager {
     }
 
     override fun closeFloatingDialog(key: Any) {
-        floatingDialogs[key]?.isClosed = true
+        val dialog = floatingDialogs[key] ?: return
+        if (dialog.hasOverlay) dialog.isClosed = true
+        else floatingDialogs.remove(key)
     }
 
     @OptIn(ExperimentalComposeUiApi::class)
