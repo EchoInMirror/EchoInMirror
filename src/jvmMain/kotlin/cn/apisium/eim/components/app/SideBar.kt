@@ -163,8 +163,8 @@ internal fun SideBarContent() {
                 sideBarSelectedItem?.content()
             }
             VerticalScrollbar(
-                modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
-                adapter = rememberScrollbarAdapter(stateVertical)
+                rememberScrollbarAdapter(stateVertical),
+                Modifier.align(Alignment.CenterEnd).fillMaxHeight()
             )
         }
     }

@@ -70,8 +70,8 @@ val SettingsWindow: @Composable () -> Unit = @Composable {
                             Box(Modifier.padding(14.dp)) { selectedTab?.content() }
                         }
                         VerticalScrollbar(
-                            modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
-                            adapter = rememberScrollbarAdapter(stateVertical)
+                            rememberScrollbarAdapter(stateVertical),
+                            Modifier.align(Alignment.CenterEnd).fillMaxHeight()
                         )
                     }
                     Row(Modifier.padding(14.dp, 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {

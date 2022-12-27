@@ -27,7 +27,7 @@ import cn.apisium.eim.impl.WindowManagerImpl
 import cn.apisium.eim.utils.Border
 import cn.apisium.eim.utils.CLIPBOARD_MANAGER
 import cn.apisium.eim.utils.border
-import cn.apisium.eim.window.Playlist
+import cn.apisium.eim.window.playlist.Playlist
 import org.jetbrains.skiko.Cursor
 import java.lang.ref.WeakReference
 

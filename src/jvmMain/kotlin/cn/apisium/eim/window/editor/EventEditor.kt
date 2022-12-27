@@ -34,7 +34,7 @@ internal fun EventEditor() {
             EditorGrid(noteWidth, horizontalScrollState)
             Spacer(Modifier.fillMaxSize().drawBehind {
                 val track = EchoInMirror.selectedTrack ?: return@drawBehind
-                val noteWidthPx = noteWidth.toPx()
+                val noteWidthPx = noteWidth.value.toPx()
                 val offsetOfDelta = delta / 127F * size.height
                 val offsetX = if (action == EditAction.MOVE) deltaX * noteWidthPx else 0f
                 val scrollX = horizontalScrollState.value
@@ -54,7 +54,7 @@ internal fun EventEditor() {
                 detectDragGestures({
                     val track = EchoInMirror.selectedTrack ?: return@detectDragGestures
                     val x = it.x + horizontalScrollState.value
-                    val noteWidthPx = noteWidth.toPx()
+                    val noteWidthPx = noteWidth.value.toPx()
                     for (i in startNoteIndex until track.notes.size) {
                         val note = track.notes[i]
                         val curX = note.time * noteWidthPx

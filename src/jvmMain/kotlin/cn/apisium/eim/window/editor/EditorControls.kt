@@ -41,7 +41,7 @@ internal fun EditorControls() {
         }
     }
     Column(Modifier.padding(10.dp)) {
-        Slider(noteWidth.value / 0.4f, { noteWidth = 0.4.dp * it }, valueRange = 0.15f..8f)
+        Slider(noteWidth.value.value / 0.4f, { noteWidth.value = 0.4.dp * it }, valueRange = 0.15f..8f)
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("试听音符", Modifier.weight(1f), style = MaterialTheme.typography.labelLarge)
             Checkbox(playOnEdit, { playOnEdit = !playOnEdit })

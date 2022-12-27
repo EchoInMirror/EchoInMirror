@@ -18,6 +18,8 @@ import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.*
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import cn.apisium.eim.EchoInMirror
@@ -47,7 +49,7 @@ internal enum class EditAction {
 val selectedNotes = hashSetOf<NoteMessage>()
 var startNoteIndex = 0
 val noteHeight by mutableStateOf(16.dp)
-var noteWidth by mutableStateOf(0.4.dp)
+var noteWidth = mutableStateOf(0.4.dp)
 val noteUnit by mutableStateOf(96)
 val verticalScrollState = ScrollState(0)
 val horizontalScrollState = ScrollState(0).apply {
@@ -74,9 +76,10 @@ internal var notesInView by mutableStateOf(arrayListOf<NoteMessage>())
 
 private data class NoteDrawObject(val note: NoteMessage, val offset: Offset, val size: Size)
 
-private fun getClickedNotes(x: Float, y: Float, notes: NoteMessageList, block: (NoteMessage) -> Boolean = { true }): NoteMessage? {
+private fun Density.getClickedNotes(x: Float, y: Float, notes: NoteMessageList,
+                                    block: Density.(NoteMessage) -> Boolean = { true }): NoteMessage? {
     currentNote = KEYBOARD_KEYS - ((y + verticalScrollState.value) / noteHeight.value).toInt() - 1
-    currentX = ((x + horizontalScrollState.value) / noteWidth.value).roundToInt()
+    currentX = ((x + horizontalScrollState.value) / noteWidth.value.toPx()).roundToInt()
     for (i in startNoteIndex until notes.size) {
         val note = notes[i]
         if (note.time > currentX) break
@@ -103,7 +106,29 @@ private fun stopAllNotes() {
 }
 
 @OptIn(DelicateCoroutinesApi::class)
-private suspend fun PointerInputScope.handleDrag() {
+fun Density.calcScroll(event: PointerEvent, noteWidth: MutableState<Dp>, horizontalScrollState: ScrollState) {
+    if (event.keyboardModifiers.isCtrlPressed) {
+        val change = event.changes[0]
+        if (event.keyboardModifiers.isAltPressed) {
+            // TODO
+        } else {
+            val x = change.position.x
+            val oldX = (x + horizontalScrollState.value) / noteWidth.value.toPx()
+            noteWidth.value = (noteWidth.value.value +
+                    (if (change.scrollDelta.y > 0) -0.05F else 0.05F)).coerceIn(0.06f, 3.2f).dp
+            GlobalScope.launch {
+                val noteWidthPx = noteWidth.value.toPx()
+                horizontalScrollState.scrollBy(
+                    (oldX - (x + horizontalScrollState.value) / noteWidthPx) * noteWidthPx
+                )
+            }
+        }
+        change.consume()
+    }
+}
+
+@OptIn(DelicateCoroutinesApi::class)
+private suspend fun PointerInputScope.handleMouseEvent() {
     forEachGesture {
         awaitPointerEventScope {
             var event: PointerEvent
@@ -114,17 +139,23 @@ private suspend fun PointerInputScope.handleDrag() {
             do {
                 event = awaitPointerEvent(PointerEventPass.Main)
                 val track = EchoInMirror.selectedTrack ?: continue
-                if (event.type == PointerEventType.Move) {
-                    var cursor0 = Cursor.DEFAULT_CURSOR
-                    getClickedNotes(event.x, event.y, track.notes)?.let {
-                        val startX = it.time * noteWidth.value - horizontalScrollState.value
-                        val endX = (it.time + it.duration) * noteWidth.value - horizontalScrollState.value
-                        cursor0 = if ((event.x < startX + 4 && event.x > startX - 4) ||
-                            (event.x < endX + 4 && event.x > endX - 4)) Cursor.E_RESIZE_CURSOR
-                        else Cursor.MOVE_CURSOR
+                when (event.type) {
+                    PointerEventType.Move -> {
+                        var cursor0 = Cursor.DEFAULT_CURSOR
+                        getClickedNotes(event.x, event.y, track.notes)?.let {
+                            val startX = it.time * noteWidth.value.toPx() - horizontalScrollState.value
+                            val endX = (it.time + it.duration) * noteWidth.value.toPx() - horizontalScrollState.value
+                            cursor0 = if ((event.x < startX + 4 && event.x > startX - 4) ||
+                                (event.x < endX + 4 && event.x > endX - 4)) Cursor.E_RESIZE_CURSOR
+                            else Cursor.MOVE_CURSOR
+                        }
+                        cursor = cursor0
+                        continue
                     }
-                    cursor = cursor0
-                    continue
+                    PointerEventType.Scroll -> {
+                        calcScroll(event, noteWidth, horizontalScrollState)
+                        continue
+                    }
                 }
 
                 if (event.buttons.isPrimaryPressed) {
@@ -152,8 +183,8 @@ private suspend fun PointerInputScope.handleDrag() {
                     // check is move or resize
                     // if user click on start 4px and end -4px is resize
                     // else will move
-                    val startX = currentSelectNote.time * noteWidth.value - horizontalScrollState.value
-                    val endX = (currentSelectNote.time + currentSelectNote.duration) * noteWidth.value - horizontalScrollState.value
+                    val startX = currentSelectNote.time * noteWidth.value.toPx() - horizontalScrollState.value
+                    val endX = (currentSelectNote.time + currentSelectNote.duration) * noteWidth.value.toPx() - horizontalScrollState.value
                     if (event.x < startX + 4 && event.x > startX - 4) {
                         resizeDirectionRight = false
                         action = RESIZE
@@ -225,7 +256,7 @@ private suspend fun PointerInputScope.handleDrag() {
                     MOVE, RESIZE -> {
                         // calc delta in noteUnit, then check all move notes are in bound
                         deltaX = (((it.position.x + horizontalScrollState.value).coerceAtLeast(0F) - downX) /
-                                noteWidth.value).fitInUnit(noteUnit)
+                                noteWidth.value.toPx()).fitInUnit(noteUnit)
                         val prevDeltaY = deltaY
                         deltaY = (((it.position.y + verticalScrollState.value).coerceAtLeast(0F) - downY) /
                                 noteHeight.value).roundToInt()
@@ -259,8 +290,8 @@ private suspend fun PointerInputScope.handleDrag() {
             // calc selected notes
             if (track != null) when (action) {
                 SELECT -> {
-                    val startX = (selectionStartX / noteWidth.value).roundToInt()
-                    val endX = (selectionX / noteWidth.value).roundToInt()
+                    val startX = (selectionStartX / noteWidth.value.toPx()).roundToInt()
+                    val endX = (selectionX / noteWidth.value.toPx()).roundToInt()
                     val startY = KEYBOARD_KEYS - selectionStartY - 1
                     val endY = KEYBOARD_KEYS - selectionY - 1
                     val minX = minOf(startX, endX)
@@ -302,14 +333,14 @@ private suspend fun PointerInputScope.handleDrag() {
 private fun NotesEditorCanvas() {
     Box(Modifier.fillMaxSize().clipToBounds().background(MaterialTheme.colorScheme.background)
         .scrollable(verticalScrollState, Orientation.Vertical, reverseDirection = true)
-        .pointerInput(Unit) { handleDrag() }
+        .pointerInput(Unit) { handleMouseEvent() }
     ) {
         val highlightNoteColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.03F)
         val outlineColor = MaterialTheme.colorScheme.surfaceVariant
         val primaryColor = MaterialTheme.colorScheme.primary
         EditorGrid(noteWidth, horizontalScrollState)
         Spacer(Modifier.fillMaxSize().drawWithCache {
-            val noteWidthPx = noteWidth.toPx()
+            val noteWidthPx = noteWidth.value.toPx()
             val verticalScrollValue = verticalScrollState.value
             val horizontalScrollValue = horizontalScrollState.value
             val noteHeightPx = noteHeight.toPx()

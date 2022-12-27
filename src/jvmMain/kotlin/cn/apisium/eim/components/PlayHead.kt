@@ -46,7 +46,7 @@ val TIMELINE_HEIGHT = 40.dp
 
 @OptIn(ExperimentalTextApi::class)
 @Composable
-fun Timeline(modifier: Modifier = Modifier, noteWidth: Dp, scrollState: ScrollState, drawRange: Boolean = false, offsetX: Dp = 0.dp) {
+fun Timeline(modifier: Modifier = Modifier, noteWidth: MutableState<Dp>, scrollState: ScrollState, drawRange: Boolean = false, offsetX: Dp = 0.dp) {
     Surface(modifier.height(TIMELINE_HEIGHT).fillMaxWidth().zIndex(2F).pointerHoverIcon(PointerIcon(Cursor(Cursor.E_RESIZE_CURSOR))),
         shadowElevation = 5.dp, tonalElevation = 4.dp) {
         val outlineColor = MaterialTheme.colorScheme.outlineVariant
@@ -61,7 +61,7 @@ fun Timeline(modifier: Modifier = Modifier, noteWidth: Dp, scrollState: ScrollSt
         Canvas(Modifier.fillMaxSize().pointerInput(Unit) {
             forEachGesture {
                 awaitPointerEventScope {
-                    val noteWidthPx = noteWidth.toPx()
+                    val noteWidthPx = noteWidth.value.toPx()
                     var event: PointerEvent
                     do {
                         event = awaitPointerEvent(PointerEventPass.Main)
@@ -97,11 +97,11 @@ fun Timeline(modifier: Modifier = Modifier, noteWidth: Dp, scrollState: ScrollSt
             }
             detectDragGestures { change, _ ->
                 change.consume()
-                EchoInMirror.currentPosition.setCurrentTime(((change.position.x + scrollState.value - offsetX.value) / noteWidth.value).toInt())
+                EchoInMirror.currentPosition.setCurrentTime(((change.position.x + scrollState.value - offsetX.value) / noteWidth.value.toPx()).toInt())
             }
         }) {
             val offsetXValue = offsetX.toPx()
-            val noteWidthPx = noteWidth.toPx()
+            val noteWidthPx = noteWidth.value.toPx()
             val barWidth = noteWidthPx * EchoInMirror.currentPosition.ppq * EchoInMirror.currentPosition.timeSigNumerator
             val startBar = (scrollState.value / barWidth).toInt()
             val endBar = ((scrollState.value + size.width - offsetXValue) / barWidth).toInt()
@@ -135,10 +135,10 @@ fun Timeline(modifier: Modifier = Modifier, noteWidth: Dp, scrollState: ScrollSt
 }
 
 @Composable
-fun PlayHead(noteWidth: Dp, scrollState: ScrollState, width: Dp? = null, offsetX: Dp = 0.dp,
+fun PlayHead(noteWidth: MutableState<Dp>, scrollState: ScrollState, width: Dp? = null, offsetX: Dp = 0.dp,
              color: Color = MaterialTheme.colorScheme.onBackground) {
     val currentPosition = EchoInMirror.currentPosition.ppqPosition * EchoInMirror.currentPosition.ppq
-    var playHeadPosition = noteWidth * currentPosition.toFloat() - scrollState.value.dp
+    var playHeadPosition = noteWidth.value * currentPosition.toFloat() - scrollState.value.dp
     if (playHeadPosition.value < 0 || (width != null && playHeadPosition > width)) return
     playHeadPosition += offsetX
     Box(Modifier.fillMaxHeight().width(1.dp).offset(playHeadPosition).background(color))

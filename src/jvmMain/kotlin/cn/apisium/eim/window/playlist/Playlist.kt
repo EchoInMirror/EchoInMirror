@@ -1,6 +1,9 @@
-package cn.apisium.eim.window
+package cn.apisium.eim.window.playlist
 
 import androidx.compose.foundation.*
+import androidx.compose.foundation.gestures.*
+import androidx.compose.foundation.gestures.drag
+import androidx.compose.foundation.gestures.forEachGesture
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.VolumeOff
@@ -11,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
@@ -23,6 +27,8 @@ import cn.apisium.eim.api.Track
 import cn.apisium.eim.components.*
 import cn.apisium.eim.components.icons.Crown
 import cn.apisium.eim.components.icons.DebugStepOver
+import cn.apisium.eim.utils.fastAll
+import cn.apisium.eim.window.editor.calcScroll
 
 private val TRACK_ITEM_ICON_SIZE = Modifier.size(16.dp)
 
@@ -69,66 +75,108 @@ private fun TrackItem(track: Track, height: Dp, index: Int, depth: Int = 0) {
     } }
 }
 
+var noteWidth = mutableStateOf(0.2.dp)
+
 @Composable
-private fun TrackContent(height: Dp = 70.dp, track: Track, noteWidth: Dp, modifier: Modifier = Modifier) {
+private fun TrackContent(height: Dp = 70.dp, track: Track, modifier: Modifier = Modifier) {
     Box(modifier.fillMaxWidth().height(height)) {
         track.notes.read()
         track.notes.forEach {
-            Box(Modifier.height(height / 128).width(noteWidth * it.duration)
-                .offset(x = noteWidth * it.time, y = height - height / 128 * it.note)
+            Box(Modifier.height(height / 128).width(noteWidth.value * it.duration)
+                .offset(x = noteWidth.value * it.time, y = height - height / 128 * it.note)
                 .background(track.color))
         }
     }
     Divider()
-    track.subTracks.forEach { key(it.uuid) { TrackContent(height, it, noteWidth, modifier) } }
+    track.subTracks.forEach { key(it.uuid) { TrackContent(height, it, modifier) } }
 }
 
-val playlistVerticalScrollState = ScrollState(0)
+val verticalScrollState = ScrollState(0)
+val horizontalScrollState = ScrollState(0)
+
+@Suppress("DuplicatedCode")
+private suspend fun PointerInputScope.handleMouseEvent() {
+    forEachGesture {
+        awaitPointerEventScope {
+            var event: PointerEvent
+            do {
+                event = awaitPointerEvent(PointerEventPass.Initial)
+                when (event.type) {
+                    PointerEventType.Scroll -> {
+                        calcScroll(event, noteWidth, horizontalScrollState)
+                        continue
+                    }
+                    else -> {}
+                }
+            } while (!event.changes.fastAll(PointerInputChange::changedToDownIgnoreConsumed))
+            val down = event.changes[0]
+
+            var drag: PointerInputChange?
+            do {
+                @Suppress("INVISIBLE_MEMBER")
+                drag = awaitPointerSlopOrCancellation(down.id, down.type,
+                    triggerOnMainAxisSlop = false) { change, _ -> change.consume() }
+            } while (drag != null && !drag.isConsumed)
+            if (drag == null) return@awaitPointerEventScope
+            drag(drag.id) {
+                it.consume()
+            }
+        }
+    }
+}
 
 @Composable
 fun Playlist() {
     Row {
         val trackHeight = 70.dp
         Surface(Modifier.width(200.dp).fillMaxHeight().zIndex(5f), shadowElevation = 2.dp, tonalElevation = 2.dp) {
-            Column(Modifier.padding(top = TIMELINE_HEIGHT).verticalScroll(playlistVerticalScrollState)) {
-                Divider()
-                EchoInMirror.bus.subTracks.forEachIndexed { i, it ->
-                    key(it.uuid) {
-                        TrackItem(it, trackHeight, i + 1)
+            Column {
+                Surface(shadowElevation = 2.dp, tonalElevation = 4.dp) {
+                    Row(Modifier.height(TIMELINE_HEIGHT).fillMaxWidth().padding(horizontal = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically) {
+                        cn.apisium.eim.components.silder.Slider(
+                            noteWidth.value.value / 0.4f,
+                            { noteWidth.value = 0.4.dp * it },
+                            valueRange = 0.15f..8f
+                        )
                     }
                 }
-                Divider()
+                Column(Modifier.verticalScroll(verticalScrollState)) {
+                    Divider()
+                    EchoInMirror.bus.subTracks.forEachIndexed { i, it ->
+                        key(it.uuid) {
+                            TrackItem(it, trackHeight, i + 1)
+                        }
+                    }
+                    Divider()
+                }
             }
         }
         Box(Modifier.fillMaxSize()) {
-            val noteWidth = 0.2.dp
-            val horizontalScroll = rememberScrollState()
             Column {
                 var contentWidth by remember { mutableStateOf(0.dp) }
                 var cursorOffsetY by remember { mutableStateOf(0.dp) }
                 val localDensity = LocalDensity.current
-                Timeline(Modifier.zIndex(3f), noteWidth, horizontalScroll, true)
+                Timeline(Modifier.zIndex(3f), noteWidth, horizontalScrollState, true)
                 Box(Modifier.weight(1f).onGloballyPositioned {
                     with(localDensity) {
                         contentWidth = it.size.width.toDp()
                         cursorOffsetY = it.size.height.toDp()
                     }
-                }) {
-                    EditorGrid(noteWidth, horizontalScroll)
-                    Column(Modifier.horizontalScroll(horizontalScroll).verticalScroll(playlistVerticalScrollState)
+                }.pointerInput(Unit) { handleMouseEvent() }) {
+                    EditorGrid(noteWidth, horizontalScrollState)
+                    Column(Modifier.horizontalScroll(horizontalScrollState).verticalScroll(verticalScrollState)
                         .width(10000.dp)) {
                         Divider()
                         EchoInMirror.bus.subTracks.forEach {
-                            key(it.uuid) { TrackContent(trackHeight, it, noteWidth) }
+                            key(it.uuid) { TrackContent(trackHeight, it) }
                         }
                     }
-                    PlayHead(noteWidth, horizontalScroll, contentWidth)
+                    PlayHead(noteWidth, horizontalScrollState, contentWidth)
                 }
             }
-            HorizontalScrollbar(
-                modifier = Modifier.align(Alignment.TopStart).fillMaxWidth(),
-                adapter = rememberScrollbarAdapter(horizontalScroll)
-            )
+            HorizontalScrollbar(rememberScrollbarAdapter(horizontalScrollState),
+                Modifier.align(Alignment.TopStart).fillMaxWidth())
         }
     }
 }

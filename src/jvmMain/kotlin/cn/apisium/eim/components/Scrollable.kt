@@ -17,17 +17,13 @@ fun Scrollable(vertical: Boolean = true, horizontal: Boolean = true, content: @C
         var modifier = Modifier.fillMaxSize()
         if (vertical) modifier = modifier.verticalScroll(stateVertical)
         Box(if (horizontal) modifier.horizontalScroll(stateHorizontal) else modifier) { content() }
-        if (vertical) {
-            VerticalScrollbar(
-                modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
-                adapter = rememberScrollbarAdapter(stateVertical)
-            )
-        }
-        if (horizontal) {
-            HorizontalScrollbar(
-                modifier = Modifier.align(Alignment.BottomStart).fillMaxWidth(),
-                adapter = rememberScrollbarAdapter(stateHorizontal)
-            )
-        }
+        if (vertical) VerticalScrollbar(
+            rememberScrollbarAdapter(stateVertical),
+            Modifier.align(Alignment.CenterEnd).fillMaxHeight()
+        )
+        if (horizontal) HorizontalScrollbar(
+            rememberScrollbarAdapter(stateHorizontal),
+            Modifier.align(Alignment.BottomStart).fillMaxWidth()
+        )
     }
 }
