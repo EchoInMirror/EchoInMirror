@@ -142,5 +142,5 @@ fun DefaultThumb(
 }
 
 
-internal val DEFAULT_THUMB_SIZE = DpSize(20.dp, 20.dp)
+internal val DEFAULT_THUMB_SIZE = DpSize(14.dp, 14.dp)
 private const val ALPHA_WHEN_DISABLED = 0.6f

@@ -3,6 +3,7 @@ package cn.apisium.eim.api.window
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.awt.ComposeWindow
+import androidx.compose.ui.geometry.Offset
 import java.lang.ref.WeakReference
 
 interface WindowManager {
@@ -14,4 +15,7 @@ interface WindowManager {
 
     fun registerPanel(panel: Panel)
     fun unregisterPanel(panel: Panel)
+    fun <T> openFloatingDialog(onClose: (() -> Unit)? = null, position: Offset? = null, key: T? = null,
+                           hasOverlay: Boolean = false, content: @Composable () -> Unit): T
+    fun closeFloatingDialog(key: Any)
 }

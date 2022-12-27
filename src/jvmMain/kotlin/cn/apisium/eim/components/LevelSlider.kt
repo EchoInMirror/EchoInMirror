@@ -3,7 +3,6 @@ package cn.apisium.eim.components
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import cn.apisium.eim.api.processor.dsp.Volume
 import cn.apisium.eim.components.silder.DefaultTrack
@@ -18,7 +17,6 @@ fun VolumeSlider(volume: Volume, modifier: Modifier = Modifier.height(150.dp), i
         { volume.volume = ((if (isVertical) 140 - it else it) / 100F).pow(2) },
         valueRange = 0f..140f,
         modifier = modifier,
-        thumbSize = DpSize(14.dp, 14.dp),
         isVertical = isVertical,
         track = { m, progress, interactionSource, tickFractions, enabled, i ->
             DefaultTrack(

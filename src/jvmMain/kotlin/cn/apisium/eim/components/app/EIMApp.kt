@@ -77,35 +77,40 @@ fun eimApp() {
                     window.exceptionHandler = WindowExceptionHandler {
                         it.printStackTrace()
                     }
-                    Row {
-                        SideBar()
-                        Scaffold(
-                            topBar = { EimAppBar() },
-                            content = {
-                                Column {
-                                    Box(Modifier.weight(1F).padding(top = APP_BAR_HEIGHT)) {
-                                        HorizontalSplitPane(splitPaneState = sideBarWidthState) {
-                                            first(0.dp) { SideBarContent() }
-                                            second(400.dp) {
-                                                VerticalSplitPane(splitPaneState = bottomBarHeightState) {
-                                                    first(200.dp) {
-                                                        Box(Modifier.fillMaxSize().border(start = Border(0.6.dp, contentWindowColor))) {
-                                                            Playlist()
+
+                    Box {
+                        Row {
+                            SideBar()
+                            Scaffold(
+                                topBar = { EimAppBar() },
+                                content = {
+                                    Column {
+                                        Box(Modifier.weight(1F).padding(top = APP_BAR_HEIGHT)) {
+                                            HorizontalSplitPane(splitPaneState = sideBarWidthState) {
+                                                first(0.dp) { SideBarContent() }
+                                                second(400.dp) {
+                                                    VerticalSplitPane(splitPaneState = bottomBarHeightState) {
+                                                        first(200.dp) {
+                                                            Box(Modifier.fillMaxSize().border(start = Border(0.6.dp, contentWindowColor))) {
+                                                                Playlist()
+                                                            }
                                                         }
-                                                    }
-                                                    second(0.dp) {
-                                                        Surface(tonalElevation = 2.dp, shadowElevation = 2.dp) {
-                                                            bottomBarSelectedItem?.content()
+                                                        second(0.dp) {
+                                                            Surface(tonalElevation = 2.dp, shadowElevation = 2.dp) {
+                                                                bottomBarSelectedItem?.content()
+                                                            }
                                                         }
                                                     }
                                                 }
                                             }
                                         }
+                                        StatusBar()
                                     }
-                                    StatusBar()
                                 }
-                            }
-                        )
+                            )
+                        }
+
+                        EchoInMirror.windowManager.FloatingDialogs()
                     }
 
                     EchoInMirror.windowManager.Dialogs()

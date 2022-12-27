@@ -21,7 +21,6 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
@@ -87,7 +86,6 @@ private fun MixerTrack(track: Track, index: String, height: MutableState<Dp>?, m
                     { track.pan = it },
                     valueRange = -1f..1f,
                     modifier = Modifier.fillMaxWidth(),
-                    thumbSize = DpSize(14.dp, 14.dp),
                     track = { modifier, progress, interactionSource, tickFractions, enabled, isVertical ->
                         DefaultTrack(modifier, progress, interactionSource, tickFractions, enabled, isVertical, startPoint = 0.5f)
                     }

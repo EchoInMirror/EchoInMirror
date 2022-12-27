@@ -48,7 +48,7 @@ internal enum class EditAction {
 val selectedNotes = hashSetOf<NoteMessage>()
 var startNoteIndex = 0
 val noteHeight by mutableStateOf(16.dp)
-val noteWidth by mutableStateOf(0.4.dp)
+var noteWidth by mutableStateOf(0.4.dp)
 val noteUnit by mutableStateOf(96)
 val verticalScrollState = ScrollState(0)
 val horizontalScrollState = ScrollState(0).apply {
@@ -442,9 +442,7 @@ object Editor: Panel {
     @Composable
     override fun content() {
         Row(Modifier.fillMaxSize()) {
-            Column(Modifier.width(200.dp)) {
-
-            }
+            Column(Modifier.width(200.dp)) { EditorControls() }
             Surface(Modifier.fillMaxSize(), shadowElevation = 2.dp) {
                 Column {
                     Box {
