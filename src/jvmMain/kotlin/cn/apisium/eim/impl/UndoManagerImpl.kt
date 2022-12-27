@@ -14,7 +14,7 @@ class UndoManagerImpl: UndoManager, ManualState() {
 
     override suspend fun undo(steps: Int): Boolean {
         if (steps <= 0) return true
-        for (i in 0 until steps.coerceAtLeast(cursor)) {
+        for (i in 0 until steps.coerceAtMost(cursor)) {
             if (!actions[cursor - 1].undo()) return false
             cursor--
         }

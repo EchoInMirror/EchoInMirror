@@ -45,8 +45,7 @@ internal enum class EditAction {
     fun isLazy() = this == MOVE || this == RESIZE
 }
 
-val manualState = ManualState()
-val selectedNotes = mutableStateSetOf<NoteMessage>()
+val selectedNotes = hashSetOf<NoteMessage>()
 var startNoteIndex = 0
 val noteHeight by mutableStateOf(16.dp)
 val noteWidth by mutableStateOf(0.4.dp)
@@ -286,7 +285,9 @@ private fun NotesEditorCanvas() {
                 startNoteIndex = 0
                 var flag = true
                 track.notes.read()
-                manualState.read()
+                val allNotes = track.notes.toSet()
+                selectedNotes.removeIf { !allNotes.contains(it) }
+
                 val notesInViewList = arrayListOf<NoteMessage>()
                 for ((index, it) in track.notes.withIndex()) {
                     val y = (KEYBOARD_KEYS - 1 - it.note) * noteHeightPx - verticalScrollValue

@@ -59,9 +59,7 @@ internal fun EventEditor() {
                         val note = track.notes[i]
                         val curX = note.time * noteWidthPx
                         if (curX <= x && x <= curX + 4) {
-                            @Suppress("ControlFlowWithEmptyBody")
-                            if (selectedNotes.isEmpty()) {
-                            } else if (!selectedNotes.contains(note)) return@detectDragGestures
+                            if (selectedNotes.isNotEmpty() && !selectedNotes.contains(note)) continue
                             selectedNote = note
                             break
                         }
