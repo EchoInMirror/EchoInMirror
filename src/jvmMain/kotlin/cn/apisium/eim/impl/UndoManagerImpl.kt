@@ -53,6 +53,7 @@ class UndoManagerImpl: UndoManager, ManualState() {
         } else {
             cursor++
         }
+        update()
         return true
     }
 
