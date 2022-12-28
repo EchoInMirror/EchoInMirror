@@ -47,13 +47,15 @@ kotlin {
                 implementation("org.apache.commons:commons-lang3:3.12.0")
                 implementation("org.pf4j:pf4j:3.8.0")
                 implementation("org.slf4j:slf4j-simple:2.0.3")
+                implementation("com.github.ajalt.colormath:colormath:3.2.1") {
+                    exclude("org.jetbrains.kotlin")
+                }
             }
         }
 
         val jvmTest by getting {
             dependencies {
                 implementation(kotlin("test-junit"))
-
             }
         }
     }

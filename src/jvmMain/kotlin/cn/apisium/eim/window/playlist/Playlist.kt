@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -28,14 +29,21 @@ import cn.apisium.eim.components.*
 import cn.apisium.eim.components.icons.Crown
 import cn.apisium.eim.components.icons.DebugStepOver
 import cn.apisium.eim.utils.fastAll
+import cn.apisium.eim.utils.onClick
+import cn.apisium.eim.window.dialogs.openColorPicker
 import cn.apisium.eim.window.editor.calcScroll
 
 private val TRACK_ITEM_ICON_SIZE = Modifier.size(16.dp)
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun TrackItem(track: Track, height: Dp, index: Int, depth: Int = 0) {
-    Row(Modifier.height(height).padding(start = (depth * 8).dp)) {
-        Canvas(Modifier.fillMaxHeight().width(8.dp).background(track.color.copy(alpha = 0.5F))) {
+    Row(Modifier.height(height).padding(start = (depth * 8).dp).onPointerEvent(PointerEventType.Press) {
+        EchoInMirror.selectedTrack = track
+    }) {
+        Canvas(Modifier.fillMaxHeight().width(8.dp).background(track.color.copy(alpha = 0.5F)).onClick {
+            openColorPicker(track.color) { track.color = it }
+        }) {
             val y = size.height * (1F - track.levelMeter.maxLevel.toPercentage())
             drawRect(track.color, Offset(0F, y), Size(size.width, size.height - y))
         }

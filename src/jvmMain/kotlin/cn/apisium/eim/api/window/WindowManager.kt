@@ -15,7 +15,7 @@ interface WindowManager {
 
     fun registerPanel(panel: Panel)
     fun unregisterPanel(panel: Panel)
-    fun <T> openFloatingDialog(onClose: (() -> Unit)? = null, position: Offset? = null, key: T? = null,
-                           hasOverlay: Boolean = false, content: @Composable () -> Unit): T
+    fun openFloatingDialog(onClose: ((Any) -> Unit)? = null, position: Offset? = null, key: Any? = null,
+                           hasOverlay: Boolean = false, content: @Composable () -> Unit): Any
     fun closeFloatingDialog(key: Any)
 }

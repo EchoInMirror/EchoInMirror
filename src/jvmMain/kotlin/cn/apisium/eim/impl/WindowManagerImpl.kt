@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposeWindow
@@ -24,7 +25,7 @@ import cn.apisium.eim.window.dialogs.settings.SettingsWindow
 import java.lang.ref.WeakReference
 import cn.apisium.eim.window.UndoList
 
-private data class FloatingDialog(val onClose: (() -> Unit)?, val position: Offset?,
+private data class FloatingDialog(val onClose: ((Any) -> Unit)?, val position: Offset?,
     val hasOverlay: Boolean, val content: @Composable () -> Unit) {
     var isClosed by mutableStateOf(false)
 }
@@ -57,12 +58,11 @@ class WindowManagerImpl: WindowManager {
         }
     }
 
-    @Suppress("UNCHECKED_CAST")
-    override fun <T> openFloatingDialog(onClose: (() -> Unit)?, position: Offset?, key: T?,
-                                        hasOverlay: Boolean, content: @Composable () -> Unit): T {
+    override fun openFloatingDialog(onClose: ((Any) -> Unit)?, position: Offset?, key: Any?,
+                                        hasOverlay: Boolean, content: @Composable () -> Unit): Any {
         val k = key ?: Any()
         floatingDialogs[k] = FloatingDialog(onClose, position, hasOverlay, content)
-        return k as T
+        return k
     }
 
     override fun closeFloatingDialog(key: Any) {
@@ -88,9 +88,9 @@ class WindowManagerImpl: WindowManager {
                     modifier = modifier.background(backgroundAnimation.value)
                 }
                 if (dialog.onClose != null) modifier = modifier.fillMaxSize()
-                    .onPointerEvent(PointerEventType.Press) { dialog.onClose.invoke() }
+                    .onPointerEvent(PointerEventType.Press) { dialog.onClose.invoke(key) }
                 Box(modifier)
-                if (dialog.position == null) dialog.content()
+                if (dialog.position == null) Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { dialog.content() }
                 else Box(Modifier.absoluteOffset {
                     IntOffset(dialog.position.x.toInt(), dialog.position.y.toInt())
                 }) { dialog.content() }

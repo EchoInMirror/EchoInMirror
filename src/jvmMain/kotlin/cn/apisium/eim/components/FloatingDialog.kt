@@ -32,7 +32,7 @@ fun FloatingDialog(dialogContent: @Composable (size: Size, closeDialog: () -> Un
         size[0] = it.size.toSize()
     }).let { if (enabled) it.pointerHoverIcon(PointerIconDefaults.Hand) else it }
         .onPointerEvent(PointerEventType.Press) {
-            EchoInMirror.windowManager.openFloatingDialog(closeDialog,
+            EchoInMirror.windowManager.openFloatingDialog({ closeDialog() },
                 if (isCentral) null else offset[0] + Offset(0f, size[0].height),
                 id, hasOverlay
             ) { dialogContent(size[0], closeDialog) }
