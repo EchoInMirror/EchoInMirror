@@ -33,7 +33,6 @@ fun randomUUID() = UUID.randomUUID().mostSignificantBits and Long.MAX_VALUE
 
 data class Border(val strokeWidth: Dp, val color: Color, val offset: Dp = 0.dp)
 
-@Suppress("unused")
 @Composable
 fun getSurfaceColor(elevation: Dp) = MaterialTheme.colorScheme.surfaceColorAtElevation(LocalAbsoluteTonalElevation.current + elevation)
 

@@ -38,15 +38,17 @@ fun Keyboard(
     keyWidth: Dp = KEYBOARD_DEFAULT_WIDTH,
     whiteKeyColor: Color = if (EchoInMirror.windowManager.isDarkTheme) MaterialTheme.colorScheme.secondary
         else MaterialTheme.colorScheme.background,
-    backKeyColor: Color = if (EchoInMirror.windowManager.isDarkTheme) MaterialTheme.colorScheme.background
+    blackKeyColor: Color = if (EchoInMirror.windowManager.isDarkTheme) MaterialTheme.colorScheme.background
         else MaterialTheme.colorScheme.secondary
 ) {
+    val whiteKeyTextColor = whiteKeyColor.toOnSurfaceColor()
+    val blackKeyTextColor = blackKeyColor.toOnSurfaceColor()
     Column(modifier.width(keyWidth)) {
         for (i in (KEYBOARD_KEYS - 1) downTo 0) {
             val name = KEY_NAMES[i % 12]
             val isBlack = defaultScale.scale[i % 12]
-            val color = if (isBlack) backKeyColor else whiteKeyColor
-            var modifier2 = Modifier.fillMaxWidth().height(keyHeight - 1.dp).background(color)
+            var modifier2 = Modifier.fillMaxWidth().height(keyHeight - 1.dp)
+                .background(if (isBlack) blackKeyColor else whiteKeyColor)
             if (i <= 0x7F) modifier2 = modifier2.onClick()
                 .onPointerEvent(PointerEventType.Press) {
                     onNoteOn(i, it.x / keyWidth.toPx())
@@ -60,7 +62,7 @@ fun Keyboard(
                     letterSpacing = (-0.3).sp,
                     lineHeight = 11.sp,
                     fontWeight = if (i % 12 == 0) FontWeight.ExtraBold else null,
-                    color = color.toOnSurfaceColor(),
+                    color = if (isBlack) blackKeyTextColor else whiteKeyTextColor,
                     fontStyle = if (isBlack) FontStyle.Italic else null,
                 )
             }

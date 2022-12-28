@@ -52,7 +52,7 @@ var selectedNotes by mutableStateOf(hashSetOf<NoteMessage>())
 var startNoteIndex = 0
 val noteHeight by mutableStateOf(16.dp)
 var noteWidth = mutableStateOf(0.4.dp)
-val verticalScrollState = ScrollState(0)
+val verticalScrollState = ScrollState(noteHeight.value.toInt() * 50)
 val horizontalScrollState = ScrollState(0).apply {
     @Suppress("INVISIBLE_SETTER")
     maxValue = 10000
@@ -338,7 +338,7 @@ private fun NotesEditorCanvas() {
         .scrollable(verticalScrollState, Orientation.Vertical, reverseDirection = true)
         .pointerInput(Unit) { handleMouseEvent() }
     ) {
-        val highlightNoteColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.03F)
+        val highlightNoteColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.05F)
         val outlineColor = MaterialTheme.colorScheme.surfaceVariant
         val primaryColor = MaterialTheme.colorScheme.primary
         EditorGrid(noteWidth, horizontalScrollState)
@@ -377,11 +377,13 @@ private fun NotesEditorCanvas() {
             }
 
             onDrawBehind {
+                val isDarkTheme = EchoInMirror.windowManager.isDarkTheme
                 for (i in (verticalScrollValue / noteHeightPx).toInt()..((verticalScrollValue + size.height) / noteHeightPx).toInt()) {
                     val y = i * noteHeightPx - verticalScrollValue
                     if (y < 0) continue
                     drawLine(outlineColor, Offset(0f, y), Offset(size.width, y), 1F)
-                    if (defaultScale.scale[11 - (i + 4) % 12]) drawRect(highlightNoteColor, Offset(0f, y), Size(size.width, noteHeightPx))
+                    if (defaultScale.scale[11 - (i + 4) % 12] != isDarkTheme)
+                        drawRect(highlightNoteColor, Offset(0f, y), Size(size.width, noteHeightPx))
                 }
 
                 val track = EchoInMirror.selectedTrack ?: return@onDrawBehind

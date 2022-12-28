@@ -1,6 +1,6 @@
 package cn.apisium.eim
 
-import cn.apisium.eim.components.app.eimApp
+import cn.apisium.eim.components.app.runEIMApp
 import cn.apisium.eim.data.midi.getMidiEvents
 import cn.apisium.eim.data.midi.getNoteMessages
 import cn.apisium.eim.impl.TrackImpl
@@ -73,5 +73,5 @@ fun main() {
 //        }
 //    }.start()
 
-    eimApp()
+    runEIMApp()
 }

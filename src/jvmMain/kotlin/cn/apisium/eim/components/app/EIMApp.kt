@@ -47,7 +47,7 @@ fun checkSampleRateAndBufferSize() {
 private fun Modifier.cursorForHorizontalResize() = pointerHoverIcon(PointerIcon(Cursor(Cursor.E_RESIZE_CURSOR)))
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
-fun eimApp() {
+fun runEIMApp() {
     application {
         val icon = painterResource("logo.png")
         checkSampleRateAndBufferSize()

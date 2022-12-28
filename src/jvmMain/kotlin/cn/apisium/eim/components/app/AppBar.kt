@@ -19,7 +19,9 @@ import cn.apisium.eim.data.defaultScale
 import cn.apisium.eim.data.quantificationUnits
 import cn.apisium.eim.utils.rem
 
-val AppBarFont = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.7F).sp, lineHeight = 0.sp)
+@Composable
+fun getAppBarFont() = TextStyle(MaterialTheme.colorScheme.onBackground, 18.sp, fontWeight = FontWeight.Bold,
+    letterSpacing = (-0.7F).sp, lineHeight = 0.sp)
 
 @Composable
 fun AppBarSubTitle(title: String) {
@@ -151,7 +153,7 @@ private fun TimeSignature() {
         Row(verticalAlignment = Alignment.Bottom) {
             BasicTextField(EchoInMirror.currentPosition.timeSigNumerator.toString(), {
                 EchoInMirror.currentPosition.timeSigNumerator = it.toIntOrNull()?.coerceIn(1, 32) ?: return@BasicTextField
-            }, Modifier.width(IntrinsicSize.Min), textStyle = AppBarFont, singleLine = true)
+            }, Modifier.width(IntrinsicSize.Min), textStyle = getAppBarFont(), singleLine = true)
             AppBarTitle("/")
             FloatingDialog({ _, close ->
                 Surface(shape = MaterialTheme.shapes.extraSmall,
@@ -179,7 +181,7 @@ private fun BPM() {
     AppBarItem(subTitle = "BPM") {
         BasicTextField("%.2f" % EchoInMirror.currentPosition.bpm, {
             EchoInMirror.currentPosition.bpm = it.toDoubleOrNull()?.coerceIn(1.0, 600.0) ?: return@BasicTextField
-        }, Modifier.width(IntrinsicSize.Min), textStyle = AppBarFont, singleLine = true)
+        }, Modifier.width(IntrinsicSize.Min), textStyle = getAppBarFont(), singleLine = true)
     }
 }
 

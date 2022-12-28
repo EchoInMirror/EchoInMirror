@@ -30,10 +30,7 @@ import cn.apisium.eim.api.window.PanelDirection
 import cn.apisium.eim.components.*
 import cn.apisium.eim.components.silder.DefaultTrack
 import cn.apisium.eim.components.silder.Slider
-import cn.apisium.eim.utils.Border
-import cn.apisium.eim.utils.border
-import cn.apisium.eim.utils.onClick
-import cn.apisium.eim.utils.toOnSurfaceColor
+import cn.apisium.eim.utils.*
 
 @Composable
 fun MixerProcessorButton(title: String, useMarquee: Boolean = false, fontStyle: FontStyle? = null,
@@ -51,7 +48,7 @@ private fun MixerTrack(track: Track, index: String, height: MutableState<Dp>?, m
                        isLastTrack: Boolean = false, drawSplitter: Boolean = true, isRound: Boolean = false,
                        renderChildren: Boolean = true) {
     Row(if (isRound) modifier.shadow(1.dp, MaterialTheme.shapes.medium, clip = false)
-        .background(MaterialTheme.colorScheme.surface, MaterialTheme.shapes.medium).clip(MaterialTheme.shapes.medium)
+        .background(getSurfaceColor(LocalAbsoluteTonalElevation.current + 1.dp), MaterialTheme.shapes.medium).clip(MaterialTheme.shapes.medium)
     else modifier) {
         val selectedTrack = EchoInMirror.selectedTrack
         var curModifier = Modifier.width(80.dp)
