@@ -1,9 +1,11 @@
 package cn.apisium.eim.api
+import androidx.compose.ui.graphics.vector.ImageVector
 
 interface UndoableAction {
     suspend fun undo(): Boolean
     suspend fun execute(): Boolean
     val name: String
+    val icon: ImageVector
     fun merge(other: UndoableAction): UndoableAction? = null
 }
 

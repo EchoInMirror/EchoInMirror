@@ -9,8 +9,6 @@ import androidx.compose.ui.Modifier
 import cn.apisium.eim.EchoInMirror
 import androidx.compose.ui.unit.dp
 import cn.apisium.eim.impl.UndoManagerImpl
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import kotlinx.coroutines.GlobalScope
@@ -20,7 +18,7 @@ import androidx.compose.ui.text.font.FontStyle
 
 @Composable
 fun UndoList() {
-    Column {
+    Column(Modifier.padding(4.dp)) {
         (EchoInMirror.undoManager as UndoManagerImpl).read()
         EchoInMirror.undoManager.actions.forEachIndexed { index, it ->
             val color = if (index < EchoInMirror.undoManager.cursor) Color(0, 0, 0) else Color(0, 0, 0, 100)
@@ -33,7 +31,7 @@ fun UndoList() {
                         GlobalScope.launch { EchoInMirror.undoManager.redo(index - EchoInMirror.undoManager.cursor + 1) }
                     }
                 }) {
-                Icon(Icons.Default.RestartAlt, "redo", Modifier.scale(0.8f), color)
+                Icon(it.icon, "redo", Modifier.scale(0.8f), color)
                 Spacer(Modifier.width(2.dp))
                 Text(
                     EchoInMirror.undoManager.actions[index].name,
