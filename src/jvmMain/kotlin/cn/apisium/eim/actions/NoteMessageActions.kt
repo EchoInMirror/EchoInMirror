@@ -18,6 +18,7 @@ fun Track.doNoteAmountAction(noteMessage: Collection<NoteMessage>, isDelete: Boo
 }
 
 fun Track.doNoteMessageEditAction(noteMessage: Array<NoteMessage>, deltaX: Int, deltaY: Int, deltaDuration: Int) {
+    if (deltaX == 0 && deltaY == 0 && deltaDuration == 0) return
     val track = this
     runBlocking {
         EchoInMirror.undoManager.execute(
@@ -33,13 +34,14 @@ fun Track.doNoteMessageEditAction(noteMessage: Array<NoteMessage>, deltaX: Int, 
 }
 
 fun Track.doNoteVelocityAction(noteMessage: Array<NoteMessage>, deltaVelocity: Int) {
+    if (deltaVelocity == 0) return
     val track = this
     runBlocking { EchoInMirror.undoManager.execute(NoteVelocityAction(track, noteMessage, deltaVelocity)) }
 }
 
 class NoteAmountAction(private val track: Track, private val notes: Set<NoteMessage>, isDelete: Boolean) :
     ReversibleAction(isDelete) {
-    override val name = if (isDelete) "音符删除" else "音符添加"
+    override val name = (if (isDelete) "音符删除 (" else "音符添加 (") + notes.size + "个)"
     override val icon = if (isDelete) PencilMinus else PencilPlus
     override suspend fun perform(isForward: Boolean): Boolean {
         if (isForward) {
@@ -57,7 +59,7 @@ class NoteMessageEditAction(
     private val deltaX: Int, private val deltaY: Int,
     private val deltaDuration: Int
 ) : ReversibleAction() {
-    override val name = "音符编辑"
+    override val name = "音符编辑 (${notes.size}个)"
     override val icon = Icons.Default.Edit
     override suspend fun perform(isForward: Boolean): Boolean {
         val x = if (isForward) deltaX else -deltaX
@@ -80,7 +82,7 @@ class NoteVelocityAction(
     private val deltaVelocity: Int
 ) : UndoableAction {
     private val oldVelocities = notes.map { it.velocity }.toIntArray()
-    override val name = "音符力度编辑"
+    override val name = "音符力度编辑 (${notes.size}个)"
     override val icon = Icons.Default.Tune
     override suspend fun undo(): Boolean {
         notes.forEachIndexed { index, noteMessage -> noteMessage.velocity = oldVelocities[index] }

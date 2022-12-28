@@ -22,5 +22,6 @@ interface UndoManager {
     suspend fun undo(steps: Int = 1): Boolean
     suspend fun redo(steps: Int = 1): Boolean
     suspend fun execute(action: UndoableAction): Boolean
+    suspend fun reset(): Boolean
     fun clear()
 }

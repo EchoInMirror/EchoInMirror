@@ -22,7 +22,7 @@ import cn.apisium.eim.window.Mixer
 import cn.apisium.eim.window.dialogs.QuickLoadDialog
 import cn.apisium.eim.window.dialogs.settings.SettingsWindow
 import java.lang.ref.WeakReference
-import cn.apisium.eim.window.UndoListPanel
+import cn.apisium.eim.window.UndoList
 
 private data class FloatingDialog(val onClose: (() -> Unit)?, val position: Offset?,
     val hasOverlay: Boolean, val content: @Composable () -> Unit) {
@@ -32,7 +32,7 @@ private data class FloatingDialog(val onClose: (() -> Unit)?, val position: Offs
 class WindowManagerImpl: WindowManager {
     private val floatingDialogs = mutableStateMapOf<Any, FloatingDialog>()
     override val dialogs = mutableStateMapOf<@Composable () -> Unit, Boolean>()
-    override val panels = mutableStateListOf(Mixer, Editor, UndoListPanel)
+    override val panels = mutableStateListOf(Mixer, Editor, UndoList)
     override var mainWindow: WeakReference<ComposeWindow> = WeakReference(null)
     override var isDarkTheme by mutableStateOf(false)
     override var activePanel: Panel? = null

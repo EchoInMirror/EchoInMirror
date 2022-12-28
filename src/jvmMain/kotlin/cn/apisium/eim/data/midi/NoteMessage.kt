@@ -1,6 +1,7 @@
 package cn.apisium.eim.data.midi
 
 import androidx.compose.runtime.mutableStateOf
+import cn.apisium.eim.utils.IManualState
 import kotlin.collections.ArrayList
 
 interface NoteMessage {
@@ -61,22 +62,8 @@ fun NoteMessage.toNoteOffEvent(channel: Int = 0) = noteOff(channel, note)
 fun NoteMessage.toNoteOnRawData(channel: Int = 0) = 0x90 or channel or (note shl 8) or (velocity shl 16)
 fun NoteMessage.toNoteOffRawData(channel: Int = 0) = 0x80 or (70 shl 16) or channel or (note shl 8)
 
-interface NoteMessageList : MutableList<NoteMessage> {
+interface NoteMessageList : MutableList<NoteMessage>, IManualState {
     fun sort()
-    fun update()
-    fun read()
-}
-
-@Suppress("unused")
-inline fun <R> NoteMessageList.readWith(block: NoteMessageList.() -> R): R {
-    read()
-    return this.block()
-}
-
-@Suppress("unused")
-inline fun NoteMessageList.updateWith(block: NoteMessageList.() -> Unit) {
-    this.block()
-    update()
 }
 
 class NoteMessageListImpl : NoteMessageList, ArrayList<NoteMessage>() {

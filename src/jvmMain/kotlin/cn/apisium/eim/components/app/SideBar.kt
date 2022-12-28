@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.rememberScrollbarAdapter
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -152,11 +151,7 @@ val contentWindowColor @Composable get() = MaterialTheme.colorScheme.onSurfaceVa
 
 @Composable
 internal fun SideBarContent() {
-    Surface(
-        tonalElevation = 2.dp,
-        shadowElevation = 2.dp,
-        shape = RoundedCornerShape(0.dp, 16.dp, if (bottomBarSelectedItem == null) 16.dp else 0.dp, 0.dp)
-    ) {
+    Surface(tonalElevation = 2.dp, shadowElevation = 2.dp) {
         Box(Modifier.fillMaxSize().border(start = Border(0.6.dp, contentWindowColor))) {
             val stateVertical = rememberScrollState(0)
             Box(Modifier.fillMaxSize().verticalScroll(stateVertical)) {

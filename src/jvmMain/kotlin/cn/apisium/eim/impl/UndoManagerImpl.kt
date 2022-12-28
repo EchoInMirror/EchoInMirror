@@ -7,8 +7,15 @@ import cn.apisium.eim.api.UndoManager
 import cn.apisium.eim.api.UndoableAction
 import cn.apisium.eim.utils.ManualState
 
-class UndoManagerImpl: UndoManager, ManualState() {
-    override val actions = ArrayDeque<UndoableAction>()
+class UndoManagerImpl: UndoManager {
+    private val _actions = ArrayDeque<UndoableAction>()
+    private val manualState = ManualState()
+    override val actions: List<UndoableAction>
+        get() {
+            manualState.read()
+            return _actions
+        }
+
     override val limit = 100
     override var cursor by mutableStateOf(0)
 
@@ -18,7 +25,7 @@ class UndoManagerImpl: UndoManager, ManualState() {
             if (!actions[cursor - 1].undo()) return false
             cursor--
         }
-        update()
+        manualState.update()
         return true
     }
 
@@ -28,38 +35,48 @@ class UndoManagerImpl: UndoManager, ManualState() {
             if (!actions[cursor].execute()) return false
             cursor++
         }
-        update()
+        manualState.update()
         return true
     }
 
     override suspend fun execute(action: UndoableAction): Boolean {
         if (cursor < actions.size) {
-            actions.subList(cursor, actions.size).clear()
+            _actions.subList(cursor, actions.size).clear()
         }
         if (actions.isNotEmpty()) {
             val last = actions.last()
             val merged = last.merge(action)
             if (merged != null) {
                 if (!merged.execute()) return false
-                actions[cursor - 1] = merged
-                update()
+                _actions[cursor - 1] = merged
+                manualState.update()
                 return true
             }
         }
         if (!action.execute()) return false
-        actions.add(action)
+        _actions.add(action)
         if (actions.size > limit) {
-            actions.removeFirst()
+            _actions.removeFirst()
         } else {
             cursor++
         }
-        update()
+        manualState.update()
+        return true
+    }
+
+    override suspend fun reset(): Boolean {
+        if (cursor == 0) return true
+        for (i in 0 until cursor) {
+            if (!actions[cursor - 1].undo()) return false
+            cursor--
+        }
+        manualState.update()
         return true
     }
 
     override fun clear() {
-        actions.clear()
+        _actions.clear()
         cursor = 0
-        update()
+        manualState.update()
     }
 }

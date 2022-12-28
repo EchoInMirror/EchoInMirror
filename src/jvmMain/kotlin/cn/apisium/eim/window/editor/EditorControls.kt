@@ -16,6 +16,7 @@ import cn.apisium.eim.components.CustomTextField
 import cn.apisium.eim.components.TIMELINE_HEIGHT
 import cn.apisium.eim.components.silder.Slider
 import cn.apisium.eim.utils.onClick
+import cn.apisium.eim.utils.toOnSurfaceColor
 import kotlin.math.roundToInt
 
 private fun dfsTrackIndex(track: Track, target: Track, index: String): String? {
@@ -29,18 +30,21 @@ private fun dfsTrackIndex(track: Track, target: Track, index: String): String? {
 
 @Composable
 internal fun EditorControls() {
-    Surface(Modifier.fillMaxWidth().height(TIMELINE_HEIGHT).onClick(), shadowElevation = 2.dp, tonalElevation = 4.dp) {
+    val track = EchoInMirror.selectedTrack
+    Surface(Modifier.fillMaxWidth().height(TIMELINE_HEIGHT).onClick(), shadowElevation = 2.dp, tonalElevation = 4.dp,
+        color = track?.color ?: MaterialTheme.colorScheme.surface) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            val track = EchoInMirror.selectedTrack
+            val color = track?.color?.toOnSurfaceColor() ?: MaterialTheme.colorScheme.onSurface
             Text(
                 remember(track) {
                     if (track == null) null else dfsTrackIndex(EchoInMirror.bus, track, "")?.trimStart('-')
                 } ?: "?", Modifier.padding(horizontal = 8.dp),
+                color = color,
                 fontWeight = FontWeight.Bold,
                 fontSize = MaterialTheme.typography.labelLarge.fontSize
             )
-            Text(track?.name ?: "未选择", Modifier.weight(1f), style = MaterialTheme.typography.labelLarge)
-            Icon(Icons.Filled.ExpandMore, null, Modifier.padding(horizontal = 8.dp))
+            Text(track?.name ?: "未选择", Modifier.weight(1f), color, style = MaterialTheme.typography.labelLarge)
+            Icon(Icons.Filled.ExpandMore, null, Modifier.padding(horizontal = 8.dp), color)
         }
     }
     Column(Modifier.padding(10.dp)) {
@@ -51,7 +55,6 @@ internal fun EditorControls() {
         }
 
         Row(verticalAlignment = Alignment.CenterVertically) {
-            val track = EchoInMirror.selectedTrack
             track?.notes?.read()
             var delta by remember { mutableStateOf(0) }
             currentSelectedNote

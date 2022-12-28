@@ -54,11 +54,13 @@ private fun MixerTrack(track: Track, index: String, height: MutableState<Dp>?, m
         .background(MaterialTheme.colorScheme.surface, MaterialTheme.shapes.medium).clip(MaterialTheme.shapes.medium)
     else modifier) {
         val selectedTrack = EchoInMirror.selectedTrack
-        Column(if (selectedTrack == track && height != null) Modifier.width(80.dp).height(height.value)
+        var curModifier = Modifier.width(80.dp)
+        if (selectedTrack == track && height != null) curModifier = curModifier.height(height.value)
             .border(1.dp, track.color, RoundedCornerShape(
                 CornerSize(0.dp), CornerSize(0.dp), MaterialTheme.shapes.medium.bottomEnd, MaterialTheme.shapes.medium.bottomStart)
             )
-        else Modifier.width(80.dp).let { if (drawSplitter) it.border(start = Border(1.dp, MaterialTheme.colorScheme.outlineVariant)) else it }) {
+        else if (drawSplitter) curModifier = curModifier.border(start = Border(1.dp, MaterialTheme.colorScheme.outlineVariant))
+        Column(curModifier) {
             Row(Modifier.background(track.color).onClick { if (track != EchoInMirror.bus) EchoInMirror.selectedTrack = track }
                 .padding(vertical = 2.5.dp).zIndex(2f)) {
                 val color = track.color.toOnSurfaceColor()
@@ -163,7 +165,8 @@ object Mixer: Panel {
     override fun content() {
         Scrollable {
             Row(Modifier.padding(14.dp)) {
-                MixerTrack(EchoInMirror.bus, "0", null, Modifier, isRound = true, renderChildren = false)
+                MixerTrack(EchoInMirror.bus, "0", null, Modifier, isRound = true,
+                    renderChildren = false, drawSplitter = false)
                 val localDensity = LocalDensity.current
                 EchoInMirror.bus.subTracks.forEachIndexed { i, it ->
                     key(it) {
@@ -171,7 +174,7 @@ object Mixer: Panel {
                         val state = remember { mutableStateOf(0.dp) }
                         MixerTrack(it, (i + 1).toString(), state, Modifier.onGloballyPositioned {
                             with (localDensity) { state.value = it.size.height.toDp() }
-                        }, isRound = true)
+                        }, isRound = true, drawSplitter = false)
                     }
                 }
             }
