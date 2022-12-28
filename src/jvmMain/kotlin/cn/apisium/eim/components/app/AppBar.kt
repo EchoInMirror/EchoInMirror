@@ -1,6 +1,5 @@
 package cn.apisium.eim.components.app
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
@@ -10,12 +9,36 @@ import androidx.compose.material3.ButtonDefaults.textButtonColors
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.*
 import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.components.FloatingDialog
 import cn.apisium.eim.components.MenuItem
+import cn.apisium.eim.data.defaultScale
+import cn.apisium.eim.data.quantificationUnits
+import cn.apisium.eim.utils.rem
+
+val AppBarFont = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.7F).sp, lineHeight = 0.sp)
+
+@Composable
+fun AppBarSubTitle(title: String) {
+    Text(title, fontSize = 9.sp, letterSpacing = (-0.5).sp, lineHeight = 0.sp)
+}
+@Composable
+fun AppBarTitle(title: String) {
+    Text(title, fontSize = 18.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.7).sp, lineHeight = 0.sp)
+}
+
+@Composable
+fun AppBarItem(title: String? = null, subTitle: String? = null, modifier: Modifier = Modifier,
+               content: @Composable (() -> Unit)? = null) {
+    Column(modifier.padding(6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        if (title != null) AppBarTitle(title)
+        content?.invoke()
+        if (subTitle != null) AppBarSubTitle(subTitle)
+    }
+}
 
 @Composable
 fun AppBarButton(onClick: (() -> Unit)? = null, content: @Composable RowScope.() -> Unit) {
@@ -52,16 +75,14 @@ private fun AppBarIcons() {
 @Composable
 private fun TimeText() {
     AppBarButton {
-        Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(start = 4.dp)) {
-            Text(
-                text = "${(EchoInMirror.currentPosition.timeInSeconds.toInt() / 60).toString().padStart(2, '0')}:${(EchoInMirror.currentPosition.timeInSeconds.toInt() % 60).toString().padStart(2, '0')}:",
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text("${(EchoInMirror.currentPosition.timeInSeconds.toInt() / 60).toString().padStart(2, '0')}:${(EchoInMirror.currentPosition.timeInSeconds.toInt() % 60).toString().padStart(2, '0')}:",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = (-0.7F).sp,
                 lineHeight = 0.sp
             )
-            Text(
-                text = ((EchoInMirror.currentPosition.timeInSeconds * 1000).toInt() % 1000).toString().padStart(3, '0'),
+            Text(((EchoInMirror.currentPosition.timeInSeconds * 1000).toInt() % 1000).toString().padStart(3, '0'),
                 fontSize = 14.sp,
                 letterSpacing = (-1.5).sp,
                 lineHeight = 0.sp
@@ -74,8 +95,7 @@ private fun TimeText() {
 private fun PPQText() {
     AppBarButton {
         Row(verticalAlignment = Alignment.Bottom) {
-            Text(
-                text = "${(1 + EchoInMirror.currentPosition.ppqPosition / EchoInMirror.currentPosition.timeSigNumerator)
+            Text("${(1 + EchoInMirror.currentPosition.ppqPosition / EchoInMirror.currentPosition.timeSigNumerator)
                     .toInt().toString().padStart(2, '0')}:${(1 + EchoInMirror.currentPosition.ppqPosition
                     .toInt() % EchoInMirror.currentPosition.timeSigNumerator).toString().padStart(2, '0')}:",
                 fontSize = 18.sp,
@@ -83,8 +103,7 @@ private fun PPQText() {
                 letterSpacing = (-0.7F).sp,
                 lineHeight = 0.sp
             )
-            Text(
-                text = (1 + (EchoInMirror.currentPosition.ppqPosition - EchoInMirror.currentPosition.ppqPosition.toInt()) *
+            Text((1 + (EchoInMirror.currentPosition.ppqPosition - EchoInMirror.currentPosition.ppqPosition.toInt()) *
                         (16 / EchoInMirror.currentPosition.timeSigDenominator)).toInt().toString(),
                 fontSize = 14.sp,
                 letterSpacing = (-1.5).sp,
@@ -94,43 +113,73 @@ private fun PPQText() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun RightSide() {
-    FloatingDialog({
-        /*
-        <MenuItem value={state.ppq * state.timeSigNumerator}><em>小节</em></MenuItem>
- <Divider />
- <MenuItem value={state.ppq}><em>节拍</em></MenuItem>
- <MenuItem value={state.ppq / 2}>1/2 拍</MenuItem>
- <MenuItem value={state.ppq / 3 | 0}>1/3 拍</MenuItem>
- <MenuItem value={state.ppq / 4}>1/4 拍</MenuItem>
- <MenuItem value={state.ppq / 6 | 0}>1/6 拍</MenuItem>
- <Divider />
- <MenuItem value={steps}><em>步进</em></MenuItem>
- <MenuItem value={steps / 2}>1/2 步</MenuItem>
- <MenuItem value={steps / 3 | 0}>1/3 步</MenuItem>
- <MenuItem value={steps / 4}>1/4 步</MenuItem>
- <MenuItem value={steps / 6 | 0}>1/6 步</MenuItem>
- <Divider />
- <MenuItem value={1}><em>无</em></MenuItem>
-         */
-        Surface(Modifier.widthIn(min = it.width.dp), MaterialTheme.shapes.extraSmall, shadowElevation = 6.dp, tonalElevation = 1.dp) {
+private fun Quantification() {
+    FloatingDialog({ _, close ->
+        Surface(Modifier.width(IntrinsicSize.Min), MaterialTheme.shapes.extraSmall,
+            shadowElevation = 6.dp, tonalElevation = 1.dp) {
             Column {
-                MenuItem(false, { }) {
-                    Text("小节", fontStyle = FontStyle.Italic)
-                }
-                Divider()
-                MenuItem(false, { }) {
-                    Text("节拍", fontStyle = FontStyle.Italic)
-                }
-                MenuItem(false, { }) {
-                    Text("1/2 拍")
+                quantificationUnits.forEach {
+                    if (it.hasDividerAbove) Divider()
+                    MenuItem(EchoInMirror.quantification == it, {
+                        close()
+                        EchoInMirror.quantification = it
+                    }) {
+                        Text(it.name, fontWeight = if (it.isSpecial) FontWeight.Bold else FontWeight.Normal)
+                    }
                 }
             }
         }
     }) {
-        BasicTextField("步进", { }, Modifier.width(50.dp), readOnly = true, singleLine = true)
+        AppBarItem(EchoInMirror.quantification.name, "吸附")
+    }
+}
+
+@Composable
+fun RootNote() {
+    AppBarItem("C", "根音")
+}
+
+@Composable
+fun Scale() {
+    AppBarItem(defaultScale.name, "调式")
+}
+
+@Composable
+private fun TimeSignature() {
+    AppBarItem(subTitle = "拍号") {
+        Row(verticalAlignment = Alignment.Bottom) {
+            BasicTextField(EchoInMirror.currentPosition.timeSigNumerator.toString(), {
+                EchoInMirror.currentPosition.timeSigNumerator = it.toIntOrNull()?.coerceIn(1, 32) ?: return@BasicTextField
+            }, Modifier.width(IntrinsicSize.Min), textStyle = AppBarFont, singleLine = true)
+            AppBarTitle("/")
+            FloatingDialog({ _, close ->
+                Surface(shape = MaterialTheme.shapes.extraSmall,
+                    shadowElevation = 6.dp, tonalElevation = 1.dp) {
+                    Column {
+                        arrayOf(2, 4, 8, 16).forEach {
+                            MenuItem(EchoInMirror.currentPosition.timeSigDenominator == it, {
+                                close()
+                                EchoInMirror.currentPosition.timeSigDenominator = it
+                            }) {
+                                Text(it.toString())
+                            }
+                        }
+                    }
+                }
+            }) {
+                AppBarTitle(EchoInMirror.currentPosition.timeSigDenominator.toString())
+            }
+        }
+    }
+}
+
+@Composable
+private fun BPM() {
+    AppBarItem(subTitle = "BPM") {
+        BasicTextField("%.2f" % EchoInMirror.currentPosition.bpm, {
+            EchoInMirror.currentPosition.bpm = it.toDoubleOrNull()?.coerceIn(1.0, 600.0) ?: return@BasicTextField
+        }, Modifier.width(IntrinsicSize.Min), textStyle = AppBarFont, singleLine = true)
     }
 }
 
@@ -138,18 +187,26 @@ val APP_BAR_HEIGHT = 54.dp
 
 @Composable
 internal fun EimAppBar() {
-    Surface(modifier = Modifier.fillMaxWidth().height(APP_BAR_HEIGHT), shadowElevation = 2.dp) {
+    Surface(modifier = Modifier.fillMaxWidth().height(APP_BAR_HEIGHT), shadowElevation = 2.dp, tonalElevation = 5.dp) {
         Row(
-            Modifier.background(MaterialTheme.colorScheme.surfaceColorAtElevation(5.dp)),
+            Modifier.padding(horizontal = 20.dp),
             horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically
         ) {
-            Row { }
-            Row {
+            Row(Modifier.weight(1f), horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically) { }
+            Row(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 TimeText()
                 AppBarIcons()
                 PPQText()
             }
-            Row { RightSide() }
+            Row(Modifier.weight(1f), horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically) {
+                Quantification()
+                RootNote()
+                Scale()
+                TimeSignature()
+                BPM()
+            }
         }
     }
 }

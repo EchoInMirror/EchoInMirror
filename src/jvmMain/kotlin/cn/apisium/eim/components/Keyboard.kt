@@ -1,6 +1,5 @@
 package cn.apisium.eim.components
 
-import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Divider
@@ -19,17 +18,17 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cn.apisium.eim.EchoInMirror
+import cn.apisium.eim.data.defaultScale
 import cn.apisium.eim.data.midi.KEY_NAMES
+import cn.apisium.eim.utils.onClick
 import cn.apisium.eim.utils.toOnSurfaceColor
 import cn.apisium.eim.utils.x
 import cn.apisium.eim.utils.y
 
-val scales = arrayOf(true, false, true, false, true, false, true, true, false, true, false, true)
 const val KEYBOARD_KEYS = 128
 val KEYBOARD_DEFAULT_WIDTH = 68.dp
 
 @OptIn(ExperimentalComposeUiApi::class)
-@Preview
 @Composable
 fun Keyboard(
     onNoteOn: (key: Int, position: Float) -> Unit,
@@ -45,10 +44,10 @@ fun Keyboard(
     Column(modifier.width(keyWidth)) {
         for (i in (KEYBOARD_KEYS - 1) downTo 0) {
             val name = KEY_NAMES[i % 12]
-            val isWhite = scales[i % 12]
-            val color = if (isWhite) whiteKeyColor else backKeyColor
+            val isBlack = defaultScale.scale[i % 12]
+            val color = if (isBlack) backKeyColor else whiteKeyColor
             var modifier2 = Modifier.fillMaxWidth().height(keyHeight - 1.dp).background(color)
-            if (i <= 0x7F) modifier2 = modifier2.clickable {  }
+            if (i <= 0x7F) modifier2 = modifier2.onClick()
                 .onPointerEvent(PointerEventType.Press) {
                     onNoteOn(i, it.x / keyWidth.toPx())
                 }
@@ -62,7 +61,7 @@ fun Keyboard(
                     lineHeight = 11.sp,
                     fontWeight = if (i % 12 == 0) FontWeight.ExtraBold else null,
                     color = color.toOnSurfaceColor(),
-                    fontStyle = if (isWhite) null else FontStyle.Italic,
+                    fontStyle = if (isBlack) FontStyle.Italic else null,
                 )
             }
             if (i != 0) Divider(color = if (i % 12 == 0) MaterialTheme.colorScheme.outline

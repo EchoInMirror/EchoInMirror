@@ -1,10 +1,12 @@
 package cn.apisium.eim.utils
 
+import androidx.compose.foundation.clickable
 import androidx.compose.material3.LocalAbsoluteTonalElevation
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
@@ -12,6 +14,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.platform.ClipboardManager
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
@@ -30,6 +33,7 @@ fun randomUUID() = UUID.randomUUID().mostSignificantBits and Long.MAX_VALUE
 
 data class Border(val strokeWidth: Dp, val color: Color, val offset: Dp = 0.dp)
 
+@Suppress("unused")
 @Composable
 fun getSurfaceColor(elevation: Dp) = MaterialTheme.colorScheme.surfaceColorAtElevation(LocalAbsoluteTonalElevation.current + elevation)
 
@@ -164,3 +168,11 @@ inline fun <T> List<T>.fastAll(predicate: (T) -> Boolean): Boolean {
 fun Int.fitInUnit(unit: Int) = this / unit * unit
 
 fun Float.fitInUnit(unit: Int) = (this / unit).roundToInt() * unit
+
+@Suppress("NOTHING_TO_INLINE")
+inline operator fun String.rem(other: Any?) = format(other)
+
+@OptIn(ExperimentalComposeUiApi::class)
+fun Modifier.onClick(enabled: Boolean = true, onClickLabel: String? = null,
+                       role: Role? = null, onClick: () -> Unit = { }) =
+    (if (enabled) pointerHoverIcon(PointerIconDefaults.Hand) else this).clickable(enabled, onClickLabel, role, onClick)

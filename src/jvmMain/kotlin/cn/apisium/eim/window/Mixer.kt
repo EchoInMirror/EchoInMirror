@@ -1,6 +1,5 @@
 package cn.apisium.eim.window
 
-import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CornerSize
@@ -33,6 +32,7 @@ import cn.apisium.eim.components.silder.DefaultTrack
 import cn.apisium.eim.components.silder.Slider
 import cn.apisium.eim.utils.Border
 import cn.apisium.eim.utils.border
+import cn.apisium.eim.utils.onClick
 import cn.apisium.eim.utils.toOnSurfaceColor
 
 @Composable
@@ -59,7 +59,7 @@ private fun MixerTrack(track: Track, index: String, height: MutableState<Dp>?, m
                 CornerSize(0.dp), CornerSize(0.dp), MaterialTheme.shapes.medium.bottomEnd, MaterialTheme.shapes.medium.bottomStart)
             )
         else Modifier.width(80.dp).let { if (drawSplitter) it.border(start = Border(1.dp, MaterialTheme.colorScheme.outlineVariant)) else it }) {
-            Row(Modifier.background(track.color).clickable { if (track != EchoInMirror.bus) EchoInMirror.selectedTrack = track }
+            Row(Modifier.background(track.color).onClick { if (track != EchoInMirror.bus) EchoInMirror.selectedTrack = track }
                 .padding(vertical = 2.5.dp).zIndex(2f)) {
                 val color = track.color.toOnSurfaceColor()
                 Text(
@@ -159,7 +159,6 @@ object Mixer: Panel {
         Icon(Icons.Default.Tune, "Mixer")
     }
 
-    @Preview
     @Composable
     override fun content() {
         Scrollable {

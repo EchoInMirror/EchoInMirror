@@ -87,11 +87,13 @@ class WindowManagerImpl: WindowManager {
                     remember { isOpened = true }
                     modifier = modifier.background(backgroundAnimation.value)
                 }
-                if (dialog.onClose != null) modifier = modifier.fillMaxSize().onPointerEvent(PointerEventType.Press) { dialog.onClose.invoke() }
-                Box(modifier) {
-                    if (dialog.position == null) dialog.content()
-                    else Box(Modifier.absoluteOffset { IntOffset(dialog.position.x.toInt(), dialog.position.y.toInt()) }) { dialog.content() }
-                }
+                if (dialog.onClose != null) modifier = modifier.fillMaxSize()
+                    .onPointerEvent(PointerEventType.Press) { dialog.onClose.invoke() }
+                Box(modifier)
+                if (dialog.position == null) dialog.content()
+                else Box(Modifier.absoluteOffset {
+                    IntOffset(dialog.position.x.toInt(), dialog.position.y.toInt())
+                }) { dialog.content() }
             }
         }
     }

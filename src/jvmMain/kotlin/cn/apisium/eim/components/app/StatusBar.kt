@@ -1,6 +1,5 @@
 package cn.apisium.eim.components.app
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.EventNote
@@ -16,12 +15,13 @@ import cn.apisium.eim.utils.Border
 import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.utils.border
 import cn.apisium.eim.components.icons.MetronomeTick
+import cn.apisium.eim.utils.onClick
 import cn.apisium.eim.window.dialogs.settings.SettingsWindow
 
 @Composable
 fun StatusBarItem(id: String, icon: ImageVector? = null, modifier: Modifier = Modifier, onClick: (() -> Unit)? = null, child: (@Composable () -> Unit)? = null) {
     Row(
-        modifier.clickable { onClick?.invoke() }.padding(horizontal = 4.dp).height(24.dp),
+        modifier.onClick { onClick?.invoke() }.padding(horizontal = 4.dp).height(24.dp),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {

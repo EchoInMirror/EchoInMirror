@@ -6,6 +6,7 @@ import androidx.compose.runtime.setValue
 import cn.apisium.eim.api.*
 import cn.apisium.eim.api.processor.AudioProcessorManager
 import cn.apisium.eim.api.window.WindowManager
+import cn.apisium.eim.data.defaultQuantification
 import cn.apisium.eim.impl.*
 import cn.apisium.eim.impl.processor.AudioProcessorManagerImpl
 import cn.apisium.eim.impl.processor.players.NativeAudioPlayer
@@ -25,6 +26,7 @@ object EchoInMirror {
     val windowManager: WindowManager = WindowManagerImpl()
     val audioProcessorManager: AudioProcessorManager = AudioProcessorManagerImpl()
     val undoManager: UndoManager = UndoManagerImpl()
+    var quantification by mutableStateOf(defaultQuantification)
 
     var selectedTrack by mutableStateOf<Track?>(null)
 }

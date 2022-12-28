@@ -43,9 +43,9 @@ kotlin {
                 @OptIn(ExperimentalComposeLibrary::class) implementation(compose.material3)
 //                @OptIn(ExperimentalComposeLibrary::class) implementation(compose.desktop.components.splitPane)
 
-                implementation("org.pf4j:pf4j:3.8.0")
                 implementation("commons-io:commons-io:2.11.0")
                 implementation("org.apache.commons:commons-lang3:3.12.0")
+                implementation("org.pf4j:pf4j:3.8.0")
                 implementation("org.slf4j:slf4j-simple:2.0.3")
             }
         }
@@ -107,11 +107,4 @@ tasks.withType<Jar> {
 tasks.withType<ShadowJar> {
     archiveClassifier.set("")
     archiveVersion.set("")
-    minimize {
-        exclude(dependency(org.jetbrains.compose.ComposePlugin.DesktopDependencies.currentOs))
-        exclude(dependency("org.jetbrains.kotlin:kotlin-stdlib-jdk8"))
-        exclude(dependency("org.jetbrains.kotlinx:kotlinx-serialization-json"))
-        exclude(dependency("org.pf4j:pf4j"))
-        exclude(dependency("org.pf4j:pf4j-simple"))
-    }
 }

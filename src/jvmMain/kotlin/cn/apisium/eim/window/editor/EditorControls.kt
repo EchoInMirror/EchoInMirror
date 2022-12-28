@@ -1,7 +1,8 @@
 package cn.apisium.eim.window.editor
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -12,9 +13,9 @@ import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.actions.doNoteVelocityAction
 import cn.apisium.eim.api.Track
 import cn.apisium.eim.components.CustomTextField
-import cn.apisium.eim.components.Marquee
 import cn.apisium.eim.components.TIMELINE_HEIGHT
 import cn.apisium.eim.components.silder.Slider
+import cn.apisium.eim.utils.onClick
 import kotlin.math.roundToInt
 
 private fun dfsTrackIndex(track: Track, target: Track, index: String): String? {
@@ -28,16 +29,18 @@ private fun dfsTrackIndex(track: Track, target: Track, index: String): String? {
 
 @Composable
 internal fun EditorControls() {
-    Surface(Modifier.fillMaxWidth().height(TIMELINE_HEIGHT).clickable {  }, shadowElevation = 2.dp, tonalElevation = 4.dp) {
+    Surface(Modifier.fillMaxWidth().height(TIMELINE_HEIGHT).onClick(), shadowElevation = 2.dp, tonalElevation = 4.dp) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             val track = EchoInMirror.selectedTrack
             Text(
-                remember(track) { if (track == null) null else dfsTrackIndex(EchoInMirror.bus, track, "")?.trimStart('-') } ?: "?",
-                Modifier.padding(horizontal = 8.dp),
+                remember(track) {
+                    if (track == null) null else dfsTrackIndex(EchoInMirror.bus, track, "")?.trimStart('-')
+                } ?: "?", Modifier.padding(horizontal = 8.dp),
                 fontWeight = FontWeight.Bold,
                 fontSize = MaterialTheme.typography.labelLarge.fontSize
             )
-            Marquee { Text(track?.name ?: "未选择", Modifier.weight(1f), style = MaterialTheme.typography.labelLarge) }
+            Text(track?.name ?: "未选择", Modifier.weight(1f), style = MaterialTheme.typography.labelLarge)
+            Icon(Icons.Filled.ExpandMore, null, Modifier.padding(horizontal = 8.dp))
         }
     }
     Column(Modifier.padding(10.dp)) {

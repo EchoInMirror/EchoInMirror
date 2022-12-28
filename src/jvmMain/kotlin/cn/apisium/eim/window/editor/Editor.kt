@@ -31,6 +31,8 @@ import cn.apisium.eim.commands.*
 import cn.apisium.eim.components.*
 import cn.apisium.eim.components.splitpane.VerticalSplitPane
 import cn.apisium.eim.components.splitpane.rememberSplitPaneState
+import cn.apisium.eim.data.defaultScale
+import cn.apisium.eim.data.getEditUnit
 import cn.apisium.eim.data.midi.*
 import cn.apisium.eim.utils.*
 import cn.apisium.eim.window.editor.EditAction.*
@@ -46,11 +48,10 @@ internal enum class EditAction {
     fun isLazy() = this == MOVE || this == RESIZE
 }
 
-val selectedNotes = hashSetOf<NoteMessage>()
+var selectedNotes by mutableStateOf(hashSetOf<NoteMessage>())
 var startNoteIndex = 0
 val noteHeight by mutableStateOf(16.dp)
 var noteWidth = mutableStateOf(0.4.dp)
-val noteUnit by mutableStateOf(96)
 val verticalScrollState = ScrollState(0)
 val horizontalScrollState = ScrollState(0).apply {
     @Suppress("INVISIBLE_SETTER")
@@ -165,14 +166,15 @@ private suspend fun PointerInputScope.handleMouseEvent() {
                     }
                     var currentSelectNote = getClickedNotes(event.x, event.y, track.notes)
                     if (currentSelectNote == null) {
-                        selectedNotes.clear()
+                        selectedNotes = hashSetOf()
+                        val noteUnit = getEditUnit()
                         currentSelectNote = defaultNoteMessage(currentNote, currentX.fitInUnit(noteUnit), noteUnit, defaultVelocity)
                         track.doNoteAmountAction(listOf(currentSelectNote), false)
                         track.notes.sort()
                         track.notes.update()
                         selectedNotes.add(currentSelectNote)
                     } else if (!selectedNotes.contains(currentSelectNote)) {
-                        selectedNotes.clear()
+                        selectedNotes = hashSetOf()
                         selectedNotes.add(currentSelectNote)
                         action = MOVE
                     }
@@ -207,12 +209,12 @@ private suspend fun PointerInputScope.handleMouseEvent() {
                     action = SELECT
                     break
                 } else if (event.buttons.isTertiaryPressed) {
-                    selectedNotes.clear()
+                    selectedNotes = hashSetOf()
                     getClickedNotes(event.x, event.y, track.notes) ?.let(deletionList::add)
                     action = DELETE
                     break
                 } else if (event.buttons.isSecondaryPressed) {
-                    selectedNotes.clear()
+                    selectedNotes = hashSetOf()
                     action = NONE
                     break
                 }
@@ -238,7 +240,7 @@ private suspend fun PointerInputScope.handleMouseEvent() {
                 return@awaitPointerEventScope
             }
             if (action == SELECT) {
-                selectedNotes.clear()
+                selectedNotes = hashSetOf()
                 selectionStartX = downX
                 selectionStartY = (downY / noteHeight.value).toInt()
                 selectionX = selectionStartX
@@ -254,6 +256,7 @@ private suspend fun PointerInputScope.handleMouseEvent() {
                     DELETE -> if (track != null) getClickedNotes(it.position.x, it.position.y, track.notes)
                         { note -> !deletionList.contains(note) }?.let(deletionList::add)
                     MOVE, RESIZE -> {
+                        val noteUnit = getEditUnit()
                         // calc delta in noteUnit, then check all move notes are in bound
                         deltaX = (((it.position.x + horizontalScrollState.value).coerceAtLeast(0F) - downX) /
                                 noteWidth.value.toPx()).fitInUnit(noteUnit)
@@ -378,7 +381,7 @@ private fun NotesEditorCanvas() {
                     val y = i * noteHeightPx - verticalScrollValue
                     if (y < 0) continue
                     drawLine(outlineColor, Offset(0f, y), Offset(size.width, y), 1F)
-                    if (!scales[11 - (i + 4) % 12]) drawRect(highlightNoteColor, Offset(0f, y), Size(size.width, noteHeightPx))
+                    if (defaultScale.scale[11 - (i + 4) % 12]) drawRect(highlightNoteColor, Offset(0f, y), Size(size.width, noteHeightPx))
                 }
 
                 val track = EchoInMirror.selectedTrack ?: return@onDrawBehind
