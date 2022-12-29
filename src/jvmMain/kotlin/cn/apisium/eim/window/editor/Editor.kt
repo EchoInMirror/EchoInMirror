@@ -353,7 +353,7 @@ private fun NotesEditorCanvas() {
             val noteHeightPx = noteHeight.toPx()
             val notes = arrayListOf<NoteDrawObject>()
             val backingsNotes = arrayListOf<BackingTrack>()
-            action
+            action // read mutable state of action
             EchoInMirror.selectedTrack?.let { track ->
                 startNoteIndex = 0
                 var flag = true

@@ -1,6 +1,5 @@
 package cn.apisium.eim.impl
 
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -79,28 +78,22 @@ class WindowManagerImpl: WindowManager {
     fun FloatingDialogs() {
         floatingDialogs.forEach { (key, dialog) ->
             Box {
-                var modifier: Modifier = Modifier
                 var isOpened by remember { mutableStateOf(false) }
-                if (dialog.hasOverlay) {
-                    modifier = Modifier.fillMaxSize()
-                    val backgroundAnimation = animateColorAsState(if (dialog.isClosed || !isOpened)
-                        Color.Transparent else Color.Black.copy(0.36F), tween(150))
-                    modifier = modifier.background(backgroundAnimation.value)
+                val alpha by animateFloatAsState(if (dialog.isClosed || !isOpened) 0F else 1F, tween(300)) {
+                    if (dialog.isClosed) floatingDialogs.remove(key)
                 }
+                var modifier = if (dialog.hasOverlay) Modifier.fillMaxSize().background(Color.Black.copy(alpha * 0.26F))
+                    else Modifier
                 if (dialog.onClose != null) modifier = modifier.fillMaxSize()
                     .onPointerEvent(PointerEventType.Press) { dialog.onClose.invoke(key) }
                 Box(modifier)
-                val alpha by animateFloatAsState(if (dialog.isClosed || !isOpened) 0F else 1F) {
-                    if (dialog.isClosed) floatingDialogs.remove(key)
-                }
                 if (dialog.position == null)
-                    Box(Modifier.fillMaxSize().graphicsLayer(alpha = alpha, shadowElevation = if (alpha == 1F) 0F else 5F),
-                        contentAlignment = Alignment.Center) { dialog.content() }
+                    Box(Modifier.fillMaxSize().graphicsLayer(alpha = alpha), contentAlignment = Alignment.Center) { dialog.content() }
                 else Layout({
                     Box(Modifier.graphicsLayer(alpha = alpha, shadowElevation = if (alpha == 1F) 0F else 5F)) { dialog.content() }
                 }) { measurables, constraints ->
-                    val c = Constraints(0, constraints.maxWidth - dialog.position.x.toInt(),
-                        0, constraints.maxHeight - dialog.position.y.toInt() - 25)
+                    val c = Constraints(0, (constraints.maxWidth - dialog.position.x.toInt() - 25).coerceAtLeast(0),
+                        0, (constraints.maxHeight - dialog.position.y.toInt() - 25).coerceAtLeast(0))
                     val placeable = measurables.firstOrNull()?.measure(c)
                     layout(c.maxWidth, c.maxHeight) {
                         placeable?.place(dialog.position.x.toInt(), dialog.position.y.toInt(), 5F)
