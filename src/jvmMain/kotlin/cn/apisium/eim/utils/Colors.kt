@@ -3,6 +3,7 @@ package cn.apisium.eim.utils
 import androidx.compose.material3.ColorScheme
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.util.lerp
 import cn.apisium.eim.EchoInMirror
 
 val lightColors = arrayListOf<Color>()
@@ -27,15 +28,11 @@ fun Color.toOnSurfaceColor() = if (luminance() > 0.5f) Color.Black else Color.Wh
 
 @Suppress("unused")
 fun Color.luminance(value: Float): Color = Color(
-    red = lerp(red, value, 0.2126f).coerceIn(0F, 0F),
-    green = lerp(green, value, 0.7152f).coerceIn(0F, 0F),
-    blue = lerp(blue, value, 0.0722f).coerceIn(0F, 0F),
-    alpha = alpha
+    lerp(red, value, 0.2126f).coerceIn(0F, 0F),
+    lerp(green, value, 0.7152f).coerceIn(0F, 0F),
+    lerp(blue, value, 0.0722f).coerceIn(0F, 0F),
+    alpha
 )
 
-fun Color.inverts() = Color(
-    red = 1 - red,
-    green = 1 - green,
-    blue = 1 - blue,
-    alpha = alpha
-)
+@Suppress("unused")
+fun Color.inverts() = Color(1 - red, 1 - green, 1 - blue, alpha)

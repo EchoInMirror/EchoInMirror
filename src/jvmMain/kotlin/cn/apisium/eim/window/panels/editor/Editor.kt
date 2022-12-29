@@ -22,6 +22,7 @@ import androidx.compose.ui.text.*
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.zIndex
 import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.actions.doNoteAmountAction
@@ -31,6 +32,7 @@ import cn.apisium.eim.api.window.Panel
 import cn.apisium.eim.api.window.PanelDirection
 import cn.apisium.eim.commands.*
 import cn.apisium.eim.components.*
+import cn.apisium.eim.components.dragdrop.dropTarget
 import cn.apisium.eim.components.splitpane.VerticalSplitPane
 import cn.apisium.eim.components.splitpane.rememberSplitPaneState
 import cn.apisium.eim.data.defaultScale
@@ -341,6 +343,11 @@ private fun NotesEditorCanvas() {
     Box(Modifier.fillMaxSize().clipToBounds().background(MaterialTheme.colorScheme.background)
         .scrollable(verticalScrollState, Orientation.Vertical, reverseDirection = true)
         .pointerInput(Unit) { handleMouseEvent() }
+        .dropTarget({ _, _ -> true }) { a, pos ->
+            println(a.firstOrNull()?.absolutePath)
+            println(pos)
+            true
+        }
     ) {
         val highlightNoteColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.05F)
         val outlineColor = MaterialTheme.colorScheme.surfaceVariant

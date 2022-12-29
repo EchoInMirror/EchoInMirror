@@ -132,7 +132,6 @@ class WindowManagerImpl: WindowManager {
         track.subTracks.add(subTrack1)
         track.subTracks.add(subTrack2)
         EchoInMirror.bus.subTracks.add(track)
-        println(EchoInMirror.bus.subTracks.size)
         EchoInMirror.bus.prepareToPlay(EchoInMirror.currentPosition.sampleRate, EchoInMirror.currentPosition.bufferSize)
         EchoInMirror.player.open(EchoInMirror.currentPosition.sampleRate, EchoInMirror.currentPosition.bufferSize, 2)
         isMainWindowOpened = true

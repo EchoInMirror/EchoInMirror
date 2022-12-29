@@ -5,6 +5,7 @@ import java.net.URL
 import java.net.HttpURLConnection
 import java.io.FileOutputStream
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jetbrains.compose.ComposeBuildConfig
 
 plugins {
     kotlin("multiplatform")
@@ -38,6 +39,7 @@ kotlin {
                 implementation(compose.desktop.currentOs) {
                     exclude("org.jetbrains.compose.material")
                 }
+                implementation("org.jetbrains.compose.ui:ui-util:${ComposeBuildConfig.composeVersion}")
                 implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.14.+")
                 implementation(compose.materialIconsExtended)
                 @OptIn(ExperimentalComposeLibrary::class) implementation(compose.material3)

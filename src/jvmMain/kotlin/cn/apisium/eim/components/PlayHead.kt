@@ -19,9 +19,9 @@ import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.zIndex
 import cn.apisium.eim.EchoInMirror
-import cn.apisium.eim.utils.fastAll
 import cn.apisium.eim.utils.x
 import org.jetbrains.skiko.Cursor
 
@@ -44,6 +44,7 @@ fun calcDrag(isInRange: Boolean, x0: Float, noteWidth: Float) {
 
 val TIMELINE_HEIGHT = 40.dp
 
+@Suppress("DuplicatedCode")
 @OptIn(ExperimentalTextApi::class)
 @Composable
 fun Timeline(modifier: Modifier = Modifier, noteWidth: MutableState<Dp>, scrollState: ScrollState, drawRange: Boolean = false, offsetX: Dp = 0.dp) {

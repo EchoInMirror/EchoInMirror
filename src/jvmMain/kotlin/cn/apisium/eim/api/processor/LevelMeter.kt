@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package cn.apisium.eim.api.processor
 
 import androidx.compose.runtime.getValue
@@ -11,7 +13,6 @@ import kotlin.math.pow
 import kotlin.math.sqrt
 
 @JvmInline
-@Suppress("unused")
 value class Level(val value: Float = 0F) {
     override fun toString() = toDecibel().let { if (it.isInfinite()) "-inf" else if (it > -0.01 && it < 0.01) "0.00" else "%.2f".format(it) }
     @Suppress("MemberVisibilityCanBePrivate")
@@ -54,7 +55,6 @@ value class Level(val value: Float = 0F) {
     fun coerceIn(minimumValue: Level, maximumValue: Level) = Level(value.coerceIn(minimumValue.value, maximumValue.value))
 }
 
-@Suppress("unused")
 interface LevelMeter {
     var left: Level
     var right: Level
@@ -76,5 +76,4 @@ class LevelMeterImpl : LevelMeter {
     }
 }
 
-@Suppress("unused")
 fun decibelToVoltage(db: Float) = 10.0F.pow(db / 20.0F)
