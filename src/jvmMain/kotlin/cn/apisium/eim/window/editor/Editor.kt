@@ -14,6 +14,7 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
@@ -25,6 +26,7 @@ import androidx.compose.ui.zIndex
 import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.actions.doNoteAmountAction
 import cn.apisium.eim.actions.doNoteMessageEditAction
+import cn.apisium.eim.api.Track
 import cn.apisium.eim.api.window.Panel
 import cn.apisium.eim.api.window.PanelDirection
 import cn.apisium.eim.commands.*
@@ -44,11 +46,11 @@ import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
 
 internal enum class EditAction {
-    NONE, MOVE, RESIZE, SELECT, DELETE;
-    fun isLazy() = this == MOVE || this == RESIZE
+    NONE, MOVE, RESIZE, SELECT, DELETE
 }
 
 var selectedNotes by mutableStateOf(hashSetOf<NoteMessage>())
+val backingTracks = mutableStateSetOf<Track>()
 var startNoteIndex = 0
 val noteHeight by mutableStateOf(16.dp)
 var noteWidth = mutableStateOf(0.4.dp)
@@ -75,7 +77,8 @@ private val playingNotes = arrayListOf<MidiEvent>()
 internal var currentSelectedNote by mutableStateOf<NoteMessage?>(null)
 internal var notesInView by mutableStateOf(arrayListOf<NoteMessage>())
 
-private data class NoteDrawObject(val note: NoteMessage, val offset: Offset, val size: Size)
+private data class NoteDrawObject(val note: NoteMessage, val offset: Offset, val size: Size, val color: Color)
+private data class BackingTrack(val track: Track, val notes: ArrayList<NoteDrawObject>)
 
 private fun Density.getClickedNotes(x: Float, y: Float, notes: NoteMessageList,
                                     block: Density.(NoteMessage) -> Boolean = { true }): NoteMessage? {
@@ -332,6 +335,7 @@ private suspend fun PointerInputScope.handleMouseEvent() {
     }
 }
 
+@Suppress("DuplicatedCode")
 @Composable
 private fun NotesEditorCanvas() {
     Box(Modifier.fillMaxSize().clipToBounds().background(MaterialTheme.colorScheme.background)
@@ -348,7 +352,8 @@ private fun NotesEditorCanvas() {
             val horizontalScrollValue = horizontalScrollState.value
             val noteHeightPx = noteHeight.toPx()
             val notes = arrayListOf<NoteDrawObject>()
-            val isLazy = action.isLazy()
+            val backingsNotes = arrayListOf<BackingTrack>()
+            action
             EchoInMirror.selectedTrack?.let { track ->
                 startNoteIndex = 0
                 var flag = true
@@ -357,6 +362,7 @@ private fun NotesEditorCanvas() {
                 selectedNotes.removeIf { !allNotes.contains(it) }
 
                 val notesInViewList = arrayListOf<NoteMessage>()
+                val color = track.color
                 for ((index, it) in track.notes.withIndex()) {
                     val y = (KEYBOARD_KEYS - 1 - it.note) * noteHeightPx - verticalScrollValue
                     val x = it.time * noteWidthPx - horizontalScrollValue
@@ -369,11 +375,30 @@ private fun NotesEditorCanvas() {
                         startNoteIndex = index
                         flag = false
                     }
-                    if (isLazy && selectedNotes.contains(it)) continue
+                    if (selectedNotes.contains(it)) continue
                     notes.add(NoteDrawObject(it, Offset(x, y.coerceAtLeast(0F)), Size(width, if (y < 0)
-                        (noteHeightPx + y).coerceAtLeast(0F) else noteHeightPx)))
+                        (noteHeightPx + y).coerceAtLeast(0F) else noteHeightPx),
+                        color.copy(0.6F + 0.4F * mapValue(it.velocity, 0, 127))))
                 }
                 notesInView = notesInViewList
+            }
+            backingTracks.forEach { track ->
+                if (track == EchoInMirror.selectedTrack) return@forEach
+                track.notes.read()
+                val color = track.color
+                val curNotes = arrayListOf<NoteDrawObject>()
+                for (it in track.notes) {
+                    val y = (KEYBOARD_KEYS - 1 - it.note) * noteHeightPx - verticalScrollValue
+                    val x = it.time * noteWidthPx - horizontalScrollValue
+                    if (x > size.width) break
+                    if (y < -noteHeightPx || y > size.height || deletionList.contains(it)) continue
+                    val width = it.duration * noteWidthPx
+                    if (x < 0 && width < -x) continue
+                    curNotes.add(NoteDrawObject(it, Offset(x, y.coerceAtLeast(0F)), Size(width, if (y < 0)
+                        (noteHeightPx + y).coerceAtLeast(0F) else noteHeightPx),
+                        color.copy(0.6F + 0.4F * mapValue(it.velocity, 0, 127))))
+                }
+                backingsNotes.add(BackingTrack(track, curNotes))
             }
 
             onDrawBehind {
@@ -386,9 +411,13 @@ private fun NotesEditorCanvas() {
                         drawRect(highlightNoteColor, Offset(0f, y), Size(size.width, noteHeightPx))
                 }
 
+                backingsNotes.forEach { cur ->
+                    val color = cur.track.color.copy(0.16F)
+                    cur.notes.forEach { drawRoundRect(color, it.offset, it.size, BorderCornerRadius2PX) }
+                }
+                notes.forEach { drawRoundRect(it.color, it.offset, it.size, BorderCornerRadius2PX) }
                 val track = EchoInMirror.selectedTrack ?: return@onDrawBehind
                 val trackColor = track.color
-                notes.forEach { drawRoundRect(trackColor, it.offset, it.size, BorderCornerRadius2PX) }
                 selectedNotes.forEach {
                     var y = (KEYBOARD_KEYS - 1 - it.note) * noteHeightPx - verticalScrollValue
                     val x = it.time * noteWidthPx - horizontalScrollValue
@@ -413,7 +442,8 @@ private fun NotesEditorCanvas() {
                         }
                     }
                     if (size.height <= 0 || size.width <= 0) return@forEach
-                    drawRoundRect(trackColor, offset, size, BorderCornerRadius2PX)
+                    drawRoundRect(trackColor.copy(0.6F + 0.4F * mapValue(it.velocity, 0, 127)),
+                        offset, size, BorderCornerRadius2PX)
                     drawRoundRect(primaryColor, offset, size, BorderCornerRadius2PX, Stroke1_5PX)
                 }
             }

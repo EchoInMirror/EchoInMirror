@@ -1,5 +1,7 @@
 package cn.apisium.eim.window.playlist
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.*
 import androidx.compose.foundation.gestures.drag
@@ -41,11 +43,14 @@ private fun TrackItem(track: Track, height: Dp, index: Int, depth: Int = 0) {
     Row(Modifier.height(height).padding(start = (depth * 8).dp).onPointerEvent(PointerEventType.Press) {
         EchoInMirror.selectedTrack = track
     }) {
-        Canvas(Modifier.fillMaxHeight().width(8.dp).background(track.color.copy(alpha = 0.5F)).onClick {
-            openColorPicker(track.color) { track.color = it }
-        }) {
-            val y = size.height * (1F - track.levelMeter.maxLevel.toPercentage())
-            drawRect(track.color, Offset(0F, y), Size(size.width, size.height - y))
+        Box {
+            val color by animateColorAsState(track.color, tween(100))
+            Canvas(Modifier.fillMaxHeight().width(8.dp).background(color.copy(alpha = 0.5F)).onClick {
+                openColorPicker(track.color) { track.color = it }
+            }) {
+                val y = size.height * (1F - track.levelMeter.maxLevel.toPercentage())
+                drawRect(color, Offset(0F, y), Size(size.width, size.height - y))
+            }
         }
         Row(Modifier.padding(8.dp, 4.dp)) {
             Text(index.toString(),

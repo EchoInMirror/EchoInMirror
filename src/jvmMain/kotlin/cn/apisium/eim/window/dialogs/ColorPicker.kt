@@ -1,6 +1,7 @@
 package cn.apisium.eim.window.dialogs
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -24,8 +25,8 @@ fun openColorPicker(initialColor: Color = randomColor(), onCancel: (() -> Unit)?
     EchoInMirror.windowManager.openFloatingDialog({
         closeColorPicker()
         onCancel?.invoke()
-    }, key = KEY, hasOverlay = false) {
-        Surface(shadowElevation = 5.dp, tonalElevation = 5.dp) {
+    }, key = KEY, hasOverlay = true) {
+        Surface(shape = MaterialTheme.shapes.small, shadowElevation = 5.dp, tonalElevation = 5.dp) {
             Column(Modifier.width(IntrinsicSize.Min)) {
                 var currentColor by remember { mutableStateOf(HsvColor.from(initialColor)) }
                 ColorPicker(currentColor, Modifier.size(200.dp)) { currentColor = it }

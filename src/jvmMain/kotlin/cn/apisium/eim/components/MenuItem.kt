@@ -1,7 +1,6 @@
 package cn.apisium.eim.components
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
@@ -10,34 +9,35 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerIconDefaults
 import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
-@OptIn(ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun MenuItem(
     selected: Boolean = false,
     onClick: () -> Unit,
+    onDoubleClick: (() -> Unit)? = null,
     enabled: Boolean = true,
+    modifier: Modifier = Modifier,
+    minHeight: Dp = 38.dp,
+    padding: PaddingValues = PaddingValues(horizontal = 12.dp),
     content: @Composable RowScope.() -> Unit
 ) {
     Row(
-        modifier = Modifier
-            .clickable(
+        modifier = modifier
+            .combinedClickable(
                 enabled,
-                onClick = onClick,
+                onDoubleClick = onDoubleClick,
+                onClick = onClick
             )
             .run { if (selected) background(MaterialTheme.colorScheme.secondary.copy(0.2F)) else this }
             .sizeIn(
                 minWidth = 100.dp,
                 maxWidth = 280.dp,
-                minHeight = 38.dp
+                minHeight = minHeight
             )
-            .padding(
-                PaddingValues(
-                    horizontal = 16.dp,
-                    vertical = 0.dp
-                )
-            )
+            .padding(padding)
             .pointerHoverIcon(if (enabled) PointerIconDefaults.Hand else PointerIconDefaults.Default),
         verticalAlignment = Alignment.CenterVertically,
         content = content

@@ -218,19 +218,21 @@ private fun ColorWheel(
             TileMode.Clamp
         )
     }
-    Canvas(modifier = Modifier.fillMaxSize()) {
-        // draw the hue bar
-        drawCircle(colorSweepGradientBrush)
-        // draw saturation radial overlay
-        drawCircle(saturationGradientBrush)
-        // account for "brightness/value" slider
-        drawCircle(
-            hsvColor.copy(
-                hue = 0f,
-                saturation = 0f
-            ).toColor(),
-            blendMode = BlendMode.Modulate
-        )
+    Surface(shape = CircleShape, shadowElevation = 3.dp) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            // draw the hue bar
+            drawCircle(colorSweepGradientBrush)
+            // draw saturation radial overlay
+            drawCircle(saturationGradientBrush)
+            // account for "brightness/value" slider
+            drawCircle(
+                hsvColor.copy(
+                    hue = 0f,
+                    saturation = 0f
+                ).toColor(),
+                blendMode = BlendMode.Modulate
+            )
+        }
     }
 }
 

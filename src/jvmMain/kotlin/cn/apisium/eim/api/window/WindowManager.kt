@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.geometry.Offset
+import cn.apisium.eim.api.Track
 import java.lang.ref.WeakReference
 
 interface WindowManager {
@@ -18,4 +19,5 @@ interface WindowManager {
     fun openFloatingDialog(onClose: ((Any) -> Unit)? = null, position: Offset? = null, key: Any? = null,
                            hasOverlay: Boolean = false, content: @Composable () -> Unit): Any
     fun closeFloatingDialog(key: Any)
+    fun clearTrackUIState(track: Track)
 }

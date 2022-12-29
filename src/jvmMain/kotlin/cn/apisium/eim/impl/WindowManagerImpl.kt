@@ -1,11 +1,10 @@
 package cn.apisium.eim.impl
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.absoluteOffset
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -13,9 +12,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
-import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.unit.Constraints
+import cn.apisium.eim.EchoInMirror
+import cn.apisium.eim.api.Track
 import cn.apisium.eim.api.window.Panel
 import cn.apisium.eim.api.window.WindowManager
 import cn.apisium.eim.window.editor.Editor
@@ -24,6 +27,7 @@ import cn.apisium.eim.window.dialogs.QuickLoadDialog
 import cn.apisium.eim.window.dialogs.settings.SettingsWindow
 import java.lang.ref.WeakReference
 import cn.apisium.eim.window.UndoList
+import cn.apisium.eim.window.editor.backingTracks
 
 private data class FloatingDialog(val onClose: ((Any) -> Unit)?, val position: Offset?,
     val hasOverlay: Boolean, val content: @Composable () -> Unit) {
@@ -35,7 +39,7 @@ class WindowManagerImpl: WindowManager {
     override val dialogs = mutableStateMapOf<@Composable () -> Unit, Boolean>()
     override val panels = mutableStateListOf(Mixer, Editor, UndoList)
     override var mainWindow: WeakReference<ComposeWindow> = WeakReference(null)
-    override var isDarkTheme by mutableStateOf(true)
+    override var isDarkTheme by mutableStateOf(false)
     override var activePanel: Panel? = null
 
     init {
@@ -67,8 +71,7 @@ class WindowManagerImpl: WindowManager {
 
     override fun closeFloatingDialog(key: Any) {
         val dialog = floatingDialogs[key] ?: return
-        if (dialog.hasOverlay) dialog.isClosed = true
-        else floatingDialogs.remove(key)
+        dialog.isClosed = true
     }
 
     @OptIn(ExperimentalComposeUiApi::class)
@@ -77,24 +80,39 @@ class WindowManagerImpl: WindowManager {
         floatingDialogs.forEach { (key, dialog) ->
             Box {
                 var modifier: Modifier = Modifier
+                var isOpened by remember { mutableStateOf(false) }
                 if (dialog.hasOverlay) {
                     modifier = Modifier.fillMaxSize()
-                    var isOpened by remember { mutableStateOf(false) }
                     val backgroundAnimation = animateColorAsState(if (dialog.isClosed || !isOpened)
-                        Color.Transparent else Color.Black.copy(0.36F), tween(150)) {
-                        if (dialog.isClosed) floatingDialogs.remove(key)
-                    }
-                    remember { isOpened = true }
+                        Color.Transparent else Color.Black.copy(0.36F), tween(150))
                     modifier = modifier.background(backgroundAnimation.value)
                 }
                 if (dialog.onClose != null) modifier = modifier.fillMaxSize()
                     .onPointerEvent(PointerEventType.Press) { dialog.onClose.invoke(key) }
                 Box(modifier)
-                if (dialog.position == null) Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { dialog.content() }
-                else Box(Modifier.absoluteOffset {
-                    IntOffset(dialog.position.x.toInt(), dialog.position.y.toInt())
-                }) { dialog.content() }
+                val alpha by animateFloatAsState(if (dialog.isClosed || !isOpened) 0F else 1F) {
+                    if (dialog.isClosed) floatingDialogs.remove(key)
+                }
+                if (dialog.position == null)
+                    Box(Modifier.fillMaxSize().graphicsLayer(alpha = alpha, shadowElevation = if (alpha == 1F) 0F else 5F),
+                        contentAlignment = Alignment.Center) { dialog.content() }
+                else Layout({
+                    Box(Modifier.graphicsLayer(alpha = alpha, shadowElevation = if (alpha == 1F) 0F else 5F)) { dialog.content() }
+                }) { measurables, constraints ->
+                    val c = Constraints(0, constraints.maxWidth - dialog.position.x.toInt(),
+                        0, constraints.maxHeight - dialog.position.y.toInt() - 25)
+                    val placeable = measurables.firstOrNull()?.measure(c)
+                    layout(c.maxWidth, c.maxHeight) {
+                        placeable?.place(dialog.position.x.toInt(), dialog.position.y.toInt(), 5F)
+                    }
+                }
+                remember { isOpened = true }
             }
         }
+    }
+
+    override fun clearTrackUIState(track: Track) {
+        if (EchoInMirror.selectedTrack == track) EchoInMirror.selectedTrack = null
+        backingTracks.remove(track)
     }
 }

@@ -91,7 +91,7 @@ class NoteVelocityAction(
     }
 
     override suspend fun execute(): Boolean {
-        notes.forEach { it.velocity += deltaVelocity }
+        notes.forEach { it.velocity = (it.velocity + deltaVelocity).coerceIn(0, 127) }
         track.notes.update()
         return true
     }

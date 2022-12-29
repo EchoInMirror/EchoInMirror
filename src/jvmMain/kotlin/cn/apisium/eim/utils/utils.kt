@@ -27,6 +27,7 @@ val OBJECT_MAPPER = jacksonObjectMapper()
 var CLIPBOARD_MANAGER: ClipboardManager? = null
 
 fun lerp(start: Float, stop: Float, fraction: Float) = (1 - fraction) * start + fraction * stop
+fun mapValue(value: Int, start1: Int, stop1: Int) = ((value - start1) / (stop1 - start1).toFloat()).coerceIn(0f, 1f)
 fun mapValue(value: Float, start1: Float, stop1: Float) = ((value - start1) / (stop1 - start1)).coerceIn(0f, 1f)
 
 fun randomUUID() = UUID.randomUUID().mostSignificantBits and Long.MAX_VALUE

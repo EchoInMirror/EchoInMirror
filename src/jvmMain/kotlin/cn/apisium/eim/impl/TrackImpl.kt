@@ -4,6 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.api.CurrentPosition
 import cn.apisium.eim.api.Track
 import cn.apisium.eim.api.processor.AbstractAudioProcessor
@@ -165,6 +166,7 @@ open class TrackImpl(trackName: String) : Track, AbstractAudioProcessor() {
     }
 
     override fun close() {
+        EchoInMirror.windowManager.clearTrackUIState(this)
         preProcessorsChain.forEach { it.close() }
         preProcessorsChain.clear()
         subTracks.forEach { it.close() }

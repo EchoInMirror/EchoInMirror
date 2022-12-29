@@ -16,6 +16,7 @@ import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.components.FloatingDialog
 import cn.apisium.eim.components.MenuItem
 import cn.apisium.eim.data.defaultScale
+import cn.apisium.eim.data.midi.KEY_NAMES
 import cn.apisium.eim.data.quantificationUnits
 import cn.apisium.eim.utils.rem
 
@@ -139,7 +140,18 @@ private fun Quantification() {
 
 @Composable
 fun RootNote() {
-    AppBarItem("C", "根音")
+    FloatingDialog({ _, close ->
+        Surface(Modifier.width(IntrinsicSize.Min), MaterialTheme.shapes.extraSmall,
+            shadowElevation = 6.dp, tonalElevation = 1.dp) {
+            Column {
+                KEY_NAMES.forEach {
+                    MenuItem(false, { close() }) { Text(it) }
+                }
+            }
+        }
+    }) {
+        AppBarItem("C", "根音")
+    }
 }
 
 @Composable
