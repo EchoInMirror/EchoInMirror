@@ -1,4 +1,4 @@
-package cn.apisium.eim.window.editor
+package cn.apisium.eim.window.panels.editor
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween

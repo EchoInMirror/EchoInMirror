@@ -1,4 +1,4 @@
-package cn.apisium.eim.window.editor
+package cn.apisium.eim.window.panels.editor
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.*
@@ -37,7 +37,7 @@ import cn.apisium.eim.data.defaultScale
 import cn.apisium.eim.data.getEditUnit
 import cn.apisium.eim.data.midi.*
 import cn.apisium.eim.utils.*
-import cn.apisium.eim.window.editor.EditAction.*
+import cn.apisium.eim.window.panels.editor.EditAction.*
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -376,9 +376,11 @@ private fun NotesEditorCanvas() {
                         flag = false
                     }
                     if (selectedNotes.contains(it)) continue
-                    notes.add(NoteDrawObject(it, Offset(x, y.coerceAtLeast(0F)), Size(width, if (y < 0)
+                    notes.add(
+                        NoteDrawObject(it, Offset(x, y.coerceAtLeast(0F)), Size(width, if (y < 0)
                         (noteHeightPx + y).coerceAtLeast(0F) else noteHeightPx),
-                        color.copy(0.6F + 0.4F * mapValue(it.velocity, 0, 127))))
+                        color.copy(0.6F + 0.4F * mapValue(it.velocity, 0, 127)))
+                    )
                 }
                 notesInView = notesInViewList
             }
@@ -394,9 +396,11 @@ private fun NotesEditorCanvas() {
                     if (y < -noteHeightPx || y > size.height || deletionList.contains(it)) continue
                     val width = it.duration * noteWidthPx
                     if (x < 0 && width < -x) continue
-                    curNotes.add(NoteDrawObject(it, Offset(x, y.coerceAtLeast(0F)), Size(width, if (y < 0)
+                    curNotes.add(
+                        NoteDrawObject(it, Offset(x, y.coerceAtLeast(0F)), Size(width, if (y < 0)
                         (noteHeightPx + y).coerceAtLeast(0F) else noteHeightPx),
-                        color.copy(0.6F + 0.4F * mapValue(it.velocity, 0, 127))))
+                        color.copy(0.6F + 0.4F * mapValue(it.velocity, 0, 127)))
+                    )
                 }
                 backingsNotes.add(BackingTrack(track, curNotes))
             }

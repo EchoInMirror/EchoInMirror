@@ -1,4 +1,4 @@
-package cn.apisium.eim.window.playlist
+package cn.apisium.eim.window.panels.playlist
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
@@ -33,7 +33,7 @@ import cn.apisium.eim.components.icons.DebugStepOver
 import cn.apisium.eim.utils.fastAll
 import cn.apisium.eim.utils.onClick
 import cn.apisium.eim.window.dialogs.openColorPicker
-import cn.apisium.eim.window.editor.calcScroll
+import cn.apisium.eim.window.panels.editor.calcScroll
 
 private val TRACK_ITEM_ICON_SIZE = Modifier.size(16.dp)
 

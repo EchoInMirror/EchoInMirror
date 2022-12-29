@@ -1,17 +1,20 @@
 package cn.apisium.eim
 
-import cn.apisium.eim.components.app.runEIMApp
-import cn.apisium.eim.data.midi.getMidiEvents
-import cn.apisium.eim.data.midi.getNoteMessages
-import cn.apisium.eim.impl.TrackImpl
-import cn.apisium.eim.processor.synthesizer.KarplusStrongSynthesizer
+import androidx.compose.foundation.LocalScrollbarStyle
+import androidx.compose.foundation.ScrollbarStyle
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.application
+import cn.apisium.eim.window.MainWindow
 //import kotlinx.coroutines.delay
 //import kotlinx.coroutines.launch
 //import kotlinx.coroutines.runBlocking
 //import cn.apisium.eim.impl.processor.NativeAudioPluginImpl
 //import cn.apisium.eim.impl.processor.nativeAudioPluginManager
-import java.io.File
-import javax.sound.midi.MidiSystem
 import javax.swing.UIManager
 
 fun main() {
@@ -19,23 +22,6 @@ fun main() {
     createDirectories()
     Runtime.getRuntime().addShutdownHook(Thread(EchoInMirror.bus::close))
     Runtime.getRuntime().addShutdownHook(Thread(EchoInMirror.player::close))
-
-    val track = TrackImpl("Track 1")
-    val subTrack1 = TrackImpl("SubTrack 1")
-    val subTrack2 = TrackImpl("SubTrack 2")
-    subTrack1.preProcessorsChain.add(KarplusStrongSynthesizer())
-    EchoInMirror.selectedTrack = track
-    if (IS_DEBUG) {
-        val midi =
-            MidiSystem.getSequence(File("E:\\Midis\\UTMR&C VOL 1-14 [MIDI FILES] for other DAWs FINAL by Hunter UT\\VOL 13\\13.Darren Porter - To Feel Again LD.mid"))
-        track.notes.addAll(getNoteMessages(midi.getMidiEvents(1)))
-    }
-
-    track.subTracks.add(subTrack1)
-    track.subTracks.add(subTrack2)
-    EchoInMirror.bus.subTracks.add(track)
-    EchoInMirror.bus.prepareToPlay(EchoInMirror.currentPosition.sampleRate, EchoInMirror.currentPosition.bufferSize)
-    EchoInMirror.player.open(EchoInMirror.currentPosition.sampleRate, EchoInMirror.currentPosition.bufferSize, 2)
 
 //    runBlocking {
 //        println("start render")
@@ -72,6 +58,16 @@ fun main() {
 //            }
 //        }
 //    }.start()
-
-    runEIMApp()
+    EchoInMirror.windowManager.openMainWindow()
+    application {
+        MaterialTheme(if (EchoInMirror.windowManager.isDarkTheme) darkColorScheme() else lightColorScheme()) {
+            val color = MaterialTheme.colorScheme.onSurface
+            CompositionLocalProvider(
+                LocalScrollbarStyle provides ScrollbarStyle(16.dp, 8.dp, RoundedCornerShape(4.dp),
+                    300, color.copy(0.26f), color.copy(0.60f))
+            ) {
+                MainWindow()
+            }
+        }
+    }
 }

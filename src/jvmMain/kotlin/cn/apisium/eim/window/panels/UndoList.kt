@@ -1,21 +1,24 @@
-package cn.apisium.eim.window
+package cn.apisium.eim.window.panels
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Icon
-import androidx.compose.runtime.Composable
-import cn.apisium.eim.api.window.Panel
-import cn.apisium.eim.api.window.PanelDirection
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.SettingsBackupRestore
 import androidx.compose.material.icons.outlined.RestartAlt
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import cn.apisium.eim.EchoInMirror
+import cn.apisium.eim.api.window.Panel
+import cn.apisium.eim.api.window.PanelDirection
 import cn.apisium.eim.utils.onClick
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
@@ -23,7 +26,7 @@ import kotlinx.coroutines.launch
 
 private val ICON_SIZE = Modifier.scale(0.8f).padding(4.dp, end = 2.dp)
 
-object UndoList:Panel{
+object UndoList: Panel {
     override val name = "历史操作"
     override val direction = PanelDirection.Vertical
 

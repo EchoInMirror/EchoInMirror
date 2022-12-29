@@ -13,6 +13,7 @@ interface WindowManager {
     val mainWindow: WeakReference<ComposeWindow>
     var isDarkTheme: Boolean
     var activePanel: Panel?
+    val isMainWindowOpened: Boolean
 
     fun registerPanel(panel: Panel)
     fun unregisterPanel(panel: Panel)
@@ -20,4 +21,5 @@ interface WindowManager {
                            hasOverlay: Boolean = false, content: @Composable () -> Unit): Any
     fun closeFloatingDialog(key: Any)
     fun clearTrackUIState(track: Track)
+    fun openMainWindow()
 }

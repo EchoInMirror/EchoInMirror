@@ -1,4 +1,4 @@
-package cn.apisium.eim.window
+package cn.apisium.eim.window.panels
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
