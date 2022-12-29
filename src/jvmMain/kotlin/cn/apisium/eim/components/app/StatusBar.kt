@@ -9,25 +9,66 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import cn.apisium.eim.utils.Border
 import cn.apisium.eim.EchoInMirror
+import cn.apisium.eim.api.ChannelType
+import cn.apisium.eim.components.Filled
+import cn.apisium.eim.components.FloatingDialog
+import cn.apisium.eim.components.MenuItem
+import cn.apisium.eim.components.icons.*
 import cn.apisium.eim.utils.border
-import cn.apisium.eim.components.icons.MetronomeTick
 import cn.apisium.eim.utils.onClick
 import cn.apisium.eim.window.dialogs.settings.SettingsWindow
 
 @Composable
-fun StatusBarItem(id: String, icon: ImageVector? = null, modifier: Modifier = Modifier, onClick: (() -> Unit)? = null, child: (@Composable () -> Unit)? = null) {
+fun StatusBarItem(id: String, icon: ImageVector? = null, iconColor: Color? = null,
+                  modifier: Modifier = Modifier, onClick: (() -> Unit)? = null, child: (@Composable () -> Unit)? = null) {
     Row(
-        modifier.onClick { onClick?.invoke() }.padding(horizontal = 4.dp).height(24.dp),
+        (if (onClick == null) modifier else modifier.onClick(onClick = onClick)).padding(horizontal = 4.dp).height(24.dp),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        if (icon != null) Icon(icon, id, modifier = Modifier.size(14.dp))
+        if (icon != null) Icon(icon, id, Modifier.size(14.dp), iconColor ?: LocalContentColor.current)
         Box(Modifier.padding(horizontal = 1.dp))
         if (child != null) child()
+    }
+}
+
+fun getChannelTypeIcon(type: ChannelType) = when (type) {
+    ChannelType.STEREO -> SetNone
+    ChannelType.MONO -> SetCenter
+    ChannelType.LEFT -> SetLeftCenter
+    ChannelType.RIGHT -> SetCenterRight
+    ChannelType.SIDE -> SetLeftRight
+}
+
+@Composable
+private fun BusChannelType() {
+    FloatingDialog({ _, close ->
+        Surface(Modifier.width(IntrinsicSize.Min), shape = MaterialTheme.shapes.extraSmall,
+            tonalElevation = 5.dp, shadowElevation = 5.dp) {
+            Column {
+                ChannelType.values().forEach { type ->
+                    MenuItem(type == EchoInMirror.bus.channelType, {
+                        close()
+                        EchoInMirror.bus.channelType = type
+                    }) {
+                        Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(getChannelTypeIcon(type), type.name)
+                            Box(Modifier.padding(horizontal = 4.dp))
+                            Text(type.name, style = MaterialTheme.typography.labelLarge)
+                        }
+                    }
+                }
+            }
+        }
+    }) {
+        val type = EchoInMirror.bus.channelType
+        StatusBarItem("MonoAndStereo", getChannelTypeIcon(type),
+            if (type == ChannelType.STEREO) null else MaterialTheme.colorScheme.primary)
     }
 }
 
@@ -46,13 +87,8 @@ internal fun StatusBar() {
                     StatusBarItem("TimeCost", Icons.Default.EventNote) {
                         Text("大约19小时")
                     }
-                    Box(Modifier.weight(2F))
-                    StatusBarItem("Pai", MetronomeTick) {
-                        Text("${EchoInMirror.currentPosition.timeSigNumerator}/${EchoInMirror.currentPosition.timeSigDenominator}")
-                    }
-                    StatusBarItem("BPM") {
-                        Text("%.2f".format(EchoInMirror.currentPosition.bpm))
-                    }
+                    Filled()
+                    BusChannelType()
                 }
             }
         }

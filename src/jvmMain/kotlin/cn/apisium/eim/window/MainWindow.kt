@@ -5,10 +5,12 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.ApplicationScope
 import androidx.compose.ui.window.Window
@@ -22,6 +24,7 @@ import cn.apisium.eim.components.app.StatusBar
 import cn.apisium.eim.components.app.bottomBarHeightState
 import cn.apisium.eim.components.app.bottomBarSelectedItem
 import cn.apisium.eim.components.app.sideBarWidthState
+import cn.apisium.eim.components.dragdrop.PlatformDropTargetModifier
 import cn.apisium.eim.components.splitpane.HorizontalSplitPane
 import cn.apisium.eim.components.splitpane.VerticalSplitPane
 import cn.apisium.eim.impl.WindowManagerImpl
@@ -51,11 +54,14 @@ fun ApplicationScope.MainWindow() {
         window.exceptionHandler = WindowExceptionHandler {
             it.printStackTrace()
         }
+        val density = LocalDensity.current.density
+        val dropParent = remember(density) { PlatformDropTargetModifier(density, window) }
 
         Box {
             Row {
                 SideBar()
                 Scaffold(
+                    Modifier.then(dropParent),
                     topBar = { EimAppBar() },
                     content = {
                         Column {

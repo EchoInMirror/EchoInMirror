@@ -5,6 +5,8 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import cn.apisium.eim.EchoInMirror
+import cn.apisium.eim.api.Bus
+import cn.apisium.eim.api.ChannelType
 import cn.apisium.eim.api.CurrentPosition
 import cn.apisium.eim.api.Track
 import cn.apisium.eim.api.processor.AbstractAudioProcessor
@@ -136,15 +138,18 @@ open class TrackImpl(trackName: String) : Track, AbstractAudioProcessor() {
             tempBuffer[1].copyInto(buffers[1])
         }
         postProcessorsChain.forEach { it.processBlock(buffers, position, midiBuffer) }
+
         var leftPeak = 0F
         var rightPeak = 0F
+        val leftFactor = calcPanLeftChannel() * volume
+        val rightFactor = calcPanRightChannel() * volume
         for (i in buffers[0].indices) {
-            buffers[0][i] *= calcPanLeftChannel() * volume
+            buffers[0][i] *= leftFactor
             val tmp = buffers[0][i]
             if (tmp > leftPeak) leftPeak = tmp
         }
         for (i in buffers[1].indices) {
-            buffers[1][i] *= calcPanRightChannel() * volume
+            buffers[1][i] *= rightFactor
             val tmp = buffers[1][i]
             if (tmp > rightPeak) rightPeak = tmp
         }
@@ -201,5 +206,35 @@ open class TrackImpl(trackName: String) : Track, AbstractAudioProcessor() {
 
     override fun onRenderEnd() {
         isRendering = false
+    }
+}
+
+class BusImpl : TrackImpl("Bus"), Bus {
+    override var channelType by mutableStateOf(ChannelType.STEREO)
+    override suspend fun processBlock(
+        buffers: Array<FloatArray>,
+        position: CurrentPosition,
+        midiBuffer: ArrayList<Int>
+    ) {
+        super.processBlock(buffers, position, midiBuffer)
+
+        when (channelType) {
+            ChannelType.LEFT -> buffers[0].copyInto(buffers[1])
+            ChannelType.RIGHT -> buffers[1].copyInto(buffers[0])
+            ChannelType.MONO -> {
+                for (i in 0 until position.bufferSize) {
+                    buffers[0][i] = (buffers[0][i] + buffers[1][i]) / 2
+                    buffers[1][i] = buffers[0][i]
+                }
+            }
+            ChannelType.SIDE -> {
+                for (i in 0 until position.bufferSize) {
+                    val mid = (buffers[0][i] + buffers[1][i]) / 2
+                    buffers[0][i] -= mid
+                    buffers[1][i] -= mid
+                }
+            }
+            else -> {}
+        }
     }
 }

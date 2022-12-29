@@ -99,11 +99,17 @@ class WindowManagerImpl: WindowManager {
                 else Layout({
                     Box(Modifier.graphicsLayer(alpha = alpha, shadowElevation = if (alpha == 1F) 0F else 5F)) { dialog.content() }
                 }) { measurables, constraints ->
-                    val c = Constraints(0, (constraints.maxWidth - dialog.position.x.toInt() - 25).coerceAtLeast(0),
-                        0, (constraints.maxHeight - dialog.position.y.toInt() - 25).coerceAtLeast(0))
+                    var height = constraints.maxHeight - dialog.position.y.toInt() - 25
+                    var width = constraints.maxWidth - dialog.position.x.toInt() - 25
+                    val isTooSmall = height < 40
+                    val isTooRight = width < 100
+                    if (isTooSmall) height = constraints.maxHeight - 50
+                    if (isTooRight) width = constraints.maxWidth - 100
+                    val c = Constraints(0, width, 0, height)
                     val placeable = measurables.firstOrNull()?.measure(c)
                     layout(c.maxWidth, c.maxHeight) {
-                        placeable?.place(dialog.position.x.toInt(), dialog.position.y.toInt(), 5F)
+                        placeable?.place(dialog.position.x.toInt() - (if (isTooRight) placeable.width else 0),
+                            dialog.position.y.toInt() - (if (isTooSmall) placeable.height + 25 else 0), 5F)
                     }
                 }
                 remember { isOpened = true }
