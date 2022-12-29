@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.EventNote
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -22,6 +23,7 @@ import cn.apisium.eim.components.icons.*
 import cn.apisium.eim.utils.border
 import cn.apisium.eim.utils.onClick
 import cn.apisium.eim.window.dialogs.settings.SettingsWindow
+import kotlin.math.roundToInt
 
 @Composable
 fun StatusBarItem(id: String, icon: ImageVector? = null, iconColor: Color? = null,
@@ -89,6 +91,9 @@ internal fun StatusBar() {
                     }
                     Filled()
                     BusChannelType()
+                    StatusBarItem("CpuLoad", Icons.Filled.Memory) {
+                        Text((EchoInMirror.player.cpuLoad * 100).roundToInt().toString() + "%")
+                    }
                 }
             }
         }

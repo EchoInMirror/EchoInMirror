@@ -1,6 +1,6 @@
 package cn.apisium.eim.impl.processor.players
 
-import cn.apisium.eim.api.AudioPlayer
+import cn.apisium.eim.api.AbstractAudioPlayer
 import cn.apisium.eim.api.CurrentPosition
 import cn.apisium.eim.api.processor.AudioProcessor
 import cn.apisium.eim.utils.getSampleBits
@@ -10,7 +10,8 @@ import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioSystem
 import javax.sound.sampled.SourceDataLine
 
-class JvmAudioPlayer(currentPosition: CurrentPosition, processor: AudioProcessor?) : AudioPlayer(currentPosition, processor), Runnable {
+class JvmAudioPlayer(currentPosition: CurrentPosition, processor: AudioProcessor?) :
+    AbstractAudioPlayer(currentPosition, processor), Runnable {
     private var thread: Thread? = null
     private var sdl: SourceDataLine? = null
     private var sampleRate = 44800
@@ -64,6 +65,8 @@ class JvmAudioPlayer(currentPosition: CurrentPosition, processor: AudioProcessor
                 Thread.sleep(10)
                 continue
             }
+
+            enterProcessBlock()
             buffers.forEach { it.fill(0F) }
 
             try {
@@ -83,6 +86,8 @@ class JvmAudioPlayer(currentPosition: CurrentPosition, processor: AudioProcessor
                     }
                 }
             }
+            exitProcessBlock()
+
             sdl?.write(outputBuffer, 0, outputBuffer.size)
 
             if (currentPosition.isPlaying) {

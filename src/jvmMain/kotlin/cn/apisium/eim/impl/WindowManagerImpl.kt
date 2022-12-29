@@ -140,6 +140,25 @@ class WindowManagerImpl: WindowManager {
         EchoInMirror.bus.subTracks.add(track)
         EchoInMirror.bus.prepareToPlay(EchoInMirror.currentPosition.sampleRate, EchoInMirror.currentPosition.bufferSize)
         EchoInMirror.player.open(EchoInMirror.currentPosition.sampleRate, EchoInMirror.currentPosition.bufferSize, 2)
+
+//        if (IS_DEBUG) Thread {
+//            runBlocking {
+//                launch {
+//                    delay(2000)
+//                    var proQ: NativeAudioPluginImpl? = null
+//                    var spire: NativeAudioPluginImpl? = null
+//                    EchoInMirror.audioProcessorManager.nativeAudioPluginManager.descriptions.forEach {
+//                        if (it.name == "FabFilter Pro-Q 3") proQ = NativeAudioPluginImpl(it)
+//                        if (it.name == "Spire-1.5") spire = NativeAudioPluginImpl(it)
+//                    }
+//                    proQ!!.launch()
+//                    spire!!.launch()
+//                    subTrack2.preProcessorsChain.add(spire!!)
+//                    track.postProcessorsChain.add(proQ!!)
+//
+//                }
+//            }
+//        }.start()
         isMainWindowOpened = true
     }
 }

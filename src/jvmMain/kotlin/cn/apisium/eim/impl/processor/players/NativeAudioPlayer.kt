@@ -1,6 +1,6 @@
 package cn.apisium.eim.impl.processor.players
 
-import cn.apisium.eim.api.AudioPlayer
+import cn.apisium.eim.api.AbstractAudioPlayer
 import cn.apisium.eim.api.CurrentPosition
 import cn.apisium.eim.api.processor.AudioProcessor
 import cn.apisium.eim.utils.EIMInputStream
@@ -10,7 +10,7 @@ import java.util.*
 import kotlin.collections.ArrayList
 
 class NativeAudioPlayer(currentPosition: CurrentPosition, processor: AudioProcessor?, private val execFile: String,
-                        private vararg val commands: String) : AudioPlayer(currentPosition, processor), Runnable {
+                        private vararg val commands: String) : AbstractAudioPlayer(currentPosition, processor), Runnable {
     private var thread: Thread? = null
     private var process: Process? = null
     private var inputStream: EIMInputStream? = null
@@ -62,6 +62,7 @@ class NativeAudioPlayer(currentPosition: CurrentPosition, processor: AudioProces
                 continue
             }
 
+            enterProcessBlock()
             buffers.forEach { it.fill(0F) }
 
             runBlocking {
@@ -71,6 +72,7 @@ class NativeAudioPlayer(currentPosition: CurrentPosition, processor: AudioProces
                     e.printStackTrace()
                 }
             }
+            exitProcessBlock()
 
             if (inputStream!!.read() != 0) {
                 continue

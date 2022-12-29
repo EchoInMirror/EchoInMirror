@@ -10,11 +10,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.application
 import cn.apisium.eim.window.MainWindow
-//import kotlinx.coroutines.delay
-//import kotlinx.coroutines.launch
-//import kotlinx.coroutines.runBlocking
-//import cn.apisium.eim.impl.processor.NativeAudioPluginImpl
-//import cn.apisium.eim.impl.processor.nativeAudioPluginManager
 import javax.swing.UIManager
 
 fun main() {
@@ -39,25 +34,6 @@ fun main() {
 //        }
 //    }
 
-
-//    if (IS_DEBUG) Thread {
-//        runBlocking {
-//            launch {
-//                delay(2000)
-//                var proQ: NativeAudioPluginImpl? = null
-//                var spire: NativeAudioPluginImpl? = null
-//                EchoInMirror.audioProcessorManager.nativeAudioPluginManager.descriptions.forEach {
-//                    if (it.name == "FabFilter Pro-Q 3") proQ = NativeAudioPluginImpl(it)
-//                    if (it.name == "Spire-1.5") spire = NativeAudioPluginImpl(it)
-//                }
-//                proQ!!.launch()
-//                spire!!.launch()
-//                subTrack2.preProcessorsChain.add(spire!!)
-//                track.postProcessorsChain.add(proQ!!)
-//
-//            }
-//        }
-//    }.start()
     EchoInMirror.windowManager.openMainWindow()
     application {
         MaterialTheme(if (EchoInMirror.windowManager.isDarkTheme) darkColorScheme() else lightColorScheme()) {
