@@ -18,9 +18,7 @@ package cn.apisium.eim.components.dragdrop
 
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.geometry.Offset
-import java.awt.datatransfer.DataFlavor
 import java.awt.dnd.*
-import java.io.File
 import java.awt.dnd.DropTarget as AwtDropTarget
 
 class PlatformDropTargetModifier(
@@ -46,7 +44,7 @@ private fun dropTargetListener(
     override fun dragEnter(dtde: DropTargetDragEvent?) {
         if (dtde == null) return
         dropTargetModifier.onDragStarted(
-            listOf(),
+            dtde,
             Offset(
                 dtde.location.x * density,
                 dtde.location.y * density
@@ -78,7 +76,7 @@ private fun dropTargetListener(
         dtde.acceptDrop(DnDConstants.ACTION_REFERENCE)
         dtde.dropComplete(
             dropTargetModifier.onDropped(
-                dtde.fileUris(),
+                dtde,
                 Offset(
                     dtde.location.x * density,
                     dtde.location.y * density
@@ -88,8 +86,3 @@ private fun dropTargetListener(
         dropTargetModifier.onDragEnded()
     }
 }
-
-private fun DropTargetDropEvent.fileUris(): List<Uri> = transferable
-    .getTransferData(DataFlavor.javaFileListFlavor)
-    .let { it as? List<*> ?: listOf<File>() }
-    .filterIsInstance<File>()

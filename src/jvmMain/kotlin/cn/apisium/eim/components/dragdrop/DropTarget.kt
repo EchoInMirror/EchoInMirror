@@ -21,16 +21,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.debugInspectorInfo
+import java.awt.dnd.DropTargetDragEvent
+import java.awt.dnd.DropTargetDropEvent
 import java.io.File
 
 internal typealias Uri = File
 
 interface DropTarget {
-    fun onDragStarted(uris: List<Uri>, position: Offset): Boolean
+    fun onDragStarted(uris: DropTargetDragEvent, position: Offset): Boolean
     fun onDragEntered()
     fun onDragMoved(position: Offset) {}
     fun onDragExited()
-    fun onDropped(uris: List<Uri>, position: Offset): Boolean
+    fun onDropped(uris: DropTargetDropEvent, position: Offset): Boolean
     fun onDragEnded()
 }
 
@@ -46,7 +48,7 @@ fun Modifier.dropTarget(
     onDragMoved: (position: Offset) -> Unit = {},
     onDragExited: () -> Unit = { },
     onDragEnded: () -> Unit = {},
-    onDropped: (uris: List<Uri>, position: Offset) -> Boolean,
+    onDropped: (uris: DropTargetDropEvent, position: Offset) -> Boolean,
 ): Modifier = composed(
     inspectorInfo = debugInspectorInfo {
         name = "dropTarget"
@@ -59,7 +61,7 @@ fun Modifier.dropTarget(
                     false -> DragAction.Reject
                     true -> DragAction.Accept(
                         object : DropTarget {
-                            override fun onDragStarted(uris: List<Uri>, position: Offset): Boolean = onDragStarted(
+                            override fun onDragStarted(uris: DropTargetDragEvent, position: Offset): Boolean = onDragStarted(
                                 uris,
                                 position
                             )
@@ -70,7 +72,7 @@ fun Modifier.dropTarget(
 
                             override fun onDragExited() = onDragExited()
 
-                            override fun onDropped(uris: List<Uri>, position: Offset): Boolean = onDropped(
+                            override fun onDropped(uris: DropTargetDropEvent, position: Offset): Boolean = onDropped(
                                 uris,
                                 position
                             )
