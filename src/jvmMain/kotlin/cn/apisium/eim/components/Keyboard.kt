@@ -24,6 +24,7 @@ import cn.apisium.eim.utils.onClick
 import cn.apisium.eim.utils.toOnSurfaceColor
 import cn.apisium.eim.utils.x
 import cn.apisium.eim.utils.y
+import cn.apisium.eim.window.panels.editor.noteHeight
 
 const val KEYBOARD_KEYS = 128
 val KEYBOARD_DEFAULT_WIDTH = 68.dp
@@ -57,13 +58,14 @@ fun Keyboard(
                     onNoteOff(i, it.y / keyWidth.toPx())
                 }
             Box(modifier2) {
+                if (noteHeight.value < 13) return@Box
                 Text(name + (i / 12), Modifier.align(Alignment.CenterEnd).padding(horizontal = 5.dp),
                     fontSize = 11.sp,
                     letterSpacing = (-0.3).sp,
                     lineHeight = 11.sp,
                     fontWeight = if (i % 12 == 0) FontWeight.ExtraBold else null,
                     color = if (isBlack) blackKeyTextColor else whiteKeyTextColor,
-                    fontStyle = if (isBlack) FontStyle.Italic else null,
+                    fontStyle = if (isBlack) FontStyle.Italic else null
                 )
             }
             if (i != 0) Divider(color = if (i % 12 == 0) MaterialTheme.colorScheme.outline

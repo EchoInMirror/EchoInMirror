@@ -22,7 +22,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.zIndex
@@ -34,13 +34,20 @@ import cn.apisium.eim.components.icons.DebugStepOver
 import cn.apisium.eim.utils.onClick
 import cn.apisium.eim.window.dialogs.openColorPicker
 import cn.apisium.eim.window.panels.editor.calcScroll
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 
 private val TRACK_ITEM_ICON_SIZE = Modifier.size(16.dp)
 
+var trackHeight by mutableStateOf(70.dp)
+val verticalScrollState = ScrollState(0)
+val horizontalScrollState = ScrollState(0)
+
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-private fun TrackItem(track: Track, height: Dp, index: Int, depth: Int = 0) {
-    Row(Modifier.height(height).padding(start = (depth * 8).dp).onPointerEvent(PointerEventType.Press) {
+private fun TrackItem(track: Track, index: Int, depth: Int = 0) {
+    Row(Modifier.height(trackHeight).padding(start = (depth * 8).dp).onPointerEvent(PointerEventType.Press) {
         EchoInMirror.selectedTrack = track
     }) {
         Box {
@@ -65,7 +72,7 @@ private fun TrackItem(track: Track, height: Dp, index: Int, depth: Int = 0) {
                     overflow = TextOverflow.Ellipsis,
                     maxLines = 1
                 )
-                SegmentedButtons {
+                if (trackHeight.value > 54) SegmentedButtons {
                     SegmentedButton({ track.isMute = !track.isMute }, track.isMute, false) {
                         Icon(if (track.isMute) Icons.Filled.VolumeOff else Icons.Filled.VolumeUp, null, TRACK_ITEM_ICON_SIZE)
                     }
@@ -78,35 +85,34 @@ private fun TrackItem(track: Track, height: Dp, index: Int, depth: Int = 0) {
                         Icon(DebugStepOver, null, TRACK_ITEM_ICON_SIZE)
                     }
                 }
-                VolumeSlider(track, Modifier.fillMaxWidth().offset((-4).dp), false)
+                if (trackHeight.value > 40) VolumeSlider(track, Modifier.fillMaxWidth().offset((-4).dp), false)
             }
         }
     }
     track.subTracks.forEachIndexed { i, it -> key(it.uuid) {
         Divider(Modifier.offset(8.dp * (depth + 1)))
-        TrackItem(it, height, i + 1, depth + 1)
+        TrackItem(it, i + 1, depth + 1)
     } }
 }
 
 var noteWidth = mutableStateOf(0.2.dp)
 
 @Composable
-private fun TrackContent(height: Dp = 70.dp, track: Track, modifier: Modifier = Modifier) {
-    Box(modifier.fillMaxWidth().height(height)) {
+private fun TrackContent(track: Track, modifier: Modifier = Modifier) {
+    Box(modifier.fillMaxWidth().height(trackHeight)) {
+        val height = (trackHeight / 128).coerceAtLeast(0.5.dp)
         track.notes.read()
         track.notes.forEach {
-            Box(Modifier.height(height / 128).width(noteWidth.value * it.duration)
-                .offset(x = noteWidth.value * it.time, y = height - height / 128 * it.note)
+            Box(Modifier.height(height).width(noteWidth.value * it.duration)
+                .offset(x = noteWidth.value * it.time, y = trackHeight - trackHeight / 128 * it.note)
                 .background(track.color))
         }
     }
     Divider()
-    track.subTracks.forEach { key(it.uuid) { TrackContent(height, it, modifier) } }
+    track.subTracks.forEach { key(it.uuid) { TrackContent(it, modifier) } }
 }
 
-val verticalScrollState = ScrollState(0)
-val horizontalScrollState = ScrollState(0)
-
+@OptIn(DelicateCoroutinesApi::class)
 @Suppress("DuplicatedCode")
 private suspend fun PointerInputScope.handleMouseEvent() {
     forEachGesture {
@@ -116,7 +122,20 @@ private suspend fun PointerInputScope.handleMouseEvent() {
                 event = awaitPointerEvent(PointerEventPass.Initial)
                 when (event.type) {
                     PointerEventType.Scroll -> {
-                        calcScroll(event, noteWidth, horizontalScrollState)
+                        calcScroll(event, noteWidth, horizontalScrollState) {
+                            val newValue = (trackHeight.value + (if (it.scrollDelta.y > 0) -2 else 2)).coerceIn(28F, 100F)
+                            println(newValue)
+                            if (newValue == trackHeight.value) return@calcScroll
+                            val y = it.position.x
+                            val oldY = (y + verticalScrollState.value) / trackHeight.toPx()
+                            trackHeight = newValue.dp
+                            GlobalScope.launch {
+                                val trackHeightPx = trackHeight.toPx()
+                                verticalScrollState.scrollBy(
+                                    (oldY - (y + verticalScrollState.value) / trackHeightPx) * trackHeightPx
+                                )
+                            }
+                        }
                         continue
                     }
                     else -> {}
@@ -141,7 +160,6 @@ private suspend fun PointerInputScope.handleMouseEvent() {
 @Composable
 fun Playlist() {
     Row {
-        val trackHeight = 70.dp
         Surface(Modifier.width(200.dp).fillMaxHeight().zIndex(5f), shadowElevation = 2.dp, tonalElevation = 2.dp) {
             Column {
                 Surface(shadowElevation = 2.dp, tonalElevation = 4.dp) {
@@ -158,7 +176,7 @@ fun Playlist() {
                     Divider()
                     EchoInMirror.bus.subTracks.forEachIndexed { i, it ->
                         key(it.uuid) {
-                            TrackItem(it, trackHeight, i + 1)
+                            TrackItem(it, i + 1)
                         }
                     }
                     Divider()
@@ -182,7 +200,7 @@ fun Playlist() {
                         .width(10000.dp)) {
                         Divider()
                         EchoInMirror.bus.subTracks.forEach {
-                            key(it.uuid) { TrackContent(trackHeight, it) }
+                            key(it.uuid) { TrackContent(it) }
                         }
                     }
                     PlayHead(noteWidth, horizontalScrollState, contentWidth)

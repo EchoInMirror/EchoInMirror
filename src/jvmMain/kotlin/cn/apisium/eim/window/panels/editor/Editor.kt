@@ -54,7 +54,7 @@ internal enum class EditAction {
 var selectedNotes by mutableStateOf(hashSetOf<NoteMessage>())
 val backingTracks = mutableStateSetOf<Track>()
 var startNoteIndex = 0
-val noteHeight by mutableStateOf(16.dp)
+var noteHeight by mutableStateOf(16.dp)
 var noteWidth = mutableStateOf(0.4.dp)
 val verticalScrollState = ScrollState(noteHeight.value.toInt() * 50)
 val horizontalScrollState = ScrollState(0).apply {
@@ -112,21 +112,24 @@ private fun stopAllNotes() {
 }
 
 @OptIn(DelicateCoroutinesApi::class)
-fun Density.calcScroll(event: PointerEvent, noteWidth: MutableState<Dp>, horizontalScrollState: ScrollState) {
+fun Density.calcScroll(event: PointerEvent, noteWidth: MutableState<Dp>, horizontalScrollState: ScrollState,
+                       onVerticalScroll: (PointerInputChange) -> Unit) {
     if (event.keyboardModifiers.isCtrlPressed) {
         val change = event.changes[0]
-        if (event.keyboardModifiers.isAltPressed) {
-            // TODO
-        } else {
+        if (event.keyboardModifiers.isAltPressed) onVerticalScroll(change)
+        else {
             val x = change.position.x
             val oldX = (x + horizontalScrollState.value) / noteWidth.value.toPx()
-            noteWidth.value = (noteWidth.value.value +
-                    (if (change.scrollDelta.y > 0) -0.05F else 0.05F)).coerceIn(0.06f, 3.2f).dp
-            GlobalScope.launch {
-                val noteWidthPx = noteWidth.value.toPx()
-                horizontalScrollState.scrollBy(
-                    (oldX - (x + horizontalScrollState.value) / noteWidthPx) * noteWidthPx
-                )
+            val newValue = (noteWidth.value.value +
+                    (if (change.scrollDelta.y > 0) -0.05F else 0.05F)).coerceIn(0.06f, 3.2f)
+            if (newValue != noteWidth.value.value) {
+                noteWidth.value = newValue.dp
+                GlobalScope.launch {
+                    val noteWidthPx = noteWidth.value.toPx()
+                    horizontalScrollState.scrollBy(
+                        (oldX - (x + horizontalScrollState.value) / noteWidthPx) * noteWidthPx
+                    )
+                }
             }
         }
         change.consume()
@@ -159,7 +162,19 @@ private suspend fun PointerInputScope.handleMouseEvent() {
                         continue
                     }
                     PointerEventType.Scroll -> {
-                        calcScroll(event, noteWidth, horizontalScrollState)
+                        calcScroll(event, noteWidth, horizontalScrollState) {
+                            val newValue = (noteHeight.value + (if (it.scrollDelta.y > 0) -1 else 1)).coerceIn(8F, 32F)
+                            if (newValue == noteHeight.value) return@calcScroll
+                            val y = it.position.x
+                            val oldY = (y + verticalScrollState.value) / noteHeight.toPx()
+                            noteHeight = newValue.dp
+                            GlobalScope.launch {
+                                val noteHeightPx = noteHeight.toPx()
+                                verticalScrollState.scrollBy(
+                                    (oldY - (y + verticalScrollState.value) / noteHeightPx) * noteHeightPx
+                                )
+                            }
+                        }
                         continue
                     }
                 }
