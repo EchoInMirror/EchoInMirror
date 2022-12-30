@@ -28,6 +28,7 @@ import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.actions.doNoteAmountAction
 import cn.apisium.eim.actions.doNoteMessageEditAction
 import cn.apisium.eim.api.Track
+import cn.apisium.eim.api.projectDisplayPPQ
 import cn.apisium.eim.api.window.Panel
 import cn.apisium.eim.api.window.PanelDirection
 import cn.apisium.eim.commands.*
@@ -40,8 +41,7 @@ import cn.apisium.eim.data.getEditUnit
 import cn.apisium.eim.data.midi.*
 import cn.apisium.eim.utils.*
 import cn.apisium.eim.window.panels.editor.EditAction.*
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.awt.Cursor
 import kotlin.math.absoluteValue
@@ -58,8 +58,7 @@ var noteHeight by mutableStateOf(16.dp)
 var noteWidth = mutableStateOf(0.4.dp)
 val verticalScrollState = ScrollState(noteHeight.value.toInt() * 50)
 val horizontalScrollState = ScrollState(0).apply {
-    @Suppress("INVISIBLE_SETTER")
-    maxValue = 10000
+    openMaxValue = (noteWidth.value * EchoInMirror.currentPosition.projectDisplayPPQ).value.toInt()
 }
 var playOnEdit by mutableStateOf(true)
 var defaultVelocity by mutableStateOf(70)
@@ -111,9 +110,8 @@ private fun stopAllNotes() {
     }
 }
 
-@OptIn(DelicateCoroutinesApi::class)
 fun Density.calcScroll(event: PointerEvent, noteWidth: MutableState<Dp>, horizontalScrollState: ScrollState,
-                       onVerticalScroll: (PointerInputChange) -> Unit) {
+                       coroutineScope: CoroutineScope, onVerticalScroll: (PointerInputChange) -> Unit) {
     if (event.keyboardModifiers.isCtrlPressed) {
         val change = event.changes[0]
         if (event.keyboardModifiers.isAltPressed) onVerticalScroll(change)
@@ -123,8 +121,9 @@ fun Density.calcScroll(event: PointerEvent, noteWidth: MutableState<Dp>, horizon
             val newValue = (noteWidth.value.value +
                     (if (change.scrollDelta.y > 0) -0.05F else 0.05F)).coerceIn(0.06f, 3.2f)
             if (newValue != noteWidth.value.value) {
+                horizontalScrollState.openMaxValue = (noteWidth.value * EchoInMirror.currentPosition.projectDisplayPPQ).toPx().toInt()
                 noteWidth.value = newValue.dp
-                GlobalScope.launch {
+                coroutineScope.launch {
                     val noteWidthPx = noteWidth.value.toPx()
                     horizontalScrollState.scrollBy(
                         (oldX - (x + horizontalScrollState.value) / noteWidthPx) * noteWidthPx
@@ -136,8 +135,8 @@ fun Density.calcScroll(event: PointerEvent, noteWidth: MutableState<Dp>, horizon
     }
 }
 
-@OptIn(DelicateCoroutinesApi::class)
-private suspend fun PointerInputScope.handleMouseEvent() {
+@Suppress("DuplicatedCode")
+private suspend fun PointerInputScope.handleMouseEvent(coroutineScope: CoroutineScope) {
     forEachGesture {
         awaitPointerEventScope {
             var event: PointerEvent
@@ -162,13 +161,13 @@ private suspend fun PointerInputScope.handleMouseEvent() {
                         continue
                     }
                     PointerEventType.Scroll -> {
-                        calcScroll(event, noteWidth, horizontalScrollState) {
+                        calcScroll(event, noteWidth, horizontalScrollState, coroutineScope) {
                             val newValue = (noteHeight.value + (if (it.scrollDelta.y > 0) -1 else 1)).coerceIn(8F, 32F)
                             if (newValue == noteHeight.value) return@calcScroll
                             val y = it.position.x
                             val oldY = (y + verticalScrollState.value) / noteHeight.toPx()
                             noteHeight = newValue.dp
-                            GlobalScope.launch {
+                            coroutineScope.launch {
                                 val noteHeightPx = noteHeight.toPx()
                                 verticalScrollState.scrollBy(
                                     (oldY - (y + verticalScrollState.value) / noteHeightPx) * noteHeightPx
@@ -304,10 +303,10 @@ private suspend fun PointerInputScope.handleMouseEvent() {
                     else -> { }
                 }
                 // detect out of frame then auto scroll
-                if (it.position.x < 0) GlobalScope.launch { horizontalScrollState.scrollBy(-1F) }
-                if (it.position.x > size.width - 5) GlobalScope.launch { horizontalScrollState.scrollBy(1F) }
-                if (it.position.y < 0) GlobalScope.launch { verticalScrollState.scrollBy(-1F) }
-                if (it.position.y > size.height) GlobalScope.launch { verticalScrollState.scrollBy(1F) }
+                if (it.position.x < 0) coroutineScope.launch { horizontalScrollState.scrollBy(-1F) }
+                if (it.position.x > size.width - 5) coroutineScope.launch { horizontalScrollState.scrollBy(1F) }
+                if (it.position.y < 0) coroutineScope.launch { verticalScrollState.scrollBy(-1F) }
+                if (it.position.y > size.height) coroutineScope.launch { verticalScrollState.scrollBy(1F) }
                 it.consume()
             }
             // calc selected notes
@@ -355,9 +354,10 @@ private suspend fun PointerInputScope.handleMouseEvent() {
 @Suppress("DuplicatedCode")
 @Composable
 private fun NotesEditorCanvas() {
+    val coroutineScope = rememberCoroutineScope()
     Box(Modifier.fillMaxSize().clipToBounds().background(MaterialTheme.colorScheme.background)
         .scrollable(verticalScrollState, Orientation.Vertical, reverseDirection = true)
-        .pointerInput(Unit) { handleMouseEvent() }
+        .pointerInput(Unit) { handleMouseEvent(coroutineScope) }
         .dropTarget({ _, _ -> true }) { a, pos ->
             println(a.firstOrNull()?.absolutePath)
             println(pos)
@@ -367,6 +367,11 @@ private fun NotesEditorCanvas() {
         val highlightNoteColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.05F)
         val outlineColor = MaterialTheme.colorScheme.surfaceVariant
         val primaryColor = MaterialTheme.colorScheme.primary
+        val displayPPQ = EchoInMirror.currentPosition.projectDisplayPPQ
+        val localDensity = LocalDensity.current
+        remember(displayPPQ, localDensity) {
+            with (localDensity) { horizontalScrollState.openMaxValue = (noteWidth.value * displayPPQ).toPx().toInt() }
+        }
         EditorGrid(noteWidth, horizontalScrollState)
         Spacer(Modifier.fillMaxSize().drawWithCache {
             val noteWidthPx = noteWidth.value.toPx()
@@ -561,8 +566,8 @@ object Editor: Panel {
                     Box {
                         Column(Modifier.fillMaxSize()) { editorContent() }
                         HorizontalScrollbar(
-                            modifier = Modifier.align(Alignment.TopStart).fillMaxWidth(),
-                            adapter = rememberScrollbarAdapter(horizontalScrollState)
+                            rememberScrollbarAdapter(horizontalScrollState),
+                            Modifier.align(Alignment.TopStart).fillMaxWidth()
                         )
                     }
                 }

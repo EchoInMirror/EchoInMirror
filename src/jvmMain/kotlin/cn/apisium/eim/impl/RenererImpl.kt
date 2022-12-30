@@ -3,6 +3,7 @@ package cn.apisium.eim.impl
 import cn.apisium.eim.api.CurrentPosition
 import cn.apisium.eim.api.Renderable
 import cn.apisium.eim.api.Renderer
+import cn.apisium.eim.api.convertPPQToSamples
 import cn.apisium.eim.data.CachedBufferInputStream
 import cn.apisium.eim.utils.getSampleBits
 import kotlinx.coroutines.Dispatchers
@@ -31,12 +32,11 @@ class RenderPosition(override var ppq: Int, override var sampleRate: Int, range:
     override var isRecording = false
     override val isRealtime = false
     override var timeInPPQ = range.first
-    override var timeInSamples = this.convertPPQToSamples(timeInPPQ)
+    override var timeInSamples = convertPPQToSamples(timeInPPQ)
 
     override val ppqCountOfBlock: Int
         get() = (bufferSize / sampleRate / 60.0 * bpm * ppq).toInt()
 
-    override fun convertPPQToSamples(ppq: Int): Long = (ppq.toDouble() / this.ppq / bpm * 60.0 * sampleRate).toLong()
     override fun setCurrentTime(timeInPPQ: Int) {
         throw UnsupportedOperationException()
     }

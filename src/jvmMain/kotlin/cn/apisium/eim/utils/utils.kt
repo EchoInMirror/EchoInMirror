@@ -1,5 +1,6 @@
 package cn.apisium.eim.utils
 
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.clickable
 import androidx.compose.material3.LocalAbsoluteTonalElevation
 import androidx.compose.material3.MaterialTheme
@@ -155,3 +156,8 @@ inline operator fun String.rem(other: Any?) = format(other)
 fun Modifier.onClick(enabled: Boolean = true, onClickLabel: String? = null,
                        role: Role? = null, onClick: () -> Unit = { }) =
     (if (enabled) pointerHoverIcon(PointerIconDefaults.Hand) else this).clickable(enabled, onClickLabel, role, onClick)
+
+var ScrollState.openMaxValue
+    get() = maxValue
+    @Suppress("INVISIBLE_SETTER")
+    set(value) { maxValue = value }

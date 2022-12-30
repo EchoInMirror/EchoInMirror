@@ -22,5 +22,8 @@ interface CurrentPosition {
     fun update(timeInSamples: Long)
     fun setPPQPosition(ppqPosition: Double)
     fun setCurrentTime(timeInPPQ: Int)
-    fun convertPPQToSamples(ppq: Int): Long
 }
+
+fun CurrentPosition.convertPPQToSamples(ppq: Int) = (ppq.toDouble() / this.ppq / bpm * 60.0 * sampleRate).toLong()
+val CurrentPosition.projectDisplayPPQ get() = projectRange.last.coerceAtLeast(timeSigDenominator * ppq * 64) +
+        timeSigDenominator * ppq * 16

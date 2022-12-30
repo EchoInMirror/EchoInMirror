@@ -66,7 +66,7 @@ fun Timeline(modifier: Modifier = Modifier, noteWidth: MutableState<Dp>, scrollS
                     var event: PointerEvent
                     do {
                         event = awaitPointerEvent(PointerEventPass.Main)
-                        when (event.type) {
+                        if (drawRange) when (event.type) {
                             PointerEventType.Enter, PointerEventType.Move -> {
                                 val x = event.x + scrollState.value
                                 val range = EchoInMirror.currentPosition.projectRange
@@ -76,7 +76,7 @@ fun Timeline(modifier: Modifier = Modifier, noteWidth: MutableState<Dp>, scrollS
                             }
                             PointerEventType.Exit -> isInRange = false
                         }
-                        if (event.buttons.isPrimaryPressed || event.buttons.isSecondaryPressed) break
+                        if (event.buttons.isPrimaryPressed || (drawRange && event.buttons.isSecondaryPressed)) break
                     } while (!event.changes.fastAll(PointerInputChange::changedToDownIgnoreConsumed))
                     val down = event.changes[0]
                     var drag: PointerInputChange?
@@ -85,7 +85,7 @@ fun Timeline(modifier: Modifier = Modifier, noteWidth: MutableState<Dp>, scrollS
                         drag = awaitPointerSlopOrCancellation(down.id, down.type, triggerOnMainAxisSlop = false)
                             { change, _ -> change.consume() }
                     } while (drag != null && !drag.isConsumed)
-                    if (event.buttons.isSecondaryPressed) isInRange = true
+                    if (drawRange && event.buttons.isSecondaryPressed) isInRange = true
                     calcDrag(isInRange, down.position.x + scrollState.value - offsetX.toPx(), noteWidthPx)
                     if (drag != null) {
                         !drag(drag.id) {
@@ -106,6 +106,7 @@ fun Timeline(modifier: Modifier = Modifier, noteWidth: MutableState<Dp>, scrollS
             val barWidth = noteWidthPx * EchoInMirror.currentPosition.ppq * EchoInMirror.currentPosition.timeSigNumerator
             val startBar = (scrollState.value / barWidth).toInt()
             val endBar = ((scrollState.value + size.width - offsetXValue) / barWidth).toInt()
+            scrollState.maxValue // mark as read state
 
             for (i in startBar..endBar) {
                 val x = i * barWidth - scrollState.value

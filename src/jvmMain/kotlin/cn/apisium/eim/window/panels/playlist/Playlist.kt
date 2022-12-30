@@ -28,21 +28,25 @@ import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.zIndex
 import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.api.Track
+import cn.apisium.eim.api.projectDisplayPPQ
 import cn.apisium.eim.components.*
 import cn.apisium.eim.components.icons.Crown
 import cn.apisium.eim.components.icons.DebugStepOver
 import cn.apisium.eim.utils.onClick
+import cn.apisium.eim.utils.openMaxValue
 import cn.apisium.eim.window.dialogs.openColorPicker
 import cn.apisium.eim.window.panels.editor.calcScroll
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 private val TRACK_ITEM_ICON_SIZE = Modifier.size(16.dp)
 
+var noteWidth = mutableStateOf(0.2.dp)
 var trackHeight by mutableStateOf(70.dp)
 val verticalScrollState = ScrollState(0)
-val horizontalScrollState = ScrollState(0)
+val horizontalScrollState = ScrollState(0).apply {
+    openMaxValue = (noteWidth.value * EchoInMirror.currentPosition.projectDisplayPPQ).value.toInt()
+}
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -95,8 +99,6 @@ private fun TrackItem(track: Track, index: Int, depth: Int = 0) {
     } }
 }
 
-var noteWidth = mutableStateOf(0.2.dp)
-
 @Composable
 private fun TrackContent(track: Track, modifier: Modifier = Modifier) {
     Box(modifier.fillMaxWidth().height(trackHeight)) {
@@ -112,9 +114,8 @@ private fun TrackContent(track: Track, modifier: Modifier = Modifier) {
     track.subTracks.forEach { key(it.uuid) { TrackContent(it, modifier) } }
 }
 
-@OptIn(DelicateCoroutinesApi::class)
 @Suppress("DuplicatedCode")
-private suspend fun PointerInputScope.handleMouseEvent() {
+private suspend fun PointerInputScope.handleMouseEvent(coroutineScope: CoroutineScope) {
     forEachGesture {
         awaitPointerEventScope {
             var event: PointerEvent
@@ -122,14 +123,13 @@ private suspend fun PointerInputScope.handleMouseEvent() {
                 event = awaitPointerEvent(PointerEventPass.Initial)
                 when (event.type) {
                     PointerEventType.Scroll -> {
-                        calcScroll(event, noteWidth, horizontalScrollState) {
+                        calcScroll(event, noteWidth, horizontalScrollState, coroutineScope) {
                             val newValue = (trackHeight.value + (if (it.scrollDelta.y > 0) -2 else 2)).coerceIn(28F, 100F)
-                            println(newValue)
                             if (newValue == trackHeight.value) return@calcScroll
                             val y = it.position.x
                             val oldY = (y + verticalScrollState.value) / trackHeight.toPx()
                             trackHeight = newValue.dp
-                            GlobalScope.launch {
+                            coroutineScope.launch {
                                 val trackHeightPx = trackHeight.toPx()
                                 verticalScrollState.scrollBy(
                                     (oldY - (y + verticalScrollState.value) / trackHeightPx) * trackHeightPx
@@ -188,16 +188,21 @@ fun Playlist() {
                 var contentWidth by remember { mutableStateOf(0.dp) }
                 var cursorOffsetY by remember { mutableStateOf(0.dp) }
                 val localDensity = LocalDensity.current
+                val coroutineScope = rememberCoroutineScope()
                 Timeline(Modifier.zIndex(3f), noteWidth, horizontalScrollState, true)
                 Box(Modifier.weight(1f).onGloballyPositioned {
                     with(localDensity) {
                         contentWidth = it.size.width.toDp()
                         cursorOffsetY = it.size.height.toDp()
                     }
-                }.pointerInput(Unit) { handleMouseEvent() }) {
+                }.pointerInput(Unit) { handleMouseEvent(coroutineScope) }) {
                     EditorGrid(noteWidth, horizontalScrollState)
+                    val width = noteWidth.value * EchoInMirror.currentPosition.projectDisplayPPQ
+                    remember(width, localDensity) {
+                        with (localDensity) { horizontalScrollState.openMaxValue = width.toPx().toInt() }
+                    }
                     Column(Modifier.horizontalScroll(horizontalScrollState).verticalScroll(verticalScrollState)
-                        .width(10000.dp)) {
+                        .width(width)) {
                         Divider()
                         EchoInMirror.bus.subTracks.forEach {
                             key(it.uuid) { TrackContent(it) }

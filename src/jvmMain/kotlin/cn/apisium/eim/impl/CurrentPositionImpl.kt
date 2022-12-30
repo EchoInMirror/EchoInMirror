@@ -58,6 +58,4 @@ class CurrentPositionImpl: CurrentPosition {
         timeInSamples = (timeInSeconds * sampleRate).toLong()
         EchoInMirror.bus.onSuddenChange()
     }
-
-    override fun convertPPQToSamples(ppq: Int) = (ppq.toDouble() / this.ppq / bpm * 60.0 * sampleRate).toLong()
 }

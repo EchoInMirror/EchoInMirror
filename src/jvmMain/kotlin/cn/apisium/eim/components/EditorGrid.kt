@@ -18,7 +18,8 @@ fun EditorGrid(
     topPadding: Float? = null,
     modifier: Modifier = Modifier.fillMaxSize()
 ) {
-    val outlineColor = MaterialTheme.colorScheme.surfaceVariant
+    val beatsOutlineColor = MaterialTheme.colorScheme.surfaceVariant
+    val stepsOutlineColor = beatsOutlineColor.copy(0.5F)
     val barsOutlineColor = MaterialTheme.colorScheme.outlineVariant
     val timeSigDenominator = EchoInMirror.currentPosition.timeSigDenominator
     val timeSigNumerator = EchoInMirror.currentPosition.timeSigNumerator
@@ -28,11 +29,19 @@ fun EditorGrid(
         val horizontalScrollValue = horizontalScrollState.value
         val beatsWidth = noteWidthPx * ppq
         val drawBeats = noteWidthPx > 0.1F
-        val horizontalDrawWidth = if (drawBeats) beatsWidth else beatsWidth * timeSigNumerator
-        val highlightWidth = if (drawBeats) timeSigDenominator else timeSigDenominator * timeSigNumerator
-        for (i in (horizontalScrollValue / horizontalDrawWidth).toInt()..((horizontalScrollValue + size.width) / horizontalDrawWidth).toInt()) {
+        val drawSteps = noteWidthPx > 0.4F
+        var horizontalDrawWidth = if (drawBeats) beatsWidth else beatsWidth * timeSigNumerator
+        var highlightBarsWidth = if (drawBeats) timeSigDenominator else timeSigDenominator * timeSigNumerator
+        val highlightStepsWidth = if (drawSteps) timeSigNumerator else 1
+        if (drawSteps) {
+            horizontalDrawWidth /= timeSigNumerator
+            highlightBarsWidth *= timeSigNumerator
+        }
+        for (i in (horizontalScrollValue / horizontalDrawWidth).toInt()..
+                ((horizontalScrollValue + size.width) / horizontalDrawWidth).toInt()) {
             val x = i * horizontalDrawWidth - horizontalScrollState.value
-            drawLine(if (i % highlightWidth == 0) barsOutlineColor else outlineColor, Offset(x, topPadding ?: 0F),
+            drawLine(if (i % highlightBarsWidth == 0) barsOutlineColor else
+                if (i % highlightStepsWidth == 0) beatsOutlineColor else stepsOutlineColor, Offset(x, topPadding ?: 0F),
                 Offset(x, size.height), 1F)
         }
     }
