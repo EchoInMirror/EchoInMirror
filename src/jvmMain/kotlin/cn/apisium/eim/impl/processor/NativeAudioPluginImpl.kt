@@ -53,12 +53,20 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
     val scanningPlugins = mutableStateMapOf<String, Process>()
 
     init {
+        var read = false
         if (NATIVE_AUDIO_PLUGIN_CONFIG.toFile().exists()) {
-            val data = OBJECT_MAPPER.readValue<NativeAudioPluginFactoryData>(NATIVE_AUDIO_PLUGIN_CONFIG.toFile())
-            descriptions.addAll(data.descriptions)
-            scanPaths.addAll(data.scanPaths)
-            skipList.addAll(data.skipList)
-        } else {
+            try {
+                val data = OBJECT_MAPPER.readValue<NativeAudioPluginFactoryData>(NATIVE_AUDIO_PLUGIN_CONFIG.toFile())
+                descriptions.addAll(data.descriptions)
+                scanPaths.addAll(data.scanPaths)
+                skipList.addAll(data.skipList)
+                read = true
+            } catch (e: Throwable) {
+                e.printStackTrace()
+                Files.delete(NATIVE_AUDIO_PLUGIN_CONFIG)
+            }
+        }
+        if (!read) {
             if (SystemUtils.IS_OS_WINDOWS) {
                 scanPaths.add("C:\\Program Files\\Common Files\\VST3")
                 scanPaths.add("C:\\Program Files\\Steinberg\\VSTPlugins")
