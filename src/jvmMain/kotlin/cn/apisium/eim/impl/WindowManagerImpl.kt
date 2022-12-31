@@ -16,13 +16,16 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.unit.Constraints
-import cn.apisium.eim.EchoInMirror
-import cn.apisium.eim.IS_DEBUG
-import cn.apisium.eim.api.Track
+import cn.apisium.eim.*
+import cn.apisium.eim.api.DefaultProjectInformation
+import cn.apisium.eim.api.processor.Track
 import cn.apisium.eim.api.window.Panel
 import cn.apisium.eim.api.window.WindowManager
 import cn.apisium.eim.data.midi.getMidiEvents
 import cn.apisium.eim.data.midi.getNoteMessages
+import cn.apisium.eim.impl.processor.BusImpl
+import cn.apisium.eim.impl.processor.TrackImpl
+import cn.apisium.eim.impl.processor.players.NativeAudioPlayer
 import cn.apisium.eim.processor.synthesizer.KarplusStrongSynthesizer
 import cn.apisium.eim.window.panels.editor.Editor
 import cn.apisium.eim.window.panels.Mixer
@@ -32,7 +35,9 @@ import java.lang.ref.WeakReference
 import cn.apisium.eim.window.panels.UndoList
 import cn.apisium.eim.window.panels.editor.backingTracks
 import java.io.File
+import java.nio.file.Path
 import javax.sound.midi.MidiSystem
+import kotlin.io.path.absolutePathString
 
 private data class FloatingDialog(val onClose: ((Any) -> Unit)?, val position: Offset?,
     val hasOverlay: Boolean, val content: @Composable () -> Unit) {
@@ -122,8 +127,23 @@ class WindowManagerImpl: WindowManager {
         backingTracks.remove(track)
     }
 
-    override fun openMainWindow() {
+    override fun closeMainWindow() {
+        isMainWindowOpened = false
+        mainWindow.get()?.dispose()
+        EchoInMirror.player?.close()
+        EchoInMirror.bus?.close()
+        EchoInMirror.player = null
+        EchoInMirror.bus = null
+    }
+
+    override fun openProject(path: Path) {
         if (isMainWindowOpened) return
+
+        val absolutePath = path.absolutePathString()
+        recentProjects.remove(absolutePath)
+        recentProjects.add(0, absolutePath)
+        saveRecentProjects()
+
         val track = TrackImpl("Track 1")
         val subTrack1 = TrackImpl("SubTrack 1")
         val subTrack2 = TrackImpl("SubTrack 2")
@@ -137,9 +157,13 @@ class WindowManagerImpl: WindowManager {
 
         track.subTracks.add(subTrack1)
         track.subTracks.add(subTrack2)
-        EchoInMirror.bus.subTracks.add(track)
-        EchoInMirror.bus.prepareToPlay(EchoInMirror.currentPosition.sampleRate, EchoInMirror.currentPosition.bufferSize)
-        EchoInMirror.player.open(EchoInMirror.currentPosition.sampleRate, EchoInMirror.currentPosition.bufferSize, 2)
+        val bus = BusImpl(DefaultProjectInformation(path))
+        EchoInMirror.bus = bus
+        bus.subTracks.add(track)
+        bus.prepareToPlay(EchoInMirror.currentPosition.sampleRate, EchoInMirror.currentPosition.bufferSize)
+        val player = NativeAudioPlayer(EchoInMirror.currentPosition, bus, Configuration.nativeHostPath)
+        player.open(EchoInMirror.currentPosition.sampleRate, EchoInMirror.currentPosition.bufferSize, 2)
+        EchoInMirror.player = player
 
 //        if (IS_DEBUG) Thread {
 //            runBlocking {

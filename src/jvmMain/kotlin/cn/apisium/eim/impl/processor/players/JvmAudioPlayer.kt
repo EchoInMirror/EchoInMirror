@@ -10,7 +10,7 @@ import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioSystem
 import javax.sound.sampled.SourceDataLine
 
-class JvmAudioPlayer(currentPosition: CurrentPosition, processor: AudioProcessor?) :
+class JvmAudioPlayer(currentPosition: CurrentPosition, processor: AudioProcessor) :
     AbstractAudioPlayer(currentPosition, processor), Runnable {
     private var thread: Thread? = null
     private var sdl: SourceDataLine? = null
@@ -40,7 +40,7 @@ class JvmAudioPlayer(currentPosition: CurrentPosition, processor: AudioProcessor
         sdl!!.open(af, outputBuffer.size)
         sdl!!.start()
 
-        if (processor != null) processor!!.prepareToPlay(sampleRate, bufferSize)
+        processor.prepareToPlay(sampleRate, bufferSize)
 
         thread = Thread(this)
         thread!!.start()
@@ -61,7 +61,7 @@ class JvmAudioPlayer(currentPosition: CurrentPosition, processor: AudioProcessor
     override fun run() {
         val sampleBits = getSampleBits(bits)
         while (thread?.isAlive == true) {
-            if (sdl == null || processor == null) {
+            if (sdl == null) {
                 Thread.sleep(10)
                 continue
             }
@@ -71,7 +71,7 @@ class JvmAudioPlayer(currentPosition: CurrentPosition, processor: AudioProcessor
 
             try {
                 runBlocking {
-                    processor?.processBlock(buffers, currentPosition, ArrayList(0))
+                    processor.processBlock(buffers, currentPosition, ArrayList(0))
                 }
             } catch (ignored: InterruptedException) { } catch (e: Exception) {
                 e.printStackTrace()

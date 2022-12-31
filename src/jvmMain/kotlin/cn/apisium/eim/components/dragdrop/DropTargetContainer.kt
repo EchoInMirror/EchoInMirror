@@ -27,6 +27,8 @@ import androidx.compose.ui.platform.InspectorValueInfo
 import androidx.compose.ui.platform.debugInspectorInfo
 import androidx.compose.ui.util.fastFirstOrNull
 import androidx.compose.ui.util.fastForEach
+import java.awt.dnd.DropTargetDragEvent
+import java.awt.dnd.DropTargetDropEvent
 
 internal val ModifierLocalDropTargetParent = modifierLocalOf<DropTargetParent?> { null }
 
@@ -52,7 +54,7 @@ internal sealed class DragAction {
 }
 
 internal class DropTargetContainer(
-    private val onDragStarted: (uris: List<Uri>, Offset) -> DragAction
+    private val onDragStarted: (uris: DropTargetDragEvent, Offset) -> DragAction
 ) : Modifier.Element,
     ModifierLocalConsumer,
     ModifierLocalProvider<DropTargetParent?>,
@@ -128,7 +130,7 @@ internal class DropTargetContainer(
         return position.x in x1..x2 && position.y in y1..y2
     }
 
-    override fun onDragStarted(uris: List<Uri>, position: Offset): Boolean {
+    override fun onDragStarted(uris: DropTargetDragEvent, position: Offset): Boolean {
         coordinates ?: return false
 
         check(currentTarget == null)
@@ -198,7 +200,7 @@ internal class DropTargetContainer(
         currentTarget?.onDragExited()
     }
 
-    override fun onDropped(uris: List<Uri>, position: Offset): Boolean =
+    override fun onDropped(uris: DropTargetDropEvent, position: Offset): Boolean =
         when (val currentActiveChild = activeChild) {
             null -> currentTarget?.onDropped(
                 uris = uris,

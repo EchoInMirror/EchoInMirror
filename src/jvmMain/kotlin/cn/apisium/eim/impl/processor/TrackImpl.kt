@@ -1,21 +1,28 @@
-package cn.apisium.eim.impl
+package cn.apisium.eim.impl.processor
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import cn.apisium.eim.EchoInMirror
-import cn.apisium.eim.api.*
-import cn.apisium.eim.api.processor.AbstractAudioProcessor
-import cn.apisium.eim.api.processor.AudioProcessor
-import cn.apisium.eim.api.processor.LevelMeterImpl
+import cn.apisium.eim.api.CurrentPosition
+import cn.apisium.eim.api.ProjectInformation
+import cn.apisium.eim.api.convertPPQToSamples
+import cn.apisium.eim.api.processor.*
 import cn.apisium.eim.api.processor.dsp.calcPanLeftChannel
 import cn.apisium.eim.api.processor.dsp.calcPanRightChannel
 import cn.apisium.eim.data.midi.*
 import cn.apisium.eim.utils.randomColor
-import kotlinx.coroutines.*
+import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
+import java.nio.file.Files
+import java.nio.file.Paths
 import java.util.*
-import kotlin.collections.ArrayList
+import kotlin.io.path.pathString
 
 open class TrackImpl(trackName: String) : Track, AbstractAudioProcessor() {
     override var name by mutableStateOf(trackName)
@@ -23,11 +30,16 @@ open class TrackImpl(trackName: String) : Track, AbstractAudioProcessor() {
     override var pan by mutableStateOf(0F)
     override var volume by mutableStateOf(1F)
 
+    @JsonIgnore
     override val levelMeter = LevelMeterImpl()
+    @JsonIgnore
     override val notes = NoteMessageListImpl()
 
+    @JsonIgnore
     override val preProcessorsChain = mutableStateListOf<AudioProcessor>()
+    @JsonIgnore
     override val postProcessorsChain = mutableStateListOf<AudioProcessor>()
+    @JsonIgnore
     override val subTracks = mutableStateListOf<Track>()
     private val pendingMidiBuffer = Collections.synchronizedList(ArrayList<Int>())
     private var currentPlayedIndex = 0
@@ -204,10 +216,24 @@ open class TrackImpl(trackName: String) : Track, AbstractAudioProcessor() {
     override fun onRenderEnd() {
         isRendering = false
     }
+
+    override suspend fun save(path: String) {
+        withContext(Dispatchers.IO) {
+            val dir = Paths.get(path)
+            if (!Files.exists(dir)) Files.createDirectory(dir)
+            val trackFile = dir.resolve("track.json").toFile()
+            jacksonObjectMapper().writerWithDefaultPrettyPrinter().writeValue(trackFile, this@TrackImpl)
+        }
+    }
 }
 
-class BusImpl : TrackImpl("Bus"), Bus {
+class BusImpl(override val project: ProjectInformation) : TrackImpl("Bus"), Bus {
     override var channelType by mutableStateOf(ChannelType.STEREO)
+    override suspend fun save() {
+        project.save()
+        save(project.root.pathString)
+    }
+
     override suspend fun processBlock(
         buffers: Array<FloatArray>,
         position: CurrentPosition,

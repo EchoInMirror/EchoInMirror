@@ -38,8 +38,7 @@ import java.lang.ref.WeakReference
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun ApplicationScope.MainWindow() {
-    if (!EchoInMirror.windowManager.isMainWindowOpened) return
-    Window(onCloseRequest = ::exitApplication, icon = Logo, title = "Echo In Mirror", onKeyEvent = {
+    Window(::exitApplication, icon = Logo, title = "Echo In Mirror", onKeyEvent = {
         if (it.type != KeyEventType.KeyUp) return@Window false
         var keys = it.key.keyCode.toString()
         if (it.isCtrlPressed) keys = "${Key.CtrlLeft.keyCode} $keys"

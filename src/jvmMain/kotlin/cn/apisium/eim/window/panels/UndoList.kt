@@ -19,7 +19,7 @@ import androidx.compose.ui.unit.dp
 import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.api.window.Panel
 import cn.apisium.eim.api.window.PanelDirection
-import cn.apisium.eim.utils.onClick
+import cn.apisium.eim.utils.clickableWithIcon
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -40,7 +40,7 @@ object UndoList: Panel {
     override fun content() {
         Column(Modifier.padding(vertical = 4.dp)) {
             Row(
-                Modifier.fillMaxWidth().onClick {
+                Modifier.fillMaxWidth().clickableWithIcon {
                     GlobalScope.launch { EchoInMirror.undoManager.reset() }
                 }) {
                 Icon(Icons.Outlined.RestartAlt, "redo", ICON_SIZE)
@@ -52,7 +52,7 @@ object UndoList: Panel {
                 val fontStyle = if (index < cursor) FontStyle.Normal else FontStyle.Italic
                 if (index >= cursor) color = color.copy(0.38F)
                 Row(
-                    Modifier.padding(horizontal = 4.dp).fillMaxWidth().onClick {
+                    Modifier.padding(horizontal = 4.dp).fillMaxWidth().clickableWithIcon {
                         val flag = index < cursor
                         GlobalScope.launch {
                             if (flag) EchoInMirror.undoManager.undo(cursor - index - 1)

@@ -24,7 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import cn.apisium.eim.EchoInMirror
-import cn.apisium.eim.api.Track
+import cn.apisium.eim.api.processor.Track
 import cn.apisium.eim.api.window.Panel
 import cn.apisium.eim.api.window.PanelDirection
 import cn.apisium.eim.components.*
@@ -58,7 +58,7 @@ private fun MixerTrack(track: Track, index: String, height: MutableState<Dp>?, m
             )
         else if (drawSplitter) curModifier = curModifier.border(start = Border(1.dp, MaterialTheme.colorScheme.outlineVariant))
         Column(curModifier) {
-            Row(Modifier.background(track.color).onClick { if (track != EchoInMirror.bus) EchoInMirror.selectedTrack = track }
+            Row(Modifier.background(track.color).clickableWithIcon { if (track != EchoInMirror.bus) EchoInMirror.selectedTrack = track }
                 .padding(vertical = 2.5.dp).zIndex(2f)) {
                 val color = track.color.toOnSurfaceColor()
                 Text(
@@ -162,10 +162,11 @@ object Mixer: Panel {
     override fun content() {
         Scrollable {
             Row(Modifier.padding(14.dp)) {
-                MixerTrack(EchoInMirror.bus, "0", null, Modifier, isRound = true,
+                val bus = EchoInMirror.bus!!
+                MixerTrack(bus, "0", null, Modifier, isRound = true,
                     renderChildren = false, drawSplitter = false)
                 val localDensity = LocalDensity.current
-                EchoInMirror.bus.subTracks.forEachIndexed { i, it ->
+                bus.subTracks.forEachIndexed { i, it ->
                     key(it) {
                         Gap(8)
                         val state = remember { mutableStateOf(0.dp) }

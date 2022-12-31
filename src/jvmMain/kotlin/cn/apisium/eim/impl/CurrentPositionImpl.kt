@@ -31,7 +31,7 @@ class CurrentPositionImpl: CurrentPosition {
         set(value) {
             val flag = _isPlaying != value
             _isPlaying = value
-            if (flag) EchoInMirror.bus.onSuddenChange()
+            if (flag) EchoInMirror.bus?.onSuddenChange()
         }
 
     override fun update(timeInSamples: Long) {
@@ -48,7 +48,7 @@ class CurrentPositionImpl: CurrentPosition {
         timeInSamples = (timeInSeconds * sampleRate).toLong()
         timeInPPQ = (this.ppqPosition * ppq * timeSigNumerator).toInt()
         if (timeInPPQ !in projectRange) setCurrentTime(projectRange.first)
-        EchoInMirror.bus.onSuddenChange()
+        EchoInMirror.bus?.onSuddenChange()
     }
 
     override fun setCurrentTime(timeInPPQ: Int) {
@@ -56,6 +56,6 @@ class CurrentPositionImpl: CurrentPosition {
         ppqPosition = this.timeInPPQ.toDouble() / ppq
         timeInSeconds = ppqPosition / bpm * 60.0
         timeInSamples = (timeInSeconds * sampleRate).toLong()
-        EchoInMirror.bus.onSuddenChange()
+        EchoInMirror.bus?.onSuddenChange()
     }
 }

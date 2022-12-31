@@ -16,7 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.actions.doNoteVelocityAction
-import cn.apisium.eim.api.Track
+import cn.apisium.eim.api.processor.Track
 import cn.apisium.eim.components.*
 import cn.apisium.eim.components.silder.Slider
 import cn.apisium.eim.utils.toOnSurfaceColor
@@ -54,7 +54,7 @@ internal fun EditorControls() {
             tonalElevation = 5.dp, shadowElevation = 5.dp) {
             val stateVertical = rememberScrollState(0)
             Column(Modifier.verticalScroll(stateVertical).padding(vertical = 4.dp)) {
-                EchoInMirror.bus.subTracks.forEachIndexed { index, it -> TrackItem(it, (index + 1).toString()) }
+                EchoInMirror.bus!!.subTracks.forEachIndexed { index, it -> TrackItem(it, (index + 1).toString()) }
             }
         }
     }) {
@@ -64,7 +64,7 @@ internal fun EditorControls() {
                 val textColor by animateColorAsState(color.toOnSurfaceColor(), tween(80))
                 Text(
                     remember(track) {
-                        if (track == null) null else dfsTrackIndex(EchoInMirror.bus, track, "")?.trimStart('-')
+                        if (track == null) null else dfsTrackIndex(EchoInMirror.bus!!, track, "")?.trimStart('-')
                     } ?: "?", Modifier.padding(horizontal = 8.dp),
                     color = textColor,
                     fontWeight = FontWeight.Bold,

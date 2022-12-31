@@ -52,6 +52,7 @@ kotlin {
                 implementation("com.github.ajalt.colormath:colormath:3.2.1") {
                     exclude("org.jetbrains.kotlin")
                 }
+                implementation("org.ocpsoft.prettytime:prettytime:5.0.6.Final")
             }
         }
 

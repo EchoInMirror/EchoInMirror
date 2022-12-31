@@ -23,9 +23,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.debugInspectorInfo
 import java.awt.dnd.DropTargetDragEvent
 import java.awt.dnd.DropTargetDropEvent
-import java.io.File
-
-internal typealias Uri = File
 
 interface DropTarget {
     fun onDragStarted(uris: DropTargetDragEvent, position: Offset): Boolean
@@ -38,12 +35,10 @@ interface DropTarget {
 
 interface DropTargetModifier : DropTarget, Modifier.Element
 
-internal fun dropTargetModifier(): DropTargetModifier = DropTargetContainer(
-    onDragStarted = { _, _ -> DragAction.Reject }
-)
+internal fun dropTargetModifier(): DropTargetModifier = DropTargetContainer { _, _ -> DragAction.Reject }
 
 fun Modifier.dropTarget(
-    onDragStarted: (uris: List<Uri>, Offset) -> Boolean,
+    onDragStarted: (uris: DropTargetDragEvent, Offset) -> Boolean,
     onDragEntered: () -> Unit = { },
     onDragMoved: (position: Offset) -> Unit = {},
     onDragExited: () -> Unit = { },

@@ -1,7 +1,7 @@
 package cn.apisium.eim.components
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -14,6 +14,7 @@ import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import cn.apisium.eim.EchoInMirror
 
@@ -38,4 +39,21 @@ fun FloatingDialog(dialogContent: @Composable (size: Size, closeDialog: () -> Un
             ) { dialogContent(size[0], closeDialog) }
         }
     ) { content() }
+}
+
+@Composable
+fun Dialog(onOk: (() -> Unit)? = null, onCancel: (() -> Unit)? = null,
+           modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+    Surface(modifier.widthIn(min = 250.dp).width(IntrinsicSize.Max),
+        shape = MaterialTheme.shapes.extraSmall, tonalElevation = 5.dp, shadowElevation = 5.dp) {
+        val flag = onOk != null || onCancel != null
+        Column(Modifier.padding(16.dp, 16.dp, 16.dp, if (flag) 0.dp else 16.dp)) {
+            content()
+            if (flag) Row {
+                Filled()
+                if (onCancel != null) TextButton(onCancel) { Text("取消") }
+                if (onOk != null) TextButton(onOk) { Text("确认") }
+            }
+        }
+    }
 }

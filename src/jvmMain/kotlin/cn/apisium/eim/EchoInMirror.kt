@@ -5,19 +5,20 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import cn.apisium.eim.api.*
 import cn.apisium.eim.api.processor.AudioProcessorManager
+import cn.apisium.eim.api.processor.Bus
+import cn.apisium.eim.api.processor.Track
 import cn.apisium.eim.api.window.WindowManager
 import cn.apisium.eim.data.defaultQuantification
 import cn.apisium.eim.impl.*
 import cn.apisium.eim.impl.processor.AudioProcessorManagerImpl
-import cn.apisium.eim.impl.processor.players.NativeAudioPlayer
 import cn.apisium.eim.plugin.EIMPluginManager
 import org.pf4j.PluginManager
 
 object EchoInMirror {
     @Suppress("MemberVisibilityCanBePrivate")
     val currentPosition: CurrentPosition = CurrentPositionImpl()
-    val bus: Bus = BusImpl()
-    var player: AudioPlayer = NativeAudioPlayer(currentPosition, bus, Configuration.nativeHostPath)
+    var bus: Bus? by mutableStateOf(null)
+    var player: AudioPlayer? by mutableStateOf(null)
 //    var player: AudioPlayer = JvmAudioPlayer(currentPosition, bus)
 
     val commandManager: CommandManager = CommandManagerImpl()

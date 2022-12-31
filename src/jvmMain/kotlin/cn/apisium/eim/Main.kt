@@ -10,13 +10,15 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.application
 import cn.apisium.eim.window.MainWindow
+import cn.apisium.eim.window.ProjectWindow
+import java.io.File
+import java.nio.file.Paths
 import javax.swing.UIManager
 
 fun main() {
     UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
     createDirectories()
-    Runtime.getRuntime().addShutdownHook(Thread(EchoInMirror.bus::close))
-    Runtime.getRuntime().addShutdownHook(Thread(EchoInMirror.player::close))
+    Runtime.getRuntime().addShutdownHook(Thread(EchoInMirror.windowManager::closeMainWindow))
 
 //    runBlocking {
 //        println("start render")
@@ -34,7 +36,8 @@ fun main() {
 //        }
 //    }
 
-    EchoInMirror.windowManager.openMainWindow()
+    if (!File("test_project").exists()) File("test_project").mkdir()
+    EchoInMirror.windowManager.openProject(Paths.get("test_project"))
     application {
         MaterialTheme(if (EchoInMirror.windowManager.isDarkTheme) darkColorScheme() else lightColorScheme()) {
             val color = MaterialTheme.colorScheme.onSurface
@@ -42,7 +45,8 @@ fun main() {
                 LocalScrollbarStyle provides ScrollbarStyle(16.dp, 8.dp, RoundedCornerShape(4.dp),
                     300, color.copy(0.26f), color.copy(0.60f))
             ) {
-                MainWindow()
+                if (EchoInMirror.windowManager.isMainWindowOpened) MainWindow()
+                else ProjectWindow()
             }
         }
     }

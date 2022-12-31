@@ -9,7 +9,7 @@ import kotlinx.coroutines.runBlocking
 import java.util.*
 import kotlin.collections.ArrayList
 
-class NativeAudioPlayer(currentPosition: CurrentPosition, processor: AudioProcessor?, private val execFile: String,
+class NativeAudioPlayer(currentPosition: CurrentPosition, processor: AudioProcessor, private val execFile: String,
                         private vararg val commands: String) : AbstractAudioPlayer(currentPosition, processor), Runnable {
     private var thread: Thread? = null
     private var process: Process? = null
@@ -37,7 +37,7 @@ class NativeAudioPlayer(currentPosition: CurrentPosition, processor: AudioProces
         p.onExit().thenAccept { process = null }
         process = p
 
-        if (processor != null) processor!!.prepareToPlay(sampleRate, bufferSize)
+        processor.prepareToPlay(sampleRate, bufferSize)
 
         thread = Thread(this)
         thread!!.start()
@@ -57,7 +57,7 @@ class NativeAudioPlayer(currentPosition: CurrentPosition, processor: AudioProces
     @Suppress("DuplicatedCode")
     override fun run() {
         while (thread?.isAlive == true) {
-            if (processor == null || process == null) {
+            if (process == null) {
                 Thread.sleep(10)
                 continue
             }
@@ -67,7 +67,7 @@ class NativeAudioPlayer(currentPosition: CurrentPosition, processor: AudioProces
 
             runBlocking {
                 try {
-                    processor?.processBlock(buffers, currentPosition, ArrayList(0))
+                    processor.processBlock(buffers, currentPosition, ArrayList(0))
                 } catch (e: Throwable) {
                     e.printStackTrace()
                 }

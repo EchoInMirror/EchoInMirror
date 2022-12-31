@@ -27,7 +27,7 @@ import androidx.compose.ui.zIndex
 import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.actions.doNoteAmountAction
 import cn.apisium.eim.actions.doNoteMessageEditAction
-import cn.apisium.eim.api.Track
+import cn.apisium.eim.api.processor.Track
 import cn.apisium.eim.api.projectDisplayPPQ
 import cn.apisium.eim.api.window.Panel
 import cn.apisium.eim.api.window.PanelDirection
@@ -358,8 +358,7 @@ private fun NotesEditorCanvas() {
     Box(Modifier.fillMaxSize().clipToBounds().background(MaterialTheme.colorScheme.background)
         .scrollable(verticalScrollState, Orientation.Vertical, reverseDirection = true)
         .pointerInput(Unit) { handleMouseEvent(coroutineScope) }
-        .dropTarget({ _, _ -> true }) { a, pos ->
-            println(a.firstOrNull()?.absolutePath)
+        .dropTarget({ _, _ -> true }) { _, pos ->
             println(pos)
             true
         }

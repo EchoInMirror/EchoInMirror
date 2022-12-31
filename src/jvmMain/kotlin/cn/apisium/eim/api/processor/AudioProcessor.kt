@@ -22,6 +22,8 @@ interface AudioProcessor: AutoCloseable {
     fun prepareToPlay(sampleRate: Int, bufferSize: Int) { }
     fun onSuddenChange() { }
     fun onClick() { }
+    suspend fun save(path: String) { }
+    suspend fun load(path: String) { }
     override fun close() { }
 }
 

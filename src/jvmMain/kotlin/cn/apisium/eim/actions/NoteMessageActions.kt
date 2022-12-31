@@ -2,7 +2,7 @@ package cn.apisium.eim.actions
 
 import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.api.ReversibleAction
-import cn.apisium.eim.api.Track
+import cn.apisium.eim.api.processor.Track
 import cn.apisium.eim.api.UndoableAction
 import cn.apisium.eim.data.midi.NoteMessage
 import kotlinx.coroutines.runBlocking

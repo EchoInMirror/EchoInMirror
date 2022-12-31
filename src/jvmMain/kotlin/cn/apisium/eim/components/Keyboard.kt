@@ -20,7 +20,7 @@ import androidx.compose.ui.unit.sp
 import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.data.defaultScale
 import cn.apisium.eim.data.midi.KEY_NAMES
-import cn.apisium.eim.utils.onClick
+import cn.apisium.eim.utils.clickableWithIcon
 import cn.apisium.eim.utils.toOnSurfaceColor
 import cn.apisium.eim.utils.x
 import cn.apisium.eim.utils.y
@@ -50,7 +50,7 @@ fun Keyboard(
             val isBlack = defaultScale.scale[i % 12]
             var modifier2 = Modifier.fillMaxWidth().height(keyHeight - 1.dp)
                 .background(if (isBlack) blackKeyColor else whiteKeyColor)
-            if (i <= 0x7F) modifier2 = modifier2.onClick()
+            if (i <= 0x7F) modifier2 = modifier2.clickableWithIcon()
                 .onPointerEvent(PointerEventType.Press) {
                     onNoteOn(i, it.x / keyWidth.toPx())
                 }

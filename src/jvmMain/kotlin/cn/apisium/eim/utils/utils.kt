@@ -1,7 +1,9 @@
 package cn.apisium.eim.utils
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.material3.LocalAbsoluteTonalElevation
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.surfaceColorAtElevation
@@ -19,11 +21,21 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import org.ocpsoft.prettytime.PrettyTime
+import java.awt.Component
+import java.io.File
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.*
+import javax.swing.JFileChooser
 import kotlin.math.roundToInt
 
+private val ZERO_DATE = Date(0)
 val OBJECT_MAPPER = jacksonObjectMapper()
 var CLIPBOARD_MANAGER: ClipboardManager? = null
+val TIME_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneId.systemDefault())
+val TIME_PRETTIER = PrettyTime()
+val DURATION_PRETTIER = PrettyTime(ZERO_DATE)
 
 fun mapValue(value: Int, start1: Int, stop1: Int) = ((value - start1) / (stop1 - start1).toFloat()).coerceIn(0f, 1f)
 fun mapValue(value: Float, start1: Float, stop1: Float) = ((value - start1) / (stop1 - start1)).coerceIn(0f, 1f)
@@ -152,12 +164,29 @@ fun Float.fitInUnit(unit: Int) = (this / unit).roundToInt() * unit
 @Suppress("NOTHING_TO_INLINE")
 inline operator fun String.rem(other: Any?) = format(other)
 
-@OptIn(ExperimentalComposeUiApi::class)
-fun Modifier.onClick(enabled: Boolean = true, onClickLabel: String? = null,
-                       role: Role? = null, onClick: () -> Unit = { }) =
-    (if (enabled) pointerHoverIcon(PointerIconDefaults.Hand) else this).clickable(enabled, onClickLabel, role, onClick)
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
+fun Modifier.clickableWithIcon(enabled: Boolean = true, onClickLabel: String? = null,
+                       role: Role? = null, onLongClick: (() -> Unit)? = null,
+                     onDoubleClick: (() -> Unit)? = null, onClick: () -> Unit = { }): Modifier {
+    val modifier = if (enabled) pointerHoverIcon(PointerIconDefaults.Hand) else this
+    return if (onLongClick != null || onDoubleClick != null) modifier.clickable(enabled, onClickLabel, role) { }
+        .combinedClickable(onLongClick = onLongClick, onDoubleClick = onDoubleClick, onClick = onClick)
+    else modifier.clickable(enabled, onClickLabel, role, onClick)
+}
 
 var ScrollState.openMaxValue
     get() = maxValue
     @Suppress("INVISIBLE_SETTER")
     set(value) { maxValue = value }
+
+@Suppress("INVISIBLE_MEMBER")
+val CurrentWindow @Composable get() = androidx.compose.ui.window.LocalWindow
+
+fun openFolderBrowser(parent: Component? = null): File? {
+    val fileChooser = JFileChooser()
+    fileChooser.fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
+    fileChooser.showOpenDialog(parent)
+    return fileChooser.selectedFile
+}
+
+fun formatDuration(time: Long): String = DURATION_PRETTIER.formatDuration(Date(time)).ifEmpty { DURATION_PRETTIER.format(ZERO_DATE) }

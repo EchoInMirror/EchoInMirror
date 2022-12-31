@@ -27,12 +27,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.zIndex
 import cn.apisium.eim.EchoInMirror
-import cn.apisium.eim.api.Track
+import cn.apisium.eim.api.processor.Track
 import cn.apisium.eim.api.projectDisplayPPQ
 import cn.apisium.eim.components.*
 import cn.apisium.eim.components.icons.Crown
 import cn.apisium.eim.components.icons.DebugStepOver
-import cn.apisium.eim.utils.onClick
+import cn.apisium.eim.utils.clickableWithIcon
 import cn.apisium.eim.utils.openMaxValue
 import cn.apisium.eim.window.dialogs.openColorPicker
 import cn.apisium.eim.window.panels.editor.calcScroll
@@ -56,7 +56,7 @@ private fun TrackItem(track: Track, index: Int, depth: Int = 0) {
     }) {
         Box {
             val color by animateColorAsState(track.color, tween(100))
-            Canvas(Modifier.fillMaxHeight().width(8.dp).background(color.copy(alpha = 0.5F)).onClick {
+            Canvas(Modifier.fillMaxHeight().width(8.dp).background(color.copy(alpha = 0.5F)).clickableWithIcon {
                 openColorPicker(track.color) { track.color = it }
             }) {
                 val y = size.height * (1F - track.levelMeter.maxLevel.toPercentage())
@@ -174,7 +174,7 @@ fun Playlist() {
                 }
                 Column(Modifier.verticalScroll(verticalScrollState)) {
                     Divider()
-                    EchoInMirror.bus.subTracks.forEachIndexed { i, it ->
+                    EchoInMirror.bus!!.subTracks.forEachIndexed { i, it ->
                         key(it.uuid) {
                             TrackItem(it, i + 1)
                         }
@@ -204,7 +204,7 @@ fun Playlist() {
                     Column(Modifier.horizontalScroll(horizontalScrollState).verticalScroll(verticalScrollState)
                         .width(width)) {
                         Divider()
-                        EchoInMirror.bus.subTracks.forEach {
+                        EchoInMirror.bus!!.subTracks.forEach {
                             key(it.uuid) { TrackContent(it) }
                         }
                     }

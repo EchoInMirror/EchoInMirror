@@ -9,7 +9,7 @@ interface AudioPlayer: AutoCloseable {
     val cpuLoad: Float
     fun open(sampleRate: Int, bufferSize: Int, bits: Int)
 }
-abstract class AbstractAudioPlayer(val currentPosition: CurrentPosition, var processor: AudioProcessor? = null): AudioPlayer {
+abstract class AbstractAudioPlayer(val currentPosition: CurrentPosition, var processor: AudioProcessor): AudioPlayer {
     final override var cpuLoad by mutableStateOf(0F)
         private set
     private var lastTime = 0L

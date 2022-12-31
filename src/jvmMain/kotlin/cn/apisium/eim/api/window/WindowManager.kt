@@ -4,8 +4,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.geometry.Offset
-import cn.apisium.eim.api.Track
+import cn.apisium.eim.api.processor.Track
 import java.lang.ref.WeakReference
+import java.nio.file.Path
 
 interface WindowManager {
     val dialogs: SnapshotStateMap<@Composable () -> Unit, Boolean>
@@ -21,5 +22,6 @@ interface WindowManager {
                            hasOverlay: Boolean = false, content: @Composable () -> Unit): Any
     fun closeFloatingDialog(key: Any)
     fun clearTrackUIState(track: Track)
-    fun openMainWindow()
+    fun openProject(path: Path)
+    fun closeMainWindow()
 }

@@ -11,10 +11,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import cn.apisium.eim.EchoInMirror
-import cn.apisium.eim.api.window.SettingsTab
 import cn.apisium.eim.components.Gap
+import cn.apisium.eim.components.Tab
 import cn.apisium.eim.impl.processor.NativeAudioPluginFactoryImpl
 import cn.apisium.eim.impl.processor.nativeAudioPluginManager
+import cn.apisium.eim.utils.CurrentWindow
+import cn.apisium.eim.utils.openFolderBrowser
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
@@ -23,7 +25,7 @@ import javax.swing.JFileChooser
 import javax.swing.filechooser.FileNameExtensionFilter
 
 private var scanningJob by mutableStateOf<Job?>(null)
-internal class NativeAudioPluginSettings: SettingsTab {
+internal class NativeAudioPluginSettings: Tab {
     @Composable
     override fun label() {
         Text("原生音频插件")
@@ -60,13 +62,12 @@ internal class NativeAudioPluginSettings: SettingsTab {
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun content() {
-        @Suppress("INVISIBLE_MEMBER")
-        val window = androidx.compose.ui.window.LocalWindow.current
         Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
             CompositionLocalProvider(
                 LocalContentColor provides MaterialTheme.colorScheme.surface,
                 LocalAbsoluteTonalElevation provides 0.dp
             ) {
+                val window = CurrentWindow.current
                 val apm = EchoInMirror.audioProcessorManager.nativeAudioPluginManager as NativeAudioPluginFactoryImpl
                 Column(Modifier.width(300.dp)) {
                     Row {
@@ -78,11 +79,7 @@ internal class NativeAudioPluginSettings: SettingsTab {
                         )
                         IconButton(
                             onClick = {
-                                val fileChooser = JFileChooser().apply {
-                                    fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
-                                }
-                                fileChooser.showOpenDialog(window)
-                                fileChooser.selectedFile?.let {
+                                openFolderBrowser(window)?.let {
                                     apm.scanPaths.add(it.absolutePath)
                                     apm.save()
                                 }

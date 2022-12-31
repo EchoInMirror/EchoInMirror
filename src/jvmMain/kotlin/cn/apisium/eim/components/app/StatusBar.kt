@@ -13,23 +13,26 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
-import cn.apisium.eim.utils.Border
 import cn.apisium.eim.EchoInMirror
-import cn.apisium.eim.api.ChannelType
+import cn.apisium.eim.api.processor.ChannelType
 import cn.apisium.eim.components.Filled
 import cn.apisium.eim.components.FloatingDialog
 import cn.apisium.eim.components.MenuItem
 import cn.apisium.eim.components.icons.*
-import cn.apisium.eim.utils.border
-import cn.apisium.eim.utils.onClick
+import cn.apisium.eim.utils.*
 import cn.apisium.eim.window.dialogs.settings.SettingsWindow
+import java.awt.Desktop
 import kotlin.math.roundToInt
 
 @Composable
 fun StatusBarItem(id: String, icon: ImageVector? = null, iconColor: Color? = null,
-                  modifier: Modifier = Modifier, onClick: (() -> Unit)? = null, child: (@Composable () -> Unit)? = null) {
+                  modifier: Modifier = Modifier, onLongClick: (() -> Unit)? = null,
+                  onDoubleClick: (() -> Unit)? = null, onClick: (() -> Unit)? = null,
+                  child: (@Composable () -> Unit)? = null) {
     Row(
-        (if (onClick == null) modifier else modifier.onClick(onClick = onClick)).padding(horizontal = 4.dp).height(24.dp),
+        (if (onClick == null) modifier else modifier
+            .clickableWithIcon(onLongClick = onLongClick, onDoubleClick = onDoubleClick, onClick = onClick))
+            .padding(horizontal = 4.dp).height(24.dp),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -54,9 +57,9 @@ private fun BusChannelType() {
             tonalElevation = 5.dp, shadowElevation = 5.dp) {
             Column {
                 ChannelType.values().forEach { type ->
-                    MenuItem(type == EchoInMirror.bus.channelType, {
+                    MenuItem(type == EchoInMirror.bus!!.channelType, {
                         close()
-                        EchoInMirror.bus.channelType = type
+                        EchoInMirror.bus!!.channelType = type
                     }) {
                         Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                             Icon(getChannelTypeIcon(type), type.name)
@@ -68,7 +71,7 @@ private fun BusChannelType() {
             }
         }
     }) {
-        val type = EchoInMirror.bus.channelType
+        val type = EchoInMirror.bus!!.channelType
         StatusBarItem("MonoAndStereo", getChannelTypeIcon(type),
             if (type == ChannelType.STEREO) null else MaterialTheme.colorScheme.primary)
     }
@@ -83,16 +86,19 @@ internal fun StatusBar() {
             ProvideTextStyle(MaterialTheme.typography.labelSmall) {
                 CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurfaceVariant) {
                     StatusBarItem("Settings", Icons.Default.Settings, onClick = { EchoInMirror.windowManager.dialogs[SettingsWindow] = true })
-                    StatusBarItem("Project", Icons.Default.Folder) {
-                        Text("临时工程")
+                    StatusBarItem("Project", Icons.Default.Folder,
+                        onClick = { Desktop.getDesktop().open(EchoInMirror.bus!!.project.root.toFile()) },
+                        onLongClick = { EchoInMirror.windowManager.closeMainWindow() }
+                    ) {
+                        Text(EchoInMirror.bus!!.project.name)
                     }
                     StatusBarItem("TimeCost", Icons.Default.EventNote) {
-                        Text("大约19小时")
+                        Text(formatDuration(EchoInMirror.bus!!.project.timeCost.toLong()))
                     }
                     Filled()
                     BusChannelType()
                     StatusBarItem("CpuLoad", Icons.Filled.Memory) {
-                        Text((EchoInMirror.player.cpuLoad * 100).roundToInt().toString() + "%")
+                        Text((EchoInMirror.player!!.cpuLoad * 100).roundToInt().toString() + "%")
                     }
                 }
             }
