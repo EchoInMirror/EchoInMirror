@@ -127,7 +127,7 @@ class WindowManagerImpl: WindowManager {
         backingTracks.remove(track)
     }
 
-    override fun closeMainWindow() {
+    override fun closeMainWindow(isExit: Boolean) {
         isMainWindowOpened = false
         mainWindow.get()?.dispose()
         EchoInMirror.player?.close()

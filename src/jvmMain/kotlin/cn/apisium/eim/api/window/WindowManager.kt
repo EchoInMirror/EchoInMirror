@@ -23,5 +23,5 @@ interface WindowManager {
     fun closeFloatingDialog(key: Any)
     fun clearTrackUIState(track: Track)
     fun openProject(path: Path)
-    fun closeMainWindow()
+    fun closeMainWindow(isExit: Boolean = false)
 }
