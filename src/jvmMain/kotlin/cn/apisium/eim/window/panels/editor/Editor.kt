@@ -83,7 +83,7 @@ private data class BackingTrack(val track: Track, val notes: ArrayList<NoteDrawO
 
 private fun Density.getClickedNotes(x: Float, y: Float, notes: NoteMessageList,
                                     block: Density.(NoteMessage) -> Boolean = { true }): NoteMessage? {
-    currentNote = KEYBOARD_KEYS - ((y + verticalScrollState.value) / noteHeight.value).toInt() - 1
+    currentNote = KEYBOARD_KEYS - ((y + verticalScrollState.value) / noteHeight.toPx()).toInt() - 1
     currentX = ((x + horizontalScrollState.value) / noteWidth.value.toPx()).roundToInt()
     for (i in startNoteIndex until notes.size) {
         val note = notes[i]
@@ -261,7 +261,7 @@ private suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutine
             if (action == SELECT) {
                 selectedNotes = hashSetOf()
                 selectionStartX = downX
-                selectionStartY = (downY / noteHeight.value).toInt()
+                selectionStartY = (downY / noteHeight.toPx()).toInt()
                 selectionX = selectionStartX
                 selectionY = selectionStartY
             }
@@ -270,7 +270,7 @@ private suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutine
                 when (action) {
                     SELECT -> {
                         selectionX = (it.position.x.coerceAtMost(size.width.toFloat()) + horizontalScrollState.value).coerceAtLeast(0F)
-                        selectionY = ((it.position.y.coerceAtMost(size.height.toFloat()) + verticalScrollState.value) / noteHeight.value).roundToInt()
+                        selectionY = ((it.position.y.coerceAtMost(size.height.toFloat()) + verticalScrollState.value) / noteHeight.toPx()).roundToInt()
                     }
                     DELETE -> if (track != null) getClickedNotes(it.position.x, it.position.y, track.notes)
                         { note -> !deletionList.contains(note) }?.let(deletionList::add)
@@ -281,7 +281,7 @@ private suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutine
                                 noteWidth.value.toPx()).fitInUnit(noteUnit)
                         val prevDeltaY = deltaY
                         deltaY = (((it.position.y + verticalScrollState.value).coerceAtLeast(0F) - downY) /
-                                noteHeight.value).roundToInt()
+                                noteHeight.toPx()).roundToInt()
                         if (action == MOVE) {
                             if (selectedNotesLeft + deltaX < 0) deltaX = -selectedNotesLeft
                             if (selectedNotesTop + deltaY > KEYBOARD_KEYS - 1) deltaY = KEYBOARD_KEYS - 1 - selectedNotesTop
