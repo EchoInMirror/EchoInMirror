@@ -297,6 +297,7 @@ class BusImpl(
     description: AudioProcessorDescription, factory: TrackFactory<Track>
 ) : TrackImpl(description, factory), Bus {
     override var name = "Bus"
+    override var lastSaveTime by mutableStateOf(System.currentTimeMillis())
     @get:JsonProperty
     override var channelType by mutableStateOf(ChannelType.STEREO)
     override var color
@@ -304,6 +305,9 @@ class BusImpl(
         set(_) { }
 
     override suspend fun save() {
+        val time = System.currentTimeMillis()
+        project.timeCost += (time - lastSaveTime).toInt()
+        lastSaveTime = time
         project.save()
         save(project.root.pathString)
     }

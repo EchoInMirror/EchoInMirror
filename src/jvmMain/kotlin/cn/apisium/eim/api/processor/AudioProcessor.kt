@@ -58,7 +58,7 @@ abstract class AbstractAudioProcessor(
             ObjectMapper().writerWithDefaultPrettyPrinter().writeValue(File("$path.json"), mapOf(
                 "factory" to factory.name,
                 "name" to name,
-                "uuid" to id,
+                "id" to id,
                 "identifier" to description.name
             ))
         }
@@ -66,7 +66,7 @@ abstract class AbstractAudioProcessor(
 
     override suspend fun load(path: String, json: JsonNode) {
         name = json["name"]?.asText() ?: ""
-        json["uuid"]?.asText()?.let { if (it.isNotEmpty()) id = it }
+        json["id"]?.asText()?.let { if (it.isNotEmpty()) id = it }
     }
 }
 

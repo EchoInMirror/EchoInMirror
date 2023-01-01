@@ -25,5 +25,6 @@ interface Track : AudioProcessor, Pan, Volume, Mute, Solo, Disabled, MidiEventHa
 interface Bus : Track {
     val project: ProjectInformation
     var channelType: ChannelType
+    val lastSaveTime: Long
     suspend fun save()
 }

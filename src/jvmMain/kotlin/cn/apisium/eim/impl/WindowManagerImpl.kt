@@ -26,10 +26,12 @@ import cn.apisium.eim.window.panels.editor.Editor
 import cn.apisium.eim.window.panels.Mixer
 import cn.apisium.eim.window.dialogs.QuickLoadDialog
 import cn.apisium.eim.window.dialogs.settings.SettingsWindow
-import java.lang.ref.WeakReference
 import cn.apisium.eim.window.panels.UndoList
 import cn.apisium.eim.window.panels.editor.backingTracks
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.nio.file.Path
 import kotlin.io.path.absolutePathString
 
@@ -42,7 +44,7 @@ class WindowManagerImpl: WindowManager {
     private val floatingDialogs = mutableStateMapOf<Any, FloatingDialog>()
     override val dialogs = mutableStateMapOf<@Composable () -> Unit, Boolean>()
     override val panels = mutableStateListOf(Mixer, Editor, UndoList)
-    override var mainWindow: WeakReference<ComposeWindow> = WeakReference(null)
+    override var mainWindow: ComposeWindow? = null
     override var isDarkTheme by mutableStateOf(false)
     override var activePanel: Panel? = null
     override var isMainWindowOpened by mutableStateOf(false)
@@ -124,14 +126,16 @@ class WindowManagerImpl: WindowManager {
     override fun closeMainWindow(isExit: Boolean) {
         isMainWindowOpened = false
         try {
-            mainWindow.get()?.dispose()
+            mainWindow?.dispose()
         } catch (ignored: Throwable) { }
+        mainWindow = null
         EchoInMirror.player?.close()
         EchoInMirror.bus?.close()
         EchoInMirror.player = null
         EchoInMirror.bus = null
     }
 
+    @OptIn(DelicateCoroutinesApi::class)
     override fun openProject(path: Path) {
         if (isMainWindowOpened) return
 
@@ -140,31 +144,20 @@ class WindowManagerImpl: WindowManager {
         recentProjects.add(0, absolutePath)
         saveRecentProjects()
 
-        val bus = runBlocking { EchoInMirror.audioProcessorManager.createBus(DefaultProjectInformation(path)) }
-        EchoInMirror.bus = bus
-        bus.prepareToPlay(EchoInMirror.currentPosition.sampleRate, EchoInMirror.currentPosition.bufferSize)
-        val player = NativeAudioPlayer(EchoInMirror.currentPosition, bus, Configuration.nativeHostPath)
-        player.open(EchoInMirror.currentPosition.sampleRate, EchoInMirror.currentPosition.bufferSize, 2)
-        EchoInMirror.player = player
-
-//        if (IS_DEBUG) Thread {
-//            runBlocking {
-//                launch {
-//                    delay(2000)
-//                    var proQ: NativeAudioPluginImpl? = null
-//                    var spire: NativeAudioPluginImpl? = null
-//                    EchoInMirror.audioProcessorManager.nativeAudioPluginManager.descriptions.forEach {
-//                        if (it.name == "FabFilter Pro-Q 3") proQ = NativeAudioPluginImpl(it)
-//                        if (it.name == "Spire-1.5") spire = NativeAudioPluginImpl(it)
-//                    }
-//                    proQ!!.launch()
-//                    spire!!.launch()
-//                    subTrack2.preProcessorsChain.add(spire!!)
-//                    track.postProcessorsChain.add(proQ!!)
-//
-//                }
-//            }
-//        }.start()
         isMainWindowOpened = true
+
+        GlobalScope.launch {
+            val (bus, loadBus) = EchoInMirror.audioProcessorManager.createBus(DefaultProjectInformation(path))
+            EchoInMirror.bus = bus
+            bus.prepareToPlay(EchoInMirror.currentPosition.sampleRate, EchoInMirror.currentPosition.bufferSize)
+            val player = NativeAudioPlayer(EchoInMirror.currentPosition, bus, Configuration.nativeHostPath)
+            EchoInMirror.player = player
+
+            while (mainWindow == null) delay(25)
+
+            loadBus()
+
+            player.open(EchoInMirror.currentPosition.sampleRate, EchoInMirror.currentPosition.bufferSize, 2)
+        }
     }
 }

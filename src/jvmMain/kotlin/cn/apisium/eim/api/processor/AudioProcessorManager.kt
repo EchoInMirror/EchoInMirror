@@ -28,5 +28,5 @@ interface AudioProcessorManager {
     @Throws(NoSuchFactoryException::class)
     suspend fun createTrack(path: String, id: String): Track
 
-    suspend fun createBus(project: ProjectInformation): Bus
+    suspend fun createBus(project: ProjectInformation): Pair<Bus, suspend () -> Unit>
 }

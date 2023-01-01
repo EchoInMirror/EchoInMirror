@@ -33,7 +33,6 @@ import cn.apisium.eim.utils.CLIPBOARD_MANAGER
 import cn.apisium.eim.utils.Logo
 import cn.apisium.eim.utils.border
 import cn.apisium.eim.window.panels.playlist.Playlist
-import java.lang.ref.WeakReference
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -52,7 +51,7 @@ fun ApplicationScope.MainWindow() {
         false
     }) {
         CLIPBOARD_MANAGER = LocalClipboardManager.current
-        (EchoInMirror.windowManager as WindowManagerImpl).mainWindow = WeakReference(window)
+        (EchoInMirror.windowManager as WindowManagerImpl).mainWindow = window
         window.exceptionHandler = WindowExceptionHandler {
             it.printStackTrace()
         }

@@ -18,9 +18,11 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.sync.withPermit
 import org.apache.commons.lang3.SystemUtils
 import org.slf4j.LoggerFactory
+import java.io.File
 import java.nio.file.FileVisitResult
 import java.nio.file.Files
 import kotlin.io.path.*
@@ -30,6 +32,26 @@ class NativeAudioPluginImpl(
     factory: AudioProcessorFactory<*>,
 ) : NativeAudioPlugin, ProcessAudioProcessorImpl(description, factory) {
     override var name = description.name
+
+    override suspend fun save(path: String) {
+        withContext(Dispatchers.IO) {
+            ObjectMapper().writerWithDefaultPrettyPrinter().writeValue(
+                File("$path.json"), mapOf(
+                "factory" to factory.name,
+                "name" to name,
+                "id" to id,
+                "identifier" to description.identifier
+            ))
+        }
+        if (!isLaunched) return
+        mutex.withLock {
+            outputStream?.apply {
+                write(3)
+                writeString("$path.bin")
+                flush()
+            }
+        }
+    }
 }
 
 private val NATIVE_AUDIO_PLUGIN_CONFIG = ROOT_PATH.resolve("nativeAudioPlugin.json")
@@ -160,13 +182,19 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
         if (description !is NativeAudioPluginDescription)
             throw NoSuchAudioProcessorException(description.identifier ?: "Unknown", name)
         return NativeAudioPluginImpl(description, this).apply {
-            launch(Configuration.nativeHostPath, " -L",
+            launch(Configuration.nativeHostPath, "-L",
                 OBJECT_MAPPER.run { writeValueAsString(writeValueAsString(description)) })
         }
     }
 
     override suspend fun createAudioProcessor(path: String, json: JsonNode): NativeAudioPlugin {
-        throw NoSuchAudioProcessorException("Unknown", name)
+        val description = descriptions.find { it.identifier == json["identifier"].asText() }
+            ?: throw NoSuchAudioProcessorException(path, name)
+        return NativeAudioPluginImpl(description, this).apply {
+            OBJECT_MAPPER.run { launch(Configuration.nativeHostPath, "-P",
+                writeValueAsString("$path/${json["id"]!!.asText()}.bin"), "-L",
+                writeValueAsString(writeValueAsString(description))) }
+        }
     }
 
     override fun save() {

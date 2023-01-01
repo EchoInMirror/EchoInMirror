@@ -55,14 +55,18 @@ class AudioProcessorManagerImpl: AudioProcessorManager {
     override suspend fun createTrack(path: String, id: String) =
         createTrack(path, ObjectMapper().readTree(File(path, "track.json")))
 
-    override suspend fun createBus(project: ProjectInformation): Bus {
+    override suspend fun createBus(project: ProjectInformation): Pair<Bus, suspend () -> Unit> {
         val file = project.root.resolve("track.json")
-        if (!Files.exists(file)) return trackFactories.values.firstOrNull { it.canCreateBus }?.createBus(project)
-            ?: throw NoSuchFactoryException("DefaultTrackFactory")
+        if (!Files.exists(file)) {
+            val bus = trackFactories.values.firstOrNull { it.canCreateBus }?.createBus(project)
+                ?: throw NoSuchFactoryException("DefaultTrackFactory")
+            return bus to { }
+        }
         val json = ObjectMapper().readTree(file.toFile())
         val factoryName = json["factory"]?.asText()
         val factory = trackFactories[factoryName] ?: throw NoSuchFactoryException(factoryName ?: "Null")
-        return factory.createBus(project).apply { load(project.root.absolutePathString(), json) }
+        val bus = factory.createBus(project)
+        return bus to { bus.load(project.root.absolutePathString(), json) }
     }
 }
 

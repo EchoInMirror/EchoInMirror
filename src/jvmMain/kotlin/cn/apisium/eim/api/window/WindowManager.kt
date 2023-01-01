@@ -5,13 +5,12 @@ import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.geometry.Offset
 import cn.apisium.eim.api.processor.Track
-import java.lang.ref.WeakReference
 import java.nio.file.Path
 
 interface WindowManager {
     val dialogs: SnapshotStateMap<@Composable () -> Unit, Boolean>
     val panels: List<Panel>
-    val mainWindow: WeakReference<ComposeWindow>
+    val mainWindow: ComposeWindow?
     var isDarkTheme: Boolean
     var activePanel: Panel?
     val isMainWindowOpened: Boolean

@@ -24,10 +24,10 @@ open class ProcessAudioProcessorImpl(
         protected set
     override var name = "ProcessAudioProcessor"
     private var process: Process? = null
-    private var inputStream: EIMInputStream? = null
-    private var outputStream: EIMOutputStream? = null
-    private val mutex = Mutex()
     private var prepared = false
+    protected var inputStream: EIMInputStream? = null
+    protected var outputStream: EIMOutputStream? = null
+    protected val mutex = Mutex()
 
     override suspend fun processBlock(buffers: Array<FloatArray>, position: CurrentPosition, midiBuffer: ArrayList<Int>) {
         val output = outputStream
@@ -87,7 +87,7 @@ open class ProcessAudioProcessorImpl(
         if (isLaunched) return true
         return withContext(Dispatchers.IO) {
             val args = ArrayList<String>()
-            EchoInMirror.windowManager.mainWindow.get()?.windowHandle?.let {
+            EchoInMirror.windowManager.mainWindow?.windowHandle?.let {
                 args.add("-H")
                 args.add(it.toString())
             }

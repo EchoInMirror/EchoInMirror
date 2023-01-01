@@ -7,9 +7,11 @@ import cn.apisium.eim.IS_DEBUG
 import cn.apisium.eim.api.AbstractCommand
 import cn.apisium.eim.api.Command
 import cn.apisium.eim.api.CommandManager
+import cn.apisium.eim.api.processor.NativeAudioPluginDescription
 import cn.apisium.eim.commands.*
 import cn.apisium.eim.data.midi.getMidiEvents
 import cn.apisium.eim.data.midi.getNoteMessages
+import cn.apisium.eim.impl.processor.nativeAudioPluginManager
 import kotlinx.coroutines.*
 import java.io.File
 import javax.sound.midi.MidiSystem
@@ -55,6 +57,16 @@ class CommandManagerImpl: CommandManager {
 
                     track.subTracks.add(subTrack1)
                     track.subTracks.add(subTrack2)
+
+                    var proQ: NativeAudioPluginDescription? = null
+                    var spire: NativeAudioPluginDescription? = null
+                    EchoInMirror.audioProcessorManager.nativeAudioPluginManager.descriptions.forEach {
+                        if (it.name == "FabFilter Pro-Q 3") proQ = it
+                        if (it.name == "Spire-1.5") spire = it
+                    }
+                    subTrack2.preProcessorsChain.add(EchoInMirror.audioProcessorManager.nativeAudioPluginManager.createAudioProcessor(spire!!))
+                    track.postProcessorsChain.add(EchoInMirror.audioProcessorManager.nativeAudioPluginManager.createAudioProcessor(proQ!!))
+
                     EchoInMirror.bus?.subTracks?.add(track)
                     EchoInMirror.selectedTrack = track
                 }
