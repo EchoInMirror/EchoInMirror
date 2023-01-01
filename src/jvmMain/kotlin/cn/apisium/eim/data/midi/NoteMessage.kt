@@ -2,6 +2,12 @@ package cn.apisium.eim.data.midi
 
 import androidx.compose.runtime.mutableStateOf
 import cn.apisium.eim.utils.IManualState
+import com.fasterxml.jackson.annotation.JsonInclude
+import com.fasterxml.jackson.core.JsonGenerator
+import com.fasterxml.jackson.core.type.TypeReference
+import com.fasterxml.jackson.databind.SerializerProvider
+import com.fasterxml.jackson.databind.annotation.JsonSerialize
+import com.fasterxml.jackson.databind.ser.std.StdSerializer
 import kotlin.collections.ArrayList
 
 interface NoteMessage {
@@ -9,7 +15,10 @@ interface NoteMessage {
     var velocity: Int
     var time: Int
     var duration: Int
+    @get:JsonInclude(value = JsonInclude.Include.NON_DEFAULT)
     var disabled: Boolean
+    @get:JsonInclude(value = JsonInclude.Include.NON_NULL, content = JsonInclude.Include.NON_EMPTY)
+    var extraData: MutableMap<String, Any>?
     fun copy(note: Int = this.note, velocity: Int = this.velocity, time: Int = this.time,
              duration: Int = this.duration, disabled: Boolean = this.disabled): NoteMessage
 }
@@ -27,11 +36,13 @@ open class NoteMessageImpl(note: Int, time: Int, duration: Int = 0, override var
         set(value) { field = value.coerceAtLeast(0) }
     override var duration = duration.coerceAtLeast(0)
         set(value) { field = value.coerceAtLeast(0) }
+    override var extraData: MutableMap<String, Any>? = null
+
     override fun copy(note: Int, velocity: Int, time: Int, duration: Int, disabled: Boolean) =
         NoteMessageImpl(note, time, duration, velocity, disabled)
 
     override fun toString(): String {
-        return "NoteMessageImpl(note=$note, time=$time, duration=$duration)"
+        return "NoteMessageImpl(note=$note, time=$time, duration=$duration, velocity=$velocity, disabled=$disabled)"
     }
 }
 
@@ -62,6 +73,7 @@ fun NoteMessage.toNoteOffEvent(channel: Int = 0) = noteOff(channel, note)
 fun NoteMessage.toNoteOnRawData(channel: Int = 0) = 0x90 or channel or (note shl 8) or (velocity shl 16)
 fun NoteMessage.toNoteOffRawData(channel: Int = 0) = 0x80 or (70 shl 16) or channel or (note shl 8)
 
+@JsonSerialize(using = NoteMessageListSerializer::class)
 interface NoteMessageList : MutableList<NoteMessage>, IManualState {
     fun sort()
 }
@@ -76,3 +88,12 @@ class NoteMessageListImpl : NoteMessageList, ArrayList<NoteMessage>() {
     override fun update() { modification.value++ }
     override fun read() { modification.value }
 }
+
+class NoteMessageListSerializer @JvmOverloads constructor(t: Class<NoteMessageList>? = null) :
+    StdSerializer<NoteMessageList>(t) {
+    override fun serialize(value: NoteMessageList, jgen: JsonGenerator, provider: SerializerProvider?) {
+        jgen.writeObject(value.toList())
+    }
+}
+
+object NoteMessageListTypeReference : TypeReference<MutableList<NoteMessageImpl>>()

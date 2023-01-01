@@ -24,6 +24,7 @@ import java.io.FileNotFoundException
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.*
+import kotlin.collections.ArrayList
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.pathString
 
@@ -47,7 +48,6 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
     override var volume by mutableStateOf(1F)
 
     override val levelMeter = LevelMeterImpl()
-    override val notes = NoteMessageListImpl()
 
     @get:JsonProperty(access = JsonProperty.Access.READ_ONLY)
     @JsonSerialize(using = AudioProcessorCollectionIDSerializer::class)
@@ -95,6 +95,9 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
             _isDisabled = value
             stateChange()
         }
+
+    @get:JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    override val notes = NoteMessageListImpl()
 
     override suspend fun processBlock(
         buffers: Array<FloatArray>,
@@ -264,8 +267,11 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         withContext(Dispatchers.IO) {
             try {
                 val dir = Paths.get(path)
-                val reader = jacksonObjectMapper().readerForUpdating(this@TrackImpl)
+                val mapper = jacksonObjectMapper()
+                val reader = mapper.readerForUpdating(this@TrackImpl)
                 reader.readValue<TrackImpl>(json)
+                notes.addAll(json["notes"].traverse(mapper).readValueAs(NoteMessageListTypeReference))
+                notes.update()
                 val tracksDir = dir.resolve("tracks")
                 json.get("subTracks").forEach {
                     launch {
