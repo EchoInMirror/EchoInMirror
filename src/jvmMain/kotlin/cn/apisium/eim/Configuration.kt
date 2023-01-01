@@ -24,8 +24,9 @@ object Configuration {
 }
 
 val IS_DEBUG = System.getProperty("cn.apisium.eim.debug") == "true"
+val VERSION = ""::class.java.getPackage().specificationVersion
 
 val recentProjects = mutableListOf<String>().apply {
     runCatching { OBJECT_MAPPER.readValue<List<String>>(RECENT_PROJECT_PATH.toFile()) }.onSuccess { addAll(it) }
 }
-fun saveRecentProjects() = Files.write(RECENT_PROJECT_PATH, OBJECT_MAPPER.writeValueAsBytes(recentProjects))
+fun saveRecentProjects() { Files.write(RECENT_PROJECT_PATH, OBJECT_MAPPER.writeValueAsBytes(recentProjects)) }

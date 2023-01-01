@@ -9,6 +9,7 @@ data class NativeAudioPluginDescription(
     override val category: String,
     override val manufacturerName: String,
     override val version: String,
+    override val identifier: String,
     val fileOrIdentifier: String,
     override val isInstrument: Boolean,
     @JsonFormat(shape = JsonFormat.Shape.NUMBER)
@@ -19,10 +20,8 @@ data class NativeAudioPluginDescription(
     val hasARAExtension: Boolean,
     val deprecatedUid: Int,
     val uniqueId: Int,
-    val descriptiveName: String? = null
-): AudioProcessorDescription {
-    override val identifier get() = fileOrIdentifier
-}
+    val descriptiveName: String? = null,
+): AudioProcessorDescription
 
 class FailedToLoadAudioPluginException(message: String) : RuntimeException(message)
 
@@ -32,10 +31,10 @@ interface NativeAudioPlugin: ProcessAudioProcessor {
 
 interface NativeAudioPluginFactory: AudioProcessorFactory<NativeAudioPlugin> {
     override val descriptions: Set<NativeAudioPluginDescription>
+    val pluginIsFile: Boolean
     val scanPaths: MutableSet<String>
     val skipList: MutableSet<String>
     val pluginExtensions: Set<String>
-    override fun createProcessor(description: AudioProcessorDescription): NativeAudioPlugin
     suspend fun scan()
     fun save()
 }

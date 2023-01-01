@@ -2,21 +2,20 @@ package cn.apisium.eim.impl.processor
 
 import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.api.CurrentPosition
-import cn.apisium.eim.api.processor.AbstractAudioProcessor
-import cn.apisium.eim.api.processor.FailedToLoadAudioPluginException
-import cn.apisium.eim.api.processor.ProcessAudioProcessor
-import cn.apisium.eim.api.processor.toFlags
+import cn.apisium.eim.api.processor.*
 import cn.apisium.eim.utils.EIMInputStream
 import cn.apisium.eim.utils.EIMOutputStream
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
+val ProcessAudioProcessorDescription = EIMAudioProcessorDescription("ProcessAudioProcessor")
+
 @Suppress("MemberVisibilityCanBePrivate")
 open class ProcessAudioProcessorImpl(
-    protected val execFile: String,
-    protected vararg val commands: String
-) : ProcessAudioProcessor, AbstractAudioProcessor("ProcessAudioProcessor") {
+    description: AudioProcessorDescription,
+    factory: AudioProcessorFactory<*>,
+) : ProcessAudioProcessor, AbstractAudioProcessor(description, factory) {
     override var inputChannelsCount = 0
         protected set
     override var outputChannelsCount = 0
@@ -84,7 +83,7 @@ open class ProcessAudioProcessorImpl(
         output.flush()
     }
 
-    override suspend fun launch(): Boolean {
+    override suspend fun launch(execFile: String, vararg commands: String): Boolean {
         if (isLaunched) return true
         return withContext(Dispatchers.IO) {
             val args = ArrayList<String>()

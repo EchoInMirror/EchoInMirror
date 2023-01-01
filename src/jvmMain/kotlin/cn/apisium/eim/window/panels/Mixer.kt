@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import cn.apisium.eim.EchoInMirror
+import cn.apisium.eim.api.processor.Bus
 import cn.apisium.eim.api.processor.Track
 import cn.apisium.eim.api.window.Panel
 import cn.apisium.eim.api.window.PanelDirection
@@ -48,19 +49,20 @@ private fun MixerTrack(track: Track, index: String, height: MutableState<Dp>?, m
                        isLastTrack: Boolean = false, drawSplitter: Boolean = true, isRound: Boolean = false,
                        renderChildren: Boolean = true) {
     Row(if (isRound) modifier.shadow(1.dp, MaterialTheme.shapes.medium, clip = false)
-        .background(getSurfaceColor(LocalAbsoluteTonalElevation.current + 1.dp), MaterialTheme.shapes.medium).clip(MaterialTheme.shapes.medium)
+        .background(MaterialTheme.colorScheme.surface, MaterialTheme.shapes.medium).clip(MaterialTheme.shapes.medium)
     else modifier) {
+        val trackColor = if (track is Bus) MaterialTheme.colorScheme.primary else track.color
         val selectedTrack = EchoInMirror.selectedTrack
         var curModifier = Modifier.width(80.dp)
         if (selectedTrack == track && height != null) curModifier = curModifier.height(height.value)
-            .border(1.dp, track.color, RoundedCornerShape(
+            .border(1.dp, trackColor, RoundedCornerShape(
                 CornerSize(0.dp), CornerSize(0.dp), MaterialTheme.shapes.medium.bottomEnd, MaterialTheme.shapes.medium.bottomStart)
             )
         else if (drawSplitter) curModifier = curModifier.border(start = Border(1.dp, MaterialTheme.colorScheme.outlineVariant))
         Column(curModifier) {
-            Row(Modifier.background(track.color).clickableWithIcon { if (track != EchoInMirror.bus) EchoInMirror.selectedTrack = track }
+            Row(Modifier.background(trackColor).clickableWithIcon { if (track != EchoInMirror.bus) EchoInMirror.selectedTrack = track }
                 .padding(vertical = 2.5.dp).zIndex(2f)) {
-                val color = track.color.toOnSurfaceColor()
+                val color = trackColor.toOnSurfaceColor()
                 Text(
                     index,
                     Modifier.padding(start = 5.dp, end = 3.dp),

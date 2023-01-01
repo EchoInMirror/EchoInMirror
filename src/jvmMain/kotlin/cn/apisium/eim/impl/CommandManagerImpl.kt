@@ -2,9 +2,17 @@ package cn.apisium.eim.impl
 
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.input.key.*
+import cn.apisium.eim.EchoInMirror
+import cn.apisium.eim.IS_DEBUG
+import cn.apisium.eim.api.AbstractCommand
 import cn.apisium.eim.api.Command
 import cn.apisium.eim.api.CommandManager
 import cn.apisium.eim.commands.*
+import cn.apisium.eim.data.midi.getMidiEvents
+import cn.apisium.eim.data.midi.getNoteMessages
+import kotlinx.coroutines.*
+import java.io.File
+import javax.sound.midi.MidiSystem
 
 @OptIn(ExperimentalComposeUiApi::class)
 class CommandManagerImpl: CommandManager {
@@ -23,6 +31,35 @@ class CommandManagerImpl: CommandManager {
         registerCommand(PlayOrPauseCommand)
         registerCommand(UndoCommand)
         registerCommand(RedoCommand)
+
+        registerCommand(object: AbstractCommand("EIM:Temp", arrayOf(Key.CtrlLeft, Key.R)) {
+            override fun execute() {
+                val apm = EchoInMirror.audioProcessorManager
+                runBlocking {
+                    val track = apm.createTrack()
+                    val subTrack1 = apm.createTrack()
+                    val subTrack2 = apm.createTrack()
+                    track.name = "Track 1"
+                    subTrack1.name = "SubTrack 1"
+                    subTrack2.name = "SubTrack 2"
+                    val factory = apm.audioProcessorFactories["EIMAudioProcessorFactory"]!!
+                    val desc = factory.descriptions.find { it.name == "KarplusStrongSynthesizer" }!!
+                    subTrack1.preProcessorsChain.add(factory.createAudioProcessor(desc))
+                    if (IS_DEBUG) {
+                        val midi =
+                            withContext(Dispatchers.IO) {
+                                MidiSystem.getSequence(File("E:\\Midis\\UTMR&C VOL 1-14 [MIDI FILES] for other DAWs FINAL by Hunter UT\\VOL 13\\13.Darren Porter - To Feel Again LD.mid"))
+                            }
+                        track.notes.addAll(getNoteMessages(midi.getMidiEvents(1)))
+                    }
+
+                    track.subTracks.add(subTrack1)
+                    track.subTracks.add(subTrack2)
+                    EchoInMirror.bus?.subTracks?.add(track)
+                    EchoInMirror.selectedTrack = track
+                }
+            }
+        })
     }
 
     override fun registerCommand(command: Command) {
@@ -55,7 +92,11 @@ class CommandManagerImpl: CommandManager {
 
     override fun executeCommand(command: String) {
         val cmd = commands[command] ?: return
-        cmd.execute()
-        commandHandlers[cmd]!!.forEach { it() }
+        try {
+            cmd.execute()
+            commandHandlers[cmd]!!.forEach { it() }
+        } catch (e: Throwable) {
+            e.printStackTrace()
+        }
     }
 }

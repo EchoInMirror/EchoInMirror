@@ -21,12 +21,7 @@ import cn.apisium.eim.api.DefaultProjectInformation
 import cn.apisium.eim.api.processor.Track
 import cn.apisium.eim.api.window.Panel
 import cn.apisium.eim.api.window.WindowManager
-import cn.apisium.eim.data.midi.getMidiEvents
-import cn.apisium.eim.data.midi.getNoteMessages
-import cn.apisium.eim.impl.processor.BusImpl
-import cn.apisium.eim.impl.processor.TrackImpl
 import cn.apisium.eim.impl.processor.players.NativeAudioPlayer
-import cn.apisium.eim.processor.synthesizer.KarplusStrongSynthesizer
 import cn.apisium.eim.window.panels.editor.Editor
 import cn.apisium.eim.window.panels.Mixer
 import cn.apisium.eim.window.dialogs.QuickLoadDialog
@@ -34,9 +29,8 @@ import cn.apisium.eim.window.dialogs.settings.SettingsWindow
 import java.lang.ref.WeakReference
 import cn.apisium.eim.window.panels.UndoList
 import cn.apisium.eim.window.panels.editor.backingTracks
-import java.io.File
+import kotlinx.coroutines.runBlocking
 import java.nio.file.Path
-import javax.sound.midi.MidiSystem
 import kotlin.io.path.absolutePathString
 
 private data class FloatingDialog(val onClose: ((Any) -> Unit)?, val position: Offset?,
@@ -129,7 +123,9 @@ class WindowManagerImpl: WindowManager {
 
     override fun closeMainWindow(isExit: Boolean) {
         isMainWindowOpened = false
-        mainWindow.get()?.dispose()
+        try {
+            mainWindow.get()?.dispose()
+        } catch (ignored: Throwable) { }
         EchoInMirror.player?.close()
         EchoInMirror.bus?.close()
         EchoInMirror.player = null
@@ -144,22 +140,8 @@ class WindowManagerImpl: WindowManager {
         recentProjects.add(0, absolutePath)
         saveRecentProjects()
 
-        val track = TrackImpl("Track 1")
-        val subTrack1 = TrackImpl("SubTrack 1")
-        val subTrack2 = TrackImpl("SubTrack 2")
-        subTrack1.preProcessorsChain.add(KarplusStrongSynthesizer())
-        EchoInMirror.selectedTrack = track
-        if (IS_DEBUG) {
-            val midi =
-                MidiSystem.getSequence(File("E:\\Midis\\UTMR&C VOL 1-14 [MIDI FILES] for other DAWs FINAL by Hunter UT\\VOL 13\\13.Darren Porter - To Feel Again LD.mid"))
-            track.notes.addAll(getNoteMessages(midi.getMidiEvents(1)))
-        }
-
-        track.subTracks.add(subTrack1)
-        track.subTracks.add(subTrack2)
-        val bus = BusImpl(DefaultProjectInformation(path))
+        val bus = runBlocking { EchoInMirror.audioProcessorManager.createBus(DefaultProjectInformation(path)) }
         EchoInMirror.bus = bus
-        bus.subTracks.add(track)
         bus.prepareToPlay(EchoInMirror.currentPosition.sampleRate, EchoInMirror.currentPosition.bufferSize)
         val player = NativeAudioPlayer(EchoInMirror.currentPosition, bus, Configuration.nativeHostPath)
         player.open(EchoInMirror.currentPosition.sampleRate, EchoInMirror.currentPosition.bufferSize, 2)

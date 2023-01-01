@@ -9,6 +9,7 @@ enum class ChannelType {
 }
 
 interface Track : AudioProcessor, Pan, Volume, Mute, Solo, Disabled, MidiEventHandler, Colorable, Renderable {
+    override var name: String
     val subTracks: MutableList<Track>
     val preProcessorsChain: MutableList<AudioProcessor>
     val postProcessorsChain: MutableList<AudioProcessor>

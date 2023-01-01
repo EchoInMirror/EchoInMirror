@@ -21,7 +21,6 @@ import cn.apisium.eim.components.MenuItem
 import cn.apisium.eim.components.icons.*
 import cn.apisium.eim.utils.*
 import cn.apisium.eim.window.dialogs.settings.SettingsWindow
-import java.awt.Desktop
 import kotlin.math.roundToInt
 
 @Composable
@@ -87,7 +86,7 @@ internal fun StatusBar() {
                 CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurfaceVariant) {
                     StatusBarItem("Settings", Icons.Default.Settings, onClick = { EchoInMirror.windowManager.dialogs[SettingsWindow] = true })
                     StatusBarItem("Project", Icons.Default.Folder,
-                        onClick = { Desktop.getDesktop().open(EchoInMirror.bus!!.project.root.toFile()) },
+                        onClick = { openInExplorer(EchoInMirror.bus!!.project.root.toFile()) },
                         onLongClick = { EchoInMirror.windowManager.closeMainWindow() }
                     ) {
                         Text(EchoInMirror.bus!!.project.name)

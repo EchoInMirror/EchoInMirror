@@ -93,7 +93,7 @@ private fun TrackItem(track: Track, index: Int, depth: Int = 0) {
             }
         }
     }
-    track.subTracks.forEachIndexed { i, it -> key(it.uuid) {
+    track.subTracks.forEachIndexed { i, it -> key(it.id) {
         Divider(Modifier.offset(8.dp * (depth + 1)))
         TrackItem(it, i + 1, depth + 1)
     } }
@@ -111,7 +111,7 @@ private fun TrackContent(track: Track, modifier: Modifier = Modifier) {
         }
     }
     Divider()
-    track.subTracks.forEach { key(it.uuid) { TrackContent(it, modifier) } }
+    track.subTracks.forEach { key(it.id) { TrackContent(it, modifier) } }
 }
 
 @Suppress("DuplicatedCode")
@@ -175,7 +175,7 @@ fun Playlist() {
                 Column(Modifier.verticalScroll(verticalScrollState)) {
                     Divider()
                     EchoInMirror.bus!!.subTracks.forEachIndexed { i, it ->
-                        key(it.uuid) {
+                        key(it.id) {
                             TrackItem(it, i + 1)
                         }
                     }
@@ -205,7 +205,7 @@ fun Playlist() {
                         .width(width)) {
                         Divider()
                         EchoInMirror.bus!!.subTracks.forEach {
-                            key(it.uuid) { TrackContent(it) }
+                            key(it.id) { TrackContent(it) }
                         }
                     }
                     PlayHead(noteWidth, horizontalScrollState, contentWidth)

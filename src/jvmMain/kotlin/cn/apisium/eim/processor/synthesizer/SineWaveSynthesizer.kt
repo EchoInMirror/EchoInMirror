@@ -1,10 +1,18 @@
 package cn.apisium.eim.processor.synthesizer
 
 import cn.apisium.eim.api.CurrentPosition
+import cn.apisium.eim.api.processor.AudioProcessor
+import cn.apisium.eim.api.processor.AudioProcessorFactory
 import cn.apisium.eim.data.midi.MidiEvent
+import cn.apisium.eim.impl.processor.EIMAudioProcessorDescription
 import kotlin.math.sin
 
-class SineWaveSynthesizer: Synthesizer("SineWaveSynthesizer") {
+val SineWaveSynthesizerDescription = EIMAudioProcessorDescription("SineWaveSynthesizer", isInstrument = true)
+
+class SineWaveSynthesizer(
+    description: EIMAudioProcessorDescription,
+    factory: AudioProcessorFactory<AudioProcessor>,
+): Synthesizer(description, factory) {
     private val angels = DoubleArray(127)
 
     override suspend fun processBlock(buffers: Array<FloatArray>, position: CurrentPosition, midiBuffer: ArrayList<Int>) {

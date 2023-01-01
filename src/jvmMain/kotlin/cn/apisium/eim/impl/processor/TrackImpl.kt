@@ -1,9 +1,7 @@
 package cn.apisium.eim.impl.processor
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
+import androidx.compose.ui.graphics.Color
 import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.api.CurrentPosition
 import cn.apisium.eim.api.ProjectInformation
@@ -13,34 +11,54 @@ import cn.apisium.eim.api.processor.dsp.calcPanLeftChannel
 import cn.apisium.eim.api.processor.dsp.calcPanRightChannel
 import cn.apisium.eim.data.midi.*
 import cn.apisium.eim.utils.randomColor
-import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonAutoDetect
+import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import java.io.FileNotFoundException
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.*
+import kotlin.io.path.absolutePathString
 import kotlin.io.path.pathString
 
-open class TrackImpl(trackName: String) : Track, AbstractAudioProcessor() {
-    override var name by mutableStateOf(trackName)
+@JsonAutoDetect(
+    fieldVisibility = JsonAutoDetect.Visibility.NONE,
+    setterVisibility = JsonAutoDetect.Visibility.NONE,
+    getterVisibility = JsonAutoDetect.Visibility.NONE,
+    isGetterVisibility = JsonAutoDetect.Visibility.NONE,
+    creatorVisibility = JsonAutoDetect.Visibility.NONE
+)
+open class TrackImpl(description: AudioProcessorDescription, factory: TrackFactory<*>) :
+    Track, AbstractAudioProcessor(description, factory) {
+    @get:JsonProperty
+    override var name by mutableStateOf("")
+    @get:JsonProperty
+    @set:JsonProperty("color")
     override var color by mutableStateOf(randomColor(true))
+    @get:JsonProperty
     override var pan by mutableStateOf(0F)
+    @get:JsonProperty
     override var volume by mutableStateOf(1F)
 
-    @JsonIgnore
     override val levelMeter = LevelMeterImpl()
-    @JsonIgnore
     override val notes = NoteMessageListImpl()
 
-    @JsonIgnore
-    override val preProcessorsChain = mutableStateListOf<AudioProcessor>()
-    @JsonIgnore
-    override val postProcessorsChain = mutableStateListOf<AudioProcessor>()
-    @JsonIgnore
-    override val subTracks = mutableStateListOf<Track>()
+    @get:JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @JsonSerialize(using = AudioProcessorCollectionIDSerializer::class)
+    override val preProcessorsChain: MutableList<AudioProcessor> = mutableStateListOf()
+    @get:JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @JsonSerialize(using = AudioProcessorCollectionIDSerializer::class)
+    override val postProcessorsChain: MutableList<AudioProcessor> = mutableStateListOf()
+    @get:JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @JsonSerialize(using = AudioProcessorCollectionIDSerializer::class)
+    override val subTracks: MutableList<Track> = mutableStateListOf()
+
     private val pendingMidiBuffer = Collections.synchronizedList(ArrayList<Int>())
     private var currentPlayedIndex = 0
     private val pendingNoteOns = LongArray(128)
@@ -53,6 +71,7 @@ open class TrackImpl(trackName: String) : Track, AbstractAudioProcessor() {
     private var tempBuffer = arrayOf(FloatArray(1024), FloatArray(1024))
     private var tempBuffer2 = arrayOf(FloatArray(1024), FloatArray(1024))
     override var isRendering: Boolean by mutableStateOf(false)
+    @get:JsonProperty
     override var isMute
         get() = _isMute
         set(value) {
@@ -60,6 +79,7 @@ open class TrackImpl(trackName: String) : Track, AbstractAudioProcessor() {
             _isMute = value
             stateChange()
         }
+    @get:JsonProperty
     override var isSolo
         get() = _isSolo
         set(value) {
@@ -67,6 +87,7 @@ open class TrackImpl(trackName: String) : Track, AbstractAudioProcessor() {
             _isSolo = value
             stateChange()
         }
+    @get:JsonProperty
     override var isDisabled
         get() = _isDisabled
         set(value) {
@@ -223,12 +244,65 @@ open class TrackImpl(trackName: String) : Track, AbstractAudioProcessor() {
             if (!Files.exists(dir)) Files.createDirectory(dir)
             val trackFile = dir.resolve("track.json").toFile()
             jacksonObjectMapper().writerWithDefaultPrettyPrinter().writeValue(trackFile, this@TrackImpl)
+
+            if (subTracks.isNotEmpty()) {
+                val tracksDir = dir.resolve("tracks")
+                if (!Files.exists(tracksDir)) Files.createDirectory(tracksDir)
+                subTracks.forEach { launch { it.save(tracksDir.resolve(it.id).absolutePathString()) } }
+            }
+
+            if (preProcessorsChain.isNotEmpty() || postProcessorsChain.isNotEmpty()) {
+                val processorsDir = dir.resolve("processors")
+                if (!Files.exists(processorsDir)) Files.createDirectory(processorsDir)
+                preProcessorsChain.forEach { launch { it.save(processorsDir.resolve(it.id).absolutePathString()) } }
+                postProcessorsChain.forEach { launch { it.save(processorsDir.resolve(it.id).absolutePathString()) } }
+            }
+        }
+    }
+
+    override suspend fun load(path: String, json: JsonNode) {
+        withContext(Dispatchers.IO) {
+            try {
+                val dir = Paths.get(path)
+                val reader = jacksonObjectMapper().readerForUpdating(this@TrackImpl)
+                reader.readValue<TrackImpl>(json)
+                val tracksDir = dir.resolve("tracks")
+                json.get("subTracks").forEach {
+                    launch {
+                        val trackID = it.asText()
+                        val trackPath = tracksDir.resolve(trackID)
+                        subTracks.add(EchoInMirror.audioProcessorManager.createTrack(trackPath.absolutePathString(), trackID))
+                    }
+                }
+                val processorsDir = dir.resolve("processors").absolutePathString()
+                json.get("preProcessorsChain").forEach {
+                    launch {
+                        preProcessorsChain.add(EchoInMirror.audioProcessorManager
+                            .createAudioProcessor(processorsDir, it.asText()))
+                    }
+                }
+                json.get("postProcessorsChain").forEach {
+                    launch {
+                        postProcessorsChain.add(EchoInMirror.audioProcessorManager
+                            .createAudioProcessor(processorsDir, it.asText()))
+                    }
+                }
+            } catch (_: FileNotFoundException) { }
         }
     }
 }
 
-class BusImpl(override val project: ProjectInformation) : TrackImpl("Bus"), Bus {
+class BusImpl(
+    override val project: ProjectInformation,
+    description: AudioProcessorDescription, factory: TrackFactory<Track>
+) : TrackImpl(description, factory), Bus {
+    override var name = "Bus"
+    @get:JsonProperty
     override var channelType by mutableStateOf(ChannelType.STEREO)
+    override var color
+        get() = Color.Transparent
+        set(_) { }
+
     override suspend fun save() {
         project.save()
         save(project.root.pathString)

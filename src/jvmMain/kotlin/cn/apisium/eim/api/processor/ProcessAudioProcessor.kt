@@ -4,7 +4,7 @@ import cn.apisium.eim.api.CurrentPosition
 
 interface ProcessAudioProcessor: AudioProcessor {
     val isLaunched: Boolean
-    suspend fun launch(): Boolean
+    suspend fun launch(execFile: String, vararg commands: String): Boolean
 }
 
 fun CurrentPosition.toFlags(): Int {

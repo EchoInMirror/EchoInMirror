@@ -53,6 +53,7 @@ kotlin {
                     exclude("org.jetbrains.kotlin")
                 }
                 implementation("org.ocpsoft.prettytime:prettytime:5.0.6.Final")
+                implementation("com.aventrix.jnanoid:jnanoid:2.0.0")
             }
         }
 

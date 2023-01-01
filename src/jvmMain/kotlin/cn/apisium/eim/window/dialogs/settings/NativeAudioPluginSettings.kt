@@ -15,12 +15,12 @@ import cn.apisium.eim.components.Gap
 import cn.apisium.eim.components.Tab
 import cn.apisium.eim.impl.processor.NativeAudioPluginFactoryImpl
 import cn.apisium.eim.impl.processor.nativeAudioPluginManager
-import cn.apisium.eim.utils.CurrentWindow
-import cn.apisium.eim.utils.openFolderBrowser
+import cn.apisium.eim.utils.*
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import java.io.File
 import javax.swing.JFileChooser
 import javax.swing.filechooser.FileNameExtensionFilter
 
@@ -96,7 +96,9 @@ internal class NativeAudioPluginSettings: Tab {
                     Card {
                         apm.scanPaths.forEach {
                             ListItem(
-                                modifier = Modifier.background(MaterialTheme.colorScheme.surface),
+                                modifier = Modifier.background(MaterialTheme.colorScheme.surface).clickableWithIcon {
+                                    if (apm.pluginIsFile) openInExplorer(File(it))
+                                },
                                 headlineText = { Text(it) },
                                 trailingContent = {
                                     IconButton(
@@ -123,7 +125,7 @@ internal class NativeAudioPluginSettings: Tab {
                                 modifier = Modifier.padding(bottom = 8.dp),
                             )
                         }
-                        LinearProgressIndicator(
+                        if (apm.allScanCount != 0) LinearProgressIndicator(
                             modifier = Modifier.padding(vertical = 4.dp).fillMaxWidth(),
                             progress = apm.scannedCount.toFloat() / apm.allScanCount,
                         )
@@ -131,7 +133,9 @@ internal class NativeAudioPluginSettings: Tab {
                             apm.scanningPlugins.forEach { (k, v) ->
                                 key(k) {
                                     ListItem(
-                                        modifier = Modifier.background(MaterialTheme.colorScheme.surface),
+                                        modifier = Modifier.background(MaterialTheme.colorScheme.surface).clickableWithIcon {
+                                            if (apm.pluginIsFile) selectInExplorer(File(k))
+                                        },
                                         headlineText = { Text(k) },
                                         trailingContent = {
                                             IconButton(
@@ -182,7 +186,9 @@ internal class NativeAudioPluginSettings: Tab {
                     Card {
                         apm.skipList.forEach {
                             ListItem(
-                                modifier = Modifier.background(MaterialTheme.colorScheme.surface),
+                                modifier = Modifier.background(MaterialTheme.colorScheme.surface).clickableWithIcon {
+                                    if (apm.pluginIsFile) selectInExplorer(File(it))
+                                },
                                 headlineText = { Text(it) },
                                 trailingContent = {
                                     IconButton(

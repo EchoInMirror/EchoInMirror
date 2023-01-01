@@ -20,9 +20,12 @@ import androidx.compose.ui.platform.ClipboardManager
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.aventrix.jnanoid.jnanoid.NanoIdUtils
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import org.apache.commons.lang3.SystemUtils
 import org.ocpsoft.prettytime.PrettyTime
 import java.awt.Component
+import java.awt.Desktop
 import java.io.File
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -39,8 +42,6 @@ val DURATION_PRETTIER = PrettyTime(ZERO_DATE)
 
 fun mapValue(value: Int, start1: Int, stop1: Int) = ((value - start1) / (stop1 - start1).toFloat()).coerceIn(0f, 1f)
 fun mapValue(value: Float, start1: Float, stop1: Float) = ((value - start1) / (stop1 - start1)).coerceIn(0f, 1f)
-
-fun randomUUID() = UUID.randomUUID().mostSignificantBits and Long.MAX_VALUE
 
 data class Border(val strokeWidth: Dp, val color: Color, val offset: Dp = 0.dp)
 
@@ -190,3 +191,13 @@ fun openFolderBrowser(parent: Component? = null): File? {
 }
 
 fun formatDuration(time: Long): String = DURATION_PRETTIER.formatDuration(Date(time)).ifEmpty { DURATION_PRETTIER.format(ZERO_DATE) }
+
+fun openInExplorer(file: File) = Desktop.getDesktop().open(file)
+fun selectInExplorer(file: File) {
+    Desktop.getDesktop().apply {
+        if (isSupported(Desktop.Action.BROWSE_FILE_DIR)) browseFileDirectory(file)
+        else if (SystemUtils.IS_OS_WINDOWS) Runtime.getRuntime().exec("explorer.exe /select,\"${file.absolutePath}\"")
+    }
+}
+
+fun randomId(): String = NanoIdUtils.randomNanoId(NanoIdUtils.DEFAULT_NUMBER_GENERATOR, NanoIdUtils.DEFAULT_ALPHABET, 8)

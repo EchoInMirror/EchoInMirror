@@ -369,7 +369,7 @@ private fun NotesEditorCanvas() {
         val displayPPQ = EchoInMirror.currentPosition.projectDisplayPPQ
         val localDensity = LocalDensity.current
         remember(displayPPQ, localDensity) {
-            with (localDensity) { horizontalScrollState.openMaxValue = (noteWidth.value * displayPPQ).toPx().toInt() }
+            with (localDensity) { horizontalScrollState.openMaxValue = (noteWidth.value.toPx() * displayPPQ).toInt() }
         }
         EditorGrid(noteWidth, horizontalScrollState)
         Spacer(Modifier.fillMaxSize().drawWithCache {

@@ -1,10 +1,16 @@
 package cn.apisium.eim.processor.synthesizer
 
 import cn.apisium.eim.api.CurrentPosition
-import cn.apisium.eim.api.processor.AbstractAudioProcessor
+import cn.apisium.eim.api.processor.*
 import cn.apisium.eim.data.midi.MidiEvent
+import cn.apisium.eim.impl.processor.EIMAudioProcessorDescription
 
-class KarplusStrongSynthesizer: AbstractAudioProcessor("KarplusStrongSynthesizer") {
+val KarplusStrongSynthesizerDescription = EIMAudioProcessorDescription("KarplusStrongSynthesizer", isInstrument = true)
+
+class KarplusStrongSynthesizer(
+    description: EIMAudioProcessorDescription,
+    factory: AudioProcessorFactory<AudioProcessor>,
+): AbstractAudioProcessor(description, factory) {
     private val cacheBuffers = FloatArray(1024000)
     private var cacheSize = 0
     private val alpha = 0.995
