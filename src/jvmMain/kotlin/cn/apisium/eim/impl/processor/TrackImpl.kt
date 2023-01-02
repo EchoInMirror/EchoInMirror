@@ -38,7 +38,7 @@ import kotlin.io.path.pathString
 open class TrackImpl(description: AudioProcessorDescription, factory: TrackFactory<*>) :
     Track, AbstractAudioProcessor(description, factory) {
     @get:JsonProperty
-    override var name by mutableStateOf("")
+    override var name by mutableStateOf("NewTrack")
     @get:JsonProperty
     @set:JsonProperty("color")
     override var color by mutableStateOf(randomColor(true))

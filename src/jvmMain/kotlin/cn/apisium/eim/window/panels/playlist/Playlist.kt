@@ -38,6 +38,7 @@ import cn.apisium.eim.window.dialogs.openColorPicker
 import cn.apisium.eim.window.panels.editor.calcScroll
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 private val TRACK_ITEM_ICON_SIZE = Modifier.size(16.dp)
 
@@ -177,9 +178,14 @@ fun Playlist() {
                     EchoInMirror.bus!!.subTracks.forEachIndexed { i, it ->
                         key(it.id) {
                             TrackItem(it, i + 1)
+                            Divider()
                         }
                     }
-                    Divider()
+                    TextButton({
+                        runBlocking { EchoInMirror.bus!!.subTracks.add(EchoInMirror.audioProcessorManager.createTrack()) }
+                    }, Modifier.fillMaxWidth()) {
+                        Text("创建轨道")
+                    }
                 }
             }
         }
@@ -207,12 +213,19 @@ fun Playlist() {
                         EchoInMirror.bus!!.subTracks.forEach {
                             key(it.id) { TrackContent(it) }
                         }
+                        TextButton({ }, Modifier.width(0.dp)) { }
                     }
                     PlayHead(noteWidth, horizontalScrollState, contentWidth)
+                    VerticalScrollbar(
+                        rememberScrollbarAdapter(verticalScrollState),
+                        Modifier.align(Alignment.TopEnd).fillMaxHeight()
+                    )
                 }
             }
-            HorizontalScrollbar(rememberScrollbarAdapter(horizontalScrollState),
-                Modifier.align(Alignment.TopStart).fillMaxWidth())
+            HorizontalScrollbar(
+                rememberScrollbarAdapter(horizontalScrollState),
+                Modifier.align(Alignment.TopStart).fillMaxWidth()
+            )
         }
     }
 }
