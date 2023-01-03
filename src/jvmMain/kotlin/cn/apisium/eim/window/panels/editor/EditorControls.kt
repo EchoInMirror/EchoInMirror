@@ -33,8 +33,8 @@ private fun dfsTrackIndex(track: Track, target: Track, index: String): String? {
 
 @Composable
 private fun TrackItem(track: Track, index: String) {
-    val isSelected = backingTracks.contains(track) || EchoInMirror.selectedTrack == track
-    MenuItem(isSelected, {
+    val isSelected = EchoInMirror.selectedTrack == track
+    MenuItem(isSelected || backingTracks.contains(track), {
         if (!backingTracks.remove(track)) backingTracks.add(track)
     }, {
         EchoInMirror.selectedTrack = track

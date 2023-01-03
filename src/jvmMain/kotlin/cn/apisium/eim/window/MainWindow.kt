@@ -40,7 +40,7 @@ fun ApplicationScope.MainWindow() {
     Window({
         EchoInMirror.windowManager.closeMainWindow(true)
         exitApplication()
-   }, icon = Logo, title = "Echo In Mirror", onKeyEvent = {
+    }, icon = Logo, title = "Echo In Mirror", onKeyEvent = {
         if (it.type != KeyEventType.KeyUp) return@Window false
         var keys = it.key.keyCode.toString()
         if (it.isCtrlPressed) keys = "${Key.CtrlLeft.keyCode} $keys"

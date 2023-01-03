@@ -51,6 +51,15 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
     @get:JsonInclude(JsonInclude.Include.NON_DEFAULT)
     override var height by mutableStateOf(0)
 
+    @get:JsonProperty
+    @get:JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    override var sendToChild by mutableStateOf(false)
+    @get:JsonProperty
+    @get:JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    override var returnToParent by mutableStateOf(false)
+    @Suppress("LeakingThis")
+    private val busInstance = this as? Bus
+
     override val levelMeter = LevelMeterImpl()
 
     @get:JsonProperty(access = JsonProperty.Access.READ_ONLY)
@@ -149,24 +158,36 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
             }
         }
         preProcessorsChain.forEach { it.processBlock(buffers, position, midiBuffer) }
-        if (subTracks.size == 1) {
-            val track = subTracks.first()
-            if (!track.isMute && !track.isDisabled) track.processBlock(buffers, position, ArrayList(midiBuffer))
-        } else if (subTracks.isNotEmpty()) {
+        if (subTracks.isNotEmpty()) {
             tempBuffer[0].fill(0F)
             tempBuffer[1].fill(0F)
             runBlocking {
+                val bus = EchoInMirror.bus
                 subTracks.forEach {
                     if (it.isMute || it.isDisabled || it.isRendering) return@forEach
                     launch {
-                        val buffer = if (it is TrackImpl) it.tempBuffer2.apply {
-                            buffers[0].copyInto(this[0])
-                            buffers[1].copyInto(this[1])
-                        } else arrayOf(buffers[0].clone(), buffers[1].clone())
-                        it.processBlock(buffer, position, ArrayList(midiBuffer))
-                        for (i in 0 until position.bufferSize) {
-                            tempBuffer[0][i] += buffer[0][i]
-                            tempBuffer[1][i] += buffer[1][i]
+                        val buffer = if (sendToChild) {
+                            if (it is TrackImpl) it.tempBuffer2.apply {
+                                buffers[0].copyInto(this[0])
+                                buffers[1].copyInto(this[1])
+                            } else arrayOf(buffers[0].clone(), buffers[1].clone())
+                        } else {
+                            if (it is TrackImpl) it.tempBuffer2.apply {
+                                this[0].fill(0F)
+                                this[1].fill(0F)
+                            } else arrayOf(FloatArray(buffers[0].size), FloatArray(buffers[1].size))
+                        }
+                        it.processBlock(buffer, position, if (sendToChild) ArrayList(midiBuffer) else ArrayList())
+                        if (it.returnToParent) {
+                            for (i in 0 until position.bufferSize) {
+                                tempBuffer[0][i] += buffer[0][i]
+                                tempBuffer[1][i] += buffer[1][i]
+                            }
+                        } else {
+                            if (bus != null) for (i in 0 until position.bufferSize) {
+                                bus.buffers[0][i] += buffer[0][i]
+                                bus.buffers[1][i] += buffer[1][i]
+                            }
                         }
                     }
                 }
@@ -174,6 +195,14 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
             tempBuffer[0].copyInto(buffers[0])
             tempBuffer[1].copyInto(buffers[1])
         }
+
+        busInstance?.apply {
+            for (i in 0 until position.bufferSize) {
+                buffers[0][i] += this.buffers[0][i]
+                buffers[1][i] += this.buffers[1][i]
+            }
+        }
+
         postProcessorsChain.forEach { it.processBlock(buffers, position, midiBuffer) }
 
         var leftPeak = 0F
@@ -310,6 +339,7 @@ class BusImpl(
     override var lastSaveTime by mutableStateOf(System.currentTimeMillis())
     @get:JsonProperty
     override var channelType by mutableStateOf(ChannelType.STEREO)
+    override var buffers: Array<FloatArray> = arrayOf(FloatArray(0), FloatArray(0))
     override var color
         get() = Color.Transparent
         set(_) { }
@@ -322,11 +352,18 @@ class BusImpl(
         save(project.root.pathString)
     }
 
+    override fun prepareToPlay(sampleRate: Int, bufferSize: Int) {
+        super<TrackImpl>.prepareToPlay(sampleRate, bufferSize)
+        buffers = arrayOf(FloatArray(bufferSize), FloatArray(bufferSize))
+    }
+
     override suspend fun processBlock(
         buffers: Array<FloatArray>,
         position: CurrentPosition,
         midiBuffer: ArrayList<Int>
     ) {
+        this.buffers[0].fill(0f)
+        this.buffers[1].fill(0f)
         super.processBlock(buffers, position, midiBuffer)
 
         when (channelType) {
