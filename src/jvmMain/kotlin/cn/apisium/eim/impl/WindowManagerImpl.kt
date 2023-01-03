@@ -25,6 +25,7 @@ import cn.apisium.eim.impl.processor.players.NativeAudioPlayer
 import cn.apisium.eim.window.panels.editor.Editor
 import cn.apisium.eim.window.panels.Mixer
 import cn.apisium.eim.window.dialogs.QuickLoadDialog
+import cn.apisium.eim.window.dialogs.ExportDialog
 import cn.apisium.eim.window.dialogs.settings.SettingsWindow
 import cn.apisium.eim.window.panels.UndoList
 import cn.apisium.eim.window.panels.editor.backingTracks
@@ -52,6 +53,7 @@ class WindowManagerImpl: WindowManager {
     init {
         dialogs[SettingsWindow] = false
         dialogs[QuickLoadDialog] = false
+        dialogs[ExportDialog] = false
     }
 
     override fun registerPanel(panel: Panel) {
