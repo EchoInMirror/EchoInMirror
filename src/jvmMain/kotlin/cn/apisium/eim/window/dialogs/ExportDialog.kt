@@ -106,7 +106,7 @@ val ExportDialog = @Composable {
                     var exportSelect by remember { mutableStateOf(exportOptions[0]) }
                     Row {
 
-                        Row(Modifier.zIndex(100f), verticalAlignment = Alignment.CenterVertically) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
                             Text("导出格式 ")
                             var expanded by remember { mutableStateOf(false) }
                             Menu(expanded, {
@@ -136,7 +136,7 @@ val ExportDialog = @Composable {
 
                         val soundOptions = listOf<String>("立体声", "左声道", "右声道")
                         var soundSelect by remember { mutableStateOf(soundOptions[0]) }
-                        Row(Modifier.zIndex(100f)) {
+                        Row {
                             var expanded by remember { mutableStateOf(false) }
                             Menu(expanded, {
                                 Column {
@@ -161,95 +161,94 @@ val ExportDialog = @Composable {
                             }
                         }
                     }
-
-                    if (exportSelect.isLossLess) {
-                        val deepList = listOf<Int>(32, 24, 16)
-                        var deep by remember { mutableStateOf(deepList[0]) }
-                        Spacer(Modifier.height(10.dp))
-                        Row {
-                            Text("位深 ")
-                            var expanded by remember { mutableStateOf(false) }
-                            Menu(expanded, {
-                                Column {
-                                    deepList.map {
-                                        MenuItem(
-                                            deep == it, {
-                                                expanded = false
-                                                deep = it
+                    Row {
+                        if (exportSelect.isLossLess) {
+                            val deepList = listOf<Int>(32, 24, 16)
+                            var deep by remember { mutableStateOf(deepList[0]) }
+                            Row {
+                                Text("位深 ")
+                                var expanded by remember { mutableStateOf(false) }
+                                Menu(expanded, {
+                                    Column {
+                                        deepList.map {
+                                            MenuItem(
+                                                deep == it, {
+                                                    expanded = false
+                                                    deep = it
+                                                }
+                                            ) {
+                                                Text(it.toString())
                                             }
-                                        ) {
-                                            Text(it.toString())
                                         }
                                     }
-                                }
-                            }) {
-                                Row(Modifier.clickable {
-                                    expanded = !expanded
                                 }) {
-                                    Text("${deep}位")
-                                    Icon(Icons.Filled.ExpandMore, null, Modifier.padding(horizontal = 8.dp))
+                                    Row(Modifier.clickable {
+                                        expanded = !expanded
+                                    }) {
+                                        Text("${deep}位")
+                                        Icon(Icons.Filled.ExpandMore, null, Modifier.padding(horizontal = 8.dp))
+                                    }
                                 }
                             }
                         }
-                    }
 
-                    if (!exportSelect.isLossLess) {
-                        Spacer(Modifier.height(10.dp))
-                        val bitRateOptions = listOf<Int>(128, 192, 256, 320)
-                        var bitRate by remember { mutableStateOf(bitRateOptions[0]) }
-                        Row {
-                            Text("比特率 ")
-                            var expanded by remember { mutableStateOf(false) }
-                            Menu(expanded, {
-                                Column {
-                                    bitRateOptions.map {
-                                        MenuItem(
-                                            bitRate == it, {
-                                                expanded = false
-                                                bitRate = it
+                        if (!exportSelect.isLossLess) {
+                            val bitRateOptions = listOf<Int>(128, 192, 256, 320)
+                            var bitRate by remember { mutableStateOf(bitRateOptions[0]) }
+                            Row {
+                                Text("比特率 ")
+                                var expanded by remember { mutableStateOf(false) }
+                                Menu(expanded, {
+                                    Column {
+                                        bitRateOptions.map {
+                                            MenuItem(
+                                                bitRate == it, {
+                                                    expanded = false
+                                                    bitRate = it
+                                                }
+                                            ) {
+                                                Text(it.toString())
                                             }
-                                        ) {
-                                            Text(it.toString())
                                         }
                                     }
-                                }
-                            }) {
-                                Row(Modifier.clickable {
-                                    expanded = !expanded
                                 }) {
-                                    Text("${bitRate}kbps")
-                                    Icon(Icons.Filled.ExpandMore, null, Modifier.padding(horizontal = 8.dp))
+                                    Row(Modifier.clickable {
+                                        expanded = !expanded
+                                    }) {
+                                        Text("${bitRate}kbps")
+                                        Icon(Icons.Filled.ExpandMore, null, Modifier.padding(horizontal = 8.dp))
+                                    }
                                 }
                             }
                         }
-                    }
 
-                    if (exportSelect.extend == "flac") {
-                        Spacer(Modifier.height(10.dp))
-                        val flacCompressOptions = 0..8
-                        var flacCompress by remember { mutableStateOf(5) }
-                        Row {
-                            Text("flac压缩 ")
-                            var expanded by remember { mutableStateOf(false) }
-                            Menu(expanded, {
-                                Column {
-                                    flacCompressOptions.map {
-                                        MenuItem(
-                                            flacCompress == it, {
-                                                expanded = false
-                                                flacCompress = it
+                        if (exportSelect.extend == "flac") {
+                            Spacer(Modifier.width(10.dp))
+                            val flacCompressOptions = 0..8
+                            var flacCompress by remember { mutableStateOf(5) }
+                            Row {
+                                Text("flac压缩 ")
+                                var expanded by remember { mutableStateOf(false) }
+                                Menu(expanded, {
+                                    Column {
+                                        flacCompressOptions.map {
+                                            MenuItem(
+                                                flacCompress == it, {
+                                                    expanded = false
+                                                    flacCompress = it
+                                                }
+                                            ) {
+                                                Text(it.toString())
                                             }
-                                        ) {
-                                            Text(it.toString())
                                         }
                                     }
-                                }
-                            }) {
-                                Row(Modifier.clickable {
-                                    expanded = !expanded
                                 }) {
-                                    Text(flacCompress.toString())
-                                    Icon(Icons.Filled.ExpandMore, null, Modifier.padding(horizontal = 8.dp))
+                                    Row(Modifier.clickable {
+                                        expanded = !expanded
+                                    }) {
+                                        Text(flacCompress.toString())
+                                        Icon(Icons.Filled.ExpandMore, null, Modifier.padding(horizontal = 8.dp))
+                                    }
                                 }
                             }
                         }
