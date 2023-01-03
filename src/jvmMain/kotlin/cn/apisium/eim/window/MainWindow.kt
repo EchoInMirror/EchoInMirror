@@ -16,6 +16,7 @@ import androidx.compose.ui.window.ApplicationScope
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowExceptionHandler
 import cn.apisium.eim.EchoInMirror
+import cn.apisium.eim.components.LocalFloatingDialogProvider
 import cn.apisium.eim.components.app.*
 import cn.apisium.eim.components.app.EimAppBar
 import cn.apisium.eim.components.app.SideBar
@@ -91,7 +92,7 @@ fun ApplicationScope.MainWindow() {
                 )
             }
 
-            EchoInMirror.windowManager.FloatingDialogs()
+            LocalFloatingDialogProvider.current.FloatingDialogs()
         }
 
         EchoInMirror.windowManager.Dialogs()
