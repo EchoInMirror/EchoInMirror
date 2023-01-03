@@ -29,10 +29,7 @@ import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.actions.doAddOrRemoveTrackAction
 import cn.apisium.eim.actions.doReorderAction
 import cn.apisium.eim.api.processor.Track
-import cn.apisium.eim.components.SegmentedButton
-import cn.apisium.eim.components.SegmentedButtons
-import cn.apisium.eim.components.SegmentedDivider
-import cn.apisium.eim.components.VolumeSlider
+import cn.apisium.eim.components.*
 import cn.apisium.eim.components.icons.Crown
 import cn.apisium.eim.components.icons.DebugStepOver
 import cn.apisium.eim.utils.clickableWithIcon
@@ -144,8 +141,9 @@ private fun TrackItem(track: Track, parentTrack: Track, index: Int, depth: Int =
 //                drawRect(color, Offset(0F, y), Size(size.width, size.height - y))
 //            }
 //        }
+        val localFloatingDialogProvider = LocalFloatingDialogProvider.current
         Spacer(Modifier.fillMaxHeight().width(8.dp).background(track.color).clickableWithIcon {
-            openColorPicker(track.color) { track.color = it }
+            openColorPicker(localFloatingDialogProvider, track.color) { track.color = it }
         })
         Row(Modifier.padding(8.dp, 4.dp)) {
             Text(index.toString(),

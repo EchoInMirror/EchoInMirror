@@ -12,7 +12,6 @@ import androidx.compose.ui.window.ApplicationScope
 import androidx.compose.ui.window.Window
 import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.components.*
-import cn.apisium.eim.impl.WindowManagerImpl
 import cn.apisium.eim.recentProjects
 import cn.apisium.eim.utils.*
 import java.awt.Dimension
@@ -44,12 +43,15 @@ private class Projects: Tab {
             Row {
                 val window = CurrentWindow.current
                 val id = remember { Any() }
+                val localFloatingDialogProvider = LocalFloatingDialogProvider.current
                 ExtendedFloatingActionButton({
                     openFolderBrowser(window)?.let {
                         if (!it.isDirectory) return@let
                         if (Files.list(it.toPath()).findFirst().isPresent && !File(it, "eim.json").exists()) {
-                            EchoInMirror.windowManager.openFloatingDialog({ EchoInMirror.windowManager.closeFloatingDialog(id) }, hasOverlay = true, key = id) {
-                                Dialog({ EchoInMirror.windowManager.closeFloatingDialog(id) }) {
+                            localFloatingDialogProvider.openFloatingDialog({
+                                localFloatingDialogProvider.closeFloatingDialog(id)
+                            }, hasOverlay = true, key = id) {
+                                Dialog({ localFloatingDialogProvider.closeFloatingDialog(id) }) {
                                     Text("无法打开该文件夹, 因为它不是一个有效的项目文件夹 (不为空或不存在 eim.json 文件)")
                                 }
                             }
@@ -102,7 +104,10 @@ val welcomeWindowTabs = mutableStateListOf<Tab>(Projects())
 fun ApplicationScope.ProjectWindow() {
     Window(::exitApplication, icon = Logo, title = "Echo In Mirror") {
         window.minimumSize = Dimension(860, 700)
-        Tabs(welcomeWindowTabs)
-        (EchoInMirror.windowManager as WindowManagerImpl).FloatingDialogs()
+        val floatingDialogProvider = remember { FloatingDialogProvider() }
+        CompositionLocalProvider(LocalFloatingDialogProvider.provides(floatingDialogProvider)) {
+            Tabs(welcomeWindowTabs)
+        }
+        floatingDialogProvider.FloatingDialogs()
     }
 }
