@@ -104,7 +104,10 @@ val welcomeWindowTabs = mutableStateListOf<Tab>(Projects())
 fun ApplicationScope.ProjectWindow() {
     Window(::exitApplication, icon = Logo, title = "Echo In Mirror") {
         window.minimumSize = Dimension(860, 700)
-        Tabs(welcomeWindowTabs)
-        LocalFloatingDialogProvider.current.FloatingDialogs()
+        val floatingDialogProvider = remember { FloatingDialogProvider() }
+        CompositionLocalProvider(LocalFloatingDialogProvider.provides(floatingDialogProvider)) {
+            Tabs(welcomeWindowTabs)
+        }
+        floatingDialogProvider.FloatingDialogs()
     }
 }
