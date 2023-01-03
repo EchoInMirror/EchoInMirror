@@ -15,6 +15,7 @@ interface Track : AudioProcessor, Pan, Volume, Mute, Solo, Disabled, MidiEventHa
     val postProcessorsChain: MutableList<AudioProcessor>
     val levelMeter: LevelMeter
     val notes: NoteMessageList
+    var height: Int
     override suspend fun processBlock(
         buffers: Array<FloatArray>,
         position: CurrentPosition,

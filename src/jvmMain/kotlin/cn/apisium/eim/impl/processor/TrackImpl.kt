@@ -12,6 +12,7 @@ import cn.apisium.eim.api.processor.dsp.calcPanRightChannel
 import cn.apisium.eim.data.midi.*
 import cn.apisium.eim.utils.randomColor
 import com.fasterxml.jackson.annotation.JsonAutoDetect
+import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
@@ -46,6 +47,9 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
     override var pan by mutableStateOf(0F)
     @get:JsonProperty
     override var volume by mutableStateOf(1F)
+    @get:JsonProperty
+    @get:JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    override var height by mutableStateOf(0)
 
     override val levelMeter = LevelMeterImpl()
 

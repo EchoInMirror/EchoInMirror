@@ -13,17 +13,16 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Tune
 
 fun Track.doNoteAmountAction(noteMessage: Collection<NoteMessage>, isDelete: Boolean = false) {
-    val track = this
-    runBlocking { EchoInMirror.undoManager.execute(NoteAmountAction(track, noteMessage.toSet(), isDelete)) }
+    runBlocking { EchoInMirror.undoManager.execute(NoteAmountAction(this@doNoteAmountAction,
+        noteMessage.toSet(), isDelete)) }
 }
 
 fun Track.doNoteMessageEditAction(noteMessage: Array<NoteMessage>, deltaX: Int, deltaY: Int, deltaDuration: Int) {
     if (deltaX == 0 && deltaY == 0 && deltaDuration == 0) return
-    val track = this
     runBlocking {
         EchoInMirror.undoManager.execute(
             NoteMessageEditAction(
-                track,
+                this@doNoteMessageEditAction,
                 noteMessage,
                 deltaX,
                 deltaY,
@@ -35,8 +34,8 @@ fun Track.doNoteMessageEditAction(noteMessage: Array<NoteMessage>, deltaX: Int, 
 
 fun Track.doNoteVelocityAction(noteMessage: Array<NoteMessage>, deltaVelocity: Int) {
     if (deltaVelocity == 0) return
-    val track = this
-    runBlocking { EchoInMirror.undoManager.execute(NoteVelocityAction(track, noteMessage, deltaVelocity)) }
+    runBlocking { EchoInMirror.undoManager.execute(NoteVelocityAction(this@doNoteVelocityAction,
+        noteMessage, deltaVelocity)) }
 }
 
 class NoteAmountAction(private val track: Track, private val notes: Set<NoteMessage>, isDelete: Boolean) :
