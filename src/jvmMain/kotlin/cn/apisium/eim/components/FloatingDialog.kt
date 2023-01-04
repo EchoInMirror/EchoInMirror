@@ -87,9 +87,10 @@ val LocalFloatingDialogProvider = staticCompositionLocalOf { FloatingDialogProvi
 fun FloatingDialog(dialogContent: @Composable (size: Size, closeDialog: () -> Unit) -> Unit,
                    modifier: Modifier = Modifier, enabled: Boolean = true,
                    hasOverlay: Boolean = false, isCentral: Boolean = false,
+                   floatingDialogProvider: FloatingDialogProvider? = null,
                    content: @Composable BoxScope.() -> Unit) {
     val id = remember { Any() }
-    val localFloatingDialogProvider = LocalFloatingDialogProvider.current
+    val localFloatingDialogProvider = floatingDialogProvider ?: LocalFloatingDialogProvider.current
     val closeDialog = remember { { localFloatingDialogProvider.closeFloatingDialog(id) } }
     val offset = remember { arrayOf(Offset.Zero) }
     val size = remember { arrayOf(Size.Zero) }

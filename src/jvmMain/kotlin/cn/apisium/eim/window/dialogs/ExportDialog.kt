@@ -1,6 +1,5 @@
 package cn.apisium.eim.window.dialogs
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -20,11 +19,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.zIndex
 import cn.apisium.eim.api.convertPPQToSamples
-import cn.apisium.eim.components.MenuItem
+import cn.apisium.eim.components.*
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import java.io.File
@@ -37,35 +34,46 @@ private fun closeQuickLoadWindow() {
 data class ExportFormate(val extend: String, val isLossLess: Boolean = true, val formate: AudioFileFormat.Type? = null)
 
 @Composable
-private fun Menu(expanded: Boolean = false, menuItems: @Composable () -> Unit, content: @Composable () -> Unit) {
-    Column {
-        content()
-        if (expanded) {
-            Layout({
-                Surface(
-                    tonalElevation = 5.dp, shadowElevation = 5.dp
-                ) {
-                    val stateVertical = rememberScrollState(0)
-                    Box(Modifier.verticalScroll(stateVertical).graphicsLayer(alpha = 1f, shadowElevation = 2F)) {
-                        menuItems()
-                    }
-                }
-            }) { measurable, constraints ->
-                val placeable = measurable.firstOrNull()?.measure(constraints)
-                layout(constraints.minWidth, constraints.minHeight) {
-                    placeable!!.place(0, 0)
-                }
+private fun Menu(
+    menuItems: @Composable (closeDialog: () -> Unit) -> Unit,
+    floatingDialogProvider: FloatingDialogProvider? = null,
+    content: @Composable () -> Unit
+) {
+    FloatingDialog({ _, close ->
+        Surface(
+            shape = MaterialTheme.shapes.extraSmall,
+            shadowElevation = 6.dp, tonalElevation = 1.dp
+        ) {
+            val stateVertical = rememberScrollState(0)
+            Column(Modifier.verticalScroll(stateVertical)) {
+                menuItems(close)
+            }
+        }
+    }, modifier = Modifier.zIndex(100f), floatingDialogProvider = floatingDialogProvider) {
+        Surface(
+            shadowElevation = 2.dp,
+            tonalElevation = 4.dp
+        ) {
+            Row(
+                Modifier.width(100.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                content()
+                Icon(Icons.Filled.ExpandMore, null, Modifier.padding(horizontal = 8.dp))
             }
         }
     }
+
 }
 
 val ExportDialog = @Composable {
     Dialog(::closeQuickLoadWindow, title = "导出") {
         window.minimumSize = Dimension(300, 300)
         window.isModal = false
+        val floatingDialogProvider = remember { FloatingDialogProvider() }
         Surface(Modifier.fillMaxSize(), tonalElevation = 4.dp) {
-
+            floatingDialogProvider.FloatingDialogs()
             Box(Modifier.padding(10.dp)) {
                 Column {
                     Row {
@@ -105,45 +113,37 @@ val ExportDialog = @Composable {
                     )
                     var exportSelect by remember { mutableStateOf(exportOptions[0]) }
                     Row {
-
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("导出格式 ")
-                            var expanded by remember { mutableStateOf(false) }
-                            Menu(expanded, {
-                                Column {
-                                    exportOptions.map {
-                                        MenuItem(
-                                            exportSelect == it, {
-                                                expanded = false
-                                                exportSelect = it
-                                            }
-                                        ) {
-                                            Text(it.extend)
+                        Row {
+                            Text("导出格式 ", Modifier.width(80.dp))
+                            Menu({ close ->
+                                exportOptions.map {
+                                    MenuItem(
+                                        exportSelect == it, {
+                                            close()
+                                            exportSelect = it
                                         }
+                                    ) {
+                                        Text(it.extend)
                                     }
                                 }
-                            }) {
-                                Row(Modifier.clickable {
-                                    expanded = !expanded
-                                }) {
-                                    Text(exportSelect.extend)
-                                    Icon(Icons.Filled.ExpandMore, null, Modifier.padding(horizontal = 8.dp))
-                                }
+                            }, floatingDialogProvider) {
+                                Text(
+                                    exportSelect.extend
+                                )
                             }
                         }
 
-                        Spacer(Modifier.width(40.dp))
+                        Spacer(Modifier.width(10.dp))
 
                         val soundOptions = listOf<String>("立体声", "左声道", "右声道")
                         var soundSelect by remember { mutableStateOf(soundOptions[0]) }
                         Row {
-                            var expanded by remember { mutableStateOf(false) }
-                            Menu(expanded, {
+                            Menu({ close ->
                                 Column {
                                     soundOptions.map {
                                         MenuItem(
                                             soundSelect == it, {
-                                                expanded = false
+                                                close()
                                                 soundSelect = it
                                             }
                                         ) {
@@ -151,29 +151,26 @@ val ExportDialog = @Composable {
                                         }
                                     }
                                 }
-                            }) {
-                                Row(Modifier.clickable {
-                                    expanded = !expanded
-                                }) {
-                                    Text(soundSelect)
-                                    Icon(Icons.Filled.ExpandMore, null, Modifier.padding(horizontal = 8.dp))
-                                }
+                            }, floatingDialogProvider) {
+                                Text(soundSelect)
                             }
                         }
                     }
+
+                    Spacer(Modifier.height(5.dp))
+
                     Row {
                         if (exportSelect.isLossLess) {
                             val deepList = listOf<Int>(32, 24, 16)
                             var deep by remember { mutableStateOf(deepList[0]) }
                             Row {
-                                Text("位深 ")
-                                var expanded by remember { mutableStateOf(false) }
-                                Menu(expanded, {
+                                Text("位深 ", Modifier.width(80.dp))
+                                Menu({ close ->
                                     Column {
                                         deepList.map {
                                             MenuItem(
                                                 deep == it, {
-                                                    expanded = false
+                                                    close()
                                                     deep = it
                                                 }
                                             ) {
@@ -181,13 +178,8 @@ val ExportDialog = @Composable {
                                             }
                                         }
                                     }
-                                }) {
-                                    Row(Modifier.clickable {
-                                        expanded = !expanded
-                                    }) {
-                                        Text("${deep}位")
-                                        Icon(Icons.Filled.ExpandMore, null, Modifier.padding(horizontal = 8.dp))
-                                    }
+                                }, floatingDialogProvider) {
+                                    Text("${deep}位")
                                 }
                             }
                         }
@@ -196,14 +188,13 @@ val ExportDialog = @Composable {
                             val bitRateOptions = listOf<Int>(128, 192, 256, 320)
                             var bitRate by remember { mutableStateOf(bitRateOptions[0]) }
                             Row {
-                                Text("比特率 ")
-                                var expanded by remember { mutableStateOf(false) }
-                                Menu(expanded, {
+                                Text("比特率 ", Modifier.width(80.dp))
+                                Menu({ close ->
                                     Column {
                                         bitRateOptions.map {
                                             MenuItem(
                                                 bitRate == it, {
-                                                    expanded = false
+                                                    close()
                                                     bitRate = it
                                                 }
                                             ) {
@@ -211,13 +202,8 @@ val ExportDialog = @Composable {
                                             }
                                         }
                                     }
-                                }) {
-                                    Row(Modifier.clickable {
-                                        expanded = !expanded
-                                    }) {
-                                        Text("${bitRate}kbps")
-                                        Icon(Icons.Filled.ExpandMore, null, Modifier.padding(horizontal = 8.dp))
-                                    }
+                                }, floatingDialogProvider) {
+                                    Text("${bitRate}kbps")
                                 }
                             }
                         }
@@ -227,14 +213,13 @@ val ExportDialog = @Composable {
                             val flacCompressOptions = 0..8
                             var flacCompress by remember { mutableStateOf(5) }
                             Row {
-                                Text("flac压缩 ")
-                                var expanded by remember { mutableStateOf(false) }
-                                Menu(expanded, {
+                                Text("flac压缩 ", Modifier.width(80.dp))
+                                Menu({ close ->
                                     Column {
                                         flacCompressOptions.map {
                                             MenuItem(
                                                 flacCompress == it, {
-                                                    expanded = false
+                                                    close()
                                                     flacCompress = it
                                                 }
                                             ) {
@@ -242,18 +227,13 @@ val ExportDialog = @Composable {
                                             }
                                         }
                                     }
-                                }) {
-                                    Row(Modifier.clickable {
-                                        expanded = !expanded
-                                    }) {
-                                        Text(flacCompress.toString())
-                                        Icon(Icons.Filled.ExpandMore, null, Modifier.padding(horizontal = 8.dp))
-                                    }
+                                }, floatingDialogProvider) {
+                                    Text(flacCompress.toString())
                                 }
                             }
                         }
                     }
-                    Spacer(Modifier.height(100.dp))
+                    Filled()
                     Button(onClick = {
                         val renderer = EchoInMirror.bus?.let { RendererImpl(it) }
                         val position = EchoInMirror.currentPosition
@@ -276,6 +256,8 @@ val ExportDialog = @Composable {
                             Text("导出到 test.${exportSelect.extend}")
                         }
                     }
+
+
                 }
 
             }
