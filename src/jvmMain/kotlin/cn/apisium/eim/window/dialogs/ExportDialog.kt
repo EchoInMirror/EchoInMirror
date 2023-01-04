@@ -70,7 +70,7 @@ val ExportDialog = @Composable {
         window.isModal = false
         CompositionLocalProvider(LocalFloatingDialogProvider.provides(floatingDialogProvider)) {
             Surface(Modifier.fillMaxSize(), tonalElevation = 4.dp) {
-                floatingDialogProvider.FloatingDialogs()
+
                 Box(Modifier.padding(10.dp)) {
                     Column {
                         Row {
@@ -260,6 +260,7 @@ val ExportDialog = @Composable {
                 }
             }
         }
+        floatingDialogProvider.FloatingDialogs()
 
     }
 }
