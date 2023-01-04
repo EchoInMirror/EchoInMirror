@@ -31,6 +31,7 @@ data class ExportFormate(val extend: String, val isLossLess: Boolean = true, val
 
 private val floatingDialogProvider = FloatingDialogProvider()
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun Menu(
     menuItems: @Composable (closeDialog: () -> Unit) -> Unit,
@@ -46,27 +47,30 @@ private fun Menu(
                 menuItems(close)
             }
         }
-    }, modifier = Modifier.zIndex(100f)) {
-        Surface(
-            shadowElevation = 2.dp,
-            tonalElevation = 4.dp
-        ) {
+    }) {
+        Surface {
             Row(
-                Modifier.width(100.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
+                Modifier.width(120.dp)
             ) {
-                content()
-                Icon(Icons.Filled.ExpandMore, null, Modifier.padding(horizontal = 8.dp))
+                TextField(
+                    "",
+                    {},
+                    placeholder = content,
+                    trailingIcon = {
+                        Icon(Icons.Filled.ExpandMore, null, Modifier.padding(horizontal = 8.dp))
+                    }
+                )
+
             }
         }
     }
 
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 val ExportDialog = @Composable {
     Dialog(::closeQuickLoadWindow, title = "导出") {
-        window.minimumSize = Dimension(300, 300)
+        window.minimumSize = Dimension(300, 400)
         window.isModal = false
         CompositionLocalProvider(LocalFloatingDialogProvider.provides(floatingDialogProvider)) {
             Surface(Modifier.fillMaxSize(), tonalElevation = 4.dp) {
@@ -110,7 +114,10 @@ val ExportDialog = @Composable {
                         )
                         var exportSelect by remember { mutableStateOf(exportOptions[0]) }
                         Row {
-                            Row {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
                                 Text("导出格式 ", Modifier.width(80.dp))
                                 Menu({ close ->
                                     exportOptions.map {
@@ -156,80 +163,75 @@ val ExportDialog = @Composable {
 
                         Spacer(Modifier.height(5.dp))
 
-                        Row {
-                            if (exportSelect.isLossLess) {
-                                val deepList = listOf<Int>(32, 24, 16)
-                                var deep by remember { mutableStateOf(deepList[0]) }
-                                Row {
-                                    Text("位深 ", Modifier.width(80.dp))
-                                    Menu({ close ->
-                                        Column {
-                                            deepList.map {
-                                                MenuItem(
-                                                    deep == it, {
-                                                        close()
-                                                        deep = it
-                                                    }
-                                                ) {
-                                                    Text(it.toString())
-                                                }
-                                            }
-                                        }
-                                    }) {
-                                        Text("${deep}位")
-                                    }
-                                }
-                            }
+                        if (exportSelect.isLossLess) {
+                            val deepList = listOf<Int>(16, 24, 32)
+                            var deep by remember { mutableStateOf(deepList[0]) }
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Text("位深 ", Modifier.width(80.dp))
+                                deepList.map {
+                                    RadioButton(deep == it, {
+                                        deep = it
+                                    })
+                                    Text("${it}位")
 
-                            if (!exportSelect.isLossLess) {
-                                val bitRateOptions = listOf<Int>(128, 192, 256, 320)
-                                var bitRate by remember { mutableStateOf(bitRateOptions[0]) }
-                                Row {
-                                    Text("比特率 ", Modifier.width(80.dp))
-                                    Menu({ close ->
-                                        Column {
-                                            bitRateOptions.map {
-                                                MenuItem(
-                                                    bitRate == it, {
-                                                        close()
-                                                        bitRate = it
-                                                    }
-                                                ) {
-                                                    Text(it.toString())
-                                                }
-                                            }
-                                        }
-                                    }) {
-                                        Text("${bitRate}kbps")
-                                    }
-                                }
-                            }
-
-                            if (exportSelect.extend == "flac") {
-                                Spacer(Modifier.width(10.dp))
-                                val flacCompressOptions = 0..8
-                                var flacCompress by remember { mutableStateOf(5) }
-                                Row {
-                                    Text("flac压缩 ", Modifier.width(80.dp))
-                                    Menu({ close ->
-                                        Column {
-                                            flacCompressOptions.map {
-                                                MenuItem(
-                                                    flacCompress == it, {
-                                                        close()
-                                                        flacCompress = it
-                                                    }
-                                                ) {
-                                                    Text(it.toString())
-                                                }
-                                            }
-                                        }
-                                    }) {
-                                        Text(flacCompress.toString())
-                                    }
                                 }
                             }
                         }
+
+                        if (!exportSelect.isLossLess) {
+                            val bitRateOptions = listOf<Int>(128, 192, 256, 320)
+                            var bitRate by remember { mutableStateOf(bitRateOptions[0]) }
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Text("比特率 ", Modifier.width(80.dp))
+                                Menu({ close ->
+                                    Column {
+                                        bitRateOptions.map {
+                                            MenuItem(
+                                                bitRate == it, {
+                                                    close()
+                                                    bitRate = it
+                                                }
+                                            ) {
+                                                Text(it.toString())
+                                            }
+                                        }
+                                    }
+                                }) {
+                                    Text("${bitRate}kbps")
+                                }
+                            }
+                        }
+
+                        if (exportSelect.extend == "flac") {
+                            Spacer(Modifier.width(10.dp))
+                            var flacCompress by remember { mutableStateOf(5f) }
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Text("flac压缩 ", Modifier.width(80.dp))
+                                Slider(
+                                    flacCompress,
+                                    {
+                                        flacCompress = it
+                                    },
+                                    onValueChangeFinished = {
+
+                                    },
+                                    valueRange = 0f..8f,
+                                    steps = 7,
+                                    modifier = Modifier.weight(5f)
+                                )
+                                Text(" ${flacCompress.toInt()}",modifier = Modifier.weight(1f))
+                            }
+                        }
+
                         Filled()
                         Button(onClick = {
                             val renderer = EchoInMirror.bus?.let { RendererImpl(it) }
