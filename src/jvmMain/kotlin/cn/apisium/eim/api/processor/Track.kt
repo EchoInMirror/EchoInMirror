@@ -16,8 +16,6 @@ interface Track : AudioProcessor, Pan, Volume, Mute, Solo, Disabled, MidiEventHa
     val levelMeter: LevelMeter
     val notes: NoteMessageList
     var height: Int
-    var sendToChild: Boolean
-    var returnToParent: Boolean
     override suspend fun processBlock(
         buffers: Array<FloatArray>,
         position: CurrentPosition,
@@ -29,6 +27,5 @@ interface Bus : Track {
     val project: ProjectInformation
     var channelType: ChannelType
     val lastSaveTime: Long
-    val buffers: Array<FloatArray>
     suspend fun save()
 }

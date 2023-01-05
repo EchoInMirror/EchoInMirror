@@ -2,7 +2,6 @@ package cn.apisium.eim.window.panels
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -80,7 +79,7 @@ private fun MixerTrack(track: Track, index: String, height: MutableState<Dp>?, m
                 }
             }
 
-            Column(Modifier.padding(4.dp, 4.dp, 4.dp)) {
+            Column(Modifier.padding(4.dp)) {
                 Slider(
                     track.pan,
                     { track.pan = it },
@@ -118,16 +117,6 @@ private fun MixerTrack(track: Track, index: String, height: MutableState<Dp>?, m
                     Gap(18)
                     Level(track.levelMeter, Modifier.height(136.dp))
                 }
-            }
-
-            Row(Modifier.fillMaxWidth().padding(bottom = 6.dp), horizontalArrangement = Arrangement.Center) {
-                Icon(Icons.Filled.ForkRight, "发送到子轨道", Modifier.clip(CircleShape).clickableWithIcon {
-                    track.sendToChild = !track.sendToChild
-                }, if (track.sendToChild) MaterialTheme.colorScheme.primary else LocalContentColor.current)
-                Gap(4)
-                Icon(Icons.Filled.RampRight, "发送回父轨道", Modifier.clip(CircleShape).clickableWithIcon {
-                    track.returnToParent = !track.returnToParent
-                }, if (track.returnToParent) MaterialTheme.colorScheme.primary else LocalContentColor.current)
             }
 
             Column {
