@@ -19,6 +19,7 @@ import androidx.compose.ui.zIndex
 import cn.apisium.eim.api.convertPPQToSamples
 import cn.apisium.eim.components.*
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.io.File
 import javax.sound.sampled.AudioFileFormat
@@ -50,7 +51,7 @@ private fun Menu(
     }) {
         Surface {
             Row(
-                Modifier.width(120.dp)
+                Modifier.width(140.dp)
             ) {
                 TextField(
                     "",
@@ -228,34 +229,54 @@ val ExportDialog = @Composable {
                                     steps = 7,
                                     modifier = Modifier.weight(5f)
                                 )
-                                Text(" ${flacCompress.toInt()}",modifier = Modifier.weight(1f))
+                                Text(" ${flacCompress.toInt()}", modifier = Modifier.weight(1f))
                             }
                         }
 
                         Filled()
-                        Button(onClick = {
-                            val renderer = EchoInMirror.bus?.let { RendererImpl(it) }
-                            val position = EchoInMirror.currentPosition
-                            val audioFile = File("./test.wav")
-                            EchoInMirror.player!!.close()
-                            GlobalScope.launch {
-                                renderer?.start(
-                                    position.projectRange,
-                                    position.sampleRate,
-                                    position.ppq,
-                                    position.bpm,
-                                    audioFile,
-                                    AudioFileFormat.Type.WAVE
-                                ) {
-                                    println(it)
-                                }
+                        var renderProcess by remember { mutableStateOf(0f) }
+                        var isRendering by remember { mutableStateOf(false) }
+                        var renderJob: Job? by remember { mutableStateOf(null) }
+                        if (isRendering) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                LinearProgressIndicator(renderProcess, Modifier.weight(9f))
+                                Spacer(Modifier.weight(1f))
+                                Text("${(renderProcess * 100).toInt()}%")
                             }
+                            Spacer(Modifier.height(20.dp))
+                        }
+                        Button(onClick = {
+                            if (!isRendering) {
+                                val renderer = EchoInMirror.bus?.let { RendererImpl(it) }
+                                val position = EchoInMirror.currentPosition
+                                val audioFile = File("./test.${exportSelect.extend}")
+                                EchoInMirror.player!!.close()
+                                renderJob = GlobalScope.launch {
+                                    renderer?.start(
+                                        position.projectRange,
+                                        position.sampleRate,
+                                        position.ppq,
+                                        position.bpm,
+                                        audioFile,
+                                        exportSelect.formate!!
+                                    ) {
+                                        println(it)
+                                        renderProcess = it
+                                    }
+                                }
+                            } else {
+                                renderJob?.cancel()
+                                isRendering = false
+                            }
+
                         }, Modifier.zIndex(-10f).fillMaxWidth()) {
                             Row {
-                                Text("导出到 test.${exportSelect.extend}")
+                                if (isRendering)
+                                    Text("取消")
+                                else
+                                    Text("导出到 test.${exportSelect.extend}")
                             }
                         }
-
 
                     }
 
