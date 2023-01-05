@@ -6,6 +6,7 @@ import androidx.compose.material.icons.filled.EventNote
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.IosShare
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -20,6 +21,7 @@ import cn.apisium.eim.components.FloatingDialog
 import cn.apisium.eim.components.MenuItem
 import cn.apisium.eim.components.icons.*
 import cn.apisium.eim.utils.*
+import cn.apisium.eim.window.dialogs.ExportDialog
 import cn.apisium.eim.window.dialogs.settings.SettingsWindow
 import kotlin.math.roundToInt
 
@@ -85,6 +87,7 @@ internal fun StatusBar() {
             ProvideTextStyle(MaterialTheme.typography.labelSmall) {
                 CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurfaceVariant) {
                     StatusBarItem("Settings", Icons.Default.Settings, onClick = { EchoInMirror.windowManager.dialogs[SettingsWindow] = true })
+                    StatusBarItem("Export", Icons.Default.IosShare, onClick = { EchoInMirror.windowManager.dialogs[ExportDialog] = true })
                     StatusBarItem("Project", Icons.Default.Folder,
                         onClick = { openInExplorer(EchoInMirror.bus!!.project.root.toFile()) },
                         onLongClick = { EchoInMirror.windowManager.closeMainWindow() }

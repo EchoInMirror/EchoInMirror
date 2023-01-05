@@ -60,7 +60,7 @@ class RendererImpl(private val renderTarget: Renderable) : Renderer {
         audioType: AudioFileFormat.Type,
         callback: (Float) -> Unit
     ) {
-        if (range.first <= range.last) throw IllegalArgumentException("end position must be greater than start position")
+        if (range.first >= range.last) throw IllegalArgumentException("end position must be greater than start position")
         if (range.step != 1) throw IllegalArgumentException("step must be 1")
         renderTarget.onRenderStart()
         val channels = 2
