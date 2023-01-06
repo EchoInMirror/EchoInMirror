@@ -2,8 +2,6 @@ package cn.apisium.eim.window.panels
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CornerSize
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -49,10 +47,7 @@ private fun MixerTrack(track: Track, index: String, depth: Int = 0, renderChildr
         val trackColor = if (track is Bus) MaterialTheme.colorScheme.primary else track.color
         val isSelected = EchoInMirror.selectedTrack == track
         var curModifier = Modifier.width(80.dp)
-        if (isSelected) curModifier = curModifier.border(1.dp, trackColor, RoundedCornerShape(
-            CornerSize(0.dp), CornerSize(0.dp), MaterialTheme.shapes.medium.bottomEnd, MaterialTheme.shapes.medium.bottomStart)
-        )
-
+        if (isSelected) curModifier = curModifier.border(1.dp, trackColor, MaterialTheme.shapes.medium)
         Layout({
             Column(curModifier.shadow(1.dp, MaterialTheme.shapes.medium, clip = false)
                 .background(MaterialTheme.colorScheme.surface, MaterialTheme.shapes.medium)

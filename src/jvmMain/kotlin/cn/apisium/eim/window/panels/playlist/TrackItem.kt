@@ -3,6 +3,7 @@
 package cn.apisium.eim.window.panels.playlist
 
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.*
 import androidx.compose.foundation.layout.*
@@ -63,89 +64,84 @@ private fun TrackItem(track: Track, parentTrack: Track, index: Int, depth: Int =
     val primaryColor = MaterialTheme.colorScheme.primary
     val flags = trackMovingFlags[track]
     val alpha by animateFloatAsState(flags?.let { if (it.isAbove || it.isChild) 0.4F else 0F } ?: 0F)
-    Row(Modifier.height(trackHeight).padding(start = TRACK_COLOR_WIDTH * depth).onPointerEvent(PointerEventType.Press) {
-        EchoInMirror.selectedTrack = track
-    }.drawWithContent {
-        drawContent()
-        if (flags == null || !(flags.isChild || flags.isAbove)) return@drawWithContent
-        val left = TRACK_COLOR_WIDTH.toPx()
-        if (flags.isChild) drawRect(primaryColor, Offset(left, 0F), Size(size.width - left, size.height), alpha = alpha)
-        else if (flags.isAbove) drawRect(primaryColor, Offset(left, 0F), Size(size.width - left, 2F), alpha = alpha)
-    }.pointerInput(track, parentTrack) {
-        trackMovingFlags[track] = TrackMoveFlags(parentTrack)
-        val defaultHeight = trackHeight.toPx()
-        forEachGesture {
-            awaitPointerEventScope {
-                val down = awaitFirstDownOnPass(PointerEventPass.Final, false)
-                awaitPointerSlopOrCancellation(
-                    down.id,
-                    down.type,
-                    triggerOnMainAxisSlop = false
-                ) { change, _ ->
-                    val trackHeights: ArrayList<TrackToHeight> = ArrayList()
-                    EchoInMirror.bus!!.subTracks.forEach { getTrackHeights(trackHeights, it, defaultHeight) }
-                    isDragging = true
-                    var lastTrack: Track? = null
-                    var lastFlags: TrackMoveFlags? = null
-                    var currentY: Float
-                    drag(down.id) {
-                        currentY = trackItemDragStartY + it.position.y - change.position.y
-                        // binary search drop track by trackHeights and currentY
-                        var l = 0
-                        var r = trackHeights.size - 1
-                        while (l < r) {
-                            val mid = (l + r) / 2
-                            if (trackHeights[mid].height < currentY) l = mid + 1
-                            else r = mid
+    Row(Modifier.height(trackHeight).padding(start = TRACK_COLOR_WIDTH * depth)
+        .background(track.color.copy(animateFloatAsState(if (EchoInMirror.selectedTrack == track) 0.1F else 0F).value))
+        .onPointerEvent(PointerEventType.Press) { EchoInMirror.selectedTrack = track }
+        .drawWithContent {
+            drawContent()
+            if (flags == null || !(flags.isChild || flags.isAbove)) return@drawWithContent
+            val left = TRACK_COLOR_WIDTH.toPx()
+            if (flags.isChild) drawRect(primaryColor, Offset(left, 0F), Size(size.width - left, size.height), alpha = alpha)
+            else if (flags.isAbove) drawRect(primaryColor, Offset(left, 0F), Size(size.width - left, 2F), alpha = alpha)
+        }
+        .pointerInput(track, parentTrack) {
+            trackMovingFlags[track] = TrackMoveFlags(parentTrack)
+            val defaultHeight = trackHeight.toPx()
+            forEachGesture {
+                awaitPointerEventScope {
+                    val down = awaitFirstDownOnPass(PointerEventPass.Final, false)
+                    awaitPointerSlopOrCancellation(
+                        down.id,
+                        down.type,
+                        triggerOnMainAxisSlop = false
+                    ) { change, _ ->
+                        val trackHeights: ArrayList<TrackToHeight> = ArrayList()
+                        EchoInMirror.bus!!.subTracks.forEach { getTrackHeights(trackHeights, it, defaultHeight) }
+                        isDragging = true
+                        var lastTrack: Track? = null
+                        var lastFlags: TrackMoveFlags? = null
+                        var currentY: Float
+                        drag(down.id) {
+                            currentY = trackItemDragStartY + it.position.y - change.position.y
+                            // binary search drop track by trackHeights and currentY
+                            var l = 0
+                            var r = trackHeights.size - 1
+                            while (l < r) {
+                                val mid = (l + r) / 2
+                                if (trackHeights[mid].height < currentY) l = mid + 1
+                                else r = mid
+                            }
+                            val dropTrack = trackHeights[l].track
+                            lastFlags?.isAbove = false
+                            lastFlags?.isChild = false
+                            if (dropTrack == track) return@drag
+                            lastTrack = dropTrack
+                            val flags0 = trackMovingFlags[dropTrack] ?: return@drag
+                            lastFlags = flags0
+                            if (currentY - (if (l == 0) 0F else trackHeights[l - 1].height) < 6) flags0.isAbove = true
+                            else flags0.isChild = true
                         }
-                        val dropTrack = trackHeights[l].track
+                        if (lastTrack != null) {
+                            // dfs search drop track is not the child of current track
+                            var dropTrack = lastTrack
+                            var flag = false
+                            while (dropTrack != null) {
+                                if (dropTrack == track) {
+                                    flag = true
+                                    break
+                                }
+                                dropTrack = trackMovingFlags[dropTrack]?.parent
+                            }
+                            if (!flag) lastFlags?.let {
+                                if (it.isAbove) track.doReorderAction(parentTrack.subTracks, it.parent.subTracks,
+                                    it.parent.subTracks.indexOf(lastTrack))
+                                else if (it.isChild) track.doReorderAction(parentTrack.subTracks, lastTrack!!.subTracks)
+                            }
+                        }
                         lastFlags?.isAbove = false
                         lastFlags?.isChild = false
-                        if (dropTrack == track) return@drag
-                        lastTrack = dropTrack
-                        val flags0 = trackMovingFlags[dropTrack] ?: return@drag
-                        lastFlags = flags0
-                        if (currentY - (if (l == 0) 0F else trackHeights[l - 1].height) < 6) flags0.isAbove = true
-                        else flags0.isChild = true
+                        isDragging = false
                     }
-                    if (lastTrack != null) {
-                        // dfs search drop track is not the child of current track
-                        var dropTrack = lastTrack
-                        var flag = false
-                        while (dropTrack != null) {
-                            if (dropTrack == track) {
-                                flag = true
-                                break
-                            }
-                            dropTrack = trackMovingFlags[dropTrack]?.parent
-                        }
-                        if (!flag) lastFlags?.let {
-                            if (it.isAbove) track.doReorderAction(parentTrack.subTracks, it.parent.subTracks,
-                                it.parent.subTracks.indexOf(lastTrack))
-                            else if (it.isChild) track.doReorderAction(parentTrack.subTracks, lastTrack!!.subTracks)
-                        }
-                    }
-                    lastFlags?.isAbove = false
-                    lastFlags?.isChild = false
-                    isDragging = false
                 }
             }
         }
-    }.alpha(animateFloatAsState(if (isDragging) 0.3F else 1F).value)) {
-//        Box {
-//            val color by animateColorAsState(track.color, tween(100))
-//            Canvas(Modifier.fillMaxHeight().width(8.dp).background(color.copy(alpha = 0.5F)).clickableWithIcon {
-//                openColorPicker(track.color) { track.color = it }
-//            }) {
-//                val y = size.height * (1F - track.levelMeter.maxLevel.toPercentage())
-//                drawRect(color, Offset(0F, y), Size(size.width, size.height - y))
-//            }
-//        }
+        .alpha(animateFloatAsState(if (isDragging) 0.3F else 1F).value)
+    ) {
         val localFloatingDialogProvider = LocalFloatingDialogProvider.current
         Spacer(Modifier.fillMaxHeight().width(8.dp).background(track.color).clickableWithIcon {
             openColorPicker(localFloatingDialogProvider, track.color) { track.color = it }
         })
-        Row(Modifier.padding(8.dp, 4.dp)) {
+        Row(Modifier.weight(1F).padding(8.dp, 4.dp)) {
             Text(index.toString(),
                 Modifier.width(20.dp),
                 style = MaterialTheme.typography.titleSmall,
@@ -173,6 +169,16 @@ private fun TrackItem(track: Track, parentTrack: Track, index: Int, depth: Int =
                 }
                 if (trackHeight.value > 40) VolumeSlider(track, Modifier.fillMaxWidth().offset((-4).dp), false)
             }
+        }
+
+        val outlineColor = MaterialTheme.colorScheme.outlineVariant
+        Canvas(Modifier.fillMaxHeight().width(5.dp)) {
+            val y = size.height * (1F - track.levelMeter.maxLevel.toPercentage())
+            drawRect(primaryColor, Offset(0F, y), Size(size.width, size.height - y))
+//            y = size.height * (1F - track.levelMeter.right.toPercentage())
+//            drawRect(primaryColor, Offset(size.width / 2, y), Size(size.width / 2, size.height - y))
+            // drawLine(outlineColor, Offset(size.width / 2, y), Offset(size.width / 2, size.height), 0.5F)
+            drawLine(outlineColor, Offset.Zero, Offset(0F, size.height), 0.5F)
         }
     }
     track.subTracks.forEachIndexed { i, it -> key(it.id) {

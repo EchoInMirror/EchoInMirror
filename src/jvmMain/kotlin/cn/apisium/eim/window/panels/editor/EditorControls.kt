@@ -25,25 +25,26 @@ import kotlin.math.roundToInt
 private fun dfsTrackIndex(track: Track, target: Track, index: String): String? {
     if (track == target) return index
     track.subTracks.forEachIndexed { i, child ->
-        val res = dfsTrackIndex(child, target, "$index-${i + 1}")
+        val res = dfsTrackIndex(child, target, "$index.${i + 1}")
         if (res != null) return res
     }
     return null
 }
 
 @Composable
-private fun TrackItem(track: Track, index: String) {
+private fun TrackItem(track: Track, index: String, depth: Int = 0) {
     val isSelected = EchoInMirror.selectedTrack == track
     MenuItem(isSelected || backingTracks.contains(track), {
         if (!backingTracks.remove(track)) backingTracks.add(track)
     }, {
         EchoInMirror.selectedTrack = track
     }, minHeight = 28.dp, padding = PaddingValues(), modifier = Modifier.height(IntrinsicSize.Min)) {
+        Spacer(Modifier.width(6.dp * depth))
         Spacer(Modifier.width(6.dp).fillMaxHeight().background(track.color))
         Text(index + " " + track.name, Modifier.fillMaxWidth().padding(start = 6.dp, end = 12.dp), maxLines = 1,
             style = MaterialTheme.typography.labelLarge, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal)
     }
-    track.subTracks.forEachIndexed { i, it -> TrackItem(it, index + "." + (i + 1)) }
+    track.subTracks.forEachIndexed { i, it -> TrackItem(it, index + "." + (i + 1), depth + 1) }
 }
 
 @Composable
