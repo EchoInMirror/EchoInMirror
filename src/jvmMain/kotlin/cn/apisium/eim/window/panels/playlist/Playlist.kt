@@ -12,7 +12,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.zIndex
@@ -35,13 +34,13 @@ val horizontalScrollState = ScrollState(0).apply {
 @Composable
 private fun TrackContent(track: Track, modifier: Modifier = Modifier) {
     Box(modifier.fillMaxWidth().height(trackHeight)) {
-        val height = (trackHeight / 128).coerceAtLeast(0.5.dp)
-        track.notes.read()
-        track.notes.forEach {
-            Box(Modifier.height(height).width(noteWidth.value * it.duration)
-                .offset(x = noteWidth.value * it.time, y = trackHeight - trackHeight / 128 * it.note)
-                .background(track.color))
-        }
+//       TODO: val height = (trackHeight / 128).coerceAtLeast(0.5.dp)
+//        track.notes.read()
+//        track.notes.forEach {
+//            Box(Modifier.height(height).width(noteWidth.value * it.duration)
+//                .offset(x = noteWidth.value * it.time, y = trackHeight - trackHeight / 128 * it.note)
+//                .background(track.color))
+//        }
     }
     Divider()
     track.subTracks.forEach { key(it.id) { TrackContent(it, modifier) } }

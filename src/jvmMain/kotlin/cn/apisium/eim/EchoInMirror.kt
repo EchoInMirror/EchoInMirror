@@ -10,6 +10,7 @@ import cn.apisium.eim.api.processor.Track
 import cn.apisium.eim.api.window.WindowManager
 import cn.apisium.eim.data.defaultQuantification
 import cn.apisium.eim.impl.*
+import cn.apisium.eim.impl.clips.ClipManagerImpl
 import cn.apisium.eim.impl.processor.AudioProcessorManagerImpl
 import cn.apisium.eim.plugin.EIMPluginManager
 import org.pf4j.PluginManager
@@ -25,9 +26,11 @@ object EchoInMirror {
     @Suppress("unused")
     val pluginManager: PluginManager = EIMPluginManager()
     val windowManager: WindowManager = WindowManagerImpl()
+    val clipManager: ClipManager = ClipManagerImpl()
     val audioProcessorManager: AudioProcessorManager = AudioProcessorManagerImpl()
     val undoManager: UndoManager = UndoManagerImpl()
     var quantification by mutableStateOf(defaultQuantification)
 
     var selectedTrack by mutableStateOf<Track?>(null)
+    var selectedClip by mutableStateOf<TrackClip<*>?>(null)
 }

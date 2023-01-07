@@ -1,18 +1,18 @@
 package cn.apisium.eim.api.processor
 
+import cn.apisium.eim.api.NoSuchFactoryException
 import cn.apisium.eim.api.ProjectInformation
 import com.fasterxml.jackson.databind.JsonNode
 import kotlin.jvm.Throws
 
-class NoSuchFactoryException(name: String): Exception("No such factory: $name")
 class NoSuchAudioProcessorException(name: String, factory: String): Exception("No such audio processor: $name of $factory")
 
 interface AudioProcessorManager {
     val audioProcessorFactories: Map<String, AudioProcessorFactory<*>>
     val trackFactories: Map<String, TrackFactory<*>>
 
-    fun addAudioProcessorFactory(factory: AudioProcessorFactory<*>)
-    fun addTrackFactory(factory: TrackFactory<*>)
+    fun registerAudioProcessorFactory(factory: AudioProcessorFactory<*>)
+    fun registerTrackFactory(factory: TrackFactory<*>)
 
     @Throws(NoSuchFactoryException::class)
     suspend fun createAudioProcessor(factory: String, description: AudioProcessorDescription): AudioProcessor

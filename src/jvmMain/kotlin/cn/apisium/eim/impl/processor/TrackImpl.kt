@@ -4,8 +4,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
 import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.api.CurrentPosition
+import cn.apisium.eim.api.DefaultTrackClipList
 import cn.apisium.eim.api.ProjectInformation
-import cn.apisium.eim.api.convertPPQToSamples
 import cn.apisium.eim.api.processor.*
 import cn.apisium.eim.api.processor.dsp.calcPanLeftChannel
 import cn.apisium.eim.api.processor.dsp.calcPanRightChannel
@@ -64,7 +64,6 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
     override val subTracks: MutableList<Track> = mutableStateListOf()
 
     private val pendingMidiBuffer = Collections.synchronizedList(ArrayList<Int>())
-    private var currentPlayedIndex = 0
     private val pendingNoteOns = LongArray(128)
     private val noteRecorder = MidiNoteRecorder()
     private var lastUpdateTime = 0L
@@ -101,7 +100,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         }
 
     @get:JsonProperty(access = JsonProperty.Access.READ_ONLY)
-    override val notes = NoteMessageListImpl()
+    override val clips = DefaultTrackClipList()
 
     override suspend fun processBlock(
         buffers: Array<FloatArray>,
@@ -114,7 +113,6 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
             pendingMidiBuffer.clear()
         }
         if (position.isPlaying) {
-            val blockEndSample = position.timeInSamples + position.bufferSize
             noteRecorder.forEachNotes {
                 pendingNoteOns[it] -= position.bufferSize.toLong()
                 if (pendingNoteOns[it] <= 0) {
@@ -123,29 +121,8 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
                     midiBuffer.add(pendingNoteOns[it].toInt().coerceAtLeast(0))
                 }
             }
-            for (i in currentPlayedIndex until notes.size) {
-                val note = notes[i]
-                val startTimeInSamples = position.convertPPQToSamples(note.time)
-                val endTimeInSamples = position.convertPPQToSamples(note.time + note.duration)
-                if (startTimeInSamples < position.timeInSamples) continue
-                if (startTimeInSamples > blockEndSample) break
-                currentPlayedIndex = i + 1
-                val noteOnTime = (startTimeInSamples - position.timeInSamples).toInt().coerceAtLeast(0)
-                if (noteRecorder.isMarked(note.note)) {
-                    noteRecorder.unmarkNote(note.note)
-                    midiBuffer.add(note.toNoteOffRawData())
-                    midiBuffer.add(noteOnTime)
-                }
-                midiBuffer.add(note.toNoteOnRawData())
-                midiBuffer.add(noteOnTime)
-                val endTime = endTimeInSamples - position.timeInSamples
-                if (endTimeInSamples > blockEndSample) {
-                    pendingNoteOns[note.note] = endTime
-                    noteRecorder.markNote(note.note)
-                } else {
-                    midiBuffer.add(note.toNoteOffRawData())
-                    midiBuffer.add((endTimeInSamples - position.timeInSamples).toInt().coerceAtLeast(0))
-                }
+            clips.forEach {
+                it.clip.factory.processBlock(it, buffers, position, midiBuffer, noteRecorder, pendingNoteOns)
             }
         }
         preProcessorsChain.forEach { it.processBlock(buffers, position, midiBuffer) }
@@ -222,7 +199,6 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
     }
 
     override fun onSuddenChange() {
-        currentPlayedIndex = 0
         stopAllNotes()
         pendingNoteOns.clone()
         noteRecorder.reset()
@@ -251,6 +227,12 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
             val trackFile = dir.resolve("track.json").toFile()
             jacksonObjectMapper().writerWithDefaultPrettyPrinter().writeValue(trackFile, this@TrackImpl)
 
+            if (clips.isNotEmpty()) {
+                val clipsDir = dir.resolve("clips")
+                if (!Files.exists(clipsDir)) Files.createDirectory(clipsDir)
+                clips.forEach { it.clip.factory.save(it.clip, clipsDir.resolve(it.clip.id).absolutePathString()) }
+            }
+
             if (subTracks.isNotEmpty()) {
                 val tracksDir = dir.resolve("tracks")
                 if (!Files.exists(tracksDir)) Files.createDirectory(tracksDir)
@@ -270,11 +252,17 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         withContext(Dispatchers.IO) {
             try {
                 val dir = Paths.get(path)
-                val mapper = jacksonObjectMapper()
-                val reader = mapper.readerForUpdating(this@TrackImpl)
+                val reader = jacksonObjectMapper().readerForUpdating(this@TrackImpl)
                 reader.readValue<TrackImpl>(json)
-                notes.addAll(json["notes"].traverse(mapper).readValueAs(NoteMessageListTypeReference))
-                notes.update()
+
+                val clipsDir = dir.resolve("clips").absolutePathString()
+                json.get("clips").forEach {
+                    launch {
+                        clips.add(EchoInMirror.clipManager.createTrackClip(
+                            EchoInMirror.clipManager.createClip(clipsDir, it.asText())))
+                    }
+                }
+
                 val tracksDir = dir.resolve("tracks")
                 json.get("subTracks").forEach {
                     launch {

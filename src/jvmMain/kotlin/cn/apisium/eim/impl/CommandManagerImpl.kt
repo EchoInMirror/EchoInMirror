@@ -7,6 +7,7 @@ import cn.apisium.eim.IS_DEBUG
 import cn.apisium.eim.api.AbstractCommand
 import cn.apisium.eim.api.Command
 import cn.apisium.eim.api.CommandManager
+import cn.apisium.eim.api.defaultMidiClipFactory
 import cn.apisium.eim.commands.*
 import cn.apisium.eim.data.midi.getMidiEvents
 import cn.apisium.eim.data.midi.getNoteMessages
@@ -48,11 +49,12 @@ class CommandManagerImpl: CommandManager {
                     val desc = factory.descriptions.find { it.name == "KarplusStrongSynthesizer" }!!
                     subTrack1.preProcessorsChain.add(factory.createAudioProcessor(desc))
                     if (IS_DEBUG) {
-                        val midi =
-                            withContext(Dispatchers.IO) {
-                                MidiSystem.getSequence(File("E:\\Midis\\UTMR&C VOL 1-14 [MIDI FILES] for other DAWs FINAL by Hunter UT\\VOL 13\\13.Darren Porter - To Feel Again LD.mid"))
-                            }
-                        track.notes.addAll(getNoteMessages(midi.getMidiEvents(1)))
+                        val midi = withContext(Dispatchers.IO) {
+                            MidiSystem.getSequence(File("E:\\Midis\\UTMR&C VOL 1-14 [MIDI FILES] for other DAWs FINAL by Hunter UT\\VOL 13\\13.Darren Porter - To Feel Again LD.mid"))
+                        }
+                        val clip = EchoInMirror.clipManager.defaultMidiClipFactory.createClip()
+                        clip.notes.addAll(getNoteMessages(midi.getMidiEvents(1)))
+                        track.clips.add(EchoInMirror.clipManager.createTrackClip(clip))
 
 //                        var proQ: NativeAudioPluginDescription? = null
 //                        var spire: NativeAudioPluginDescription? = null

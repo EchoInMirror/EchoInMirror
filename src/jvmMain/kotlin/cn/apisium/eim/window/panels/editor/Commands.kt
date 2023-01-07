@@ -3,6 +3,7 @@ package cn.apisium.eim.window.panels.editor
 import androidx.compose.ui.text.AnnotatedString
 import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.actions.doNoteAmountAction
+import cn.apisium.eim.api.MidiClip
 import cn.apisium.eim.commands.*
 import cn.apisium.eim.data.midi.NoteMessage
 import cn.apisium.eim.data.midi.NoteMessageImpl
@@ -17,25 +18,30 @@ import kotlin.math.roundToInt
 
 object EditorCommands {
     fun delete() {
-        if (selectedNotes.isEmpty()) return
-        val track = EchoInMirror.selectedTrack ?: return
-        track.doNoteAmountAction(selectedNotes, true)
+        if (EchoInMirror.selectedTrack == null || selectedNotes.isEmpty()) return
+        val clip = EchoInMirror.selectedClip?.clip
+        if (clip !is MidiClip) return
+        clip.doNoteAmountAction(selectedNotes, true)
         selectedNotes.clear()
     }
     fun copy() {
-        if (selectedNotes.isEmpty()) return
+        if (EchoInMirror.selectedTrack == null || selectedNotes.isEmpty()) return
         CLIPBOARD_MANAGER?.setText(AnnotatedString(
             OBJECT_MAPPER.writeValueAsString(NoteMessageWithInfo(EchoInMirror.currentPosition.ppq, selectedNotes.toSet()))
         ))
     }
     fun cut() {
-        val track = EchoInMirror.selectedTrack ?: return
+        if (EchoInMirror.selectedTrack == null) return
+        val clip = EchoInMirror.selectedClip?.clip
+        if (clip !is MidiClip) return
         copy()
-        track.doNoteAmountAction(selectedNotes, true)
+        clip.doNoteAmountAction(selectedNotes, true)
         selectedNotes.clear()
     }
     fun paste() {
-        val track = EchoInMirror.selectedTrack ?: return
+        if (EchoInMirror.selectedTrack == null) return
+        val clip = EchoInMirror.selectedClip?.clip
+        if (clip !is MidiClip) return
         val content = CLIPBOARD_MANAGER?.getText()?.text ?: return
         try {
             val data = ObjectMapper()
@@ -48,15 +54,17 @@ object EditorCommands {
                 it.time = (it.time * scale).roundToInt()
                 it.duration = (it.duration * scale).roundToInt()
             }
-            track.doNoteAmountAction(data.notes)
+            clip.doNoteAmountAction(data.notes)
             selectedNotes.clear()
             selectedNotes.addAll(data.notes)
         } catch (ignored: Throwable) { ignored.printStackTrace() }
     }
     fun selectAll() {
-        val track = EchoInMirror.selectedTrack ?: return
+        if (EchoInMirror.selectedTrack == null) return
+        val clip = EchoInMirror.selectedClip?.clip
+        if (clip !is MidiClip) return
         selectedNotes.clear()
-        selectedNotes.addAll(track.notes)
+        selectedNotes.addAll(clip.notes)
     }
 }
 

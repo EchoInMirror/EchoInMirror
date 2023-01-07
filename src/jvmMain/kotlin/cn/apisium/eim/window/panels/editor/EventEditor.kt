@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.actions.doNoteVelocityAction
+import cn.apisium.eim.api.MidiClip
 import cn.apisium.eim.components.EditorGrid
 import cn.apisium.eim.components.KEYBOARD_DEFAULT_WIDTH
 import cn.apisium.eim.data.midi.NoteMessage
@@ -52,11 +53,12 @@ internal fun EventEditor() {
                 }
             }.pointerInput(Unit) {
                 detectDragGestures({
-                    val track = EchoInMirror.selectedTrack ?: return@detectDragGestures
+                    val clip = EchoInMirror.selectedClip?.clip
+                    if (clip !is MidiClip) return@detectDragGestures
                     val x = it.x + horizontalScrollState.value
                     val noteWidthPx = noteWidth.value.toPx()
-                    for (i in startNoteIndex until track.notes.size) {
-                        val note = track.notes[i]
+                    for (i in startNoteIndex until clip.notes.size) {
+                        val note = clip.notes[i]
                         val curX = note.time * noteWidthPx
                         if (curX <= x && x <= curX + 4) {
                             if (selectedNotes.isNotEmpty() && !selectedNotes.contains(note)) continue
@@ -68,7 +70,8 @@ internal fun EventEditor() {
                     val cur = selectedNote
                     if (cur != null) {
                         selectedNote = null
-                        EchoInMirror.selectedTrack?.doNoteVelocityAction(
+                        val clip = EchoInMirror.selectedClip?.clip
+                        if (clip is MidiClip) clip.doNoteVelocityAction(
                             if (selectedNotes.isEmpty()) arrayOf(cur) else selectedNotes.toTypedArray(), delta)
                     }
                     delta = 0

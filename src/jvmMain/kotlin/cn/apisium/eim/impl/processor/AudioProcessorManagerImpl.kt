@@ -1,6 +1,7 @@
 package cn.apisium.eim.impl.processor
 
 import androidx.compose.runtime.mutableStateMapOf
+import cn.apisium.eim.api.NoSuchFactoryException
 import cn.apisium.eim.api.ProjectInformation
 import cn.apisium.eim.api.processor.*
 import com.fasterxml.jackson.databind.JsonNode
@@ -17,16 +18,16 @@ class AudioProcessorManagerImpl: AudioProcessorManager {
     override val trackFactories = mutableStateMapOf<String, TrackFactory<*>>()
 
     init {
-        addAudioProcessorFactory(NativeAudioPluginFactoryImpl())
-        addAudioProcessorFactory(EIMAudioProcessorFactory())
-        addTrackFactory(DefaultTrackFactory())
+        registerAudioProcessorFactory(NativeAudioPluginFactoryImpl())
+        registerAudioProcessorFactory(EIMAudioProcessorFactory())
+        registerTrackFactory(DefaultTrackFactory())
     }
 
-    override fun addAudioProcessorFactory(factory: AudioProcessorFactory<*>) {
+    override fun registerAudioProcessorFactory(factory: AudioProcessorFactory<*>) {
         audioProcessorFactories[factory.name] = factory
     }
 
-    override fun addTrackFactory(factory: TrackFactory<*>) {
+    override fun registerTrackFactory(factory: TrackFactory<*>) {
         trackFactories[factory.name] = factory
     }
 

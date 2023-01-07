@@ -78,7 +78,7 @@ interface NoteMessageList : MutableList<NoteMessage>, IManualState {
     fun sort()
 }
 
-class NoteMessageListImpl : NoteMessageList, ArrayList<NoteMessage>() {
+open class DefaultNoteMessageList : NoteMessageList, ArrayList<NoteMessage>() {
     private var modification = mutableStateOf(0)
     override fun sort() = sortWith { o1, o2 ->
         if (o1.time == o2.time)

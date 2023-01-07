@@ -16,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.actions.doNoteVelocityAction
+import cn.apisium.eim.api.MidiClip
 import cn.apisium.eim.api.processor.Track
 import cn.apisium.eim.components.*
 import cn.apisium.eim.components.silder.Slider
@@ -84,21 +85,24 @@ internal fun EditorControls() {
         }
 
         Row(verticalAlignment = Alignment.CenterVertically) {
-            track?.notes?.read()
+            val clip = EchoInMirror.selectedClip?.clip
+            if (clip is MidiClip) clip.notes.read()
             var delta by remember { mutableStateOf(0) }
             currentSelectedNote
             val velocity = if (selectedNotes.isEmpty()) defaultVelocity else selectedNotes.first().velocity
             val trueValue = velocity + (if (selectedNotes.isEmpty()) 0 else delta)
             CustomTextField(trueValue.toString(), { str ->
                 val v = str.toIntOrNull()?.coerceIn(0, 127) ?: return@CustomTextField
-                if (selectedNotes.isEmpty()) defaultVelocity = v else track?.doNoteVelocityAction(selectedNotes.toTypedArray(), v - velocity)
+                if (selectedNotes.isEmpty()) defaultVelocity = v
+                else if (clip is MidiClip) clip.doNoteVelocityAction(selectedNotes.toTypedArray(), v - velocity)
             }, Modifier.width(60.dp).padding(end = 10.dp), label = { Text("力度") })
             Slider(trueValue.toFloat() / 127,
                 {
                     if (selectedNotes.isEmpty()) defaultVelocity = (it * 127).roundToInt()
                     else delta = (it * 127).roundToInt() - velocity
                 }, onValueChangeFinished = {
-                    if (selectedNotes.isNotEmpty()) track?.doNoteVelocityAction(selectedNotes.toTypedArray(), delta)
+                    if (selectedNotes.isNotEmpty() && clip is MidiClip)
+                        clip.doNoteVelocityAction(selectedNotes.toTypedArray(), delta)
                     delta = 0
                 },
                 modifier = Modifier.weight(1f))

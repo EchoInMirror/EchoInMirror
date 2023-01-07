@@ -27,6 +27,7 @@ import androidx.compose.ui.zIndex
 import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.actions.doNoteAmountAction
 import cn.apisium.eim.actions.doNoteMessageEditAction
+import cn.apisium.eim.api.MidiClip
 import cn.apisium.eim.api.processor.Track
 import cn.apisium.eim.api.projectDisplayPPQ
 import cn.apisium.eim.api.window.Panel
@@ -81,7 +82,7 @@ internal var notesInView by mutableStateOf(arrayListOf<NoteMessage>())
 private data class NoteDrawObject(val note: NoteMessage, val offset: Offset, val size: Size, val color: Color)
 private data class BackingTrack(val track: Track, val notes: ArrayList<NoteDrawObject>)
 
-private fun Density.getClickedNotes(x: Float, y: Float, notes: NoteMessageList,
+private fun Density.getClickedNotes(x: Float, y: Float, notes: List<NoteMessage>,
                                     block: Density.(NoteMessage) -> Boolean = { true }): NoteMessage? {
     currentNote = KEYBOARD_KEYS - ((y + verticalScrollState.value) / noteHeight.toPx()).toInt() - 1
     currentX = ((x + horizontalScrollState.value) / noteWidth.value.toPx()).roundToInt()
@@ -146,11 +147,13 @@ private suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutine
             var minNoteDuration = Int.MAX_VALUE
             do {
                 event = awaitPointerEvent(PointerEventPass.Main)
-                val track = EchoInMirror.selectedTrack ?: continue
+                if (EchoInMirror.selectedTrack == null) continue
+                val clip = EchoInMirror.selectedClip?.clip
+                if (clip !is MidiClip) continue
                 when (event.type) {
                     PointerEventType.Move -> {
                         var cursor0 = Cursor.DEFAULT_CURSOR
-                        getClickedNotes(event.x, event.y, track.notes)?.let {
+                        getClickedNotes(event.x, event.y, clip.notes)?.let {
                             val startX = it.time * noteWidth.value.toPx() - horizontalScrollState.value
                             val endX = (it.time + it.duration) * noteWidth.value.toPx() - horizontalScrollState.value
                             cursor0 = if ((event.x < startX + 4 && event.x > startX - 4) ||
@@ -183,14 +186,14 @@ private suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutine
                         action = SELECT
                         break
                     }
-                    var currentSelectNote = getClickedNotes(event.x, event.y, track.notes)
+                    var currentSelectNote = getClickedNotes(event.x, event.y, clip.notes)
                     if (currentSelectNote == null) {
                         selectedNotes = hashSetOf()
                         val noteUnit = getEditUnit()
                         currentSelectNote = defaultNoteMessage(currentNote, currentX.fitInUnit(noteUnit), noteUnit, defaultVelocity)
-                        track.doNoteAmountAction(listOf(currentSelectNote), false)
-                        track.notes.sort()
-                        track.notes.update()
+                        clip.doNoteAmountAction(listOf(currentSelectNote), false)
+                        clip.notes.sort()
+                        clip.notes.update()
                         selectedNotes.add(currentSelectNote)
                     } else if (!selectedNotes.contains(currentSelectNote)) {
                         selectedNotes = hashSetOf()
@@ -229,7 +232,7 @@ private suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutine
                     break
                 } else if (event.buttons.isTertiaryPressed) {
                     selectedNotes = hashSetOf()
-                    getClickedNotes(event.x, event.y, track.notes) ?.let(deletionList::add)
+                    getClickedNotes(event.x, event.y, clip.notes) ?.let(deletionList::add)
                     action = DELETE
                     break
                 } else if (event.buttons.isSecondaryPressed) {
@@ -249,9 +252,10 @@ private suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutine
                     triggerOnMainAxisSlop = false) { change, _ -> change.consume() }
             } while (drag != null && !drag.isConsumed)
             val track = EchoInMirror.selectedTrack
+            val clip = EchoInMirror.selectedClip?.clip
             if (drag == null) {
                 if (action == DELETE) {
-                    track?.doNoteAmountAction(deletionList, true)
+                    if (clip is MidiClip) clip.doNoteAmountAction(deletionList, true)
                     deletionList.clear()
                 }
                 stopAllNotes()
@@ -272,7 +276,7 @@ private suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutine
                         selectionX = (it.position.x.coerceAtMost(size.width.toFloat()) + horizontalScrollState.value).coerceAtLeast(0F)
                         selectionY = ((it.position.y.coerceAtMost(size.height.toFloat()) + verticalScrollState.value) / noteHeight.toPx()).roundToInt()
                     }
-                    DELETE -> if (track != null) getClickedNotes(it.position.x, it.position.y, track.notes)
+                    DELETE -> if (track != null && clip is MidiClip) getClickedNotes(it.position.x, it.position.y, clip.notes)
                         { note -> !deletionList.contains(note) }?.let(deletionList::add)
                     MOVE, RESIZE -> {
                         val noteUnit = getEditUnit()
@@ -310,7 +314,7 @@ private suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutine
                 it.consume()
             }
             // calc selected notes
-            if (track != null) when (action) {
+            if (track != null && clip is MidiClip) when (action) {
                 SELECT -> {
                     val startX = (selectionStartX / noteWidth.value.toPx()).roundToInt()
                     val endX = (selectionX / noteWidth.value.toPx()).roundToInt()
@@ -321,21 +325,21 @@ private suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutine
                     val minY = minOf(startY, endY)
                     val maxY = maxOf(startY, endY)
                     val list = arrayListOf<NoteMessage>()
-                    for (i in startNoteIndex until track.notes.size) {
-                        val note = track.notes[i]
+                    for (i in startNoteIndex until clip.notes.size) {
+                        val note = clip.notes[i]
                         if (note.time > maxX) break
                         if (note.time + note.duration >= minX && note.note in minY..maxY) list.add(note)
                     }
                     selectedNotes.addAll(list)
                 }
                 DELETE -> {
-                    track.doNoteAmountAction(deletionList, true)
+                    clip.doNoteAmountAction(deletionList, true)
                     deletionList.clear()
                 }
-                MOVE -> track.doNoteMessageEditAction(selectedNotes.toTypedArray(), deltaX, -deltaY, 0)
+                MOVE -> clip.doNoteMessageEditAction(selectedNotes.toTypedArray(), deltaX, -deltaY, 0)
                 RESIZE -> {
-                    if (resizeDirectionRight) track.doNoteMessageEditAction(selectedNotes.toTypedArray(), 0, 0, deltaX)
-                    else track.doNoteMessageEditAction(selectedNotes.toTypedArray(), deltaX, 0, -deltaX)
+                    if (resizeDirectionRight) clip.doNoteMessageEditAction(selectedNotes.toTypedArray(), 0, 0, deltaX)
+                    else clip.doNoteMessageEditAction(selectedNotes.toTypedArray(), deltaX, 0, -deltaX)
                 }
                 else -> { }
             }
@@ -380,18 +384,21 @@ private fun NotesEditorCanvas() {
             val notes = arrayListOf<NoteDrawObject>()
             val backingsNotes = arrayListOf<BackingTrack>()
             action // read mutable state of action
-            EchoInMirror.selectedTrack?.let { track ->
+            EchoInMirror.selectedClip?.let { trackClip ->
+                val clip = trackClip.clip
+                if (clip !is MidiClip) return@let
+                val startTime = trackClip.time
                 startNoteIndex = 0
                 var flag = true
-                track.notes.read()
-                val allNotes = track.notes.toSet()
+                clip.notes.read()
+                val allNotes = clip.notes.toSet()
                 selectedNotes.removeIf { !allNotes.contains(it) }
 
                 val notesInViewList = arrayListOf<NoteMessage>()
-                val color = track.color
-                for ((index, it) in track.notes.withIndex()) {
+                val color = EchoInMirror.selectedTrack!!.color
+                for ((index, it) in clip.notes.withIndex()) {
                     val y = (KEYBOARD_KEYS - 1 - it.note) * noteHeightPx - verticalScrollValue
-                    val x = it.time * noteWidthPx - horizontalScrollValue
+                    val x = startTime + it.time * noteWidthPx - horizontalScrollValue
                     if (x > size.width) break
                     notesInViewList.add(it)
                     if (y < -noteHeightPx || y > size.height || deletionList.contains(it)) continue
@@ -410,26 +417,26 @@ private fun NotesEditorCanvas() {
                 }
                 notesInView = notesInViewList
             }
-            backingTracks.forEach { track ->
-                if (track == EchoInMirror.selectedTrack) return@forEach
-                track.notes.read()
-                val color = track.color
-                val curNotes = arrayListOf<NoteDrawObject>()
-                for (it in track.notes) {
-                    val y = (KEYBOARD_KEYS - 1 - it.note) * noteHeightPx - verticalScrollValue
-                    val x = it.time * noteWidthPx - horizontalScrollValue
-                    if (x > size.width) break
-                    if (y < -noteHeightPx || y > size.height || deletionList.contains(it)) continue
-                    val width = it.duration * noteWidthPx
-                    if (x < 0 && width < -x) continue
-                    curNotes.add(
-                        NoteDrawObject(it, Offset(x, y.coerceAtLeast(0F)), Size(width, if (y < 0)
-                        (noteHeightPx + y).coerceAtLeast(0F) else noteHeightPx),
-                        color.copy(0.6F + 0.4F * mapValue(it.velocity, 0, 127)))
-                    )
-                }
-                backingsNotes.add(BackingTrack(track, curNotes))
-            }
+//           TODO: backingTracks.forEach { track ->
+//                if (track == EchoInMirror.selectedTrack) return@forEach
+//                track.notes.read()
+//                val color = track.color
+//                val curNotes = arrayListOf<NoteDrawObject>()
+//                for (it in track.notes) {
+//                    val y = (KEYBOARD_KEYS - 1 - it.note) * noteHeightPx - verticalScrollValue
+//                    val x = it.time * noteWidthPx - horizontalScrollValue
+//                    if (x > size.width) break
+//                    if (y < -noteHeightPx || y > size.height || deletionList.contains(it)) continue
+//                    val width = it.duration * noteWidthPx
+//                    if (x < 0 && width < -x) continue
+//                    curNotes.add(
+//                        NoteDrawObject(it, Offset(x, y.coerceAtLeast(0F)), Size(width, if (y < 0)
+//                        (noteHeightPx + y).coerceAtLeast(0F) else noteHeightPx),
+//                        color.copy(0.6F + 0.4F * mapValue(it.velocity, 0, 127)))
+//                    )
+//                }
+//                backingsNotes.add(BackingTrack(track, curNotes))
+//            }
 
             onDrawBehind {
                 val isDarkTheme = EchoInMirror.windowManager.isDarkTheme
@@ -447,10 +454,11 @@ private fun NotesEditorCanvas() {
                 }
                 notes.forEach { drawRoundRect(it.color, it.offset, it.size, BorderCornerRadius2PX) }
                 val track = EchoInMirror.selectedTrack ?: return@onDrawBehind
+                val trackClip = EchoInMirror.selectedClip ?: return@onDrawBehind
                 val trackColor = track.color
                 selectedNotes.forEach {
                     var y = (KEYBOARD_KEYS - 1 - it.note) * noteHeightPx - verticalScrollValue
-                    val x = it.time * noteWidthPx - horizontalScrollValue
+                    val x = trackClip.time + it.time * noteWidthPx - horizontalScrollValue
                     val width = it.duration * noteWidthPx
                     val offset: Offset
                     val size: Size
