@@ -19,10 +19,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.onPointerEvent
-import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -48,19 +45,81 @@ private class TrackMoveFlags(val parent: Track) {
     var isChild by mutableStateOf(false)
 }
 private val trackMovingFlags = WeakHashMap<Track, TrackMoveFlags>()
-private data class TrackToHeight(val track: Track, val height: Float)
-private fun getTrackHeights(list: ArrayList<TrackToHeight>, track: Track, defaultHeight: Float) {
-    list.add(TrackToHeight(track, (list.lastOrNull()?.height ?: 0F) +
+internal data class TrackToHeight(val track: Track, val height: Float)
+private fun getTrackHeights(list: ArrayList<TrackToHeight>, track: Track, defaultHeight: Float, density: Float) {
+    list.add(TrackToHeight(track, density + (list.lastOrNull()?.height ?: 0F) +
             (if (track.height == 0) defaultHeight else track.height.toFloat())))
-    track.subTracks.forEach { getTrackHeights(list, it, defaultHeight) }
+    track.subTracks.forEach { getTrackHeights(list, it, defaultHeight, density) }
+}
+internal fun getAllTrackHeights(defaultHeight: Float, density: Float): ArrayList<TrackToHeight> {
+    val trackHeights = ArrayList<TrackToHeight>()
+    EchoInMirror.bus!!.subTracks.forEach { getTrackHeights(trackHeights, it, defaultHeight, density) }
+    return trackHeights
 }
 
-private var trackItemDragStartY = 0F
+// binary search drop track by trackHeights and currentY
+internal fun binarySearchTrackByHeight(trackHeights: ArrayList<TrackToHeight>, y: Float): Int {
+    var l = 0
+    var r = trackHeights.size - 1
+    while (l < r) {
+        val mid = (l + r) / 2
+        if (trackHeights[mid].height < y) l = mid + 1
+        else r = mid
+    }
+    return l
+}
+
+private suspend fun AwaitPointerEventScope.handleDrag(track: Track, parentTrack: Track, isDragging: MutableState<Boolean>) {
+    val down = awaitFirstDownOnPass(PointerEventPass.Final, false)
+    awaitPointerSlopOrCancellation(down.id, down.type, triggerOnMainAxisSlop = false) { change, _ ->
+        // val trackHeights = getAllTrackHeights(trackHeight.toPx(), density)
+        isDragging.value = true
+        var lastTrack: Track? = null
+        var lastFlags: TrackMoveFlags? = null
+        var currentY: Float
+        drag(down.id) {
+            currentY = dragStartY + it.position.y - change.position.y
+            // binary search drop track by trackHeights and currentY
+            val cur = binarySearchTrackByHeight(trackHeights, currentY)
+            val dropTrack = trackHeights[cur].track
+            lastFlags?.isAbove = false
+            lastFlags?.isChild = false
+            if (dropTrack == track) return@drag
+            lastTrack = dropTrack
+            val flags0 = trackMovingFlags[dropTrack] ?: return@drag
+            lastFlags = flags0
+            if (currentY - (if (cur == 0) 0F else trackHeights[cur - 1].height) < 6) flags0.isAbove = true
+            else flags0.isChild = true
+        }
+        if (lastTrack != null) {
+            // dfs search drop track is not the child of current track
+            var dropTrack = lastTrack
+            var flag = false
+            while (dropTrack != null) {
+                if (dropTrack == track) {
+                    flag = true
+                    break
+                }
+                dropTrack = trackMovingFlags[dropTrack]?.parent
+            }
+            if (!flag) lastFlags?.let {
+                if (it.isAbove) track.doReorderAction(
+                    parentTrack.subTracks, it.parent.subTracks,
+                    it.parent.subTracks.indexOf(lastTrack)
+                )
+                else if (it.isChild) track.doReorderAction(parentTrack.subTracks, lastTrack!!.subTracks)
+            }
+        }
+        lastFlags?.isAbove = false
+        lastFlags?.isChild = false
+        isDragging.value = false
+    }
+}
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun TrackItem(track: Track, parentTrack: Track, index: Int, depth: Int = 0) {
-    var isDragging by remember { mutableStateOf(false) }
+    val isDragging = remember { mutableStateOf(false) }
     val primaryColor = MaterialTheme.colorScheme.primary
     val flags = trackMovingFlags[track]
     val alpha by animateFloatAsState(flags?.let { if (it.isAbove || it.isChild) 0.4F else 0F } ?: 0F)
@@ -76,66 +135,9 @@ private fun TrackItem(track: Track, parentTrack: Track, index: Int, depth: Int =
         }
         .pointerInput(track, parentTrack) {
             trackMovingFlags[track] = TrackMoveFlags(parentTrack)
-            val defaultHeight = trackHeight.toPx()
-            forEachGesture {
-                awaitPointerEventScope {
-                    val down = awaitFirstDownOnPass(PointerEventPass.Final, false)
-                    awaitPointerSlopOrCancellation(
-                        down.id,
-                        down.type,
-                        triggerOnMainAxisSlop = false
-                    ) { change, _ ->
-                        val trackHeights: ArrayList<TrackToHeight> = ArrayList()
-                        EchoInMirror.bus!!.subTracks.forEach { getTrackHeights(trackHeights, it, defaultHeight) }
-                        isDragging = true
-                        var lastTrack: Track? = null
-                        var lastFlags: TrackMoveFlags? = null
-                        var currentY: Float
-                        drag(down.id) {
-                            currentY = trackItemDragStartY + it.position.y - change.position.y
-                            // binary search drop track by trackHeights and currentY
-                            var l = 0
-                            var r = trackHeights.size - 1
-                            while (l < r) {
-                                val mid = (l + r) / 2
-                                if (trackHeights[mid].height < currentY) l = mid + 1
-                                else r = mid
-                            }
-                            val dropTrack = trackHeights[l].track
-                            lastFlags?.isAbove = false
-                            lastFlags?.isChild = false
-                            if (dropTrack == track) return@drag
-                            lastTrack = dropTrack
-                            val flags0 = trackMovingFlags[dropTrack] ?: return@drag
-                            lastFlags = flags0
-                            if (currentY - (if (l == 0) 0F else trackHeights[l - 1].height) < 6) flags0.isAbove = true
-                            else flags0.isChild = true
-                        }
-                        if (lastTrack != null) {
-                            // dfs search drop track is not the child of current track
-                            var dropTrack = lastTrack
-                            var flag = false
-                            while (dropTrack != null) {
-                                if (dropTrack == track) {
-                                    flag = true
-                                    break
-                                }
-                                dropTrack = trackMovingFlags[dropTrack]?.parent
-                            }
-                            if (!flag) lastFlags?.let {
-                                if (it.isAbove) track.doReorderAction(parentTrack.subTracks, it.parent.subTracks,
-                                    it.parent.subTracks.indexOf(lastTrack))
-                                else if (it.isChild) track.doReorderAction(parentTrack.subTracks, lastTrack!!.subTracks)
-                            }
-                        }
-                        lastFlags?.isAbove = false
-                        lastFlags?.isChild = false
-                        isDragging = false
-                    }
-                }
-            }
+            forEachGesture { awaitPointerEventScope { handleDrag(track, parentTrack, isDragging) } }
         }
-        .alpha(animateFloatAsState(if (isDragging) 0.3F else 1F).value)
+        .alpha(animateFloatAsState(if (isDragging.value) 0.3F else 1F).value)
     ) {
         val localFloatingDialogProvider = LocalFloatingDialogProvider.current
         Spacer(Modifier.fillMaxHeight().width(8.dp).background(track.color).clickableWithIcon {
@@ -149,11 +151,7 @@ private fun TrackItem(track: Track, parentTrack: Track, index: Int, depth: Int =
                 maxLines = 1
             )
             Column(Modifier.fillMaxHeight(), Arrangement.SpaceBetween) {
-                Text(track.name,
-                    style = MaterialTheme.typography.labelLarge,
-                    overflow = TextOverflow.Ellipsis,
-                    maxLines = 1
-                )
+                Text(track.name, style = MaterialTheme.typography.labelLarge, overflow = TextOverflow.Ellipsis, maxLines = 1)
                 if (trackHeight.value > 54) SegmentedButtons {
                     SegmentedButton({ track.isMute = !track.isMute }, track.isMute, false) {
                         Icon(if (track.isMute) Icons.Filled.VolumeOff else Icons.Filled.VolumeUp, null, TRACK_ITEM_ICON_SIZE)
@@ -188,7 +186,7 @@ private fun TrackItem(track: Track, parentTrack: Track, index: Int, depth: Int =
 internal fun TrackItems() {
     val scope = rememberCoroutineScope()
     Column(Modifier.pointerInput(scope) {
-        detectDragGestures({ trackItemDragStartY = it.y + verticalScrollState.value }) { change, _ ->
+        detectDragGestures({ dragStartY = it.y + verticalScrollState.value }) { change, _ ->
             if (change.position.y < 10) scope.launch { verticalScrollState.scrollBy(-3F) }
             else if (change.position.y > size.height - 10) scope.launch { verticalScrollState.scrollBy(3F) }
         }

@@ -3,14 +3,14 @@ package cn.apisium.eim.components.splitpane
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.unit.dp
-import java.awt.Cursor
+import cn.apisium.eim.utils.HorizontalResize
+import cn.apisium.eim.utils.VerticalResize
 
-private fun Modifier.cursorForHorizontalResize(isHorizontal: Boolean): Modifier =
-    pointerHoverIcon(PointerIcon(Cursor(if (isHorizontal) Cursor.E_RESIZE_CURSOR else Cursor.S_RESIZE_CURSOR)))
-
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun DefaultHandle(
     isHorizontal: Boolean,
@@ -25,7 +25,7 @@ fun DefaultHandle(
                 )
             }
         }
-        .cursorForHorizontalResize(isHorizontal)
+        .pointerHoverIcon(if (isHorizontal) PointerIconDefaults.HorizontalResize else PointerIconDefaults.VerticalResize)
         .run {
             if (isHorizontal) {
                 this.width(8.dp)

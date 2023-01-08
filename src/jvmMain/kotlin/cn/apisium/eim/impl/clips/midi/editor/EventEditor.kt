@@ -20,6 +20,7 @@ import cn.apisium.eim.components.EditorGrid
 import cn.apisium.eim.components.KEYBOARD_DEFAULT_WIDTH
 import cn.apisium.eim.data.midi.NoteMessage
 import cn.apisium.eim.utils.Stroke1_5PX
+import cn.apisium.eim.window.panels.playlist.EditAction
 import kotlin.math.roundToInt
 
 @Composable

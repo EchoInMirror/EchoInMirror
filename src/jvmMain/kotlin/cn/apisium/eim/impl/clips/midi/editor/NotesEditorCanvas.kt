@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalComposeUiApi::class)
+
 package cn.apisium.eim.impl.clips.midi.editor
 
 import androidx.compose.foundation.Canvas
@@ -9,13 +11,14 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.PointerIconDefaults
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
@@ -32,7 +35,7 @@ import cn.apisium.eim.data.defaultScale
 import cn.apisium.eim.data.midi.MidiEvent
 import cn.apisium.eim.data.midi.NoteMessage
 import cn.apisium.eim.utils.*
-import java.awt.Cursor
+import cn.apisium.eim.window.panels.playlist.EditAction
 import kotlin.math.absoluteValue
 
 var playOnEdit by mutableStateOf(true)
@@ -45,7 +48,8 @@ internal var deltaX by mutableStateOf(0)
 internal var deltaY by mutableStateOf(0)
 internal var action by mutableStateOf(EditAction.NONE)
 internal var resizeDirectionRight = false
-internal var cursor by mutableStateOf(Cursor.DEFAULT_CURSOR)
+@OptIn(ExperimentalComposeUiApi::class)
+internal var cursor by mutableStateOf(PointerIconDefaults.Default)
 internal var currentNote = 0
 internal var currentX = 0
 internal val deletionList = mutableStateSetOf<NoteMessage>()
@@ -190,19 +194,7 @@ internal fun NotesEditorCanvas(trackClip: TrackClip<MidiClip>, selectedTrack: Tr
                 }
             }
         })
-        Canvas(
-            Modifier.fillMaxSize().pointerHoverIcon(
-                PointerIcon(
-                    Cursor(
-            when (action) {
-                EditAction.MOVE -> Cursor.MOVE_CURSOR
-                EditAction.RESIZE -> Cursor.E_RESIZE_CURSOR
-                EditAction.DELETE -> Cursor.DEFAULT_CURSOR
-                else -> cursor
-            }
-        )
-                )
-            )) {
+        Canvas(Modifier.fillMaxSize().pointerHoverIcon(action.toPointerIcon(cursor))) {
             if (selectionX == 0F && selectionStartX == 0F) return@Canvas
             val scrollX = horizontalScrollState.value
             val scrollY = verticalScrollState.value
@@ -219,7 +211,7 @@ internal fun NotesEditorCanvas(trackClip: TrackClip<MidiClip>, selectedTrack: Tr
                     .absoluteValue.coerceIn(1, KEYBOARD_KEYS) * noteHeightPx -
                         (if (y < 0) -y % noteHeightPx else 0F)
             )
-            drawRect(primaryColor.copy(alpha = 0.1F), pos, size)
+            drawRect(primaryColor.copy(0.1F), pos, size)
             drawRect(primaryColor, pos, size, style = Stroke1PX)
         }
     }

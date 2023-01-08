@@ -32,10 +32,6 @@ import com.fasterxml.jackson.module.kotlin.kotlinModule
 import com.fasterxml.jackson.module.kotlin.readValue
 import kotlin.math.roundToInt
 
-internal enum class EditAction {
-    NONE, MOVE, RESIZE, SELECT, DELETE
-}
-
 var selectedNotes by mutableStateOf(hashSetOf<NoteMessage>())
 val backingTracks = mutableStateSetOf<Track>()
 var startNoteIndex = 0

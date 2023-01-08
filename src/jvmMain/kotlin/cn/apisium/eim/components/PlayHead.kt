@@ -7,6 +7,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
@@ -22,8 +23,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.zIndex
 import cn.apisium.eim.EchoInMirror
+import cn.apisium.eim.utils.HorizontalResize
 import cn.apisium.eim.utils.x
-import org.jetbrains.skiko.Cursor
 
 private val BOTTOM = ParagraphStyle(lineHeight = 16.sp,
     lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Bottom, LineHeightStyle.Trim.FirstLineTop))
@@ -45,10 +46,10 @@ fun calcDrag(isInRange: Boolean, x0: Float, noteWidth: Float) {
 val TIMELINE_HEIGHT = 40.dp
 
 @Suppress("DuplicatedCode")
-@OptIn(ExperimentalTextApi::class)
+@OptIn(ExperimentalTextApi::class, ExperimentalComposeUiApi::class)
 @Composable
 fun Timeline(modifier: Modifier = Modifier, noteWidth: MutableState<Dp>, scrollState: ScrollState, drawRange: Boolean = false, offsetX: Dp = 0.dp) {
-    Surface(modifier.height(TIMELINE_HEIGHT).fillMaxWidth().zIndex(2F).pointerHoverIcon(PointerIcon(Cursor(Cursor.E_RESIZE_CURSOR))),
+    Surface(modifier.height(TIMELINE_HEIGHT).fillMaxWidth().zIndex(2F).pointerHoverIcon(PointerIconDefaults.HorizontalResize),
         shadowElevation = 5.dp, tonalElevation = 4.dp) {
         val outlineColor = MaterialTheme.colorScheme.outlineVariant
         val primaryColor = MaterialTheme.colorScheme.primary
