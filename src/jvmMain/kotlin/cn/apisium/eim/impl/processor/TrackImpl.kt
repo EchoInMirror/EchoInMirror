@@ -122,6 +122,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
                 }
             }
             clips.forEach {
+                @Suppress("TYPE_MISMATCH")
                 it.clip.factory.processBlock(it, buffers, position, midiBuffer, noteRecorder, pendingNoteOns)
             }
         }
@@ -202,6 +203,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         stopAllNotes()
         pendingNoteOns.clone()
         noteRecorder.reset()
+        clips.forEach { it.reset() }
         preProcessorsChain.forEach(AudioProcessor::onSuddenChange)
         subTracks.forEach(Track::onSuddenChange)
         postProcessorsChain.forEach(AudioProcessor::onSuddenChange)
@@ -230,7 +232,12 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
             if (clips.isNotEmpty()) {
                 val clipsDir = dir.resolve("clips")
                 if (!Files.exists(clipsDir)) Files.createDirectory(clipsDir)
-                clips.forEach { it.clip.factory.save(it.clip, clipsDir.resolve(it.clip.id).absolutePathString()) }
+                clips.forEach {
+                    launch {
+                        @Suppress("TYPE_MISMATCH")
+                        it.clip.factory.save(it.clip, clipsDir.resolve(it.clip.id).absolutePathString())
+                    }
+                }
             }
 
             if (subTracks.isNotEmpty()) {
@@ -258,8 +265,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
                 val clipsDir = dir.resolve("clips").absolutePathString()
                 json.get("clips").forEach {
                     launch {
-                        clips.add(EchoInMirror.clipManager.createTrackClip(
-                            EchoInMirror.clipManager.createClip(clipsDir, it.asText())))
+                        clips.add(EchoInMirror.clipManager.createTrackClip(clipsDir, it))
                     }
                 }
 

@@ -1,19 +1,22 @@
 package cn.apisium.eim.impl.clips
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import cn.apisium.eim.api.*
+import cn.apisium.eim.api.processor.Track
 import cn.apisium.eim.data.midi.*
 import cn.apisium.eim.utils.randomId
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import java.io.File
 
 class MidiClipImpl(json: JsonNode?, override val factory: ClipFactory<MidiClip>) : MidiClip {
     override val notes = DefaultNoteMessageList()
     override val id = json?.get("id")?.asText() ?: randomId()
-    override var duration by mutableStateOf(json?.get("duration")?.asInt() ?: 0)
 
     init {
         if (json != null) {
@@ -27,17 +30,17 @@ class MidiClipFactoryImpl : ClipFactory<MidiClip> {
     override val name = "MIDIClip"
     override fun createClip() = MidiClipImpl(null, this)
     override fun createClip(path: String, json: JsonNode) = MidiClipImpl(json, this)
-    override fun save(clip: Clip, path: String) {
-        if (clip !is MidiClipImpl) return
-        jacksonObjectMapper().writeValue(File(path, "$clip.json"), clip)
-    }
 
-    override fun processBlock(clip: TrackClip<*>, buffers: Array<FloatArray>, position: CurrentPosition
-                              , midiBuffer: ArrayList<Int>, noteRecorder: MidiNoteRecorder, pendingNoteOns: LongArray) {
+    override fun processBlock(clip: TrackClip<MidiClip>, buffers: Array<FloatArray>, position: CurrentPosition,
+                              midiBuffer: ArrayList<Int>, noteRecorder: MidiNoteRecorder, pendingNoteOns: LongArray) {
         val c = clip.clip
         if (c !is MidiClipImpl) return
         val blockEndSample = position.timeInSamples + position.bufferSize
         val startTime = clip.time
+        if (clip.currentIndex < 0) {
+            // use binary search to find the first note that is after the start of the block
+            clip.currentIndex = c.notes.binarySearch { it.time - startTime }
+        }
         for (i in clip.currentIndex until c.notes.size) {
             val note = c.notes[i]
             val startTimeInSamples = position.convertPPQToSamples(startTime + note.time)
@@ -61,6 +64,23 @@ class MidiClipFactoryImpl : ClipFactory<MidiClip> {
                 midiBuffer.add(note.toNoteOffRawData())
                 midiBuffer.add((endTimeInSamples - position.timeInSamples).toInt().coerceAtLeast(0))
             }
+        }
+    }
+
+    @Composable
+    override fun editorContent(clip: MidiClip) {
+
+    }
+
+    @Composable
+    override fun playlistContent(clip: MidiClip, track: Track, trackHeight: Dp, noteWidth: MutableState<Dp>) {
+        val height = (trackHeight / 128).coerceAtLeast(0.5.dp)
+        clip.notes.read()
+        clip.notes.forEach {
+            Box(
+                Modifier.size(noteWidth.value * it.duration, height)
+                .absoluteOffset(noteWidth.value * it.time, trackHeight - trackHeight / 128 * it.note)
+                .background(track.color))
         }
     }
 }

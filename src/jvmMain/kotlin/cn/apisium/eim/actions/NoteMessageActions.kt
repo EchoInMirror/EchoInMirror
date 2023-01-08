@@ -11,13 +11,14 @@ import cn.apisium.eim.components.icons.PencilMinus
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Tune
 import cn.apisium.eim.api.MidiClip
+import cn.apisium.eim.api.TrackClip
 
-fun MidiClip.doNoteAmountAction(noteMessage: Collection<NoteMessage>, isDelete: Boolean = false) {
+fun TrackClip<MidiClip>.doNoteAmountAction(noteMessage: Collection<NoteMessage>, isDelete: Boolean = false) {
     runBlocking { EchoInMirror.undoManager.execute(NoteAmountAction(this@doNoteAmountAction,
         noteMessage.toSet(), isDelete)) }
 }
 
-fun MidiClip.doNoteMessageEditAction(noteMessage: Array<NoteMessage>, deltaX: Int, deltaY: Int, deltaDuration: Int) {
+fun TrackClip<MidiClip>.doNoteMessageEditAction(noteMessage: Array<NoteMessage>, deltaX: Int, deltaY: Int, deltaDuration: Int) {
     if (deltaX == 0 && deltaY == 0 && deltaDuration == 0) return
     runBlocking {
         EchoInMirror.undoManager.execute(
@@ -38,23 +39,23 @@ fun MidiClip.doNoteVelocityAction(noteMessage: Array<NoteMessage>, deltaVelocity
         noteMessage, deltaVelocity)) }
 }
 
-class NoteAmountAction(private val clip: MidiClip, private val notes: Set<NoteMessage>, isDelete: Boolean) :
+class NoteAmountAction(private val clip: TrackClip<MidiClip>, private val notes: Set<NoteMessage>, isDelete: Boolean) :
     ReversibleAction(isDelete) {
     override val name = (if (isDelete) "音符删除 (" else "音符添加 (") + notes.size + "个)"
     override val icon = if (isDelete) PencilMinus else PencilPlus
     override suspend fun perform(isForward: Boolean): Boolean {
         if (isForward) {
-            clip.notes.addAll(notes)
-            clip.notes.sort()
-//          TODO:  clip.onSuddenChange()
-        } else clip.notes.removeAll(notes)
-        clip.notes.update()
+            clip.clip.notes.addAll(notes)
+            clip.clip.notes.sort()
+        } else clip.clip.notes.removeAll(notes)
+        clip.reset()
+        clip.clip.notes.update()
         return true
     }
 }
 
 class NoteMessageEditAction(
-    private val clip: MidiClip, private val notes: Array<NoteMessage>,
+    private val clip: TrackClip<MidiClip>, private val notes: Array<NoteMessage>,
     private val deltaX: Int, private val deltaY: Int,
     private val deltaDuration: Int
 ) : ReversibleAction() {
@@ -69,9 +70,9 @@ class NoteMessageEditAction(
             it.note += y
             it.duration += duration
         }
-        clip.notes.sort()
-//      TODO: clip.onSuddenChange()
-        clip.notes.update()
+        clip.clip.notes.sort()
+        clip.reset()
+        clip.clip.notes.update()
         return true
     }
 }

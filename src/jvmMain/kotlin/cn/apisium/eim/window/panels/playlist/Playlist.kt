@@ -9,6 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
@@ -34,13 +35,18 @@ val horizontalScrollState = ScrollState(0).apply {
 @Composable
 private fun TrackContent(track: Track, modifier: Modifier = Modifier) {
     Box(modifier.fillMaxWidth().height(trackHeight)) {
-//       TODO: val height = (trackHeight / 128).coerceAtLeast(0.5.dp)
-//        track.notes.read()
-//        track.notes.forEach {
-//            Box(Modifier.height(height).width(noteWidth.value * it.duration)
-//                .offset(x = noteWidth.value * it.time, y = trackHeight - trackHeight / 128 * it.note)
-//                .background(track.color))
-//        }
+        track.clips.forEach {
+            Box(Modifier
+                .size(noteWidth.value * it.duration, trackHeight)
+                .absoluteOffset(noteWidth.value * it.time)
+                .background(track.color.copy(0.1F))
+                .border(0.5.dp, track.color, MaterialTheme.shapes.extraSmall)
+                .clip(MaterialTheme.shapes.extraSmall)
+            ) {
+                @Suppress("TYPE_MISMATCH")
+                it.clip.factory.playlistContent(it.clip, track, trackHeight, noteWidth)
+            }
+        }
     }
     Divider()
     track.subTracks.forEach { key(it.id) { TrackContent(it, modifier) } }

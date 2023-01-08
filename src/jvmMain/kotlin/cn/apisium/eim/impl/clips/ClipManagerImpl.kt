@@ -23,7 +23,9 @@ class ClipManagerImpl : ClipManager {
         factories[json["factory"].asText()]?.createClip(path, json) ?: throw NoSuchFactoryException(json["factory"].asText())
 
     override suspend fun createClip(path: String, id: String) =
-        factories[id]?.createClip(path, ObjectMapper().readTree(File(path, "$id.json"))) ?: throw NoSuchFactoryException(id)
+        createClip(path, ObjectMapper().readTree(File(path, "$id.json")))
 
     override fun <T : Clip> createTrackClip(clip: T): TrackClip<T> = TrackClipImpl(clip)
+    override suspend fun createTrackClip(path: String, json: JsonNode) =
+        TrackClipImpl(createClip(path, json["clip"]!!.asText()), json["time"]!!.asInt(), json["duration"]!!.asInt())
 }

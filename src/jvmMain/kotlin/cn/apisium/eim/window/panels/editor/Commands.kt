@@ -4,6 +4,7 @@ import androidx.compose.ui.text.AnnotatedString
 import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.actions.doNoteAmountAction
 import cn.apisium.eim.api.MidiClip
+import cn.apisium.eim.api.asMidiTrackClipOrNull
 import cn.apisium.eim.commands.*
 import cn.apisium.eim.data.midi.NoteMessage
 import cn.apisium.eim.data.midi.NoteMessageImpl
@@ -19,9 +20,8 @@ import kotlin.math.roundToInt
 object EditorCommands {
     fun delete() {
         if (EchoInMirror.selectedTrack == null || selectedNotes.isEmpty()) return
-        val clip = EchoInMirror.selectedClip?.clip
-        if (clip !is MidiClip) return
-        clip.doNoteAmountAction(selectedNotes, true)
+        EchoInMirror.selectedClip?.asMidiTrackClipOrNull()?.doNoteAmountAction(selectedNotes, true)
+            ?: return
         selectedNotes.clear()
     }
     fun copy() {
@@ -32,16 +32,14 @@ object EditorCommands {
     }
     fun cut() {
         if (EchoInMirror.selectedTrack == null) return
-        val clip = EchoInMirror.selectedClip?.clip
-        if (clip !is MidiClip) return
+        val clip = EchoInMirror.selectedClip?.asMidiTrackClipOrNull() ?: return
         copy()
         clip.doNoteAmountAction(selectedNotes, true)
         selectedNotes.clear()
     }
     fun paste() {
         if (EchoInMirror.selectedTrack == null) return
-        val clip = EchoInMirror.selectedClip?.clip
-        if (clip !is MidiClip) return
+        val clip = EchoInMirror.selectedClip?.asMidiTrackClipOrNull() ?: return
         val content = CLIPBOARD_MANAGER?.getText()?.text ?: return
         try {
             val data = ObjectMapper()

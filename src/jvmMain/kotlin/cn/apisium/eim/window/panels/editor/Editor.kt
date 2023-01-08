@@ -28,6 +28,7 @@ import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.actions.doNoteAmountAction
 import cn.apisium.eim.actions.doNoteMessageEditAction
 import cn.apisium.eim.api.MidiClip
+import cn.apisium.eim.api.asMidiTrackClipOrNull
 import cn.apisium.eim.api.processor.Track
 import cn.apisium.eim.api.projectDisplayPPQ
 import cn.apisium.eim.api.window.Panel
@@ -148,8 +149,8 @@ private suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutine
             do {
                 event = awaitPointerEvent(PointerEventPass.Main)
                 if (EchoInMirror.selectedTrack == null) continue
-                val clip = EchoInMirror.selectedClip?.clip
-                if (clip !is MidiClip) continue
+                val trackClip = EchoInMirror.selectedClip?.asMidiTrackClipOrNull() ?: continue
+                val clip = trackClip.clip
                 when (event.type) {
                     PointerEventType.Move -> {
                         var cursor0 = Cursor.DEFAULT_CURSOR
@@ -191,7 +192,7 @@ private suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutine
                         selectedNotes = hashSetOf()
                         val noteUnit = getEditUnit()
                         currentSelectNote = defaultNoteMessage(currentNote, currentX.fitInUnit(noteUnit), noteUnit, defaultVelocity)
-                        clip.doNoteAmountAction(listOf(currentSelectNote), false)
+                        trackClip.doNoteAmountAction(listOf(currentSelectNote), false)
                         clip.notes.sort()
                         clip.notes.update()
                         selectedNotes.add(currentSelectNote)
@@ -252,10 +253,10 @@ private suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutine
                     triggerOnMainAxisSlop = false) { change, _ -> change.consume() }
             } while (drag != null && !drag.isConsumed)
             val track = EchoInMirror.selectedTrack
-            val clip = EchoInMirror.selectedClip?.clip
+            val clip = EchoInMirror.selectedClip?.asMidiTrackClipOrNull()
             if (drag == null) {
                 if (action == DELETE) {
-                    if (clip is MidiClip) clip.doNoteAmountAction(deletionList, true)
+                    clip?.doNoteAmountAction(deletionList, true)
                     deletionList.clear()
                 }
                 stopAllNotes()
