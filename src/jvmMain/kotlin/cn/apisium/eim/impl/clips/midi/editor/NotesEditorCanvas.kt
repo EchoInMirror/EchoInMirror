@@ -22,6 +22,7 @@ import androidx.compose.ui.platform.LocalDensity
 import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.api.MidiClip
 import cn.apisium.eim.api.TrackClip
+import cn.apisium.eim.api.asMidiTrackClipOrNull
 import cn.apisium.eim.api.processor.Track
 import cn.apisium.eim.api.projectDisplayPPQ
 import cn.apisium.eim.components.EditorGrid
@@ -119,26 +120,29 @@ internal fun NotesEditorCanvas(trackClip: TrackClip<MidiClip>, selectedTrack: Tr
             notesInView = notesInViewList
             // get note draw nodes - end
 
-//           TODO: backingTracks.forEach { track ->
-//                if (track == EchoInMirror.selectedTrack) return@forEach
-//                track.notes.read()
-//                val color = track.color
-//                val curNotes = arrayListOf<NoteDrawObject>()
-//                for (it in track.notes) {
-//                    val y = (KEYBOARD_KEYS - 1 - it.note) * noteHeightPx - verticalScrollValue
-//                    val x = it.time * noteWidthPx - horizontalScrollValue
-//                    if (x > size.width) break
-//                    if (y < -noteHeightPx || y > size.height || deletionList.contains(it)) continue
-//                    val width = it.duration * noteWidthPx
-//                    if (x < 0 && width < -x) continue
-//                    curNotes.add(
-//                        NoteDrawObject(it, Offset(x, y.coerceAtLeast(0F)), Size(width, if (y < 0)
-//                        (noteHeightPx + y).coerceAtLeast(0F) else noteHeightPx),
-//                        color.copy(0.6F + 0.4F * mapValue(it.velocity, 0, 127)))
-//                    )
-//                }
-//                backingsNotes.add(BackingTrack(track, curNotes))
-//            }
+            backingTracks.forEach { track ->
+                if (track == EchoInMirror.selectedTrack) return@forEach
+                track.clips.read()
+                val color = track.color
+                val curNotes = arrayListOf<NoteDrawObject>()
+                track.clips.forEach { clip0 ->
+                    @Suppress("LABEL_NAME_CLASH") val curClip = clip0.asMidiTrackClipOrNull() ?: return@forEach
+                    for (it in curClip.clip.notes) {
+                        val y = (KEYBOARD_KEYS - 1 - it.note) * noteHeightPx - verticalScrollValue
+                        val x = curClip.time + it.time * noteWidthPx - horizontalScrollValue
+                        if (x > size.width) break
+                        if (y < -noteHeightPx || y > size.height || deletionList.contains(it)) continue
+                        val width = it.duration * noteWidthPx
+                        if (x < 0 && width < -x) continue
+                        curNotes.add(
+                            NoteDrawObject(it, Offset(x, y.coerceAtLeast(0F)), Size(width, if (y < 0)
+                                (noteHeightPx + y).coerceAtLeast(0F) else noteHeightPx),
+                                color.copy(0.6F + 0.4F * mapValue(it.velocity, 0, 127)))
+                        )
+                    }
+                }
+                backingsNotes.add(BackingTrack(track, curNotes))
+            }
 
             onDrawBehind {
                 val isDarkTheme = EchoInMirror.windowManager.isDarkTheme

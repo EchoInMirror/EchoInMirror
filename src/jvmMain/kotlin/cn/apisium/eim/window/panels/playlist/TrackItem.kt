@@ -171,14 +171,11 @@ private fun TrackItem(track: Track, parentTrack: Track, index: Int, depth: Int =
             }
         }
 
-        val outlineColor = MaterialTheme.colorScheme.outlineVariant
         Canvas(Modifier.fillMaxHeight().width(5.dp)) {
             val y = size.height * (1F - track.levelMeter.maxLevel.toPercentage())
             drawRect(primaryColor, Offset(0F, y), Size(size.width, size.height - y))
-//            y = size.height * (1F - track.levelMeter.right.toPercentage())
-//            drawRect(primaryColor, Offset(size.width / 2, y), Size(size.width / 2, size.height - y))
             // drawLine(outlineColor, Offset(size.width / 2, y), Offset(size.width / 2, size.height), 0.5F)
-            drawLine(outlineColor, Offset.Zero, Offset(0F, size.height), 0.5F)
+            // drawLine(outlineColor, Offset.Zero, Offset(0F, size.height), 0.5F)
         }
     }
     track.subTracks.forEachIndexed { i, it -> key(it.id) {
