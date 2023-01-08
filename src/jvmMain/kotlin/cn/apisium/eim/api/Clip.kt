@@ -20,6 +20,15 @@ import kotlin.jvm.Throws
 
 class NoSuchFactoryException(name: String): Exception("No such factory: $name")
 
+interface ClipEditor {
+    @Composable fun content()
+    fun delete()
+    fun copy()
+    fun cut()
+    fun paste()
+    fun selectAll()
+}
+
 interface ClipFactory<T: Clip> {
     val name: String
     fun createClip(): T
@@ -29,8 +38,8 @@ interface ClipFactory<T: Clip> {
     fun save(clip: T, path: String) {
         jacksonObjectMapper().writerWithDefaultPrettyPrinter().writeValue(File("$path.json"), clip)
     }
+    fun getEditor(clip: TrackClip<T>, track: Track): ClipEditor
     @Composable fun playlistContent(clip: T, track: Track, trackHeight: Dp, noteWidth: MutableState<Dp>)
-    @Composable fun editorContent(clip: T)
 }
 
 interface ClipManager {

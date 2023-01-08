@@ -8,14 +8,14 @@ import cn.apisium.eim.api.DefaultProjectInformation
 import cn.apisium.eim.api.processor.Track
 import cn.apisium.eim.api.window.Panel
 import cn.apisium.eim.api.window.WindowManager
+import cn.apisium.eim.impl.clips.midi.editor.backingTracks
 import cn.apisium.eim.impl.processor.players.NativeAudioPlayer
-import cn.apisium.eim.window.panels.editor.Editor
+import cn.apisium.eim.window.panels.Editor
 import cn.apisium.eim.window.panels.Mixer
 import cn.apisium.eim.window.dialogs.QuickLoadDialog
 import cn.apisium.eim.window.dialogs.ExportDialog
 import cn.apisium.eim.window.dialogs.settings.SettingsWindow
 import cn.apisium.eim.window.panels.UndoList
-import cn.apisium.eim.window.panels.editor.backingTracks
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay

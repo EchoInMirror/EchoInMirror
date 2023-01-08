@@ -1,6 +1,7 @@
 package cn.apisium.eim.impl.clips
 
 import cn.apisium.eim.api.*
+import cn.apisium.eim.impl.clips.midi.MidiClipFactoryImpl
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import java.io.File

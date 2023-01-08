@@ -1,4 +1,4 @@
-package cn.apisium.eim.window.panels.editor
+package cn.apisium.eim.impl.clips.midi.editor
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures

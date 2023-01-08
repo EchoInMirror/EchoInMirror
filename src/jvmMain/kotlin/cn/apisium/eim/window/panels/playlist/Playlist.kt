@@ -13,6 +13,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.zIndex
@@ -20,8 +22,8 @@ import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.api.processor.Track
 import cn.apisium.eim.api.projectDisplayPPQ
 import cn.apisium.eim.components.*
+import cn.apisium.eim.utils.clickableWithIcon
 import cn.apisium.eim.utils.openMaxValue
-import cn.apisium.eim.window.panels.editor.calcScroll
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -42,6 +44,10 @@ private fun TrackContent(track: Track, modifier: Modifier = Modifier) {
                 .background(track.color.copy(0.1F))
                 .border(0.5.dp, track.color, MaterialTheme.shapes.extraSmall)
                 .clip(MaterialTheme.shapes.extraSmall)
+                .clickableWithIcon {
+                    EchoInMirror.selectedTrack = track
+                    EchoInMirror.selectedClip = it
+                }
             ) {
                 @Suppress("TYPE_MISMATCH")
                 it.clip.factory.playlistContent(it.clip, track, trackHeight, noteWidth)
@@ -50,6 +56,33 @@ private fun TrackContent(track: Track, modifier: Modifier = Modifier) {
     }
     Divider()
     track.subTracks.forEach { key(it.id) { TrackContent(it, modifier) } }
+}
+
+fun Density.calcScroll(event: PointerEvent, noteWidth: MutableState<Dp>, horizontalScrollState: ScrollState,
+                       coroutineScope: CoroutineScope, onVerticalScroll: (PointerInputChange) -> Unit) {
+    if (event.keyboardModifiers.isShiftPressed) return
+    if (event.keyboardModifiers.isCtrlPressed) {
+        val change = event.changes[0]
+        if (event.keyboardModifiers.isAltPressed) onVerticalScroll(change)
+        else {
+            val x = change.position.x
+            val oldX = (x + horizontalScrollState.value) / noteWidth.value.toPx()
+            val newValue = (noteWidth.value.value +
+                    (if (change.scrollDelta.y > 0) -0.05F else 0.05F)).coerceIn(0.06f, 3.2f)
+            if (newValue != noteWidth.value.value) {
+                horizontalScrollState.openMaxValue =
+                    (noteWidth.value * EchoInMirror.currentPosition.projectDisplayPPQ).toPx().toInt()
+                noteWidth.value = newValue.dp
+                coroutineScope.launch {
+                    val noteWidthPx = noteWidth.value.toPx()
+                    horizontalScrollState.scrollBy(
+                        (oldX - (x + horizontalScrollState.value) / noteWidthPx) * noteWidthPx
+                    )
+                }
+            }
+        }
+        change.consume()
+    }
 }
 
 @Suppress("DuplicatedCode")

@@ -109,7 +109,7 @@ internal class DropTargetContainer(
     // start DropTargetParent
     override fun registerChild(child: DropTargetChild) {
         children += child
-        // TODO if a drag is in progress, check if we need to send events
+        // TODO if a drag is in progress, check if we need to send Events
     }
 
     override fun unregisterChild(child: DropTargetChild) {

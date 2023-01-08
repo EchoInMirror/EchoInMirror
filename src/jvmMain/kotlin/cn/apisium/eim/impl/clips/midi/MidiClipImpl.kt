@@ -1,4 +1,4 @@
-package cn.apisium.eim.impl.clips
+package cn.apisium.eim.impl.clips.midi
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -10,6 +10,7 @@ import androidx.compose.ui.unit.dp
 import cn.apisium.eim.api.*
 import cn.apisium.eim.api.processor.Track
 import cn.apisium.eim.data.midi.*
+import cn.apisium.eim.impl.clips.midi.editor.MidiClipEditor
 import cn.apisium.eim.utils.randomId
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
@@ -30,6 +31,7 @@ class MidiClipFactoryImpl : ClipFactory<MidiClip> {
     override val name = "MIDIClip"
     override fun createClip() = MidiClipImpl(null, this)
     override fun createClip(path: String, json: JsonNode) = MidiClipImpl(json, this)
+    override fun getEditor(clip: TrackClip<MidiClip>, track: Track) = MidiClipEditor(clip, track)
 
     override fun processBlock(clip: TrackClip<MidiClip>, buffers: Array<FloatArray>, position: CurrentPosition,
                               midiBuffer: ArrayList<Int>, noteRecorder: MidiNoteRecorder, pendingNoteOns: LongArray) {
@@ -65,11 +67,6 @@ class MidiClipFactoryImpl : ClipFactory<MidiClip> {
                 midiBuffer.add((endTimeInSamples - position.timeInSamples).toInt().coerceAtLeast(0))
             }
         }
-    }
-
-    @Composable
-    override fun editorContent(clip: MidiClip) {
-
     }
 
     @Composable

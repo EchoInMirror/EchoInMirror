@@ -1,4 +1,4 @@
-package cn.apisium.eim.window.panels.editor
+package cn.apisium.eim.impl.clips.midi.editor
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
@@ -37,8 +37,6 @@ private fun TrackItem(track: Track, index: String, depth: Int = 0) {
     val isSelected = EchoInMirror.selectedTrack == track
     MenuItem(isSelected || backingTracks.contains(track), {
         if (!backingTracks.remove(track)) backingTracks.add(track)
-    }, {
-        EchoInMirror.selectedTrack = track
     }, minHeight = 28.dp, padding = PaddingValues(), modifier = Modifier.height(IntrinsicSize.Min)) {
         Spacer(Modifier.width(6.dp * depth))
         Spacer(Modifier.width(6.dp).fillMaxHeight().background(track.color))
@@ -49,7 +47,7 @@ private fun TrackItem(track: Track, index: String, depth: Int = 0) {
 }
 
 @Composable
-internal fun EditorControls() {
+internal fun EditorControls(clip: MidiClip) {
     val track = EchoInMirror.selectedTrack
     FloatingDialog({ size, _ ->
         Surface(Modifier.width(IntrinsicSize.Max).widthIn(min = size.width.dp), shape = MaterialTheme.shapes.extraSmall,
@@ -66,7 +64,7 @@ internal fun EditorControls() {
                 val textColor by animateColorAsState(color.toOnSurfaceColor(), tween(80))
                 Text(
                     remember(track) {
-                        if (track == null) null else dfsTrackIndex(EchoInMirror.bus!!, track, "")?.trimStart('-')
+                        if (track == null) null else dfsTrackIndex(EchoInMirror.bus!!, track, "")?.trimStart('.')
                     } ?: "?", Modifier.padding(horizontal = 8.dp),
                     color = textColor,
                     fontWeight = FontWeight.Bold,
@@ -85,8 +83,7 @@ internal fun EditorControls() {
         }
 
         Row(verticalAlignment = Alignment.CenterVertically) {
-            val clip = EchoInMirror.selectedClip?.clip
-            if (clip is MidiClip) clip.notes.read()
+            clip.notes.read()
             var delta by remember { mutableStateOf(0) }
             currentSelectedNote
             val velocity = if (selectedNotes.isEmpty()) defaultVelocity else selectedNotes.first().velocity
@@ -94,15 +91,14 @@ internal fun EditorControls() {
             CustomTextField(trueValue.toString(), { str ->
                 val v = str.toIntOrNull()?.coerceIn(0, 127) ?: return@CustomTextField
                 if (selectedNotes.isEmpty()) defaultVelocity = v
-                else if (clip is MidiClip) clip.doNoteVelocityAction(selectedNotes.toTypedArray(), v - velocity)
+                else clip.doNoteVelocityAction(selectedNotes.toTypedArray(), v - velocity)
             }, Modifier.width(60.dp).padding(end = 10.dp), label = { Text("力度") })
             Slider(trueValue.toFloat() / 127,
                 {
                     if (selectedNotes.isEmpty()) defaultVelocity = (it * 127).roundToInt()
                     else delta = (it * 127).roundToInt() - velocity
                 }, onValueChangeFinished = {
-                    if (selectedNotes.isNotEmpty() && clip is MidiClip)
-                        clip.doNoteVelocityAction(selectedNotes.toTypedArray(), delta)
+                    if (selectedNotes.isNotEmpty()) clip.doNoteVelocityAction(selectedNotes.toTypedArray(), delta)
                     delta = 0
                 },
                 modifier = Modifier.weight(1f))

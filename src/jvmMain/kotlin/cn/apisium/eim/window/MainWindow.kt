@@ -78,7 +78,7 @@ fun ApplicationScope.MainWindow() {
                                                 }
                                             }
                                             second(0.dp) {
-                                                Surface(tonalElevation = 2.dp, shadowElevation = 2.dp) {
+                                                Surface(tonalElevation = 2.dp, shadowElevation = 6.dp) {
                                                     bottomBarSelectedItem?.content()
                                                 }
                                             }
