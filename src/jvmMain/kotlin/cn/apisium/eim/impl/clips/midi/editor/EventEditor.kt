@@ -16,6 +16,7 @@ import androidx.compose.ui.zIndex
 import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.actions.doNoteVelocityAction
 import cn.apisium.eim.api.MidiClip
+import cn.apisium.eim.api.TrackClip
 import cn.apisium.eim.components.EditorGrid
 import cn.apisium.eim.components.KEYBOARD_DEFAULT_WIDTH
 import cn.apisium.eim.data.midi.NoteMessage
@@ -24,7 +25,7 @@ import cn.apisium.eim.window.panels.playlist.EditAction
 import kotlin.math.roundToInt
 
 @Composable
-internal fun EventEditor() {
+internal fun EventEditor(clip: TrackClip<MidiClip>) {
     Row {
         Surface(Modifier.width(KEYBOARD_DEFAULT_WIDTH).fillMaxHeight().zIndex(2f), shadowElevation = 5.dp) {
 
@@ -40,26 +41,25 @@ internal fun EventEditor() {
                 val offsetOfDelta = -delta / 127F * size.height
                 val offsetX = if (action == EditAction.MOVE) deltaX * noteWidthPx else 0f
                 val scrollX = horizontalScrollState.value
+                val startTime = clip.time
                 notesInView.forEach {
                     val isSelected = selectedNotes.contains(it)
-                    val x = it.time * noteWidthPx - scrollX + 2 + (if (isSelected) offsetX else 0f)
+                    val x = (startTime + it.time) * noteWidthPx - scrollX + 2 + (if (isSelected) offsetX else 0f)
                     val y = size.height * (1 - it.velocity / 127F) + (if (isSelected || selectedNote == it) offsetOfDelta else 0f)
                     drawLine(track.color, Offset(x, y.coerceIn(0f, size.height - 1)), Offset(x, size.height), 4f)
                 }
                 selectedNotes.forEach {
-                    val x = it.time * noteWidthPx - scrollX + offsetX
+                    val x = (startTime + it.time) * noteWidthPx - scrollX + offsetX
                     val y = (size.height * (1 - it.velocity / 127F) + offsetOfDelta).coerceIn(0f, size.height - 1)
                     drawRect(primaryColor, Offset(x, y),
                         Size(4f, size.height - y), style = Stroke1_5PX)
                 }
             }.pointerInput(Unit) {
                 detectDragGestures({
-                    val clip = EchoInMirror.selectedClip?.clip
-                    if (clip !is MidiClip) return@detectDragGestures
                     val x = it.x + horizontalScrollState.value
                     val noteWidthPx = noteWidth.value.toPx()
-                    for (i in startNoteIndex until clip.notes.size) {
-                        val note = clip.notes[i]
+                    for (i in startNoteIndex until clip.clip.notes.size) {
+                        val note = clip.clip.notes[i]
                         val curX = note.time * noteWidthPx
                         if (curX <= x && x <= curX + 4) {
                             if (selectedNotes.isNotEmpty() && !selectedNotes.contains(note)) continue
@@ -71,8 +71,7 @@ internal fun EventEditor() {
                     val cur = selectedNote
                     if (cur != null) {
                         selectedNote = null
-                        val clip = EchoInMirror.selectedClip?.clip
-                        if (clip is MidiClip) clip.doNoteVelocityAction(
+                        clip.clip.doNoteVelocityAction(
                             if (selectedNotes.isEmpty()) arrayOf(cur) else selectedNotes.toTypedArray(), delta)
                     }
                     delta = 0

@@ -130,9 +130,10 @@ internal fun NotesEditorCanvas(trackClip: TrackClip<MidiClip>, selectedTrack: Tr
                 val curNotes = arrayListOf<NoteDrawObject>()
                 track.clips.forEach { clip0 ->
                     @Suppress("LABEL_NAME_CLASH") val curClip = clip0.asMidiTrackClipOrNull() ?: return@forEach
+                    val clipStartTime = curClip.time
                     for (it in curClip.clip.notes) {
                         val y = (KEYBOARD_KEYS - 1 - it.note) * noteHeightPx - verticalScrollValue
-                        val x = (curClip.time + it.time) * noteWidthPx - horizontalScrollValue
+                        val x = (clipStartTime + it.time) * noteWidthPx - horizontalScrollValue
                         if (x > size.width) break
                         if (y < -noteHeightPx || y > size.height || deletionList.contains(it)) continue
                         val width = it.duration * noteWidthPx
@@ -164,7 +165,7 @@ internal fun NotesEditorCanvas(trackClip: TrackClip<MidiClip>, selectedTrack: Tr
                 notes.forEach { drawRoundRect(it.color, it.offset, it.size, BorderCornerRadius2PX) }
                 selectedNotes.forEach {
                     var y = (KEYBOARD_KEYS - 1 - it.note) * noteHeightPx - verticalScrollValue
-                    val x = (trackClip.time + it.time) * noteWidthPx - horizontalScrollValue
+                    val x = (startTime + it.time) * noteWidthPx - horizontalScrollValue
                     val width = it.duration * noteWidthPx
                     val offset: Offset
                     val size: Size

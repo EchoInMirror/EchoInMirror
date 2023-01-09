@@ -69,7 +69,7 @@ private fun EditorContent(clip: TrackClip<MidiClip>, track: Track) {
                 }
             }
         }
-        second(20.dp) { EventEditor() }
+        second(20.dp) { EventEditor(clip) }
 
         splitter { visiblePart { Divider() } }
     }

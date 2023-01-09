@@ -51,11 +51,10 @@ class CommandManagerImpl: CommandManager {
                         }
                         val clip = EchoInMirror.clipManager.defaultMidiClipFactory.createClip()
                         clip.notes.addAll(getNoteMessages(midi.getMidiEvents(1)))
-                        val trackClip = EchoInMirror.clipManager.createTrackClip(clip, 0, 4 * 32 * EchoInMirror.currentPosition.ppq)
-                        track.clips.add(trackClip)
+                        track.clips.add(EchoInMirror.clipManager.createTrackClip(clip, 0, 4 * 32 * EchoInMirror.currentPosition.ppq))
                         val time = EchoInMirror.currentPosition.oneBarPPQ
-                        val clip2 = EchoInMirror.clipManager.createTrackClip(clip, time, time)
-                        subTrack1.clips.add(clip2)
+                        val clip2 = EchoInMirror.clipManager.defaultMidiClipFactory.createClip()
+                        subTrack1.clips.add(EchoInMirror.clipManager.createTrackClip(clip2, time, time))
 
 //                        var proQ: NativeAudioPluginDescription? = null
 //                        var spire: NativeAudioPluginDescription? = null

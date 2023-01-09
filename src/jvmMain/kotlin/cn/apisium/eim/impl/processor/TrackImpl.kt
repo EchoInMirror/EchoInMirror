@@ -18,10 +18,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 import java.io.FileNotFoundException
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -286,33 +283,25 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
                 reader.readValue<TrackImpl>(json)
 
                 val clipsDir = dir.resolve("clips").absolutePathString()
-                json.get("clips").forEach {
-                    launch {
-                        clips.add(EchoInMirror.clipManager.createTrackClip(clipsDir, it))
-                    }
-                }
+                clips.addAll(json.get("clips").map {
+                    async { EchoInMirror.clipManager.createTrackClip(clipsDir, it) }
+                }.awaitAll())
 
                 val tracksDir = dir.resolve("tracks")
-                json.get("subTracks").forEach {
-                    launch {
+                subTracks.addAll(json.get("subTracks").map {
+                    async {
                         val trackID = it.asText()
                         val trackPath = tracksDir.resolve(trackID)
-                        subTracks.add(EchoInMirror.audioProcessorManager.createTrack(trackPath.absolutePathString(), trackID))
+                        EchoInMirror.audioProcessorManager.createTrack(trackPath.absolutePathString(), trackID)
                     }
-                }
+                }.awaitAll())
                 val processorsDir = dir.resolve("processors").absolutePathString()
-                json.get("preProcessorsChain").forEach {
-                    launch {
-                        preProcessorsChain.add(EchoInMirror.audioProcessorManager
-                            .createAudioProcessor(processorsDir, it.asText()))
-                    }
-                }
-                json.get("postProcessorsChain").forEach {
-                    launch {
-                        postProcessorsChain.add(EchoInMirror.audioProcessorManager
-                            .createAudioProcessor(processorsDir, it.asText()))
-                    }
-                }
+                preProcessorsChain.addAll(json.get("preProcessorsChain").map {
+                    async { EchoInMirror.audioProcessorManager.createAudioProcessor(processorsDir, it.asText()) }
+                }.awaitAll())
+                postProcessorsChain.addAll(json.get("postProcessorsChain").map {
+                    async { EchoInMirror.audioProcessorManager.createAudioProcessor(processorsDir, it.asText()) }
+                }.awaitAll())
             } catch (_: FileNotFoundException) { }
         }
     }

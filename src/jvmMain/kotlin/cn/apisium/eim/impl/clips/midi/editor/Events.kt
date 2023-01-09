@@ -71,8 +71,9 @@ internal suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutin
                     PointerEventType.Move -> {
                         var cursor0 = PointerIconDefaults.Default
                         getClickedNotes(event.x, event.y, clip)?.let {
-                            val startX = it.time * noteWidth.value.toPx() - horizontalScrollState.value
-                            val endX = (it.time + it.duration) * noteWidth.value.toPx() - horizontalScrollState.value
+                            val startTime = clip.time + it.time
+                            val startX = startTime * noteWidth.value.toPx() - horizontalScrollState.value
+                            val endX = (startTime + it.duration) * noteWidth.value.toPx() - horizontalScrollState.value
                             cursor0 = if ((event.x < startX + 4 && event.x > startX - 4) ||
                                 (event.x < endX + 4 && event.x > endX - 4)) PointerIconDefaults.HorizontalResize
                             else PointerIconDefaults.Move
@@ -124,8 +125,9 @@ internal suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutin
                             // check is move or resize
                             // if user click on start 4px and end -4px is resize
                             // else will move
-                            val startX = currentSelectNote.time * noteWidth.value.toPx() - horizontalScrollState.value
-                            val endX = (currentSelectNote.time + currentSelectNote.duration) * noteWidth.value.toPx() -
+                            val curTrueStartTime = currentSelectNote.time + clip.time
+                            val startX = curTrueStartTime * noteWidth.value.toPx() - horizontalScrollState.value
+                            val endX = (curTrueStartTime + currentSelectNote.duration) * noteWidth.value.toPx() -
                                     horizontalScrollState.value
                             if (event.x < startX + 4 && event.x > startX - 4) {
                                 resizeDirectionRight = false
@@ -208,7 +210,7 @@ internal suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutin
                         deltaY = (((it.position.y + verticalScrollState.value).coerceAtLeast(0F) - downY) /
                                 noteHeight.toPx()).roundToInt()
                         if (action == EditAction.MOVE) {
-                            if (selectedNotesLeft + deltaX < 0) deltaX = -selectedNotesLeft
+                            if (selectedNotesLeft + deltaX + clip.time < 0) deltaX = -(selectedNotesLeft + clip.time)
                             if (selectedNotesTop + deltaY > KEYBOARD_KEYS - 1) deltaY = KEYBOARD_KEYS - 1 - selectedNotesTop
                             if (selectedNotesBottom + deltaY < 0) deltaY = -selectedNotesBottom
                             if (deltaY != prevDeltaY) {
