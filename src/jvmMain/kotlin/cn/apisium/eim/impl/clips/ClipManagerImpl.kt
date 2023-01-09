@@ -26,7 +26,7 @@ class ClipManagerImpl : ClipManager {
     override suspend fun createClip(path: String, id: String) =
         createClip(path, ObjectMapper().readTree(File(path, "$id.json")))
 
-    override fun <T : Clip> createTrackClip(clip: T): TrackClip<T> = TrackClipImpl(clip)
+    override fun <T : Clip> createTrackClip(clip: T, time: Int, duration: Int): TrackClip<T> = TrackClipImpl(clip, time, duration)
     override suspend fun createTrackClip(path: String, json: JsonNode) =
         TrackClipImpl(createClip(path, json["clip"]!!.asText()), json["time"]!!.asInt(), json["duration"]!!.asInt())
 }

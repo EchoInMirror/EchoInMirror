@@ -51,7 +51,7 @@ interface ClipManager {
     suspend fun createClip(path: String, json: JsonNode): Clip
     @Throws(NoSuchFactoryException::class)
     suspend fun createClip(path: String, id: String): Clip
-    fun <T: Clip> createTrackClip(clip: T): TrackClip<T>
+    fun <T: Clip> createTrackClip(clip: T, time: Int = 0, duration: Int = 0): TrackClip<T>
     suspend fun createTrackClip(path: String, json: JsonNode): TrackClip<Clip>
 }
 

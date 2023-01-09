@@ -8,7 +8,6 @@ import androidx.compose.material3.LocalAbsoluteTonalElevation
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Stable
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -45,10 +44,10 @@ fun mapValue(value: Float, start1: Float, stop1: Float) = ((value - start1) / (s
 
 data class Border(val strokeWidth: Dp, val color: Color, val offset: Dp = 0.dp)
 
+@Suppress("unused")
 @Composable
 fun getSurfaceColor(elevation: Dp) = MaterialTheme.colorScheme.surfaceColorAtElevation(LocalAbsoluteTonalElevation.current + elevation)
 
-@Stable
 fun Modifier.border(
     start: Border? = null,
     top: Border? = null,

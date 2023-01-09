@@ -42,6 +42,10 @@ internal suspend fun PointerInputScope.handleMouseEvent(scope: CoroutineScope) {
                         } else if (event.buttons.isForwardPressed) {
                             action = EditAction.SELECT
                             break
+                        } else if (event.buttons.isTertiaryPressed) {
+                            selectedClips.clear()
+                            action = EditAction.DELETE
+                            break
                         }
                     }
                     else -> {}
@@ -49,7 +53,7 @@ internal suspend fun PointerInputScope.handleMouseEvent(scope: CoroutineScope) {
             } while (!event.changes.fastAll(PointerInputChange::changedToDownIgnoreConsumed))
             val down = event.changes[0]
             val downX = down.position.x + horizontalScrollState.value
-            val downY = down.position.y + verticalScrollState.value
+            dragStartY = down.position.y + verticalScrollState.value
 
             var drag: PointerInputChange?
             do {
@@ -59,15 +63,20 @@ internal suspend fun PointerInputScope.handleMouseEvent(scope: CoroutineScope) {
             } while (drag != null && !drag.isConsumed)
             if (drag == null) return@awaitPointerEventScope
 
-            if (action == EditAction.SELECT) {
-                selectedClips.clear()
-                selectionStartX = downX
-                selectionStartY = downY
-                selectionX = selectionStartX
-                selectionY = selectionStartY
+            var trackHeights: ArrayList<TrackToHeight>? = null
+            when (action) {
+                EditAction.SELECT -> {
+                    selectedClips.clear()
+                    selectionStartX = downX
+                    selectionStartY = dragStartY
+                    selectionX = selectionStartX
+                    selectionY = selectionStartY
+                }
+                EditAction.DELETE -> {
+                    trackHeights = getAllTrackHeights(trackHeight.toPx(), density)
+                }
+                else -> { }
             }
-
-            dragStartY = down.position.y + verticalScrollState.value
 
             drag(drag.id) {
                 when (action) {
@@ -76,6 +85,16 @@ internal suspend fun PointerInputScope.handleMouseEvent(scope: CoroutineScope) {
                             .coerceAtLeast(0F)
                         selectionY = (it.position.y.coerceAtMost(size.height.toFloat()) + verticalScrollState.value)
                             .coerceAtLeast(0F)
+                    }
+                    EditAction.DELETE -> {
+                        val y = it.position.y + verticalScrollState.value
+                        val x = it.position.x + horizontalScrollState.value / noteWidth.value.toPx()
+                        val heights = trackHeights!!
+                        val track = heights[binarySearchTrackByHeight(heights, y)].track
+                        for (j in track.clips.indices) {
+                            val clip = track.clips[j]
+                            if (clip.time <= x && x <= clip.time + clip.duration) deletionList.add(clip)
+                        }
                     }
                     else -> {}
                 }
@@ -94,7 +113,7 @@ internal suspend fun PointerInputScope.handleMouseEvent(scope: CoroutineScope) {
                     val minY = minOf(selectionStartY, selectionY)
                     val maxY = maxOf(selectionStartY, selectionY)
 
-                    val trackHeights = getAllTrackHeights(trackHeight.toPx(), density)
+                    trackHeights = getAllTrackHeights(trackHeight.toPx(), density)
                     val cur = binarySearchTrackByHeight(trackHeights, minY)
                     val list = arrayListOf<TrackClip<*>>()
                     for (i in cur..trackHeights.lastIndex) {
@@ -115,6 +134,7 @@ internal suspend fun PointerInputScope.handleMouseEvent(scope: CoroutineScope) {
                     selectionX = 0F
                     selectionY = 0F
                 }
+                EditAction.DELETE -> deletionList.clear()
                 else -> { }
             }
             action = EditAction.NONE

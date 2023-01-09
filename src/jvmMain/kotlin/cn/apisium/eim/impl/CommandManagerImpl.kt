@@ -4,10 +4,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.input.key.*
 import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.IS_DEBUG
-import cn.apisium.eim.api.AbstractCommand
-import cn.apisium.eim.api.Command
-import cn.apisium.eim.api.CommandManager
-import cn.apisium.eim.api.defaultMidiClipFactory
+import cn.apisium.eim.api.*
 import cn.apisium.eim.commands.*
 import cn.apisium.eim.data.midi.getMidiEvents
 import cn.apisium.eim.data.midi.getNoteMessages
@@ -54,9 +51,11 @@ class CommandManagerImpl: CommandManager {
                         }
                         val clip = EchoInMirror.clipManager.defaultMidiClipFactory.createClip()
                         clip.notes.addAll(getNoteMessages(midi.getMidiEvents(1)))
-                        val trackClip = EchoInMirror.clipManager.createTrackClip(clip)
-                        trackClip.duration = 4 * 32 * EchoInMirror.currentPosition.ppq
+                        val trackClip = EchoInMirror.clipManager.createTrackClip(clip, 0, 4 * 32 * EchoInMirror.currentPosition.ppq)
                         track.clips.add(trackClip)
+                        val time = EchoInMirror.currentPosition.oneBarPPQ
+                        val clip2 = EchoInMirror.clipManager.createTrackClip(clip, time, time)
+                        subTrack1.clips.add(clip2)
 
 //                        var proQ: NativeAudioPluginDescription? = null
 //                        var spire: NativeAudioPluginDescription? = null

@@ -91,19 +91,17 @@ fun Playlist() {
                 var contentWidth by remember { mutableStateOf(0.dp) }
                 val localDensity = LocalDensity.current
                 Timeline(Modifier.zIndex(3f), noteWidth, horizontalScrollState, true)
-                Box(Modifier.weight(1f).onGloballyPositioned {
-                    with(localDensity) { contentWidth = it.size.width.toDp() }
-                }) {
-                    val coroutineScope = rememberCoroutineScope()
+                val coroutineScope = rememberCoroutineScope()
+                Box(Modifier.weight(1f).pointerInput(coroutineScope) { handleMouseEvent(coroutineScope) }
+                    .onGloballyPositioned { with(localDensity) { contentWidth = it.size.width.toDp() } }
+                ) {
                     EditorGrid(noteWidth, horizontalScrollState)
                     val width = noteWidth.value * EchoInMirror.currentPosition.projectDisplayPPQ
                     remember(width, localDensity) {
                         with (localDensity) { horizontalScrollState.openMaxValue = width.toPx().toInt() }
                     }
-                    Column(Modifier.pointerInput(coroutineScope) { handleMouseEvent(coroutineScope) }
-                        .horizontalScroll(horizontalScrollState)
-                        .verticalScroll(verticalScrollState).width(width)
-                    ) {
+                    Column(Modifier.horizontalScroll(horizontalScrollState).verticalScroll(verticalScrollState)
+                        .width(width)) {
                         Divider()
                         var i = 0
                         EchoInMirror.bus!!.subTracks.forEach {

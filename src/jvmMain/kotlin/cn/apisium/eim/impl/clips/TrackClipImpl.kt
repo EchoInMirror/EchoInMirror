@@ -13,4 +13,8 @@ class TrackClipImpl <T: Clip> (override val clip: T, time: Int = 0, duration: In
     override fun reset() {
         currentIndex = -1
     }
+
+    override fun toString(): String {
+        return "TrackClipImpl(clip=$clip, time=$time, duration=$duration)"
+    }
 }

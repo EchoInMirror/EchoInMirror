@@ -25,6 +25,10 @@ class MidiClipImpl(json: JsonNode?, override val factory: ClipFactory<MidiClip>)
             notes.update()
         }
     }
+
+    override fun toString(): String {
+        return "MidiClipImpl(factory=$factory, notes=${notes.size}, id='$id')"
+    }
 }
 
 class MidiClipFactoryImpl : ClipFactory<MidiClip> {
@@ -79,5 +83,9 @@ class MidiClipFactoryImpl : ClipFactory<MidiClip> {
                 .absoluteOffset(noteWidth.value * it.time, trackHeight - trackHeight / 128 * it.note)
                 .background(track.color))
         }
+    }
+
+    override fun toString(): String {
+        return "MidiClipFactoryImpl(name='$name')"
     }
 }
