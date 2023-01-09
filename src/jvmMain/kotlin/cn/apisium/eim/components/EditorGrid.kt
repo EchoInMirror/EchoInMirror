@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.unit.Dp
 import cn.apisium.eim.EchoInMirror
 
@@ -15,7 +16,7 @@ import cn.apisium.eim.EchoInMirror
 fun EditorGrid(
     noteWidth: MutableState<Dp>,
     horizontalScrollState: ScrollState,
-    topPadding: Float? = null,
+    range: IntRange? = null,
     modifier: Modifier = Modifier.fillMaxSize()
 ) {
     val beatsOutlineColor = MaterialTheme.colorScheme.surfaceVariant
@@ -24,9 +25,20 @@ fun EditorGrid(
     val timeSigDenominator = EchoInMirror.currentPosition.timeSigDenominator
     val timeSigNumerator = EchoInMirror.currentPosition.timeSigNumerator
     val ppq = EchoInMirror.currentPosition.ppq
+    val rangeColor = MaterialTheme.colorScheme.primary.copy(0.07F)
     Canvas(modifier) {
         val noteWidthPx = noteWidth.value.toPx()
         val horizontalScrollValue = horizontalScrollState.value
+
+        if (range != null) {
+            val rangeStart = range.first * noteWidthPx
+            val rangeEnd = range.last * noteWidthPx
+            drawRect(rangeColor,
+                Offset(rangeStart - horizontalScrollValue, 0F),
+                Size(rangeEnd - rangeStart, size.height)
+            )
+        }
+
         val beatsWidth = noteWidthPx * ppq
         val drawBeats = noteWidthPx > 0.1F
         val drawSteps = noteWidthPx > 0.4F
@@ -41,7 +53,7 @@ fun EditorGrid(
                 ((horizontalScrollValue + size.width) / horizontalDrawWidth).toInt()) {
             val x = i * horizontalDrawWidth - horizontalScrollState.value
             drawLine(if (i % highlightBarsWidth == 0) barsOutlineColor else
-                if (i % highlightStepsWidth == 0) beatsOutlineColor else stepsOutlineColor, Offset(x, topPadding ?: 0F),
+                if (i % highlightStepsWidth == 0) beatsOutlineColor else stepsOutlineColor, Offset(x, 0F),
                 Offset(x, size.height), 1F)
         }
     }

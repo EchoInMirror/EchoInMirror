@@ -49,7 +49,8 @@ private fun EditorContent(clip: TrackClip<MidiClip>, track: Track) {
             Column(Modifier.fillMaxSize()) {
                 val localDensity = LocalDensity.current
                 var contentWidth by remember { mutableStateOf(0.dp) }
-                Timeline(Modifier.zIndex(3F), noteWidth, horizontalScrollState, false, 68.dp)
+                val range = remember(clip.time, clip.duration) { clip.time..(clip.time + clip.duration) }
+                Timeline(Modifier.zIndex(3F), noteWidth, horizontalScrollState, range, 68.dp)
                 Box(Modifier.weight(1F).onGloballyPositioned { with(localDensity) { contentWidth = it.size.width.toDp() } }) {
                     Row(Modifier.fillMaxSize().zIndex(-1F)) {
                         Surface(Modifier.verticalScroll(verticalScrollState).zIndex(5f), shadowElevation = 4.dp) {

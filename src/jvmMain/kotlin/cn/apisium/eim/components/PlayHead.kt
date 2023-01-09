@@ -23,24 +23,25 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.zIndex
 import cn.apisium.eim.EchoInMirror
+import cn.apisium.eim.data.getEditUnit
 import cn.apisium.eim.utils.HorizontalResize
+import cn.apisium.eim.utils.fitInUnit
 import cn.apisium.eim.utils.x
 
 private val BOTTOM = ParagraphStyle(lineHeight = 16.sp,
     lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Bottom, LineHeightStyle.Trim.FirstLineTop))
 
-fun calcDrag(isInRange: Boolean, x0: Float, noteWidth: Float) {
+fun calcDrag(x0: Float, noteWidth: Float, range: IntRange?, onRangeChange: ((IntRange) -> Unit)?) {
     val x = x0.coerceAtLeast(0F)
-    if (isInRange) {
-        val range = EchoInMirror.currentPosition.projectRange
-        EchoInMirror.currentPosition.projectRange = if (x - range.first * noteWidth < range.last * noteWidth - x) {
-            val newStart = (x / noteWidth).toInt()
-            if (newStart > range.last) range.last..newStart else newStart..range.last
+    if (range == null) EchoInMirror.currentPosition.setCurrentTime((x / noteWidth).toInt())
+    else if (onRangeChange != null) {
+        val newValue = (x / noteWidth).fitInUnit(getEditUnit())
+        onRangeChange(if (x - range.first * noteWidth < range.last * noteWidth - x) {
+            if (newValue > range.last) range.last..newValue else newValue..range.last
         } else {
-            val newEnd = (x / noteWidth).toInt()
-            if (newEnd < range.first) newEnd..range.first else range.first..newEnd
-        }
-    } else EchoInMirror.currentPosition.setCurrentTime((x / noteWidth).toInt())
+            if (newValue < range.first) newValue..range.first else range.first..newValue
+        })
+    }
 }
 
 val TIMELINE_HEIGHT = 40.dp
@@ -48,7 +49,8 @@ val TIMELINE_HEIGHT = 40.dp
 @Suppress("DuplicatedCode")
 @OptIn(ExperimentalTextApi::class, ExperimentalComposeUiApi::class)
 @Composable
-fun Timeline(modifier: Modifier = Modifier, noteWidth: MutableState<Dp>, scrollState: ScrollState, drawRange: Boolean = false, offsetX: Dp = 0.dp) {
+fun Timeline(modifier: Modifier = Modifier, noteWidth: MutableState<Dp>, scrollState: ScrollState,
+             range: IntRange? = null, offsetX: Dp = 0.dp, onRangeChange: ((IntRange) -> Unit)? = null) {
     Surface(modifier.height(TIMELINE_HEIGHT).fillMaxWidth().zIndex(2F).pointerHoverIcon(PointerIconDefaults.HorizontalResize),
         shadowElevation = 5.dp, tonalElevation = 4.dp) {
         val outlineColor = MaterialTheme.colorScheme.outlineVariant
@@ -59,6 +61,8 @@ fun Timeline(modifier: Modifier = Modifier, noteWidth: MutableState<Dp>, scrollS
         val normalText = SpanStyle(color, MaterialTheme.typography.labelMedium.fontSize)
         val textMeasurer = rememberTextMeasurer()
         var isInRange by remember { mutableStateOf(false) }
+        val obj = remember { arrayOf(range) }
+        remember(range) { obj[0] = range }
 
         Canvas(Modifier.fillMaxSize().pointerInput(Unit) {
             forEachGesture {
@@ -67,17 +71,17 @@ fun Timeline(modifier: Modifier = Modifier, noteWidth: MutableState<Dp>, scrollS
                     var event: PointerEvent
                     do {
                         event = awaitPointerEvent(PointerEventPass.Main)
-                        if (drawRange) when (event.type) {
+                        val range0 = obj[0]
+                        if (range0 != null) when (event.type) {
                             PointerEventType.Enter, PointerEventType.Move -> {
-                                val x = event.x + scrollState.value
-                                val range = EchoInMirror.currentPosition.projectRange
-                                val start = range.first * noteWidthPx
-                                val end = range.last * noteWidthPx
+                                val x = event.x + scrollState.value - offsetX.toPx()
+                                val start = range0.first * noteWidthPx
+                                val end = range0.last * noteWidthPx
                                 isInRange = x in (start - 2)..(start + 2) || x in (end - 2)..(end + 2)
                             }
                             PointerEventType.Exit -> isInRange = false
                         }
-                        if (event.buttons.isPrimaryPressed || (drawRange && event.buttons.isSecondaryPressed)) break
+                        if (event.buttons.isPrimaryPressed || (range0 != null && event.buttons.isSecondaryPressed)) break
                     } while (!event.changes.fastAll(PointerInputChange::changedToDownIgnoreConsumed))
                     val down = event.changes[0]
                     var drag: PointerInputChange?
@@ -86,11 +90,13 @@ fun Timeline(modifier: Modifier = Modifier, noteWidth: MutableState<Dp>, scrollS
                         drag = awaitPointerSlopOrCancellation(down.id, down.type, triggerOnMainAxisSlop = false)
                             { change, _ -> change.consume() }
                     } while (drag != null && !drag.isConsumed)
-                    if (drawRange && event.buttons.isSecondaryPressed) isInRange = true
-                    calcDrag(isInRange, down.position.x + scrollState.value - offsetX.toPx(), noteWidthPx)
+                    if (obj[0] != null && event.buttons.isSecondaryPressed) isInRange = true
+                    calcDrag(down.position.x + scrollState.value - offsetX.toPx(), noteWidthPx,
+                        if (isInRange) obj[0] else null, onRangeChange)
                     if (drag != null) {
                         !drag(drag.id) {
-                            calcDrag(isInRange, it.position.x + scrollState.value - offsetX.toPx(), noteWidthPx)
+                            calcDrag(it.position.x + scrollState.value - offsetX.toPx(), noteWidthPx,
+                                if (isInRange) range else null, onRangeChange)
                             it.consume()
                         }
                     }
@@ -120,8 +126,7 @@ fun Timeline(modifier: Modifier = Modifier, noteWidth: MutableState<Dp>, scrollS
                         (if (i == 0 && offsetXValue == 0F) 4 else -result.size.width / 2), 10f))
             }
 
-            if (drawRange) {
-                val range = EchoInMirror.currentPosition.projectRange
+            if (range != null) {
                 val start = range.first * noteWidthPx - scrollState.value + offsetXValue
                 val end = range.last * noteWidthPx - scrollState.value + offsetXValue
                 // draw a rect with rangeColor in startPPQ to endPPQ

@@ -90,12 +90,14 @@ fun Playlist() {
             Column {
                 var contentWidth by remember { mutableStateOf(0.dp) }
                 val localDensity = LocalDensity.current
-                Timeline(Modifier.zIndex(3f), noteWidth, horizontalScrollState, true)
+                Timeline(Modifier.zIndex(3f), noteWidth, horizontalScrollState, EchoInMirror.currentPosition.projectRange) {
+                    EchoInMirror.currentPosition.projectRange = it
+                }
                 val coroutineScope = rememberCoroutineScope()
                 Box(Modifier.weight(1f).pointerInput(coroutineScope) { handleMouseEvent(coroutineScope) }
                     .onGloballyPositioned { with(localDensity) { contentWidth = it.size.width.toDp() } }
                 ) {
-                    EditorGrid(noteWidth, horizontalScrollState)
+                    EditorGrid(noteWidth, horizontalScrollState, EchoInMirror.currentPosition.projectRange)
                     val width = noteWidth.value * EchoInMirror.currentPosition.projectDisplayPPQ
                     remember(width, localDensity) {
                         with (localDensity) { horizontalScrollState.openMaxValue = width.toPx().toInt() }

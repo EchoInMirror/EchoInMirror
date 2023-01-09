@@ -80,7 +80,8 @@ internal fun NotesEditorCanvas(trackClip: TrackClip<MidiClip>, selectedTrack: Tr
         remember(displayPPQ, localDensity) {
             with (localDensity) { horizontalScrollState.openMaxValue = (noteWidth.value.toPx() * displayPPQ).toInt() }
         }
-        EditorGrid(noteWidth, horizontalScrollState)
+        val range = remember(trackClip.time, trackClip.duration) { trackClip.time..(trackClip.time + trackClip.duration) }
+        EditorGrid(noteWidth, horizontalScrollState, range)
         Spacer(Modifier.fillMaxSize().drawWithCache {
             val noteWidthPx = noteWidth.value.toPx()
             val verticalScrollValue = verticalScrollState.value
