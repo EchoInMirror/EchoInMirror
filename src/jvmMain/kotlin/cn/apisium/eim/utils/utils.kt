@@ -4,9 +4,6 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.material3.LocalAbsoluteTonalElevation
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -44,10 +41,6 @@ fun mapValue(value: Int, start1: Int, stop1: Int) = ((value - start1) / (stop1 -
 fun mapValue(value: Float, start1: Float, stop1: Float) = ((value - start1) / (stop1 - start1)).coerceIn(0f, 1f)
 
 data class Border(val strokeWidth: Dp, val color: Color, val offset: Dp = 0.dp)
-
-@Suppress("unused")
-@Composable
-fun getSurfaceColor(elevation: Dp) = MaterialTheme.colorScheme.surfaceColorAtElevation(LocalAbsoluteTonalElevation.current + elevation)
 
 fun Modifier.border(
     start: Border? = null,

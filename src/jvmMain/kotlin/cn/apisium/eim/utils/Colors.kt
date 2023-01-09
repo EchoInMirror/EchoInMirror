@@ -1,8 +1,13 @@
 package cn.apisium.eim.utils
 
 import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.LocalAbsoluteTonalElevation
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.surfaceColorAtElevation
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.util.lerp
 import cn.apisium.eim.EchoInMirror
 
@@ -33,6 +38,28 @@ fun Color.luminance(value: Float): Color = Color(
     lerp(blue, value, 0.0722f).coerceIn(0F, 0F),
     alpha
 )
+fun Color.saturate(value: Float): Color {
+    val r = red
+    val g = green
+    val b = blue
+    val min = minOf(r, g, b)
+    val max = maxOf(r, g, b)
+    val chroma = max - min
+
+    val h = when {
+        chroma < 1e-7 -> Float.NaN
+        r == max -> (g - b) / chroma
+        g == max -> 2 + (b - r) / chroma
+        b == max -> 4 + (r - g) / chroma
+        else -> 0.0F
+    } * 60F
+
+    return Color.hsv(h, (if (max == 0F) 0F else chroma / max) * value, max, alpha)
+}
 
 @Suppress("unused")
 fun Color.inverts() = Color(1 - red, 1 - green, 1 - blue, alpha)
+
+@Suppress("unused")
+@Composable
+fun getSurfaceColor(elevation: Dp) = MaterialTheme.colorScheme.surfaceColorAtElevation(LocalAbsoluteTonalElevation.current + elevation)

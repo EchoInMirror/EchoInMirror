@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import cn.apisium.eim.EchoInMirror
+import cn.apisium.eim.actions.doNoteDisabledAction
 import cn.apisium.eim.actions.doNoteVelocityAction
 import cn.apisium.eim.api.MidiClip
 import cn.apisium.eim.api.processor.Track
@@ -85,8 +86,8 @@ internal fun EditorControls(clip: MidiClip) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             clip.notes.read()
             var delta by remember { mutableStateOf(0) }
-            currentSelectedNote
-            val velocity = if (selectedNotes.isEmpty()) defaultVelocity else selectedNotes.first().velocity
+            val cur = currentSelectedNote
+            val velocity = if (selectedNotes.isEmpty()) defaultVelocity else (cur ?: selectedNotes.first()).velocity
             val trueValue = velocity + (if (selectedNotes.isEmpty()) 0 else delta)
             CustomTextField(trueValue.toString(), { str ->
                 val v = str.toIntOrNull()?.coerceIn(0, 127) ?: return@CustomTextField
@@ -97,11 +98,22 @@ internal fun EditorControls(clip: MidiClip) {
                 {
                     if (selectedNotes.isEmpty()) defaultVelocity = (it * 127).roundToInt()
                     else delta = (it * 127).roundToInt() - velocity
-                }, onValueChangeFinished = {
+                }, Modifier.weight(1f), onValueChangeFinished = {
                     if (selectedNotes.isNotEmpty()) clip.doNoteVelocityAction(selectedNotes.toTypedArray(), delta)
                     delta = 0
-                },
-                modifier = Modifier.weight(1f))
+                }
+            )
+        }
+
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            clip.notes.read()
+            Text("禁用", Modifier.weight(1f), style = MaterialTheme.typography.labelLarge)
+            val cur = currentSelectedNote ?: selectedNotes.firstOrNull()
+            val curState = cur?.disabled ?: true
+            Checkbox(curState, {
+                if (cur == null) return@Checkbox
+                clip.doNoteDisabledAction(selectedNotes.toTypedArray(), !curState)
+            })
         }
     }
 }

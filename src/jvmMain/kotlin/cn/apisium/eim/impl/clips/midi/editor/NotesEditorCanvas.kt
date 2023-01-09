@@ -34,6 +34,7 @@ import cn.apisium.eim.components.dragdrop.dropTarget
 import cn.apisium.eim.data.defaultScale
 import cn.apisium.eim.data.midi.MidiEvent
 import cn.apisium.eim.data.midi.NoteMessage
+import cn.apisium.eim.data.midi.colorSaturation
 import cn.apisium.eim.utils.*
 import cn.apisium.eim.window.panels.playlist.EditAction
 import kotlin.math.absoluteValue
@@ -118,7 +119,8 @@ internal fun NotesEditorCanvas(trackClip: TrackClip<MidiClip>, selectedTrack: Tr
                 notes.add(
                     NoteDrawObject(it, Offset(x, y.coerceAtLeast(0F)), Size(width, if (y < 0)
                         (noteHeightPx + y).coerceAtLeast(0F) else noteHeightPx),
-                        trackColor.copy(0.6F + 0.4F * mapValue(it.velocity, 0, 127)))
+                        trackColor.saturate(it.colorSaturation)
+                    )
                 )
             }
             notesInView = notesInViewList
@@ -188,9 +190,7 @@ internal fun NotesEditorCanvas(trackClip: TrackClip<MidiClip>, selectedTrack: Tr
                         }
                     }
                     if (size.height <= 0 || size.width <= 0) return@forEach
-                    drawRoundRect(trackColor.copy(0.6F + 0.4F * mapValue(it.velocity, 0, 127)),
-                        offset, size, BorderCornerRadius2PX
-                    )
+                    drawRoundRect(trackColor.saturate(it.colorSaturation), offset, size, BorderCornerRadius2PX)
                     drawRoundRect(primaryColor, offset, size, BorderCornerRadius2PX, Stroke1_5PX)
                 }
             }

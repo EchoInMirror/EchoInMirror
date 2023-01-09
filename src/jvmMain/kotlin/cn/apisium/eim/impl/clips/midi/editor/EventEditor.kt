@@ -54,13 +54,14 @@ internal fun EventEditor(clip: TrackClip<MidiClip>) {
                     drawRect(primaryColor, Offset(x, y),
                         Size(4f, size.height - y), style = Stroke1_5PX)
                 }
-            }.pointerInput(Unit) {
+            }.pointerInput(clip) {
                 detectDragGestures({
                     val x = it.x + horizontalScrollState.value
                     val noteWidthPx = noteWidth.value.toPx()
+                    val startTime = clip.time
                     for (i in startNoteIndex until clip.clip.notes.size) {
                         val note = clip.clip.notes[i]
-                        val curX = note.time * noteWidthPx
+                        val curX = (startTime + note.time) * noteWidthPx
                         if (curX <= x && x <= curX + 4) {
                             if (selectedNotes.isNotEmpty() && !selectedNotes.contains(note)) continue
                             selectedNote = note

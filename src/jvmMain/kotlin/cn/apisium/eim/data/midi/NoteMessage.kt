@@ -2,6 +2,7 @@ package cn.apisium.eim.data.midi
 
 import androidx.compose.runtime.mutableStateOf
 import cn.apisium.eim.utils.IManualState
+import cn.apisium.eim.utils.mapValue
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.core.type.TypeReference
@@ -22,6 +23,8 @@ interface NoteMessage {
     fun copy(note: Int = this.note, velocity: Int = this.velocity, time: Int = this.time,
              duration: Int = this.duration, disabled: Boolean = this.disabled): NoteMessage
 }
+
+val NoteMessage.colorSaturation get() = 0.4F + 0.6F * if (disabled) 0F else mapValue(velocity, 0, 127)
 
 data class NoteMessageWithInfo(val ppq: Int, val notes: Collection<NoteMessage>)
 

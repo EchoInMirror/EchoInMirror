@@ -5,8 +5,6 @@ package cn.apisium.eim.utils
 /**
  * A representation of Color in Hue, Saturation and Value form.
  */
-import androidx.compose.runtime.saveable.Saver
-import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.ui.graphics.Color
 import cn.apisium.eim.components.ColorHarmonyMode
 import com.github.ajalt.colormath.model.HSV
@@ -132,24 +130,5 @@ data class HsvColor(
                 color.alpha
             ).toHSV().toColor()
         }
-
-        val Saver: Saver<HsvColor, *> = listSaver(
-            save = {
-                listOf(
-                    it.hue,
-                    it.saturation,
-                    it.value,
-                    it.alpha
-                )
-            },
-            restore = {
-                HsvColor(
-                    it[0],
-                    it[1],
-                    it[2],
-                    it[3]
-                )
-            }
-        )
     }
 }

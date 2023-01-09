@@ -39,6 +39,11 @@ fun MidiClip.doNoteVelocityAction(noteMessage: Array<NoteMessage>, deltaVelocity
         noteMessage, deltaVelocity)) }
 }
 
+fun MidiClip.doNoteDisabledAction(noteMessage: Array<NoteMessage>, isDisabled: Boolean = false) {
+    runBlocking { EchoInMirror.undoManager.execute(NoteDisabledAction(this@doNoteDisabledAction,
+        noteMessage, isDisabled)) }
+}
+
 class NoteAmountAction(private val clip: TrackClip<MidiClip>, private val notes: Set<NoteMessage>, isDelete: Boolean) :
     ReversibleAction(isDelete) {
     override val name = (if (isDelete) "音符删除 (" else "音符添加 (") + notes.size + "个)"
@@ -81,7 +86,7 @@ class NoteVelocityAction(
     private val clip: MidiClip, private val notes: Array<NoteMessage>,
     private val deltaVelocity: Int
 ) : UndoableAction {
-    private val oldVelocities = notes.map { it.velocity }.toIntArray()
+    private val oldVelocities = notes.map { it.velocity }
     override val name = "音符力度编辑 (${notes.size}个)"
     override val icon = Icons.Default.Tune
     override suspend fun undo(): Boolean {
@@ -92,6 +97,22 @@ class NoteVelocityAction(
 
     override suspend fun execute(): Boolean {
         notes.forEach { it.velocity = (it.velocity + deltaVelocity).coerceIn(0, 127) }
+        clip.notes.update()
+        return true
+    }
+}
+
+class NoteDisabledAction(
+    private val clip: MidiClip, private val notes: Array<NoteMessage>,
+    private val isDisabled: Boolean = false
+) : ReversibleAction() {
+    private val oldStates = notes.map { it.disabled }
+    override val name = if (isDisabled) "音符禁用 (${notes.size}个)" else "音符启用 (${notes.size}个)"
+    override val icon = Icons.Default.Edit
+
+    override suspend fun perform(isForward: Boolean): Boolean {
+        if (isForward) notes.forEach { it.disabled = isDisabled }
+        else notes.forEachIndexed { index, noteMessage -> noteMessage.disabled = oldStates[index] }
         clip.notes.update()
         return true
     }

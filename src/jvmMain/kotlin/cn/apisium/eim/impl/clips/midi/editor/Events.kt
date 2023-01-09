@@ -26,6 +26,8 @@ import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 private var currentX = 0
+private var lastSelectedNoteDuration = 0
+
 private fun Density.getClickedNotes(x: Float, y: Float, clip: TrackClip<MidiClip>,
                                     block: Density.(NoteMessage) -> Boolean = { true }): NoteMessage? {
     currentNote = KEYBOARD_KEYS - ((y + verticalScrollState.value) / noteHeight.toPx()).toInt() - 1
@@ -105,20 +107,20 @@ internal suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutin
                             }
                             var currentSelectNote = getClickedNotes(event.x, event.y, clip)
                             if (currentSelectNote == null) {
-                                selectedNotes = hashSetOf()
                                 val noteUnit = getEditUnit()
+                                currentSelectedNote?.apply { lastSelectedNoteDuration = duration }
                                 currentSelectNote = defaultNoteMessage(currentNote, currentX.fitInUnit(noteUnit),
-                                    noteUnit, defaultVelocity)
+                                    lastSelectedNoteDuration.coerceAtLeast(noteUnit), defaultVelocity)
                                 clip.doNoteAmountAction(listOf(currentSelectNote), false)
                                 clip.clip.notes.sort()
                                 clip.clip.notes.update()
-                                selectedNotes.add(currentSelectNote)
+                                selectedNotes = hashSetOf(currentSelectNote)
                             } else if (!selectedNotes.contains(currentSelectNote)) {
-                                selectedNotes = hashSetOf()
-                                selectedNotes.add(currentSelectNote)
+                                selectedNotes = hashSetOf(currentSelectNote)
                                 action = EditAction.MOVE
                             }
                             currentSelectedNote = currentSelectNote
+                            lastSelectedNoteDuration = currentSelectNote.duration
 
                             playNote(currentSelectNote, track)
 
@@ -254,10 +256,11 @@ internal suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutin
                     val minY = minOf(startY, endY)
                     val maxY = maxOf(startY, endY)
                     val list = arrayListOf<NoteMessage>()
+                    val startTime = clip.time
                     for (i in startNoteIndex until clip.clip.notes.size) {
                         val note = clip.clip.notes[i]
-                        if (note.time > maxX) break
-                        if (note.time + note.duration >= minX && note.note in minY..maxY) list.add(note)
+                        if (startTime + note.time > maxX) break
+                        if (startTime + note.time + note.duration >= minX && note.note in minY..maxY) list.add(note)
                     }
                     selectedNotes.addAll(list)
                 }

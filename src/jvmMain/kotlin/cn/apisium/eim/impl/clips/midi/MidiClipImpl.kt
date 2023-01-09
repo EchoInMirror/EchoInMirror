@@ -60,10 +60,9 @@ class MidiClipFactoryImpl : ClipFactory<MidiClip> {
         for (i in clip.currentIndex..notes.lastIndex) {
             val note = notes[i]
             val startTimeInSamples = position.convertPPQToSamples(startTime + note.time)
-            val endTimeInSamples = position.convertPPQToSamples(startTime + note.time + note.duration)
-            if (startTimeInSamples < position.timeInSamples) continue
             if (startTimeInSamples > blockEndSample) break
             clip.currentIndex = i + 1
+            if (startTimeInSamples < position.timeInSamples || note.disabled) continue
             val noteOnTime = (startTimeInSamples - position.timeInSamples).toInt().coerceAtLeast(0)
             if (noteRecorder.isMarked(note.note)) {
                 noteRecorder.unmarkNote(note.note)
@@ -72,6 +71,7 @@ class MidiClipFactoryImpl : ClipFactory<MidiClip> {
             }
             midiBuffer.add(note.toNoteOnRawData())
             midiBuffer.add(noteOnTime)
+            val endTimeInSamples = position.convertPPQToSamples(startTime + note.time + note.duration)
             val endTime = endTimeInSamples - position.timeInSamples
             if (endTimeInSamples > blockEndSample) {
                 pendingNoteOns[note.note] = endTime
