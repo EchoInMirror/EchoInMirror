@@ -26,6 +26,7 @@ import org.ocpsoft.prettytime.PrettyTime
 import java.awt.Component
 import java.awt.Desktop
 import java.io.File
+import java.net.URI
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.*
@@ -192,6 +193,7 @@ fun openFolderBrowser(parent: Component? = null): File? {
 fun formatDuration(time: Long): String = DURATION_PRETTIER.formatDuration(Date(time)).ifEmpty { DURATION_PRETTIER.format(ZERO_DATE) }
 
 fun openInExplorer(file: File) = Desktop.getDesktop().open(file)
+fun openInBrowser(uri: URI) = Desktop.getDesktop().browse(uri)
 fun selectInExplorer(file: File) {
     Desktop.getDesktop().apply {
         if (isSupported(Desktop.Action.BROWSE_FILE_DIR)) browseFileDirectory(file)

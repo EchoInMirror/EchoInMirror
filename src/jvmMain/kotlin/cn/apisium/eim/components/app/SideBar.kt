@@ -31,8 +31,8 @@ import cn.apisium.eim.window.dialogs.QuickLoadDialog
 //    SideBarItem("Topic", "文件") { Icon(Icons.Default.Topic, "Topic") },
 
 internal var sideBarSelectedItem by mutableStateOf<Panel?>(null)
-internal var bottomBarSelectedItem by mutableStateOf<Panel?>(EchoInMirror.windowManager.panels[1])
-private var sideBarLastSelected: Panel? = null
+internal var bottomBarSelectedItem by mutableStateOf<Panel?>(null)
+private var sideBarLastSelected: Panel? = sideBarSelectedItem
 private var bottomBarLastSelected: Panel? = bottomBarSelectedItem
 
 internal val sideBarWidthState = object : SplitPaneState() {
@@ -60,7 +60,7 @@ internal val sideBarWidthState = object : SplitPaneState() {
     }
 }
 
-internal val bottomBarHeightState = object : SplitPaneState(100F) {
+internal val bottomBarHeightState = object : SplitPaneState() {
     override fun dispatchRawMovement(delta: Float) {
         val movableArea = maxPosition - minPosition
         if (movableArea <= 0) return

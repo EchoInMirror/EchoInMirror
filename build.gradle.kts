@@ -4,6 +4,8 @@ import org.jetbrains.compose.ExperimentalComposeLibrary
 import java.net.URL
 import java.net.HttpURLConnection
 import java.io.FileOutputStream
+import java.util.Date
+import java.text.DateFormat
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jetbrains.compose.ComposeBuildConfig
 
@@ -105,7 +107,8 @@ tasks.withType<Jar> {
         attributes(
             "Name" to "EchoInMirror",
             "Main-Class" to "cn.apisium.eim.MainKt",
-            "Version" to project.version,
+            "Implementation-Version" to project.version,
+            "Release-Time" to DateFormat.getDateTimeInstance().format(Date())
         )
     }
 }

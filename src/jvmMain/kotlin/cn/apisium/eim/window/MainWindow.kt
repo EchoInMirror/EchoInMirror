@@ -72,7 +72,7 @@ fun ApplicationScope.MainWindow() {
                                     first(0.dp) { SideBarContent() }
                                     second(400.dp) {
                                         VerticalSplitPane(splitPaneState = bottomBarHeightState) {
-                                            first(200.dp) {
+                                            first(0.dp) {
                                                 Box(Modifier.fillMaxSize().border(start = Border(0.6.dp, contentWindowColor))) {
                                                     Playlist()
                                                 }

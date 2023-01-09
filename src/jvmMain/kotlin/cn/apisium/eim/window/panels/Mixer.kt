@@ -10,6 +10,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -39,7 +40,8 @@ fun MixerProcessorButton(title: String, useMarquee: Boolean = false, fontStyle: 
 }
 
 @Composable
-private fun MixerTrack(track: Track, index: String, depth: Int = 0, renderChildren: Boolean = true) {
+private fun MixerTrack(track: Track, index: String, containerColor: Color = MaterialTheme.colorScheme.surface,
+                       depth: Int = 0, renderChildren: Boolean = true) {
     Row(Modifier.padding(7.dp, 14.dp, 7.dp, 14.dp)
         .shadow(1.dp, MaterialTheme.shapes.medium, clip = false)
         .background(MaterialTheme.colorScheme.surfaceColorAtElevation(((depth + 2) * 2).dp))
@@ -50,7 +52,7 @@ private fun MixerTrack(track: Track, index: String, depth: Int = 0, renderChildr
         if (isSelected) curModifier = curModifier.border(1.dp, trackColor, MaterialTheme.shapes.medium)
         Layout({
             Column(curModifier.shadow(1.dp, MaterialTheme.shapes.medium, clip = false)
-                .background(MaterialTheme.colorScheme.surface, MaterialTheme.shapes.medium)
+                .background(containerColor, MaterialTheme.shapes.medium)
                 .clip(MaterialTheme.shapes.medium)) {
                 Row(Modifier.background(trackColor).height(24.dp)
                     .clickableWithIcon { if (track != EchoInMirror.bus) EchoInMirror.selectedTrack = track }
@@ -133,7 +135,7 @@ private fun MixerTrack(track: Track, index: String, depth: Int = 0, renderChildr
                 Row(Modifier.padding(horizontal = 7.dp)) {
                     track.subTracks.forEachIndexed { i, it ->
                         key(it) {
-                            MixerTrack(it, "$index.${i + 1}", depth + 1)
+                            MixerTrack(it, "$index.${i + 1}", containerColor, depth + 1)
                         }
                     }
                 }
@@ -172,10 +174,12 @@ object Mixer: Panel {
         Scrollable {
             Row {
                 val bus = EchoInMirror.bus!!
-                MixerTrack(bus, "0", renderChildren = false)
+                val trackColor = if (EchoInMirror.windowManager.isDarkTheme)
+                    MaterialTheme.colorScheme.surfaceColorAtElevation(20.dp) else MaterialTheme.colorScheme.surface
+                MixerTrack(bus, "0", trackColor, renderChildren = false)
                 bus.subTracks.forEachIndexed { i, it ->
                     key(it) {
-                        MixerTrack(it, (i + 1).toString())
+                        MixerTrack(it, (i + 1).toString(), trackColor)
                     }
                 }
             }

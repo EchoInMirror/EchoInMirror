@@ -25,7 +25,7 @@ import javax.swing.JFileChooser
 import javax.swing.filechooser.FileNameExtensionFilter
 
 private var scanningJob by mutableStateOf<Job?>(null)
-internal class NativeAudioPluginSettings: Tab {
+internal object NativeAudioPluginSettings: Tab {
     @Composable
     override fun label() {
         Text("原生音频插件")

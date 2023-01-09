@@ -15,7 +15,7 @@ import cn.apisium.eim.components.Tab
 import cn.apisium.eim.components.Tabs
 import java.awt.Dimension
 
-private class AudioSettings: Tab {
+private object AudioSettings: Tab {
     @Composable
     override fun label() {
         Text("音频")
@@ -32,7 +32,7 @@ private class AudioSettings: Tab {
     }
 }
 
-val settingsTabs = mutableStateListOf(NativeAudioPluginSettings(), AudioSettings())
+val settingsTabs = mutableStateListOf(NativeAudioPluginSettings, AudioSettings, AboutPanel)
 private fun closeSettingWindow() {
     EchoInMirror.windowManager.dialogs[SettingsWindow] = false
 }
