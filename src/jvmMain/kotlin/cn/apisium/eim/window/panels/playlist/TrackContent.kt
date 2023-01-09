@@ -21,7 +21,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAll
 import cn.apisium.eim.EchoInMirror
-import cn.apisium.eim.actions.doNoteAmountAction
+import cn.apisium.eim.actions.doClipsAmountAction
+import cn.apisium.eim.actions.doClipsEditActionAction
 import cn.apisium.eim.api.TrackClip
 import cn.apisium.eim.api.defaultMidiClipFactory
 import cn.apisium.eim.api.oneBarPPQ
@@ -73,15 +74,22 @@ private suspend fun AwaitPointerEventScope.handleDragEvent(clip: TrackClip<*>, i
     val down = event.changes[0]
     awaitPointerSlopOrCancellation(down.id, down.type, triggerOnMainAxisSlop = false) { change, _ ->
         var yAllowRange: IntRange? = null
+        var minClipDuration = Int.MAX_VALUE
         var selectedClipsLeft = Int.MAX_VALUE
+        var trackToIndex: HashMap<Track, Int>? = null
         if (event.buttons.isPrimaryPressed) {
-            resizeDirectionRight = change.position.x > size.width - 4
-            action = if (change.position.x < 4 || resizeDirectionRight) {
-                resizeDirectionRight = false
+            val fourDp = 4 * density
+            resizeDirectionRight = change.position.x > size.width - fourDp
+            action = if (change.position.x < fourDp || resizeDirectionRight) {
+                selectedClips.forEach {
+                    val left = it.time
+                    if (left < selectedClipsLeft) selectedClipsLeft = left
+                    if (it.duration < minClipDuration) minClipDuration = it.duration
+                }
                 EditAction.RESIZE
             } else {
+                trackToIndex = hashMapOf()
                 trackHeights = getAllTrackHeights(trackHeight.toPx(), density)
-                val trackToIndex = hashMapOf<Track, Int>()
                 trackHeights.forEachIndexed { index, (track) -> trackToIndex[track] = index }
                 var selectedClipsTop = Int.MAX_VALUE
                 var selectedClipsBottom = 0
@@ -107,9 +115,43 @@ private suspend fun AwaitPointerEventScope.handleDragEvent(clip: TrackClip<*>, i
                         .coerceAtLeast(-selectedClipsLeft)
                     it.consume()
                 }
-                deltaY = 0
-                deltaX = 0
+                if (deltaX != 0 || deltaY != 0) {
+                    action = EditAction.NONE
+                    val y = deltaY
+                    val x = deltaX
+                    deltaY = 0
+                    deltaX = 0
+                    doClipsEditActionAction(selectedClips.toList(), x, 0,
+                        if (y == 0) null
+                        else try {
+                            selectedClips.map { trackHeights[trackToIndex!![it.track]!! + y].track }
+                        } catch (e: Throwable) {
+                            e.printStackTrace()
+                            null
+                        }
+                    )
+                }
                 trackHeights.clear()
+            }
+            EditAction.RESIZE -> {
+                change.consume()
+                drag(down.id) {
+                    val noteUnit = getEditUnit()
+                    var x = ((it.position.x - change.position.x) / noteWidth.value.toPx()).fitInUnit(noteUnit)
+                    if (resizeDirectionRight) {
+                        if (minClipDuration + x < noteUnit) x = noteUnit - minClipDuration
+                    } else if (x < -selectedClipsLeft) x = -selectedClipsLeft
+                    if (x != deltaX) deltaX = x
+                    it.consume()
+                }
+                if (deltaX != 0) {
+                    println(deltaX)
+                    action = EditAction.NONE
+                    val x = deltaX
+                    deltaX = 0
+                    if (resizeDirectionRight) doClipsEditActionAction(selectedClips.toList(), deltaDuration = x)
+                    else doClipsEditActionAction(selectedClips.toList(), x, -x)
+                }
             }
             else -> { }
         }
@@ -130,7 +172,7 @@ internal fun TrackContent(track: Track, index: Int): Int {
                     len,
                     track
                 )
-                doNoteAmountAction(listOf(clip), false)
+                doClipsAmountAction(listOf(clip), false)
             })
         })
         track.clips.read()
@@ -139,21 +181,26 @@ internal fun TrackContent(track: Track, index: Int): Int {
                 Box {
                     val isSelected = selectedClips.contains(it)
                     Box(Modifier
-                        .size(noteWidth.value * it.duration, trackHeight)
+                        .size(noteWidth.value * (it.duration + if (isSelected && action == EditAction.RESIZE) {
+                            if (resizeDirectionRight) deltaX else -deltaX
+                        } else 0), trackHeight)
                         .absoluteOffset(noteWidth.value * it.time)
                         .pointerInput(it, track, index) {
                             forEachGesture { awaitPointerEventScope { handleDragEvent(it, index, track) } }
                         }
                         .run {
                             if (isSelected) {
-                                absoluteOffset(noteWidth.value * deltaX,
+                                if (action == EditAction.MOVE) return@run absoluteOffset(noteWidth.value * deltaX,
                                     if (deltaY == 0) Dp.Zero
                                     else with(LocalDensity.current) {
                                         (trackHeights[(deltaY + index).coerceAtMost(trackHeights.size - 1)]
                                             .height - trackHeights[index].height).toDp()
                                     }
                                 )
-                            } else this
+                                else if (action == EditAction.RESIZE && !resizeDirectionRight)
+                                    return@run absoluteOffset(noteWidth.value * deltaX, Dp.Zero)
+                            }
+                            return@run this
                         }
                     ) {
                         if (!deletionList.contains(it)) {

@@ -18,13 +18,13 @@ fun TrackClip<MidiClip>.doNoteAmountAction(noteMessage: Collection<NoteMessage>,
         noteMessage.toSet(), isDelete)) }
 }
 
-fun TrackClip<MidiClip>.doNoteMessageEditAction(noteMessage: Array<NoteMessage>, deltaX: Int, deltaY: Int, deltaDuration: Int) {
+fun TrackClip<MidiClip>.doNoteMessageEditAction(noteMessage: Collection<NoteMessage>, deltaX: Int, deltaY: Int, deltaDuration: Int) {
     if (deltaX == 0 && deltaY == 0 && deltaDuration == 0) return
     runBlocking {
         EchoInMirror.undoManager.execute(
             NoteMessageEditAction(
                 this@doNoteMessageEditAction,
-                noteMessage,
+                noteMessage.toList(),
                 deltaX,
                 deltaY,
                 deltaDuration
@@ -55,7 +55,7 @@ class NoteAmountAction(private val clip: TrackClip<MidiClip>, private val notes:
 }
 
 class NoteMessageEditAction(
-    private val clip: TrackClip<MidiClip>, private val notes: Array<NoteMessage>,
+    private val clip: TrackClip<MidiClip>, private val notes: Collection<NoteMessage>,
     private val deltaX: Int, private val deltaY: Int,
     private val deltaDuration: Int
 ) : ReversibleAction() {

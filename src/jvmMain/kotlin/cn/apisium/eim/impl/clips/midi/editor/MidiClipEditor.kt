@@ -98,7 +98,7 @@ class MidiClipEditor(private val clip: TrackClip<MidiClip>, private val track: T
     override fun delete() {
         if (selectedNotes.isEmpty()) return
         clip.doNoteAmountAction(selectedNotes, true)
-        selectedNotes.clear()
+        selectedNotes = hashSetOf()
     }
 
     override fun copy() {
@@ -111,7 +111,7 @@ class MidiClipEditor(private val clip: TrackClip<MidiClip>, private val track: T
         if (EchoInMirror.selectedTrack == null) return
         copy()
         clip.doNoteAmountAction(selectedNotes, true)
-        selectedNotes.clear()
+        selectedNotes = hashSetOf()
     }
 
     override fun paste() {
@@ -129,13 +129,11 @@ class MidiClipEditor(private val clip: TrackClip<MidiClip>, private val track: T
                 it.duration = (it.duration * scale).roundToInt()
             }
             clip.doNoteAmountAction(data.notes)
-            selectedNotes.clear()
-            selectedNotes.addAll(data.notes)
+            selectedNotes = data.notes.toHashSet()
         } catch (ignored: Throwable) { ignored.printStackTrace() }
     }
 
     override fun selectAll() {
-        selectedNotes.clear()
-        selectedNotes.addAll(clip.clip.notes)
+        selectedNotes = clip.clip.notes.toHashSet()
     }
 }

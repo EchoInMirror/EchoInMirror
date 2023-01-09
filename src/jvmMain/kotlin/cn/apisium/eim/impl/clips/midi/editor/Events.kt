@@ -129,11 +129,12 @@ internal suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutin
                             val startX = curTrueStartTime * noteWidth.value.toPx() - horizontalScrollState.value
                             val endX = (curTrueStartTime + currentSelectNote.duration) * noteWidth.value.toPx() -
                                     horizontalScrollState.value
-                            if (event.x < startX + 4 && event.x > startX - 4) {
+                            val fourDp = 4 * density
+                            if (event.x < startX + fourDp && event.x > startX - fourDp) {
                                 resizeDirectionRight = false
                                 action = EditAction.RESIZE
                                 break
-                            } else if (event.x < endX + 4 && event.x > endX - 4) {
+                            } else if (event.x < endX + fourDp && event.x > endX - fourDp) {
                                 resizeDirectionRight = true
                                 action = EditAction.RESIZE
                             } else action = EditAction.MOVE
@@ -204,28 +205,29 @@ internal suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutin
                     EditAction.MOVE, EditAction.RESIZE -> {
                         val noteUnit = getEditUnit()
                         // calc delta in noteUnit, then check all move notes are in bound
-                        deltaX = (((it.position.x + horizontalScrollState.value).coerceAtLeast(0F) - downX) /
+                        var x = (((it.position.x + horizontalScrollState.value).coerceAtLeast(0F) - downX) /
                                 noteWidth.value.toPx()).fitInUnit(noteUnit)
-                        val prevDeltaY = deltaY
-                        deltaY = (((it.position.y + verticalScrollState.value).coerceAtLeast(0F) - downY) /
+                        var y = (((it.position.y + verticalScrollState.value).coerceAtLeast(0F) - downY) /
                                 noteHeight.toPx()).roundToInt()
                         if (action == EditAction.MOVE) {
-                            if (selectedNotesLeft + deltaX + clip.time < 0) deltaX = -(selectedNotesLeft + clip.time)
-                            if (selectedNotesTop + deltaY > KEYBOARD_KEYS - 1) deltaY = KEYBOARD_KEYS - 1 - selectedNotesTop
-                            if (selectedNotesBottom + deltaY < 0) deltaY = -selectedNotesBottom
-                            if (deltaY != prevDeltaY) {
+                            if (selectedNotesLeft + x + clip.time < 0) x = -(selectedNotesLeft + clip.time)
+                            if (selectedNotesTop + y > KEYBOARD_KEYS - 1) y = KEYBOARD_KEYS - 1 - selectedNotesTop
+                            if (selectedNotesBottom + y < 0) y = -selectedNotesBottom
+                            if (y != deltaY) {
+                                deltaY = y
                                 stopAllNotes(track)
                                 val note = currentSelectedNote
-                                if (note != null) playNote(note.copy(note = note.note - deltaY), track)
+                                if (note != null) playNote(note.copy(note = note.note - y), track)
                             }
                         } else {
                             if (resizeDirectionRight) {
-                                if (minNoteDuration + deltaX < noteUnit) deltaX = noteUnit - minNoteDuration
+                                if (minNoteDuration + x < noteUnit) x = noteUnit - minNoteDuration
                             } else {
-                                if (deltaX > 0) deltaX = 0
-                                if (selectedNotesLeft + deltaX < 0) deltaX = -selectedNotesLeft
+                                if (x > 0) x = 0
+                                if (selectedNotesLeft + x < 0) x = -selectedNotesLeft
                             }
                         }
+                        if (x != deltaX) deltaX = x
                     }
                     else -> { }
                 }
@@ -263,12 +265,12 @@ internal suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutin
                     clip.doNoteAmountAction(deletionList, true)
                     deletionList.clear()
                 }
-                EditAction.MOVE -> clip.doNoteMessageEditAction(selectedNotes.toTypedArray(),
+                EditAction.MOVE -> clip.doNoteMessageEditAction(selectedNotes,
                     deltaX, -deltaY, 0)
                 EditAction.RESIZE -> {
                     if (resizeDirectionRight)
-                        clip.doNoteMessageEditAction(selectedNotes.toTypedArray(), 0, 0, deltaX)
-                    else clip.doNoteMessageEditAction(selectedNotes.toTypedArray(), deltaX, 0, -deltaX)
+                        clip.doNoteMessageEditAction(selectedNotes, 0, 0, deltaX)
+                    else clip.doNoteMessageEditAction(selectedNotes, deltaX, 0, -deltaX)
                 }
                 else -> { }
             }
