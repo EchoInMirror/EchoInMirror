@@ -1,6 +1,7 @@
 package cn.apisium.eim.impl.clips
 
 import cn.apisium.eim.api.*
+import cn.apisium.eim.api.processor.Track
 import cn.apisium.eim.impl.clips.midi.MidiClipFactoryImpl
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -26,7 +27,8 @@ class ClipManagerImpl : ClipManager {
     override suspend fun createClip(path: String, id: String) =
         createClip(path, ObjectMapper().readTree(File(path, "$id.json")))
 
-    override fun <T : Clip> createTrackClip(clip: T, time: Int, duration: Int): TrackClip<T> = TrackClipImpl(clip, time, duration)
+    override fun <T : Clip> createTrackClip(clip: T, time: Int, duration: Int, track: Track?) =
+        TrackClipImpl(clip, time, duration, track)
     override suspend fun createTrackClip(path: String, json: JsonNode) =
         TrackClipImpl(createClip(path, json["clip"]!!.asText()), json["time"]!!.asInt(), json["duration"]!!.asInt())
 }

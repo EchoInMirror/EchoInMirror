@@ -97,8 +97,9 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
             stateChange()
         }
 
+    @Suppress("LeakingThis")
     @get:JsonProperty(access = JsonProperty.Access.READ_ONLY)
-    override val clips = DefaultTrackClipList()
+    override val clips = DefaultTrackClipList(this)
     private var lastClipIndex = -1
 
     override suspend fun processBlock(

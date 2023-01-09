@@ -53,7 +53,7 @@ interface ClipManager {
     suspend fun createClip(path: String, json: JsonNode): Clip
     @Throws(NoSuchFactoryException::class)
     suspend fun createClip(path: String, id: String): Clip
-    fun <T: Clip> createTrackClip(clip: T, time: Int = 0, duration: Int = 0): TrackClip<T>
+    fun <T: Clip> createTrackClip(clip: T, time: Int = 0, duration: Int = 0, track: Track? = null): TrackClip<T>
     suspend fun createTrackClip(path: String, json: JsonNode): TrackClip<Clip>
 }
 
@@ -78,6 +78,8 @@ interface TrackClip<T: Clip> {
     val clip: T
     @get:JsonIgnore
     var currentIndex: Int
+    @get:JsonIgnore
+    var track: Track?
     fun reset()
 }
 
@@ -90,7 +92,7 @@ interface TrackClipList : MutableList<TrackClip<*>>, IManualState {
     fun sort()
 }
 
-class DefaultTrackClipList : TrackClipList, ArrayList<TrackClip<*>>() {
+class DefaultTrackClipList(@JsonIgnore private val track: Track) : TrackClipList, ArrayList<TrackClip<*>>() {
     private var modification = mutableStateOf(0)
     override fun sort() = sortWith { o1, o2 ->
         if (o1.time == o2.time) o1.duration - o2.duration
@@ -98,6 +100,40 @@ class DefaultTrackClipList : TrackClipList, ArrayList<TrackClip<*>>() {
     }
     override fun update() { modification.value++ }
     override fun read() { modification.value }
+    override fun add(element: TrackClip<*>): Boolean {
+        val r = super.add(element)
+        element.track = track
+        return r
+    }
+    override fun add(index: Int, element: TrackClip<*>) {
+        super.add(index, element)
+        element.track = track
+    }
+    override fun addAll(elements: Collection<TrackClip<*>>): Boolean {
+        val r = super.addAll(elements)
+        if (r) elements.forEach { it.track = track }
+        return r
+    }
+    override fun addAll(index: Int, elements: Collection<TrackClip<*>>): Boolean {
+        val r = super.addAll(index, elements)
+        if (r) elements.forEach { it.track = track }
+        return r
+    }
+    override fun remove(element: TrackClip<*>): Boolean {
+        val r = super.remove(element)
+        if (r) element.track = null
+        return r
+    }
+    override fun removeAt(index: Int): TrackClip<*> {
+        val r = super.removeAt(index)
+        r.track = null
+        return r
+    }
+    override fun removeAll(elements: Collection<TrackClip<*>>): Boolean {
+        val r = super.removeAll(elements.toSet())
+        if (r) elements.forEach { it.track = null }
+        return r
+    }
 }
 
 class ClipIdSerializer @JvmOverloads constructor(t: Class<Clip>? = null) :

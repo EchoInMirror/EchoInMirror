@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAll
 import cn.apisium.eim.EchoInMirror
+import cn.apisium.eim.actions.doNoteAmountAction
 import cn.apisium.eim.api.TrackClip
 import cn.apisium.eim.api.defaultMidiClipFactory
 import cn.apisium.eim.api.oneBarPPQ
@@ -45,6 +46,7 @@ internal var selectionX by mutableStateOf(0F)
 internal var selectionY by mutableStateOf(0F)
 internal var selectionStartX = 0F
 internal var selectionStartY = 0F
+internal var resizeDirectionRight = false
 
 private suspend fun AwaitPointerEventScope.handleDragEvent(clip: TrackClip<*>, index: Int, track: Track) {
     var event: PointerEvent
@@ -54,7 +56,7 @@ private suspend fun AwaitPointerEventScope.handleDragEvent(clip: TrackClip<*>, i
             if (event.buttons.isPrimaryPressed) {
                 EchoInMirror.selectedTrack = track
                 EchoInMirror.selectedClip = clip
-                if (!(selectedClips.size == 1 && selectedClips.first() == clip)) {
+                if (!selectedClips.contains(clip)) {
                     selectedClips.clear()
                     selectedClips.add(clip)
                 }
@@ -70,16 +72,39 @@ private suspend fun AwaitPointerEventScope.handleDragEvent(clip: TrackClip<*>, i
     } while (!event.changes.fastAll(PointerInputChange::changedToDownIgnoreConsumed))
     val down = event.changes[0]
     awaitPointerSlopOrCancellation(down.id, down.type, triggerOnMainAxisSlop = false) { change, _ ->
-        if (event.buttons.isPrimaryPressed) action = EditAction.MOVE
+        var yAllowRange: IntRange? = null
+        var selectedClipsLeft = Int.MAX_VALUE
+        if (event.buttons.isPrimaryPressed) {
+            resizeDirectionRight = change.position.x > size.width - 4
+            action = if (change.position.x < 4 || resizeDirectionRight) {
+                resizeDirectionRight = false
+                EditAction.RESIZE
+            } else {
+                trackHeights = getAllTrackHeights(trackHeight.toPx(), density)
+                val trackToIndex = hashMapOf<Track, Int>()
+                trackHeights.forEachIndexed { index, (track) -> trackToIndex[track] = index }
+                var selectedClipsTop = Int.MAX_VALUE
+                var selectedClipsBottom = 0
+                selectedClips.forEach {
+                    val top = trackToIndex[it.track] ?: return
+                    val left = it.time
+                    if (top < selectedClipsTop) selectedClipsTop = top
+                    if (top > selectedClipsBottom) selectedClipsBottom = top
+                    if (left < selectedClipsLeft) selectedClipsLeft = left
+                }
+                yAllowRange = -selectedClipsTop..(trackHeights.size - selectedClipsBottom)
+                EditAction.MOVE
+            }
+        }
         when (action) {
             EditAction.MOVE -> {
-                trackHeights = getAllTrackHeights(trackHeight.toPx(), density)
                 change.consume()
                 drag(down.id) {
                     val currentY = dragStartY + it.position.y - change.position.y
                     val cur = binarySearchTrackByHeight(trackHeights, currentY)
-                    deltaY = cur - index
+                    deltaY = (cur - index).coerceIn(yAllowRange!!)
                     deltaX = ((it.position.x - change.position.x) / noteWidth.value.toPx()).fitInUnit(getEditUnit())
+                        .coerceAtLeast(-selectedClipsLeft)
                     it.consume()
                 }
                 deltaY = 0
@@ -99,12 +124,13 @@ internal fun TrackContent(track: Track, index: Int): Int {
         Box(Modifier.fillMaxSize().pointerInput(track) {
             detectTapGestures(onDoubleTap = {
                 val len = EchoInMirror.currentPosition.oneBarPPQ
-                track.clips.add(EchoInMirror.clipManager.createTrackClip(
+                val clip = EchoInMirror.clipManager.createTrackClip(
                     EchoInMirror.clipManager.defaultMidiClipFactory.createClip(),
                     (it.x / noteWidth.value.toPx()).fitInUnit(len),
-                    len
-                ))
-                track.clips.update()
+                    len,
+                    track
+                )
+                doNoteAmountAction(listOf(clip), false)
             })
         })
         track.clips.read()
@@ -131,15 +157,15 @@ internal fun TrackContent(track: Track, index: Int): Int {
                         }
                     ) {
                         if (!deletionList.contains(it)) {
-                            val anim by animateFloatAsState(if (isSelected) 2F else 0F)
-                            val trackColor = track.color.copy(alpha = 0.8F)
+                            val trackColor = track.color.copy(0.8F)
                             Box(
                                 Modifier
                                     .fillMaxSize()
                                     .background(trackColor, MaterialTheme.shapes.extraSmall)
                                     .run {
-                                        if (anim == 0F) this
-                                        else border(anim.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.extraSmall)
+                                        if (isSelected) border(2.dp, MaterialTheme.colorScheme.primary,
+                                            MaterialTheme.shapes.extraSmall)
+                                        else this
                                     }
                                     .clip(MaterialTheme.shapes.extraSmall)
                                     .pointerHoverIcon(action.toPointerIcon(PointerIconDefaults.Hand))
@@ -166,6 +192,7 @@ internal fun TrackContent(track: Track, index: Int): Int {
 
 @Composable
 internal fun TrackSelection(density: Density) {
+    if (action != EditAction.SELECT) return
     val scrollX = horizontalScrollState.value
     val scrollY = verticalScrollState.value
     val primaryColor = MaterialTheme.colorScheme.primary

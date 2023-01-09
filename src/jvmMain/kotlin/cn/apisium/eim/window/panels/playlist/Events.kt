@@ -121,9 +121,14 @@ internal suspend fun PointerInputScope.handleMouseEvent(scope: CoroutineScope) {
                         val height = trackHeights[i].height
                         for (j in track.clips.indices) {
                             val clip = track.clips[j]
-                            if (clip.time + clip.duration < minX) continue
-                            if (clip.time > maxX) break
-                            if (clip.time <= minX || (clip.time <= maxX && maxX <= clip.time + clip.duration)) list.add(clip)
+                            val clipStart = clip.time
+                            val clipEnd = clipStart + clip.duration
+                            if (clipEnd < minX) continue
+                            if (clipStart > maxX) break
+                            if (
+                                clipStart in minX..maxX || clipEnd in minX..maxX ||
+                                minX in clipStart..clipEnd || maxX in clipStart..clipEnd
+                            ) list.add(clip)
                         }
                         if (height > maxY) break
                     }
