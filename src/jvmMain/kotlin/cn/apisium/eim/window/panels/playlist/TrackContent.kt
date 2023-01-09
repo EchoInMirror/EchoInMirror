@@ -131,17 +131,24 @@ internal fun TrackContent(track: Track, index: Int): Int {
                         }
                     ) {
                         if (!deletionList.contains(it)) {
-                            val anim by animateFloatAsState(if (isSelected) 0.4F else 0.1F)
+                            val anim by animateFloatAsState(if (isSelected) 2F else 0F)
+                            val trackColor = track.color.copy(alpha = 0.8F)
                             Box(
                                 Modifier
                                     .fillMaxSize()
-                                    .background(track.color.copy(anim))
-                                    .border((anim * 5).dp, track.color, MaterialTheme.shapes.extraSmall)
+                                    .background(trackColor, MaterialTheme.shapes.extraSmall)
+                                    .run {
+                                        if (anim == 0F) this
+                                        else border(anim.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.extraSmall)
+                                    }
                                     .clip(MaterialTheme.shapes.extraSmall)
                                     .pointerHoverIcon(action.toPointerIcon(PointerIconDefaults.Hand))
                             ) {
                                 @Suppress("TYPE_MISMATCH")
-                                it.clip.factory.playlistContent(it.clip, track, trackHeight, noteWidth)
+                                it.clip.factory.playlistContent(it.clip, track,
+                                    trackColor.toOnSurfaceColor().copy(animateFloatAsState(if (isSelected) 1F else 0.7F).value),
+                                    trackHeight, noteWidth
+                                )
                             }
                             Spacer(RESIZE_HAND_MODIFIER)
                             Spacer(RESIZE_HAND_MODIFIER.align(Alignment.TopEnd))

@@ -34,7 +34,7 @@ private fun dfsTrackIndex(track: Track, target: Track, index: String): String? {
 
 @Composable
 private fun TrackItem(track: Track, index: String, depth: Int = 0) {
-    val isSelected = EchoInMirror.selectedTrack == track
+    val isSelected = EchoInMirror.selectedClip?.clip == track
     MenuItem(isSelected || backingTracks.contains(track), {
         if (!backingTracks.remove(track)) backingTracks.add(track)
     }, minHeight = 28.dp, padding = PaddingValues(), modifier = Modifier.height(IntrinsicSize.Min)) {

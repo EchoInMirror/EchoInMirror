@@ -3,6 +3,7 @@ package cn.apisium.eim.api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import cn.apisium.eim.api.processor.Track
 import cn.apisium.eim.data.midi.MidiNoteRecorder
@@ -39,7 +40,8 @@ interface ClipFactory<T: Clip> {
         jacksonObjectMapper().writerWithDefaultPrettyPrinter().writeValue(File("$path.json"), clip)
     }
     fun getEditor(clip: TrackClip<T>, track: Track): ClipEditor
-    @Composable fun playlistContent(clip: T, track: Track, trackHeight: Dp, noteWidth: MutableState<Dp>)
+    @Composable
+    fun playlistContent(clip: T, track: Track, contentColor: Color, trackHeight: Dp, noteWidth: MutableState<Dp>)
 }
 
 interface ClipManager {

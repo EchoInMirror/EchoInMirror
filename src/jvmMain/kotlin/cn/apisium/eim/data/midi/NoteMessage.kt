@@ -28,12 +28,10 @@ data class NoteMessageWithInfo(val ppq: Int, val notes: Collection<NoteMessage>)
 fun defaultNoteMessage(note: Int, time: Int, duration: Int = 0, velocity: Int = 70, disabled: Boolean = false) =
     NoteMessageImpl(note, time, duration, velocity, disabled)
 
-open class NoteMessageImpl(note: Int, time: Int, duration: Int = 0, override var velocity: Int = 70,
+open class NoteMessageImpl(note: Int, override var time: Int, duration: Int = 0, override var velocity: Int = 70,
                            override var disabled: Boolean = false) : NoteMessage {
     override var note = note.coerceIn(0, 127)
         set(value) { field = value.coerceIn(0, 127) }
-    override var time = time.coerceAtLeast(0)
-        set(value) { field = value.coerceAtLeast(0) }
     override var duration = duration.coerceAtLeast(0)
         set(value) { field = value.coerceAtLeast(0) }
     override var extraData: MutableMap<String, Any>? = null

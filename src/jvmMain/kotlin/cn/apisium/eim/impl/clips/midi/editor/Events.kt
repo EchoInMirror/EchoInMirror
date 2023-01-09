@@ -25,14 +25,16 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
-private fun Density.getClickedNotes(x: Float, y: Float, notes: List<NoteMessage>,
+private var currentX = 0
+private fun Density.getClickedNotes(x: Float, y: Float, clip: TrackClip<MidiClip>,
                                     block: Density.(NoteMessage) -> Boolean = { true }): NoteMessage? {
     currentNote = KEYBOARD_KEYS - ((y + verticalScrollState.value) / noteHeight.toPx()).toInt() - 1
-    currentX = ((x + horizontalScrollState.value) / noteWidth.value.toPx()).roundToInt()
-    for (i in startNoteIndex until notes.size) {
-        val note = notes[i]
-        if (note.time > currentX) break
-        if (note.note == currentNote && note.time <= currentX && note.time + note.duration >= currentX && block(note))
+    currentX = ((x + horizontalScrollState.value) / noteWidth.value.toPx() - clip.time).roundToInt()
+    for (i in startNoteIndex..clip.clip.notes.lastIndex) {
+        val note = clip.clip.notes[i]
+        val startTime = note.time
+        if (startTime > currentX) break
+        if (note.note == currentNote && startTime <= currentX && startTime + note.duration >= currentX && block(note))
             return note
     }
     return null
@@ -68,7 +70,7 @@ internal suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutin
                 when (event.type) {
                     PointerEventType.Move -> {
                         var cursor0 = PointerIconDefaults.Default
-                        getClickedNotes(event.x, event.y, clip.clip.notes)?.let {
+                        getClickedNotes(event.x, event.y, clip)?.let {
                             val startX = it.time * noteWidth.value.toPx() - horizontalScrollState.value
                             val endX = (it.time + it.duration) * noteWidth.value.toPx() - horizontalScrollState.value
                             cursor0 = if ((event.x < startX + 4 && event.x > startX - 4) ||
@@ -100,7 +102,7 @@ internal suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutin
                                 action = EditAction.SELECT
                                 break
                             }
-                            var currentSelectNote = getClickedNotes(event.x, event.y, clip.clip.notes)
+                            var currentSelectNote = getClickedNotes(event.x, event.y, clip)
                             if (currentSelectNote == null) {
                                 selectedNotes = hashSetOf()
                                 val noteUnit = getEditUnit()
@@ -148,7 +150,7 @@ internal suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutin
                             break
                         } else if (event.buttons.isTertiaryPressed) {
                             selectedNotes = hashSetOf()
-                            getClickedNotes(event.x, event.y, clip.clip.notes) ?.let(deletionList::add)
+                            getClickedNotes(event.x, event.y, clip) ?.let(deletionList::add)
                             action = EditAction.DELETE
                             break
                         } else if (event.buttons.isSecondaryPressed) {
@@ -194,7 +196,7 @@ internal suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutin
                         selectionY = ((it.position.y.coerceAtMost(size.height.toFloat()) + verticalScrollState.value) /
                                 noteHeight.toPx()).roundToInt()
                     }
-                    EditAction.DELETE -> getClickedNotes(it.position.x, it.position.y, clip.clip.notes) { note ->
+                    EditAction.DELETE -> getClickedNotes(it.position.x, it.position.y, clip) { note ->
                         !deletionList.contains(note)
                     }?.let(deletionList::add)
                     EditAction.MOVE, EditAction.RESIZE -> {

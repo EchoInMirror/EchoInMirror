@@ -31,6 +31,14 @@ object EchoInMirror {
     val undoManager: UndoManager = UndoManagerImpl()
     var quantification by mutableStateOf(defaultQuantification)
 
-    var selectedTrack by mutableStateOf<Track?>(null)
+    private var selectedTrack_ by mutableStateOf<Track?>(null)
+    var selectedTrack
+        get() = selectedTrack_
+        set(value) {
+            if (value != selectedTrack_) {
+                selectedClip = null
+                selectedTrack_ = value
+            }
+        }
     var selectedClip by mutableStateOf<TrackClip<*>?>(null)
 }

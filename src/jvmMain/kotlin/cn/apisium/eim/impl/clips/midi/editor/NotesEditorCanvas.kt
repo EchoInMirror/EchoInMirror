@@ -51,7 +51,6 @@ internal var resizeDirectionRight = false
 @OptIn(ExperimentalComposeUiApi::class)
 internal var cursor by mutableStateOf(PointerIconDefaults.Default)
 internal var currentNote = 0
-internal var currentX = 0
 internal val deletionList = mutableStateSetOf<NoteMessage>()
 internal val playingNotes = arrayListOf<MidiEvent>()
 internal var currentSelectedNote by mutableStateOf<NoteMessage?>(null)
@@ -67,7 +66,7 @@ internal fun NotesEditorCanvas(trackClip: TrackClip<MidiClip>, selectedTrack: Tr
     Box(
         Modifier.fillMaxSize().clipToBounds().background(MaterialTheme.colorScheme.background)
         .scrollable(verticalScrollState, Orientation.Vertical, reverseDirection = true)
-        .pointerInput(Unit) { handleMouseEvent(coroutineScope, trackClip, selectedTrack) }
+        .pointerInput(coroutineScope, trackClip, selectedTrack) { handleMouseEvent(coroutineScope, trackClip, selectedTrack) }
         .dropTarget({ _, _ -> true }) { _, pos ->
             println(pos)
             true
@@ -104,7 +103,7 @@ internal fun NotesEditorCanvas(trackClip: TrackClip<MidiClip>, selectedTrack: Tr
             val trackColor = selectedTrack.color
             for ((index, it) in clip.notes.withIndex()) {
                 val y = (KEYBOARD_KEYS - 1 - it.note) * noteHeightPx - verticalScrollValue
-                val x = startTime + it.time * noteWidthPx - horizontalScrollValue
+                val x = (startTime + it.time) * noteWidthPx - horizontalScrollValue
                 if (x > size.width) break
                 notesInViewList.add(it)
                 if (y < -noteHeightPx || y > size.height || deletionList.contains(it)) continue
@@ -133,7 +132,7 @@ internal fun NotesEditorCanvas(trackClip: TrackClip<MidiClip>, selectedTrack: Tr
                     @Suppress("LABEL_NAME_CLASH") val curClip = clip0.asMidiTrackClipOrNull() ?: return@forEach
                     for (it in curClip.clip.notes) {
                         val y = (KEYBOARD_KEYS - 1 - it.note) * noteHeightPx - verticalScrollValue
-                        val x = curClip.time + it.time * noteWidthPx - horizontalScrollValue
+                        val x = (curClip.time + it.time) * noteWidthPx - horizontalScrollValue
                         if (x > size.width) break
                         if (y < -noteHeightPx || y > size.height || deletionList.contains(it)) continue
                         val width = it.duration * noteWidthPx
@@ -165,7 +164,7 @@ internal fun NotesEditorCanvas(trackClip: TrackClip<MidiClip>, selectedTrack: Tr
                 notes.forEach { drawRoundRect(it.color, it.offset, it.size, BorderCornerRadius2PX) }
                 selectedNotes.forEach {
                     var y = (KEYBOARD_KEYS - 1 - it.note) * noteHeightPx - verticalScrollValue
-                    val x = trackClip.time + it.time * noteWidthPx - horizontalScrollValue
+                    val x = (trackClip.time + it.time) * noteWidthPx - horizontalScrollValue
                     val width = it.duration * noteWidthPx
                     val offset: Offset
                     val size: Size

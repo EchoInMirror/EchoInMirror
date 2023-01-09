@@ -6,6 +6,7 @@ import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.api.CurrentPosition
 import cn.apisium.eim.api.DefaultTrackClipList
 import cn.apisium.eim.api.ProjectInformation
+import cn.apisium.eim.api.convertPPQToSamples
 import cn.apisium.eim.api.processor.*
 import cn.apisium.eim.api.processor.dsp.calcPanLeftChannel
 import cn.apisium.eim.api.processor.dsp.calcPanRightChannel
@@ -101,6 +102,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
 
     @get:JsonProperty(access = JsonProperty.Access.READ_ONLY)
     override val clips = DefaultTrackClipList()
+    private var lastClipIndex = -1
 
     override suspend fun processBlock(
         buffers: Array<FloatArray>,
@@ -121,9 +123,29 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
                     midiBuffer.add(pendingNoteOns[it].toInt().coerceAtLeast(0))
                 }
             }
-            clips.forEach {
+            val startTime = position.timeInPPQ
+            val blockEndSample = position.timeInSamples + position.bufferSize
+            if (lastClipIndex == -1) {
+                var l = 0
+                var r = clips.size - 1
+                while (l < r) {
+                    val mid = (l + r) ushr 1
+                    if (clips[mid].time > startTime) r = mid
+                    else l = mid + 1
+                }
+                lastClipIndex = l
+            }
+            for (i in lastClipIndex..clips.lastIndex) {
+                val clip = clips[i]
+                val startTimeInSamples = position.convertPPQToSamples(clip.time)
+                val endTimeInSamples = position.convertPPQToSamples(clip.time + clip.duration)
+                if (endTimeInSamples < position.timeInSamples) {
+                    lastClipIndex = i + 1
+                    continue
+                }
+                if (startTimeInSamples > blockEndSample) break
                 @Suppress("TYPE_MISMATCH")
-                it.clip.factory.processBlock(it, buffers, position, midiBuffer, noteRecorder, pendingNoteOns)
+                clip.clip.factory.processBlock(clip, buffers, position, midiBuffer, noteRecorder, pendingNoteOns)
             }
         }
         preProcessorsChain.forEach { it.processBlock(buffers, position, midiBuffer) }
@@ -201,6 +223,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
 
     override fun onSuddenChange() {
         stopAllNotes()
+        lastClipIndex = -1
         pendingNoteOns.clone()
         noteRecorder.reset()
         clips.forEach { it.reset() }
@@ -292,6 +315,11 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
                 }
             } catch (_: FileNotFoundException) { }
         }
+    }
+
+    override fun toString(): String {
+        return "TrackImpl(name='$name', preProcessorsChain=${preProcessorsChain.size}, " +
+        "postProcessorsChain=${postProcessorsChain.size}, subTracks=${subTracks.size}, clips=${clips.size})"
     }
 }
 
