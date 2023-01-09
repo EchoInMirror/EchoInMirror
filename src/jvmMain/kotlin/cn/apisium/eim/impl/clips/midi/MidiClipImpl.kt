@@ -44,19 +44,21 @@ class MidiClipFactoryImpl : ClipFactory<MidiClip> {
         if (c !is MidiClipImpl) return
         val blockEndSample = position.timeInSamples + position.bufferSize
         val startTime = clip.time
-        if (clip.currentIndex < 0) {
+        val notes = c.notes
+        if (clip.currentIndex == -1) {
             // use binary search to find the first note that is after the start of the block
             var l = 0
-            var r = clip.clip.notes.size - 1
+            var r = notes.size - 1
+            val startPPQ = position.timeInPPQ - startTime
             while (l < r) {
                 val mid = (l + r) ushr 1
-                if (clip.clip.notes[mid].time > startTime) r = mid
+                if (notes[mid].time > startPPQ) r = mid
                 else l = mid + 1
             }
             clip.currentIndex = l
         }
-        for (i in clip.currentIndex..c.notes.lastIndex) {
-            val note = c.notes[i]
+        for (i in clip.currentIndex..notes.lastIndex) {
+            val note = notes[i]
             val startTimeInSamples = position.convertPPQToSamples(startTime + note.time)
             val endTimeInSamples = position.convertPPQToSamples(startTime + note.time + note.duration)
             if (startTimeInSamples < position.timeInSamples) continue
