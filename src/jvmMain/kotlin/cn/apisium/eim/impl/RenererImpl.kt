@@ -95,7 +95,6 @@ class RendererImpl(private val renderTarget: Renderable) : Renderer {
                     "-",
                     file.path
                 )
-                println(file.path)
                 pb.redirectOutput(ProcessBuilder.Redirect.INHERIT)
                 val p = pb.start()
                 try {

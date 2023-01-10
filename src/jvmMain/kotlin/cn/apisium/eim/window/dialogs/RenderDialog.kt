@@ -16,11 +16,10 @@ import cn.apisium.eim.api.RenderFormat
 import cn.apisium.eim.api.convertPPQToSamples
 import cn.apisium.eim.api.processor.ChannelType
 import cn.apisium.eim.components.*
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import java.io.File
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 private fun closeQuickLoadWindow() {
     EchoInMirror.windowManager.dialogs[ExportDialog] = false
@@ -29,171 +28,212 @@ private fun closeQuickLoadWindow() {
 private fun formateSecondTime(timeInSecond: Float): String {
     return "${(timeInSecond / 60).toInt().toString().padStart(2, '0')}:${
         (timeInSecond % 60).toInt().toString().padStart(2, '0')
-    }:${((timeInSecond * 1000) % 1000).toInt().toString().padStart(3, '0')}"
+    }"//:${((timeInSecond * 1000) % 1000).toInt().toString().padStart(3, '0')}
 }
 
 private val floatingDialogProvider = FloatingDialogProvider()
 
-@OptIn(DelicateCoroutinesApi::class)
+@OptIn(DelicateCoroutinesApi::class, ExperimentalMaterial3Api::class)
 val ExportDialog = @Composable {
     Dialog(::closeQuickLoadWindow, title = "导出") {
         remember { EchoInMirror.currentPosition.isPlaying = false }
         window.minimumSize = Dimension(300, 500)
+
         CompositionLocalProvider(LocalFloatingDialogProvider.provides(floatingDialogProvider)) {
             Surface(Modifier.fillMaxSize(), tonalElevation = 4.dp) {
                 Box(Modifier.padding(10.dp)) {
                     Column {
+                        var isRendering by remember { mutableStateOf(false) }
+
                         val position = EchoInMirror.currentPosition
                         val endPPQ = position.projectRange.last - position.projectRange.first
                         val timeInSecond = position.convertPPQToSamples(endPPQ).toFloat() / position.sampleRate
-                        Row {
-                            Text("长度: ")
-                            Text(
-                                "${endPPQ / position.ppq / position.timeSigNumerator + 1}节",
-                                color = Color.Black.copy(0.5f)
+                        var filename by remember {
+                            mutableStateOf(
+                                LocalDateTime.now().format(DateTimeFormatter.ISO_DATE)
                             )
-                            Spacer(Modifier.width(10.dp))
-                            Text(
-                                "总时间: "
-                            )
-                            Text(
-                                "${
-                                    (timeInSecond / 60).toInt().toString().padStart(2, '0')
-                                }'${(timeInSecond % 60).toInt().toString().padStart(2, '0')}\"",
-                                color = Color.Black.copy(0.5f)
-                            )
-                            Spacer(Modifier.width(10.dp))
                         }
-
-                        Spacer(Modifier.height(10.dp))
-                        Divider()
-                        Spacer(Modifier.height(10.dp))
                         var renderFormat by remember { mutableStateOf(RenderFormat.WAV) }
-                        Row {
-                            Row(
-                                Modifier.weight(1F),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-                                Text("导出格式: ")
-                                Menu({ close ->
-                                    RenderFormat.values().forEach {
-                                        MenuItem(renderFormat == it, {
-                                            close()
-                                            renderFormat = it
-                                        }, modifier = Modifier.fillMaxWidth()) { Text(it.extend) }
-                                    }
-                                }) {
-                                    Text(
-                                        renderFormat.extend
-                                    )
-                                }
-                            }
-
-                            Spacer(Modifier.width(10.dp))
-
-                            var soundSelect by remember { mutableStateOf(ChannelType.STEREO) }
-                            Row(Modifier.weight(1F)) {
-                                Menu({ close ->
-                                    Column {
-                                        ChannelType.values().forEach {
-                                            MenuItem(soundSelect == it, {
-                                                close()
-                                                soundSelect = it
-                                            }, modifier = Modifier.fillMaxWidth()) {
-                                                Text(it.name)
-                                            }
-                                        }
-                                    }
-                                }) {
-                                    Text(soundSelect.name)
-                                }
-                            }
-                        }
-
-                        Spacer(Modifier.height(5.dp))
-
+                        var soundSelect by remember { mutableStateOf(ChannelType.STEREO) }
                         var bits by remember { mutableStateOf(16) }
-                        if (renderFormat.isLossLess) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-                                Text("位深: ", Modifier.width(80.dp))
-                                arrayOf(16, 24, 32).map {
-                                    RadioButton(bits == it, { bits = it })
-                                    Text("${it}位")
-
-                                }
-                            }
-                        }
-
                         var bitRate by remember { mutableStateOf(320) }
-                        if (!renderFormat.isLossLess) {
+                        var compressionLevel by remember { mutableStateOf(5) }
+
+
+                        if (!isRendering) {
+                            Row {
+                                Text("长度: ")
+                                Text(
+                                    "${endPPQ / position.ppq / position.timeSigNumerator + 1}节",
+                                    color = Color.Black.copy(0.5f)
+                                )
+                                Spacer(Modifier.width(10.dp))
+                                Text(
+                                    "总时间: "
+                                )
+                                Text(
+                                    "${
+                                        (timeInSecond / 60).toInt().toString().padStart(2, '0')
+                                    }'${(timeInSecond % 60).toInt().toString().padStart(2, '0')}\"",
+                                    color = Color.Black.copy(0.5f)
+                                )
+                                Spacer(Modifier.width(10.dp))
+                            }
+
+                            Spacer(Modifier.height(10.dp))
+                            Divider()
+                            Spacer(Modifier.height(10.dp))
+
                             Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text("比特率: ", Modifier.width(80.dp))
-                                Menu({ close ->
-                                    Column {
-                                        arrayOf(128, 192, 256, 320).map {
-                                            MenuItem(bitRate == it, {
+                                Text("文件名:    ")
+                                TextField(filename, { filename = it }, modifier = Modifier.width(200.dp))
+                            }
+                            Spacer(Modifier.height(5.dp))
+
+                            Row {
+                                Row(
+                                    Modifier.weight(1F),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text("导出格式: ")
+                                    Menu({ close ->
+                                        RenderFormat.values().forEach {
+                                            MenuItem(renderFormat == it, {
                                                 close()
-                                                bitRate = it
-                                            }, modifier = Modifier.fillMaxWidth()) {
-                                                Text(it.toString())
+                                                renderFormat = it
+                                            }, modifier = Modifier.fillMaxWidth()) { Text(it.extend) }
+                                        }
+                                    }) {
+                                        Text(
+                                            renderFormat.extend
+                                        )
+                                    }
+                                }
+
+                                Spacer(Modifier.width(10.dp))
+
+
+                                Row(Modifier.weight(1F)) {
+                                    Menu({ close ->
+                                        Column {
+                                            ChannelType.values().forEach {
+                                                MenuItem(soundSelect == it, {
+                                                    close()
+                                                    soundSelect = it
+                                                }, modifier = Modifier.fillMaxWidth()) {
+                                                    Text(it.name)
+                                                }
                                             }
                                         }
+                                    }) {
+                                        Text(soundSelect.name)
                                     }
-                                }) {
-                                    Text("${bitRate}kbps")
                                 }
                             }
-                        }
 
-                        var compressionLevel by remember { mutableStateOf(5) }
-                        if (renderFormat.extend == "flac") {
-                            Spacer(Modifier.width(10.dp))
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-                                Text("flac压缩: ", Modifier.width(80.dp))
-                                Slider(
-                                    compressionLevel.toFloat(),
-                                    { compressionLevel = it.toInt() },
-                                    valueRange = 0f..8f,
-                                    steps = 7,
-                                    modifier = Modifier.weight(5f)
-                                )
-                                Text(" $compressionLevel", modifier = Modifier.weight(1f))
+                            Spacer(Modifier.height(5.dp))
+
+
+                            if (renderFormat.isLossLess) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
+                                    Text("位深: ", Modifier.width(80.dp))
+                                    arrayOf(16, 24, 32).map {
+                                        RadioButton(bits == it, { bits = it })
+                                        Text("${it}位")
+
+                                    }
+                                }
                             }
+
+
+                            if (!renderFormat.isLossLess) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
+                                    Text("比特率: ", Modifier.width(80.dp))
+                                    Menu({ close ->
+                                        Column {
+                                            arrayOf(128, 192, 256, 320).map {
+                                                MenuItem(bitRate == it, {
+                                                    close()
+                                                    bitRate = it
+                                                }, modifier = Modifier.fillMaxWidth()) {
+                                                    Text(it.toString())
+                                                }
+                                            }
+                                        }
+                                    }) {
+                                        Text("${bitRate}kbps")
+                                    }
+                                }
+                            }
+
+
+                            if (renderFormat.extend == "flac") {
+                                Spacer(Modifier.width(10.dp))
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
+                                    Text("flac压缩: ", Modifier.width(80.dp))
+                                    Slider(
+                                        compressionLevel.toFloat(),
+                                        { compressionLevel = it.toInt() },
+                                        valueRange = 0f..8f,
+                                        steps = 7,
+                                        modifier = Modifier.weight(5f)
+                                    )
+                                    Text(" $compressionLevel", modifier = Modifier.weight(1f))
+                                }
+                            }
+                            Filled()
                         }
 
-                        Filled()
+
                         var renderProcess by remember { mutableStateOf(0f) }
-                        var isRendering by remember { mutableStateOf(false) }
                         var renderJob by remember { mutableStateOf<Job?>(null) }
-                        Text(
-                            "${(renderProcess * 100).toInt()}% ${formateSecondTime(timeInSecond * renderProcess)}  5.5倍快于实时",
-                            Modifier.align(Alignment.CenterHorizontally)
-                        )
+                        var renderTimeInSecond by remember { mutableStateOf(0f) }
+                        var lastRenderBlockTime: Long
+                        var renderRate by remember { mutableStateOf(1f) }
+                        var renderBlockSize: Int
                         if (isRendering) {
-                            Box(Modifier.padding(horizontal = 20.dp, vertical = 10.dp)) {
-                                LinearProgressIndicator(renderProcess, Modifier.fillMaxWidth())
+                            Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+
+                                Text("已用时: ${formateSecondTime(renderTimeInSecond)}")
+                                Text("剩余: ${formateSecondTime(timeInSecond * (1 - renderProcess) / renderRate)}")
+                                Text("已渲染: ${formateSecondTime(timeInSecond * renderProcess)}")
+                                Text("%.1f倍快于实时".format(renderRate))
+                                Text("${(renderProcess * 100).toInt()}%")
+                                Box(Modifier.padding(horizontal = 20.dp, vertical = 10.dp)) {
+                                    LinearProgressIndicator(renderProcess, Modifier.fillMaxWidth())
+                                }
                             }
                         }
                         Button({
                             if (isRendering) {
-                                if(!renderJob!!.isCompleted)
+                                if (!renderJob!!.isCompleted)
                                     renderJob?.cancel()
                                 isRendering = false
                             } else {
+                                if (filename.isEmpty())
+                                    return@Button
                                 val renderer = EchoInMirror.bus?.let { RendererImpl(it) }
                                 val curposition = EchoInMirror.currentPosition
-                                val audioFile = File("./test.${renderFormat.extend}")
+                                val audioFile = File("./${filename}.${renderFormat.extend}")
+
                                 isRendering = true
+                                renderTimeInSecond = 0f
+                                renderBlockSize = 0
+                                lastRenderBlockTime = 0
+
+                                window.size = Dimension(300, 200)
+
                                 EchoInMirror.player!!.close()
                                 renderJob = GlobalScope.launch {
                                     renderer?.start(
@@ -208,16 +248,29 @@ val ExportDialog = @Composable {
                                         compressionLevel
                                     ) {
                                         renderProcess = it
-//                                        if(renderProcess >= 1f)
-//                                            isRendering = false
+                                        if (it < 1f) {
+                                            renderBlockSize += curposition.bufferSize
+                                            if (renderBlockSize >= curposition.sampleRate) {
+                                                val new_t = System.currentTimeMillis()
+                                                renderRate = 1000f / (new_t - lastRenderBlockTime)
+                                                lastRenderBlockTime = new_t
+                                                renderBlockSize = 0
+                                            }
+                                        }
+                                    }
+                                }
+                                GlobalScope.launch {
+                                    while (!renderJob!!.isCompleted) {
+                                        delay(10)
+                                        renderTimeInSecond += 0.01f
                                     }
                                 }
                             }
                         }, Modifier.zIndex(-10f).fillMaxWidth()) {
                             Row {
                                 if (isRendering && renderProcess < 1f) Text("取消")
-                                else if(isRendering && renderProcess >= 1f) Text("确认")
-                                else Text("导出到 test.${renderFormat.extend}")
+                                else if (isRendering && renderProcess >= 1f) Text("确认")
+                                else Text("导出到 $filename.${renderFormat.extend}")
                             }
                         }
                     }
