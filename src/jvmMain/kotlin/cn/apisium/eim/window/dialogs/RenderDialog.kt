@@ -26,6 +26,12 @@ private fun closeQuickLoadWindow() {
     EchoInMirror.windowManager.dialogs[ExportDialog] = false
 }
 
+private fun formateSecondTime(timeInSecond: Float): String {
+    return "${(timeInSecond / 60).toInt().toString().padStart(2, '0')}:${
+        (timeInSecond % 60).toInt().toString().padStart(2, '0')
+    }:${((timeInSecond * 1000) % 1000).toInt().toString().padStart(3, '0')}"
+}
+
 private val floatingDialogProvider = FloatingDialogProvider()
 
 @OptIn(DelicateCoroutinesApi::class)
@@ -37,16 +43,16 @@ val ExportDialog = @Composable {
             Surface(Modifier.fillMaxSize(), tonalElevation = 4.dp) {
                 Box(Modifier.padding(10.dp)) {
                     Column {
+                        val position = EchoInMirror.currentPosition
+                        val endPPQ = position.projectRange.last - position.projectRange.first
+                        val timeInSecond = position.convertPPQToSamples(endPPQ).toFloat() / position.sampleRate
                         Row {
-                            val position = EchoInMirror.currentPosition
-                            val endPPQ = position.projectRange.last - position.projectRange.first
                             Text("长度: ")
                             Text(
                                 "${endPPQ / position.ppq / position.timeSigNumerator + 1}节",
                                 color = Color.Black.copy(0.5f)
                             )
                             Spacer(Modifier.width(10.dp))
-                            val timeInSecond = position.convertPPQToSamples(endPPQ).toFloat() / position.sampleRate
                             Text(
                                 "总时间: "
                             )
@@ -64,7 +70,8 @@ val ExportDialog = @Composable {
                         Spacer(Modifier.height(10.dp))
                         var renderFormat by remember { mutableStateOf(RenderFormat.WAV) }
                         Row {
-                            Row(Modifier.weight(1F),
+                            Row(
+                                Modifier.weight(1F),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.Center
                             ) {
@@ -168,8 +175,10 @@ val ExportDialog = @Composable {
                         var renderProcess by remember { mutableStateOf(0f) }
                         var isRendering by remember { mutableStateOf(false) }
                         var renderJob by remember { mutableStateOf<Job?>(null) }
-                        Text("${(renderProcess * 100).toInt()}%  00:00:00  5.5倍快于实时",
-                            Modifier.align(Alignment.CenterHorizontally))
+                        Text(
+                            "${(renderProcess * 100).toInt()}% ${formateSecondTime(timeInSecond * renderProcess)}  5.5倍快于实时",
+                            Modifier.align(Alignment.CenterHorizontally)
+                        )
                         if (isRendering) {
                             Box(Modifier.padding(horizontal = 20.dp, vertical = 10.dp)) {
                                 LinearProgressIndicator(renderProcess, Modifier.fillMaxWidth())
@@ -177,20 +186,21 @@ val ExportDialog = @Composable {
                         }
                         Button({
                             if (isRendering) {
-                                renderJob?.cancel()
+                                if(!renderJob!!.isCompleted)
+                                    renderJob?.cancel()
                                 isRendering = false
                             } else {
                                 val renderer = EchoInMirror.bus?.let { RendererImpl(it) }
-                                val position = EchoInMirror.currentPosition
+                                val curposition = EchoInMirror.currentPosition
                                 val audioFile = File("./test.${renderFormat.extend}")
                                 isRendering = true
                                 EchoInMirror.player!!.close()
                                 renderJob = GlobalScope.launch {
                                     renderer?.start(
-                                        position.projectRange,
-                                        position.sampleRate,
-                                        position.ppq,
-                                        position.bpm,
+                                        curposition.projectRange,
+                                        curposition.sampleRate,
+                                        curposition.ppq,
+                                        curposition.bpm,
                                         audioFile,
                                         renderFormat,
                                         bits,
@@ -198,12 +208,15 @@ val ExportDialog = @Composable {
                                         compressionLevel
                                     ) {
                                         renderProcess = it
+//                                        if(renderProcess >= 1f)
+//                                            isRendering = false
                                     }
                                 }
                             }
                         }, Modifier.zIndex(-10f).fillMaxWidth()) {
                             Row {
-                                if (isRendering) Text("取消")
+                                if (isRendering && renderProcess < 1f) Text("取消")
+                                else if(isRendering && renderProcess >= 1f) Text("确认")
                                 else Text("导出到 test.${renderFormat.extend}")
                             }
                         }
