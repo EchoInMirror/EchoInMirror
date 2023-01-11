@@ -2,11 +2,11 @@ package cn.apisium.eim.impl.processor.players
 
 import cn.apisium.eim.api.AbstractAudioPlayer
 import cn.apisium.eim.api.CurrentPosition
+import cn.apisium.eim.api.getAudioFormat
 import cn.apisium.eim.api.processor.AudioProcessor
 import cn.apisium.eim.utils.getSampleBits
 import kotlinx.coroutines.runBlocking
 import java.util.*
-import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioSystem
 import javax.sound.sampled.SourceDataLine
 
@@ -34,8 +34,7 @@ class JvmAudioPlayer(currentPosition: CurrentPosition, processor: AudioProcessor
         buffers = arrayOf(FloatArray(bufferSize), FloatArray(bufferSize))
         outputBuffer = ByteArray(channels * bufferSize * bits)
 
-        val af = AudioFormat(AudioFormat.Encoding.PCM_SIGNED, sampleRate.toFloat(), bits * 8, channels,
-            bits * channels, sampleRate.toFloat(), false)
+        val af = currentPosition.getAudioFormat(bits, channels)
         sdl = AudioSystem.getSourceDataLine(af)
         sdl!!.open(af, outputBuffer.size)
         sdl!!.start()

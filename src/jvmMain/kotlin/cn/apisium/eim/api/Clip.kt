@@ -9,6 +9,8 @@ import cn.apisium.eim.api.processor.Track
 import cn.apisium.eim.data.midi.MidiNoteRecorder
 import cn.apisium.eim.data.midi.NoteMessageList
 import cn.apisium.eim.utils.IManualState
+import cn.apisium.eim.utils.audiosources.ResampledAudioSource
+import cn.apisium.eim.utils.randomId
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.JsonNode
@@ -53,23 +55,37 @@ interface ClipManager {
     suspend fun createClip(path: String, json: JsonNode): Clip
     @Throws(NoSuchFactoryException::class)
     suspend fun createClip(path: String, id: String): Clip
-    fun <T: Clip> createTrackClip(clip: T, time: Int = 0, duration: Int = 0, track: Track? = null): TrackClip<T>
+    fun <T: Clip> createTrackClip(clip: T, time: Int = 0, duration: Int = clip.defaultDuration.coerceAtLeast(0),
+                                  track: Track? = null): TrackClip<T>
     suspend fun createTrackClip(path: String, json: JsonNode): TrackClip<Clip>
 }
 
 @Suppress("UNCHECKED_CAST")
 val ClipManager.defaultMidiClipFactory get() = factories["MIDIClip"] as ClipFactory<MidiClip>
+@Suppress("UNCHECKED_CAST")
+val ClipManager.defaultAudioClipFactory get() = factories["AudioClip"] as ClipFactory<AudioClip>
 
 interface Clip {
     val id: String
     @get:JsonSerialize(using = ClipFactoryNameSerializer::class)
     val factory: ClipFactory<*>
+    val defaultDuration: Int
 }
 
 interface MidiClip : Clip {
     val notes: NoteMessageList
 }
-interface AudioClip : Clip
+interface AudioClip : Clip {
+    var audioSource: ResampledAudioSource
+}
+
+abstract class AbstractClip<T: Clip>(json: JsonNode?, override val factory: ClipFactory<T>) : Clip {
+    override val id = json?.get("id")?.asText() ?: randomId()
+
+    override fun toString(): String {
+        return "MidiClipImpl(factory=$factory, id='$id')"
+    }
+}
 
 interface TrackClip<T: Clip> {
     var time: Int
@@ -83,7 +99,7 @@ interface TrackClip<T: Clip> {
     fun reset()
 }
 
-@Suppress("UNCHECKED_CAST")
+@Suppress("UNCHECKED_CAST", "unused")
 fun TrackClip<*>.asMidiTrackClip() = this as TrackClip<MidiClip>
 @Suppress("UNCHECKED_CAST")
 fun TrackClip<*>.asMidiTrackClipOrNull() = if (clip is MidiClip) this as TrackClip<MidiClip> else null

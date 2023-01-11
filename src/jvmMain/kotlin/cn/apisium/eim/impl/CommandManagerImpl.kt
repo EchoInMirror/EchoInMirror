@@ -68,6 +68,8 @@ class CommandManagerImpl : CommandManager {
                         val time = EchoInMirror.currentPosition.oneBarPPQ
                         val clip2 = EchoInMirror.clipManager.defaultMidiClipFactory.createClip()
                         subTrack1.clips.add(EchoInMirror.clipManager.createTrackClip(clip2, time, time))
+                        val audioClip = EchoInMirror.clipManager.defaultAudioClipFactory.createClip()
+                        subTrack2.clips.add(EchoInMirror.clipManager.createTrackClip(audioClip))
 
 //                        var proQ: NativeAudioPluginDescription? = null
 //                        var spire: NativeAudioPluginDescription? = null

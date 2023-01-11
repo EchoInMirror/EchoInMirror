@@ -9,7 +9,7 @@ import cn.apisium.eim.api.processor.Track
 import cn.apisium.eim.api.window.Panel
 import cn.apisium.eim.api.window.WindowManager
 import cn.apisium.eim.impl.clips.midi.editor.backingTracks
-import cn.apisium.eim.impl.processor.players.NativeAudioPlayer
+import cn.apisium.eim.impl.processor.players.JvmAudioPlayer
 import cn.apisium.eim.window.panels.Editor
 import cn.apisium.eim.window.panels.Mixer
 import cn.apisium.eim.window.dialogs.QuickLoadDialog
@@ -21,6 +21,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.nio.file.Path
+import java.util.*
 import kotlin.io.path.absolutePathString
 
 class WindowManagerImpl: WindowManager {
@@ -84,7 +85,7 @@ class WindowManagerImpl: WindowManager {
             val (bus, loadBus) = EchoInMirror.audioProcessorManager.createBus(DefaultProjectInformation(path))
             EchoInMirror.bus = bus
             bus.prepareToPlay(EchoInMirror.currentPosition.sampleRate, EchoInMirror.currentPosition.bufferSize)
-            val player = NativeAudioPlayer(EchoInMirror.currentPosition, bus, Configuration.nativeHostPath)
+            val player = JvmAudioPlayer(EchoInMirror.currentPosition, bus)
             EchoInMirror.player = player
 
             while (mainWindow == null) delay(25)

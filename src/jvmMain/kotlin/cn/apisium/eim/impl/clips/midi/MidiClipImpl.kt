@@ -12,13 +12,12 @@ import cn.apisium.eim.api.*
 import cn.apisium.eim.api.processor.Track
 import cn.apisium.eim.data.midi.*
 import cn.apisium.eim.impl.clips.midi.editor.MidiClipEditor
-import cn.apisium.eim.utils.randomId
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 
-class MidiClipImpl(json: JsonNode?, override val factory: ClipFactory<MidiClip>) : MidiClip {
+class MidiClipImpl(json: JsonNode?, factory: ClipFactory<MidiClip>) : AbstractClip<MidiClip>(json, factory), MidiClip {
     override val notes = DefaultNoteMessageList()
-    override val id = json?.get("id")?.asText() ?: randomId()
+    override val defaultDuration = -1
 
     init {
         if (json != null) {
@@ -41,7 +40,6 @@ class MidiClipFactoryImpl : ClipFactory<MidiClip> {
     override fun processBlock(clip: TrackClip<MidiClip>, buffers: Array<FloatArray>, position: CurrentPosition,
                               midiBuffer: ArrayList<Int>, noteRecorder: MidiNoteRecorder, pendingNoteOns: LongArray) {
         val c = clip.clip
-        if (c !is MidiClipImpl) return
         val blockEndSample = position.timeInSamples + position.bufferSize
         val startTime = clip.time
         val notes = c.notes
