@@ -41,6 +41,8 @@ val horizontalScrollState = ScrollState(0).apply {
     openMaxValue = (noteWidth.value * EchoInMirror.currentPosition.projectDisplayPPQ).value.toInt()
 }
 
+val noteWidthRange = 0.02f..3.2f
+val noteWidthSliderRange = (noteWidthRange.start / 0.4F)..(noteWidthRange.endInclusive / 0.4F)
 fun Density.calcScroll(event: PointerEvent, noteWidth: MutableState<Dp>, horizontalScrollState: ScrollState,
                        coroutineScope: CoroutineScope, onVerticalScroll: (PointerInputChange) -> Unit) {
     if (event.keyboardModifiers.isShiftPressed) return
@@ -51,7 +53,7 @@ fun Density.calcScroll(event: PointerEvent, noteWidth: MutableState<Dp>, horizon
             val x = change.position.x
             val oldX = (x + horizontalScrollState.value) / noteWidth.value.toPx()
             val newValue = (noteWidth.value.value +
-                    (if (change.scrollDelta.y > 0) -0.05F else 0.05F)).coerceIn(0.06f, 3.2f)
+                    (if (change.scrollDelta.y > 0) -0.05F else 0.05F)).coerceIn(noteWidthRange)
             if (newValue != noteWidth.value.value) {
                 horizontalScrollState.openMaxValue =
                     (noteWidth.value * EchoInMirror.currentPosition.projectDisplayPPQ).toPx().toInt()
@@ -79,7 +81,7 @@ fun Playlist() {
                         cn.apisium.eim.components.silder.Slider(
                             noteWidth.value.value / 0.4f,
                             { noteWidth.value = 0.4.dp * it },
-                            valueRange = 0.15f..8f
+                            valueRange = noteWidthSliderRange
                         )
                     }
                 }

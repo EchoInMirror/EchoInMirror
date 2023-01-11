@@ -29,7 +29,7 @@ interface CurrentPosition {
 fun CurrentPosition.convertPPQToSamples(ppq: Int) = (ppq.toDouble() / this.ppq / bpm * 60.0 * sampleRate).toLong()
 fun CurrentPosition.convertSamplesToPPQ(samples: Long) = (samples.toDouble() / sampleRate * bpm / 60.0 * this.ppq).toInt()
 val CurrentPosition.projectDisplayPPQ get() = projectRange.last.coerceAtLeast(timeSigDenominator * ppq * 64) +
-        timeSigDenominator * ppq * 16
+        timeSigDenominator * ppq * 64
 val CurrentPosition.oneBarPPQ get() = timeSigDenominator * ppq
 
 fun CurrentPosition.getAudioFormat(bits: Int = 2, channels: Int = 2) = AudioFormat(
