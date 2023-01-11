@@ -6,6 +6,7 @@ import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
 import java.io.InputStream
 import java.io.OutputStream
+import javax.sound.sampled.AudioInputStream
 
 class EIMInputStream(private val isBigEndian: Boolean, stream: InputStream): BufferedInputStream(stream) {
     fun readInt() = if (isBigEndian) (read() shl 24) or (read() shl 16) or (read() shl 8) or read()
@@ -76,3 +77,6 @@ class EIMOutputStream(private val isBigEndian: Boolean, stream: OutputStream): B
         write(arr)
     }
 }
+
+val AudioInputStream.samplesCount get() = if (format.frameSize == -1 || frameLength == -1L) -1L
+    else frameLength / (format.sampleSizeInBits / 16)

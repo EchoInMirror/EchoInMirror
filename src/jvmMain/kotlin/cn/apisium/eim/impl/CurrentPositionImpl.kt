@@ -14,7 +14,7 @@ class CurrentPositionImpl: CurrentPosition {
     override var timeInPPQ = 0
     override var ppqPosition by mutableStateOf(0.0)
     override var bufferSize by mutableStateOf(1024)
-    override var sampleRate by mutableStateOf(44800)
+    override var sampleRate by mutableStateOf(48000)
     override var timeSigNumerator by mutableStateOf(4)
     override var timeSigDenominator by mutableStateOf(4)
     override var loopingRange by mutableStateOf(0..0)

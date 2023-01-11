@@ -2,6 +2,7 @@ package cn.apisium.eim.impl.clips
 
 import cn.apisium.eim.api.*
 import cn.apisium.eim.api.processor.Track
+import cn.apisium.eim.impl.clips.audio.AudioClipFactoryImpl
 import cn.apisium.eim.impl.clips.midi.MidiClipFactoryImpl
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -12,6 +13,7 @@ class ClipManagerImpl : ClipManager {
 
     init {
         registerClipFactory(MidiClipFactoryImpl())
+        registerClipFactory(AudioClipFactoryImpl())
     }
 
     override fun registerClipFactory(factory: ClipFactory<*>) {

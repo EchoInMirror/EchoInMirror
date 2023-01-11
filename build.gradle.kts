@@ -56,6 +56,17 @@ kotlin {
                 }
                 implementation("org.ocpsoft.prettytime:prettytime:5.0.6.Final")
                 implementation("com.aventrix.jnanoid:jnanoid:2.0.0")
+                implementation("com.github.dragoon000320:tarsosdsp:1.0")
+
+                // Audio decoders
+                implementation("com.googlecode.soundlibs:mp3spi:1.9.5.4") {
+                    exclude("com.googlecode.soundlibs", "tritonus_share")
+                }
+                implementation("com.googlecode.soundlibs:tritonus-all:0.3.7.2") {
+                    exclude("com.googlecode.soundlibs", "tritonus_share")
+                }
+                implementation("com.github.trilarion:vorbis-support:1.1.0")
+                implementation("org.jflac:jflac-codec:1.5.0")
             }
         }
 
