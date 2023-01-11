@@ -56,11 +56,25 @@ internal object ShortcutKeySettings : Tab {
                     val keyCompose = remember { key.split(" ").toMutableStateList() }
                     val preKeyCompose = remember { mutableStateListOf<String>() }
 
+                    fun cancel() {
+                        keyCompose.clear()
+                        selectKey = ""
+                        preKeyCompose.forEach {
+                            keyCompose.add(it)
+                        }
+                    }
+
                     fun done() {
                         selectKey = ""
                         val keyStr = keyCompose.joinToString(separator = " ")
-                        if (keyStr in commandManager.commands || keyStr in commandManager.customCommand) return
-                        if (curKey !in commandManager.commands && curKey !in commandManager.customCommand) return
+                        if (keyStr in commandManager.commands || keyStr in commandManager.customCommand) {
+                            cancel()
+                            return
+                        }
+                        if (curKey !in commandManager.commands && curKey !in commandManager.customCommand) {
+                            cancel()
+                            return
+                        }
                         val commandTar: String
                         if (curKey in commandManager.customCommand) {
                             commandTar = commandManager.customCommand[curKey]!!
@@ -76,13 +90,7 @@ internal object ShortcutKeySettings : Tab {
                         )
                     }
 
-                    fun cancel() {
-                        keyCompose.clear()
-                        selectKey = ""
-                        preKeyCompose.forEach {
-                            keyCompose.add(it)
-                        }
-                    }
+
 
                     CustomTextField(keyCompose.joinToString(separator = "+") {
                         KeyEvent.getKeyText(Key(it.toLong()).nativeKeyCode)
