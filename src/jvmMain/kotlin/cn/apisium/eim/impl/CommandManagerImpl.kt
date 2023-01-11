@@ -4,19 +4,26 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.input.key.*
 import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.IS_DEBUG
+import cn.apisium.eim.ROOT_PATH
 import cn.apisium.eim.api.*
 import cn.apisium.eim.commands.*
 import cn.apisium.eim.data.midi.getMidiEvents
 import cn.apisium.eim.data.midi.getNoteMessages
+import com.fasterxml.jackson.core.type.TypeReference
+import com.fasterxml.jackson.databind.ObjectMapper
 //import cn.apisium.eim.api.processor.NativeAudioPluginDescription
 //import cn.apisium.eim.impl.processor.nativeAudioPluginManager
 import kotlinx.coroutines.*
 import java.io.File
 import javax.sound.midi.MidiSystem
+import kotlin.io.path.exists
 
 @OptIn(ExperimentalComposeUiApi::class)
-class CommandManagerImpl: CommandManager {
-    private val commands = mutableMapOf<String, Command>()
+class CommandManagerImpl : CommandManager {
+    override val commands = mutableMapOf<String, Command>()
+    val commandMap = mutableMapOf<String, Command>()
+    var customCommand = mutableMapOf<String, String>()
+    val customShortcutKeyPath = ROOT_PATH.resolve("shortcutKey.json")
     private val commandHandlers = mutableMapOf<Command, MutableSet<() -> Unit>>()
 
     init {
@@ -32,7 +39,7 @@ class CommandManagerImpl: CommandManager {
         registerCommand(UndoCommand)
         registerCommand(RedoCommand)
 
-        registerCommand(object: AbstractCommand("EIM:Temp", arrayOf(Key.CtrlLeft, Key.R)) {
+        registerCommand(object : AbstractCommand("EIM:Temp", "Temp", arrayOf(Key.CtrlLeft, Key.R)) {
             override fun execute() {
                 val apm = EchoInMirror.audioProcessorManager
                 runBlocking {
@@ -51,7 +58,13 @@ class CommandManagerImpl: CommandManager {
                         }
                         val clip = EchoInMirror.clipManager.defaultMidiClipFactory.createClip()
                         clip.notes.addAll(getNoteMessages(midi.getMidiEvents(1)))
-                        track.clips.add(EchoInMirror.clipManager.createTrackClip(clip, 0, 4 * 32 * EchoInMirror.currentPosition.ppq))
+                        track.clips.add(
+                            EchoInMirror.clipManager.createTrackClip(
+                                clip,
+                                0,
+                                4 * 32 * EchoInMirror.currentPosition.ppq
+                            )
+                        )
                         val time = EchoInMirror.currentPosition.oneBarPPQ
                         val clip2 = EchoInMirror.clipManager.defaultMidiClipFactory.createClip()
                         subTrack1.clips.add(EchoInMirror.clipManager.createTrackClip(clip2, time, time))
@@ -76,6 +89,13 @@ class CommandManagerImpl: CommandManager {
                 }
             }
         })
+        if (customShortcutKeyPath.exists()) {
+            val typeRef = object : TypeReference<MutableMap<String, String>>() {}
+            customCommand = ObjectMapper().readValue(
+                customShortcutKeyPath.toFile(),
+                typeRef
+            )
+        }
     }
 
     override fun registerCommand(command: Command) {
@@ -99,15 +119,20 @@ class CommandManagerImpl: CommandManager {
         if (hasAlt) keys = "${Key.AltLeft.keyCode} $keys"
         if (hasMeta) keys = "${Key.MetaLeft.keyCode} $keys"
         commands[keys.trim()] = command
+        commandMap[command.name] = command
         commandHandlers[command] = hashSetOf()
     }
 
     override fun registerCommandHandler(command: Command, handler: () -> Unit) {
-        commandHandlers[command]?.add(handler) ?: throw IllegalArgumentException("Command ${command.name} not registered")
+        commandHandlers[command]?.add(handler)
+            ?: throw IllegalArgumentException("Command ${command.name} not registered")
     }
 
     override fun executeCommand(command: String) {
-        val cmd = commands[command] ?: return
+        val cmd: Command
+        if (command in customCommand) cmd = commandMap[customCommand[command]]!!
+        else if (command in commands) cmd = commands[command]!!
+        else return
         try {
             cmd.execute()
             commandHandlers[cmd]!!.forEach { it() }
@@ -115,4 +140,6 @@ class CommandManagerImpl: CommandManager {
             e.printStackTrace()
         }
     }
+
+
 }
