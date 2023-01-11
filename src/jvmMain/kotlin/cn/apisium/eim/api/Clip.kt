@@ -9,7 +9,6 @@ import cn.apisium.eim.api.processor.Track
 import cn.apisium.eim.data.midi.MidiNoteRecorder
 import cn.apisium.eim.data.midi.NoteMessageList
 import cn.apisium.eim.utils.IManualState
-import cn.apisium.eim.utils.audiosources.ResampledAudioSource
 import cn.apisium.eim.utils.randomId
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.core.JsonGenerator
@@ -41,7 +40,7 @@ interface ClipFactory<T: Clip> {
     fun save(clip: T, path: String) {
         jacksonObjectMapper().writerWithDefaultPrettyPrinter().writeValue(File("$path.json"), clip)
     }
-    fun getEditor(clip: TrackClip<T>, track: Track): ClipEditor
+    fun getEditor(clip: TrackClip<T>, track: Track): ClipEditor?
     @Composable
     fun playlistContent(clip: T, track: Track, contentColor: Color, trackHeight: Dp, noteWidth: MutableState<Dp>)
 }

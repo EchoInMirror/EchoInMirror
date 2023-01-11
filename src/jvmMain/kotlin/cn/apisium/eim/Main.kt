@@ -20,22 +20,6 @@ fun main() {
     createDirectories()
     Runtime.getRuntime().addShutdownHook(Thread(EchoInMirror.windowManager::closeMainWindow))
 
-//    runBlocking {
-//        println("start render")
-//        val renderer = RendererImpl(EchoInMirror.bus)
-//        renderer.start(
-//            0,
-//            1024,
-//            EchoInMirror.currentPosition.sampleRate,
-//            EchoInMirror.currentPosition.ppq,
-//            EchoInMirror.currentPosition.bpm,
-//            File("aa.wav"),
-//            AudioFileFormat.Type.WAVE
-//        ) {
-//            println(it)
-//        }
-//    }
-
     if (!File("test_project").exists()) File("test_project").mkdir()
     EchoInMirror.windowManager.openProject(Paths.get("test_project"))
     application {

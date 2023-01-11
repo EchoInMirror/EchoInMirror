@@ -22,6 +22,7 @@ import cn.apisium.eim.api.processor.Track
 import cn.apisium.eim.components.*
 import cn.apisium.eim.components.silder.Slider
 import cn.apisium.eim.utils.toOnSurfaceColor
+import cn.apisium.eim.window.panels.playlist.noteWidthSliderRange
 import kotlin.math.roundToInt
 
 private fun dfsTrackIndex(track: Track, target: Track, index: String): String? {
@@ -77,7 +78,7 @@ internal fun EditorControls(clip: MidiClip) {
         }
     }
     Column(Modifier.padding(10.dp)) {
-        Slider(noteWidth.value.value / 0.4f, { noteWidth.value = 0.4.dp * it }, valueRange = 0.15f..8f)
+        Slider(noteWidth.value.value / 0.4f, { noteWidth.value = 0.4.dp * it }, valueRange = noteWidthSliderRange)
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("试听音符", Modifier.weight(1f), style = MaterialTheme.typography.labelLarge)
             Checkbox(playOnEdit, { playOnEdit = !playOnEdit })

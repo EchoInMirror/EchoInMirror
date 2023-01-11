@@ -79,4 +79,4 @@ class EIMOutputStream(private val isBigEndian: Boolean, stream: OutputStream): B
 }
 
 val AudioInputStream.samplesCount get() = if (format.frameSize == -1 || frameLength == -1L) -1L
-    else frameLength / (format.sampleSizeInBits / 16)
+    else frameLength / (format.sampleSizeInBits / 8 * format.channels)

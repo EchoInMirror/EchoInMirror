@@ -72,7 +72,7 @@ internal fun binarySearchTrackByHeight(trackHeights: ArrayList<TrackToHeight>, y
 private suspend fun AwaitPointerEventScope.handleDrag(track: Track, parentTrack: Track, isDragging: MutableState<Boolean>) {
     val down = awaitFirstDownOnPass(PointerEventPass.Final, false)
     awaitPointerSlopOrCancellation(down.id, down.type, triggerOnMainAxisSlop = false) { change, _ ->
-        // val trackHeights = getAllTrackHeights(trackHeight.toPx(), density)
+        trackHeights = getAllTrackHeights(trackHeight.toPx(), density)
         isDragging.value = true
         var lastTrack: Track? = null
         var lastFlags: TrackMoveFlags? = null
