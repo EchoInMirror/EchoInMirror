@@ -59,8 +59,8 @@ class DefaultFileAudioSource(override val file: String) : FileAudioSource {
         var consumed = 0
         if (isFlac) {
             if ((lastPos + buffers[0].size - start).absoluteValue > 4) {
-                buffer.empty()
                 flacDecoder.seek(start)
+                buffer.empty()
             }
             readFromByteArray(buffers, this::readFlac)
             consumed = buffers[0].size
@@ -102,16 +102,11 @@ class DefaultFileAudioSource(override val file: String) : FileAudioSource {
             var thisLen = len2
             if (thisLen > buffer.available) thisLen = buffer.available
             if (thisLen < frameSize) {
-                if (flacDecoder.isEOF) {
-                    buffer.isEOF = true
-                } else {
-                    flacDecoder.readNextFrame()?.let {
-                        val data = flacDecoder.decodeFrame(it, pcmData)
-                        pcmData = data
-                        buffer.resize(data.len * 2)
-                        buffer.put(data.data, 0, data.len)
-                    }
-                }
+                val frame = flacDecoder.readNextFrame() ?: break
+                val data = flacDecoder.decodeFrame(frame, pcmData)
+                pcmData = data
+                buffer.resize(data.len * 2)
+                buffer.put(data.data, 0, data.len)
 
                 if (buffer.available < frameSize) break
                 continue
@@ -124,7 +119,7 @@ class DefaultFileAudioSource(override val file: String) : FileAudioSource {
             len2 -= thisBytesRead
             bytesRead += thisBytesRead
         }
-        return if (bytesRead == 0 && buffer.isEOF) -1 else bytesRead
+        return if (bytesRead < 1) -1 else bytesRead
     }
 
     private inline fun readFromByteArray(buffers: Array<FloatArray>, block: (Int, Int) -> Int) {

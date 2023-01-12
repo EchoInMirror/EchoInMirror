@@ -1,5 +1,6 @@
 package cn.apisium.eim.api
 
+import androidx.compose.foundation.ScrollState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
@@ -9,6 +10,7 @@ import cn.apisium.eim.api.processor.Track
 import cn.apisium.eim.data.midi.MidiNoteRecorder
 import cn.apisium.eim.data.midi.NoteMessageList
 import cn.apisium.eim.utils.IManualState
+import cn.apisium.eim.utils.datastructure.AudioThumbnail
 import cn.apisium.eim.utils.randomId
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.core.JsonGenerator
@@ -42,7 +44,9 @@ interface ClipFactory<T: Clip> {
     }
     fun getEditor(clip: TrackClip<T>, track: Track): ClipEditor?
     @Composable
-    fun playlistContent(clip: T, track: Track, contentColor: Color, trackHeight: Dp, noteWidth: MutableState<Dp>)
+    fun playlistContent(clip: TrackClip<T>, track: Track, contentColor: Color, trackHeight: Dp,
+                        noteWidth: MutableState<Dp>, contentWidth: Dp, scrollState: ScrollState
+    )
 }
 
 interface ClipManager {
@@ -55,7 +59,7 @@ interface ClipManager {
     @Throws(NoSuchFactoryException::class)
     suspend fun createClip(path: String, id: String): Clip
     fun <T: Clip> createTrackClip(clip: T, time: Int = 0, duration: Int = clip.defaultDuration.coerceAtLeast(0),
-                                  track: Track? = null): TrackClip<T>
+                                  start: Int = 0, track: Track? = null): TrackClip<T>
     suspend fun createTrackClip(path: String, json: JsonNode): TrackClip<Clip>
 }
 
@@ -75,7 +79,8 @@ interface MidiClip : Clip {
     val notes: NoteMessageList
 }
 interface AudioClip : Clip {
-    var audioSource: ResampledAudioSource
+    val audioSource: ResampledAudioSource
+    val thumbnail: AudioThumbnail
 }
 
 abstract class AbstractClip<T: Clip>(json: JsonNode?, override val factory: ClipFactory<T>) : Clip {
@@ -89,6 +94,7 @@ abstract class AbstractClip<T: Clip>(json: JsonNode?, override val factory: Clip
 interface TrackClip<T: Clip> {
     var time: Int
     var duration: Int
+    var start: Int
     @get:JsonSerialize(using = ClipIdSerializer::class)
     val clip: T
     @get:JsonIgnore

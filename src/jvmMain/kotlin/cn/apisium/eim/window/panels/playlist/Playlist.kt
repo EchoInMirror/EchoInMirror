@@ -37,6 +37,7 @@ enum class EditAction {
 var noteWidth = mutableStateOf(0.2.dp)
 var trackHeight by mutableStateOf(70.dp)
 val verticalScrollState = ScrollState(0)
+var contentWidth by mutableStateOf(0.dp)
 val horizontalScrollState = ScrollState(0).apply {
     openMaxValue = (noteWidth.value * EchoInMirror.currentPosition.projectDisplayPPQ).value.toInt()
 }
@@ -90,7 +91,6 @@ fun Playlist() {
         }
         Box(Modifier.fillMaxSize()) {
             Column {
-                var contentWidth by remember { mutableStateOf(0.dp) }
                 val localDensity = LocalDensity.current
                 Timeline(Modifier.zIndex(3f), noteWidth, horizontalScrollState, EchoInMirror.currentPosition.projectRange) {
                     EchoInMirror.currentPosition.projectRange = it
@@ -100,12 +100,13 @@ fun Playlist() {
                     .onGloballyPositioned { with(localDensity) { contentWidth = it.size.width.toDp() } }
                 ) {
                     EditorGrid(noteWidth, horizontalScrollState, EchoInMirror.currentPosition.projectRange)
-                    val width = noteWidth.value * EchoInMirror.currentPosition.projectDisplayPPQ
+                    val width = (noteWidth.value * EchoInMirror.currentPosition.projectDisplayPPQ)
+                        .coerceAtLeast(contentWidth)
                     remember(width, localDensity) {
                         with (localDensity) { horizontalScrollState.openMaxValue = width.toPx().toInt() }
                     }
                     Column(Modifier.horizontalScroll(horizontalScrollState).verticalScroll(verticalScrollState)
-                        .width(width)) {
+                        .width(width).fillMaxSize()) {
                         Divider()
                         var i = 0
                         EchoInMirror.bus!!.subTracks.forEach {

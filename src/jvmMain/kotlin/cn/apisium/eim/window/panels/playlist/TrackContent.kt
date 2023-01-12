@@ -145,7 +145,6 @@ private suspend fun AwaitPointerEventScope.handleDragEvent(clip: TrackClip<*>, i
                     it.consume()
                 }
                 if (deltaX != 0) {
-                    println(deltaX)
                     action = EditAction.NONE
                     val x = deltaX
                     deltaX = 0
@@ -170,6 +169,7 @@ internal fun TrackContent(track: Track, index: Int): Int {
                     EchoInMirror.clipManager.defaultMidiClipFactory.createClip(),
                     (it.x / noteWidth.value.toPx()).fitInUnit(len),
                     len,
+                    0,
                     track
                 )
                 doClipsAmountAction(listOf(clip), false)
@@ -218,9 +218,9 @@ internal fun TrackContent(track: Track, index: Int): Int {
                                     .pointerHoverIcon(action.toPointerIcon(PointerIconDefaults.Hand))
                             ) {
                                 @Suppress("TYPE_MISMATCH")
-                                it.clip.factory.playlistContent(it.clip, track,
+                                it.clip.factory.playlistContent(it, track,
                                     trackColor.toOnSurfaceColor().copy(animateFloatAsState(if (isSelected) 1F else 0.7F).value),
-                                    trackHeight, noteWidth
+                                    trackHeight, noteWidth, contentWidth, horizontalScrollState
                                 )
                             }
                             Spacer(RESIZE_HAND_MODIFIER)

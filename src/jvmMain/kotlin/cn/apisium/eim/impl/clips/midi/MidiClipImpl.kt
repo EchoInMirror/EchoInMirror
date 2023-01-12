@@ -1,5 +1,6 @@
 package cn.apisium.eim.impl.clips.midi
 
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
@@ -82,10 +83,11 @@ class MidiClipFactoryImpl : ClipFactory<MidiClip> {
     }
 
     @Composable
-    override fun playlistContent(clip: MidiClip, track: Track, contentColor: Color, trackHeight: Dp, noteWidth: MutableState<Dp>) {
+    override fun playlistContent(clip: TrackClip<MidiClip>, track: Track, contentColor: Color, trackHeight: Dp,
+                                 noteWidth: MutableState<Dp>, contentWidth: Dp, scrollState: ScrollState) {
         val height = (trackHeight / 128).coerceAtLeast(0.5.dp)
-        clip.notes.read()
-        clip.notes.forEach {
+        clip.clip.notes.read()
+        clip.clip.notes.forEach {
             Box(
                 Modifier.size(noteWidth.value * it.duration, height)
                 .absoluteOffset(noteWidth.value * it.time, trackHeight - trackHeight / 128 * it.note)
