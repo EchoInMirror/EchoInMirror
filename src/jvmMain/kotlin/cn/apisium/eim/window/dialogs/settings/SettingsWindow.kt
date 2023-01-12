@@ -32,7 +32,7 @@ private object AudioSettings : Tab {
     }
 }
 
-val settingsTabs = mutableStateListOf(NativeAudioPluginSettings, AudioSettings, AboutPanel, ShortcutKeySettings)
+val settingsTabs = mutableStateListOf(NativeAudioPluginSettings, AudioSettings, ShortcutKeySettings, AboutPanel)
 private fun closeSettingWindow() {
     EchoInMirror.windowManager.dialogs[SettingsWindow] = false
 }

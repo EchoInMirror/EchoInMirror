@@ -67,7 +67,6 @@ fun Timeline(modifier: Modifier = Modifier, noteWidth: MutableState<Dp>, scrollS
         Canvas(Modifier.fillMaxSize().pointerInput(Unit) {
             forEachGesture {
                 awaitPointerEventScope {
-                    val noteWidthPx = noteWidth.value.toPx()
                     var event: PointerEvent
                     do {
                         event = awaitPointerEvent(PointerEventPass.Main)
@@ -75,6 +74,7 @@ fun Timeline(modifier: Modifier = Modifier, noteWidth: MutableState<Dp>, scrollS
                         if (range0 != null) when (event.type) {
                             PointerEventType.Enter, PointerEventType.Move -> {
                                 val x = event.x + scrollState.value - offsetX.toPx()
+                                val noteWidthPx = noteWidth.value.toPx()
                                 val start = range0.first * noteWidthPx
                                 val end = range0.last * noteWidthPx
                                 isInRange = x in (start - 2)..(start + 2) || x in (end - 2)..(end + 2)
@@ -91,11 +91,11 @@ fun Timeline(modifier: Modifier = Modifier, noteWidth: MutableState<Dp>, scrollS
                             { change, _ -> change.consume() }
                     } while (drag != null && !drag.isConsumed)
                     if (obj[0] != null && event.buttons.isSecondaryPressed) isInRange = true
-                    calcDrag(down.position.x + scrollState.value - offsetX.toPx(), noteWidthPx,
+                    calcDrag(down.position.x + scrollState.value - offsetX.toPx(), noteWidth.value.toPx(),
                         if (isInRange) obj[0] else null, onRangeChange)
                     if (drag != null) {
                         !drag(drag.id) {
-                            calcDrag(it.position.x + scrollState.value - offsetX.toPx(), noteWidthPx,
+                            calcDrag(it.position.x + scrollState.value - offsetX.toPx(), noteWidth.value.toPx(),
                                 if (isInRange) range else null, onRangeChange)
                             it.consume()
                         }
@@ -115,11 +115,14 @@ fun Timeline(modifier: Modifier = Modifier, noteWidth: MutableState<Dp>, scrollS
             val endBar = ((scrollState.value + size.width - offsetXValue) / barWidth).toInt()
             scrollState.maxValue // mark as read state
 
+            val shouldSkipBars = noteWidth.value.value < 0.065F
+
             for (i in startBar..endBar) {
                 val x = i * barWidth - scrollState.value
                 if (x < 0) continue
                 drawLine(outlineColor, Offset(offsetXValue + x, 26f),
                     Offset(offsetXValue + x, size.height), 1F)
+                if (shouldSkipBars && i % 4 != 0) continue
                 val result = textMeasurer.measure(AnnotatedString("${i + 1}", if (i % 4 == 0) boldText else normalText, BOTTOM),
                     maxLines = 1)
                 drawText(result, topLeft = Offset(offsetXValue + x +

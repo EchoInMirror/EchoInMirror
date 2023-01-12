@@ -1,10 +1,7 @@
 package cn.apisium.eim.components
 
 import androidx.compose.foundation.*
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -12,7 +9,6 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerIconDefaults
 import androidx.compose.ui.input.pointer.pointerHoverIcon
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -48,7 +44,6 @@ fun MenuItem(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Menu(
     menuItems: @Composable (closeDialog: () -> Unit) -> Unit,
@@ -66,10 +61,6 @@ fun Menu(
             }
         }
     }) {
-        TextFieldDefaults.TextFieldDecorationBox("", content, true,
-            singleLine = true,
-            visualTransformation = VisualTransformation.None,
-            interactionSource = remember { MutableInteractionSource() },
-            trailingIcon = { Icon(Icons.Filled.ExpandMore, null, Modifier.padding(horizontal = 8.dp)) })
+        ReadonlyTextField(content = content)
     }
 }

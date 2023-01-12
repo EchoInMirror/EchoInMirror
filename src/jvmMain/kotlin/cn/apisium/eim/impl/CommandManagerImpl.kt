@@ -9,8 +9,8 @@ import cn.apisium.eim.api.*
 import cn.apisium.eim.commands.*
 import cn.apisium.eim.data.midi.getMidiEvents
 import cn.apisium.eim.data.midi.getNoteMessages
-import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 //import cn.apisium.eim.api.processor.NativeAudioPluginDescription
 //import cn.apisium.eim.impl.processor.nativeAudioPluginManager
 import kotlinx.coroutines.*
@@ -23,7 +23,7 @@ class CommandManagerImpl : CommandManager {
     override val commands = mutableMapOf<String, Command>()
     val commandMap = mutableMapOf<String, Command>()
     var customCommand = mutableMapOf<String, String>()
-    val customShortcutKeyPath = ROOT_PATH.resolve("shortcutKey.json")
+    private val customShortcutKeyPath = ROOT_PATH.resolve("shortcutKey.json")
     private val commandHandlers = mutableMapOf<Command, MutableSet<() -> Unit>>()
 
     init {
@@ -89,36 +89,18 @@ class CommandManagerImpl : CommandManager {
                 }
             }
         })
+
         if (customShortcutKeyPath.exists()) {
-            val typeRef = object : TypeReference<MutableMap<String, String>>() {}
-            customCommand = ObjectMapper().readValue(
-                customShortcutKeyPath.toFile(),
-                typeRef
-            )
+            customCommand = ObjectMapper().readValue(customShortcutKeyPath.toFile())
         }
     }
 
-    override fun registerCommand(command: Command) {
-        var hasCtrl = false
-        var hasShift = false
-        var hasAlt = false
-        var hasMeta = false
-        var keys = ""
-        command.keyBindings.forEach {
-            when (it) {
-                Key.CtrlLeft -> hasCtrl = true
-                Key.ShiftLeft -> hasShift = true
-                Key.AltLeft -> hasAlt = true
-                Key.MetaLeft -> hasMeta = true
-                else -> keys += "${it.keyCode} "
-            }
-        }
+    fun saveCustomShortcutKeys() {
+        ObjectMapper().writerWithDefaultPrettyPrinter().writeValue(customShortcutKeyPath.toFile(), customCommand)
+    }
 
-        if (hasCtrl) keys = "${Key.CtrlLeft.keyCode} $keys"
-        if (hasShift) keys = "${Key.ShiftLeft.keyCode} $keys"
-        if (hasAlt) keys = "${Key.AltLeft.keyCode} $keys"
-        if (hasMeta) keys = "${Key.MetaLeft.keyCode} $keys"
-        commands[keys.trim()] = command
+    override fun registerCommand(command: Command) {
+        commands[command.keyBindings.getKeys()] = command
         commandMap[command.name] = command
         commandHandlers[command] = hashSetOf()
     }
@@ -129,10 +111,7 @@ class CommandManagerImpl : CommandManager {
     }
 
     override fun executeCommand(command: String) {
-        val cmd: Command
-        if (command in customCommand) cmd = commandMap[customCommand[command]]!!
-        else if (command in commands) cmd = commands[command]!!
-        else return
+        val cmd = commandMap[customCommand[command]] ?: commands[command] ?: return
         try {
             cmd.execute()
             commandHandlers[cmd]!!.forEach { it() }
@@ -140,6 +119,4 @@ class CommandManagerImpl : CommandManager {
             e.printStackTrace()
         }
     }
-
-
 }

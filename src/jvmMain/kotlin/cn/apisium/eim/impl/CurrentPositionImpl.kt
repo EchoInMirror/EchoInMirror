@@ -18,7 +18,7 @@ class CurrentPositionImpl: CurrentPosition {
     override var timeSigNumerator by mutableStateOf(4)
     override var timeSigDenominator by mutableStateOf(4)
     override var loopingRange by mutableStateOf(0..0)
-    override var projectRange by mutableStateOf(0..ppq * timeSigNumerator * 16)
+    override var projectRange by mutableStateOf(0..ppq * timeSigNumerator * 96)
     override val ppqCountOfBlock get() = (bufferSize / sampleRate / 60.0 * bpm * ppq).toInt()
 
     override var isLooping by mutableStateOf(false)

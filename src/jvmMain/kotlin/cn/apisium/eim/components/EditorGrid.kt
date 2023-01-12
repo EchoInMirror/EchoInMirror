@@ -22,6 +22,7 @@ fun EditorGrid(
     val beatsOutlineColor = MaterialTheme.colorScheme.surfaceVariant
     val stepsOutlineColor = beatsOutlineColor.copy(0.5F)
     val barsOutlineColor = MaterialTheme.colorScheme.outlineVariant
+    val eightBarsOutlineColor = MaterialTheme.colorScheme.outline.copy(0.7F)
     val timeSigDenominator = EchoInMirror.currentPosition.timeSigDenominator
     val timeSigNumerator = EchoInMirror.currentPosition.timeSigNumerator
     val ppq = EchoInMirror.currentPosition.ppq
@@ -45,14 +46,18 @@ fun EditorGrid(
         var horizontalDrawWidth = if (drawBeats) beatsWidth else beatsWidth * timeSigNumerator
         var highlightBarsWidth = if (drawBeats) timeSigDenominator else timeSigDenominator * timeSigNumerator
         val highlightStepsWidth = if (drawSteps) timeSigNumerator else 1
+        var eightBarsWidth = 8
         if (drawSteps) {
             horizontalDrawWidth /= timeSigNumerator
             highlightBarsWidth *= timeSigNumerator
-        }
+            eightBarsWidth = highlightBarsWidth * 8
+        } else if (drawBeats) eightBarsWidth = highlightBarsWidth * 8
         for (i in (horizontalScrollValue / horizontalDrawWidth).toInt()..
                 ((horizontalScrollValue + size.width) / horizontalDrawWidth).toInt()) {
             val x = i * horizontalDrawWidth - horizontalScrollState.value
-            drawLine(if (i % highlightBarsWidth == 0) barsOutlineColor else
+            drawLine(if (i % highlightBarsWidth == 0) {
+                if (i % eightBarsWidth == 0) eightBarsOutlineColor else barsOutlineColor
+            } else
                 if (i % highlightStepsWidth == 0) beatsOutlineColor else stepsOutlineColor, Offset(x, 0F),
                 Offset(x, size.height), 1F)
         }

@@ -1,10 +1,14 @@
 package cn.apisium.eim.components
 
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -90,3 +94,16 @@ fun CustomTextField(
             interactionSource, isError, label, placeholder, leadingIcon, trailingIcon, supportingText, shape, colors, paddingValues)
         }
     }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ReadonlyTextField(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    Box(modifier) {
+        TextFieldDefaults.TextFieldDecorationBox("", content, true,
+            singleLine = true,
+            visualTransformation = VisualTransformation.None,
+            interactionSource = remember { MutableInteractionSource() },
+            trailingIcon = { Icon(Icons.Filled.ExpandMore, null, modifier.padding(horizontal = 8.dp)) }
+        )
+    }
+}

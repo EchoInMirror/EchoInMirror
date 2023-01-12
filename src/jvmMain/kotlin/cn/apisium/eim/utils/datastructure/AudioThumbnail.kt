@@ -3,17 +3,21 @@ package cn.apisium.eim.utils.datastructure
 import cn.apisium.eim.api.AudioSource
 import kotlin.math.ceil
 import kotlin.math.roundToInt
+
+private const val DEFAULT_SAMPLES_PRE_THUMB_SAMPLE = 64
+
 class AudioThumbnail(
     val channels: Int,
     @Suppress("MemberVisibilityCanBePrivate") val lengthInSamples: Long,
     val sampleRate: Float,
-    val samplesPerThumbSample: Int = 512
+    val samplesPerThumbSample: Int = DEFAULT_SAMPLES_PRE_THUMB_SAMPLE
 ) {
-    val size = ceil(lengthInSamples / samplesPerThumbSample.toDouble()).toInt()
+    val size = ceil(lengthInSamples / samplesPerThumbSample.coerceAtLeast(DEFAULT_SAMPLES_PRE_THUMB_SAMPLE).toDouble()).toInt()
     private val minTree = Array(channels) { ByteArray(size * 4 + 1) }
     private val maxTree = Array(channels) { ByteArray(size * 4 + 1) }
 
-    constructor(source: AudioSource, samplesPerThumbSample: Int = 64): this(source.channels, source.length, source.sampleRate, samplesPerThumbSample) {
+    constructor(source: AudioSource, samplesPerThumbSample: Int = DEFAULT_SAMPLES_PRE_THUMB_SAMPLE):
+            this(source.channels, source.length, source.sampleRate, samplesPerThumbSample) {
         val buffers = Array(channels) { FloatArray(this.samplesPerThumbSample) }
         var pos = 0L
         var i = 1

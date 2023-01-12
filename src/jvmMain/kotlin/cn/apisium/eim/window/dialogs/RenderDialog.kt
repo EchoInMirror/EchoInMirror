@@ -25,7 +25,7 @@ private fun closeQuickLoadWindow() {
     EchoInMirror.windowManager.dialogs[ExportDialog] = false
 }
 
-private fun formateSecondTime(timeInSecond: Float): String {
+private fun formatSecondTime(timeInSecond: Float): String {
     return "${(timeInSecond / 60).toInt().toString().padStart(2, '0')}:${
         (timeInSecond % 60).toInt().toString().padStart(2, '0')
     }"//:${((timeInSecond * 1000) % 1000).toInt().toString().padStart(3, '0')}
@@ -204,11 +204,10 @@ val ExportDialog = @Composable {
                         var renderBlockSize: Int
                         if (isRendering) {
                             Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-
-                                Text("已用时: ${formateSecondTime(renderTimeInSecond)}")
-                                Text("剩余: ${formateSecondTime(timeInSecond * (1 - renderProcess) / renderRate)}")
-                                Text("已渲染: ${formateSecondTime(timeInSecond * renderProcess)}")
-                                Text("%.1f倍快于实时".format(renderRate))
+                                Text("已用时: ${formatSecondTime(renderTimeInSecond)}")
+                                Text("剩余: ${formatSecondTime(timeInSecond * (1 - renderProcess) / renderRate)}")
+                                Text("已渲染: ${formatSecondTime(timeInSecond * renderProcess)}")
+                                Text("%.1f 倍快于实时".format(renderRate))
                                 Text("${(renderProcess * 100).toInt()}%")
                                 Box(Modifier.padding(horizontal = 20.dp, vertical = 10.dp)) {
                                     LinearProgressIndicator(renderProcess, Modifier.fillMaxWidth())
@@ -251,9 +250,9 @@ val ExportDialog = @Composable {
                                         if (it < 1f) {
                                             renderBlockSize += curposition.bufferSize
                                             if (renderBlockSize >= curposition.sampleRate) {
-                                                val new_t = System.currentTimeMillis()
-                                                renderRate = 1000f / (new_t - lastRenderBlockTime)
-                                                lastRenderBlockTime = new_t
+                                                val newTime = System.currentTimeMillis()
+                                                renderRate = 1000f / (newTime - lastRenderBlockTime)
+                                                lastRenderBlockTime = newTime
                                                 renderBlockSize = 0
                                             }
                                         }

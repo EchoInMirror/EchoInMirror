@@ -18,6 +18,7 @@ import cn.apisium.eim.impl.audiosources.DefaultFileAudioSource
 import cn.apisium.eim.impl.audiosources.DefaultResampledAudioSource
 import cn.apisium.eim.utils.datastructure.AudioThumbnail
 import com.fasterxml.jackson.databind.JsonNode
+import kotlin.math.absoluteValue
 
 class AudioClipImpl(json: JsonNode?, factory: ClipFactory<AudioClip>): AbstractClip<AudioClip>(json, factory), AudioClip {
     private val target = DefaultFileAudioSource("E:\\CloudMusic\\Halozy - Kiss & Crazy (extended mix).flac")
@@ -61,16 +62,16 @@ class AudioClipFactoryImpl: ClipFactory<AudioClip> {
             val endSeconds = curPos.convertPPQToSeconds(endPPQ)
             val widthInPx = (endPPQ - startPPQ) * noteWidthPx.toDouble()
             Canvas(Modifier.fillMaxSize()) {
-                val channelHeight = trackHeight.toPx() / channels
+                val channelHeight = (trackHeight.toPx() - 4) / channels
                 val halfChannelHeight = channelHeight / 2
-                clip.clip.thumbnail.query(widthInPx, startSeconds, endSeconds, 0.5F) { x, ch, min, max ->
-                    val y = channelHeight * ch + halfChannelHeight
+                clip.clip.thumbnail.query(widthInPx, startSeconds, endSeconds, 0.3F) { x, ch, min, max ->
+                    val y = 2 + channelHeight * ch + halfChannelHeight
                     val curX = startPPQ * noteWidthPx + x
                     drawLine(
                         contentColor,
-                        Offset(curX, y - max * halfChannelHeight),
-                        Offset(curX, y - min * halfChannelHeight),
-                        0.5F
+                        Offset(curX, y - max.absoluteValue * halfChannelHeight),
+                        Offset(curX, y + min.absoluteValue * halfChannelHeight),
+                        0.3F
                     )
                 }
             }
