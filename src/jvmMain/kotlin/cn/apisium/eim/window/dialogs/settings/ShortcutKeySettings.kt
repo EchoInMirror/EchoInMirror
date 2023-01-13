@@ -14,10 +14,10 @@ import androidx.compose.ui.input.key.*
 import androidx.compose.ui.unit.dp
 import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.api.Command
+import cn.apisium.eim.api.sortedStrKeys
 import cn.apisium.eim.components.ReadonlyTextField
 import cn.apisium.eim.impl.CommandManagerImpl
 import cn.apisium.eim.utils.clickableWithIcon
-import cn.apisium.eim.utils.mutableStateSetOf
 import java.awt.event.KeyEvent
 
 internal object ShortcutKeySettings : Tab {
@@ -52,7 +52,7 @@ internal object ShortcutKeySettings : Tab {
                 ) {
                     Text(command.displayName, Modifier.weight(1f))
                     var curKey by remember { mutableStateOf(key) }
-                    val keyCompose = remember { mutableStateSetOf<String>().apply { addAll(key.split(" ")) } }
+                    val keyCompose = remember { key.split(" ").toMutableStateList() }
                     val preKeyCompose = remember { mutableStateListOf<String>() }
 
                     fun cancel() {
@@ -65,8 +65,14 @@ internal object ShortcutKeySettings : Tab {
 
                     fun done() {
                         selectKey = ""
+                        keyCompose.sortedStrKeys().apply {
+                            keyCompose.clear()
+                            forEach {
+                                keyCompose.add(it)
+                            }
+                        }
                         val keyStr = keyCompose.joinToString(separator = " ")
-                        if (keyStr in commandManager.commands || keyStr in commandManager.customCommand) {
+                        if (keyStr.isEmpty() || keyStr in commandManager.commands || keyStr in commandManager.customCommand) {
                             cancel()
                             return
                         }
@@ -77,7 +83,7 @@ internal object ShortcutKeySettings : Tab {
                         val commandTar: String
                         if (curKey in commandManager.customCommand) {
                             commandTar = commandManager.customCommand[curKey]!!
-                            commandManager.customCommand.minus(curKey)
+                            commandManager.customCommand -= curKey
                         } else {
                             commandTar = commandManager.commands[curKey]!!.name
                         }
@@ -86,25 +92,37 @@ internal object ShortcutKeySettings : Tab {
                         commandManager.saveCustomShortcutKeys()
                     }
 
-                    ReadonlyTextField(Modifier.clickableWithIcon {
-                        selectKey = curKey
-                        preKeyCompose.clear()
-                        keyCompose.forEach {
-                            preKeyCompose.add(it)
+                    ReadonlyTextField(Modifier
+                        .weight(1f)
+                        .onFocusChanged {
+                            if (!it.isFocused && selectKey == curKey) done()
                         }
-                        keyCompose.clear()
-                    }.onFocusChanged {
-                        if (!it.isFocused && selectKey == curKey) done()
-                    }.onKeyEvent {
-                        if (it.type != KeyEventType.KeyDown || selectKey != curKey) return@onKeyEvent false
+                        .clickableWithIcon {
+                            if (selectKey == curKey) {
+                                done()
+                            } else {
+                                selectKey = curKey
+                                preKeyCompose.clear()
+                                keyCompose.forEach {
+                                    preKeyCompose.add(it)
+                                }
+                                keyCompose.clear()
+                            }
+                        }.onKeyEvent {
+                            if (it.type != KeyEventType.KeyDown || selectKey != curKey) return@onKeyEvent false
 
-                        if (it.key == Key.Escape) cancel()
-                        else keyCompose.add(it.key.keyCode.toString())
-                        true
-                    }) {
+                            if (it.key == Key.Escape) cancel()
+                            else if (it.key == Key.Enter) return@onKeyEvent false
+                            else {
+                                if (it.key.keyCode.toString() !in keyCompose) {
+                                    keyCompose.add(it.key.keyCode.toString())
+                                }
+                            }
+                            true
+                        }) {
                         Text(keyCompose.joinToString(separator = "+") {
                             KeyEvent.getKeyText(Key(it.toLong()).nativeKeyCode)
-                        })
+                        }, Modifier.fillMaxWidth())
                     }
                     Spacer(Modifier.weight(0.5f))
                 }

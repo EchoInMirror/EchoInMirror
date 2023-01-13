@@ -103,7 +103,7 @@ fun ReadonlyTextField(modifier: Modifier = Modifier, content: @Composable () -> 
             singleLine = true,
             visualTransformation = VisualTransformation.None,
             interactionSource = remember { MutableInteractionSource() },
-            trailingIcon = { Icon(Icons.Filled.ExpandMore, null, modifier.padding(horizontal = 8.dp)) }
+            trailingIcon = { Icon(Icons.Filled.ExpandMore, null, Modifier.padding(horizontal = 8.dp)) }
         )
     }
 }

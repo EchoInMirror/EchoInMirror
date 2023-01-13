@@ -49,6 +49,32 @@ fun Collection<Key>.sortedKeys(): List<Key> {
     ret.addAll(list.sortedBy { it.keyCode })
     return ret
 }
+
+@OptIn(ExperimentalComposeUiApi::class)
+fun Collection<String>.sortedStrKeys(): List<String> {
+    var hasCtrl = false
+    var hasShift = false
+    var hasAlt = false
+    var hasMeta = false
+    val list = distinct().filter {
+        when (it) {
+            Key.CtrlLeft.keyCode.toString() -> hasCtrl = true
+            Key.ShiftLeft.keyCode.toString() -> hasShift = true
+            Key.AltLeft.keyCode.toString() -> hasAlt = true
+            Key.MetaLeft.keyCode.toString() -> hasMeta = true
+            else -> return@filter true
+        }
+        return@filter false
+    }
+    val ret = mutableListOf<String>()
+    if (hasCtrl) ret.add(Key.CtrlLeft.keyCode.toString())
+    if (hasShift) ret.add(Key.ShiftLeft.keyCode.toString())
+    if (hasAlt) ret.add(Key.AltLeft.keyCode.toString())
+    if (hasMeta) ret.add(Key.MetaLeft.keyCode.toString())
+    ret.addAll(list.sortedBy { it })
+    return ret
+}
+
 fun Array<Key>.sortedKeys() = toList().sortedKeys()
 fun Collection<Key>.getKeys() = sortedKeys().joinToString(" ") { it.keyCode.toString() }
 fun Array<Key>.getKeys() = sortedKeys().getKeys()
