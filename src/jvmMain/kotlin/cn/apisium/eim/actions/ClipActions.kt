@@ -15,9 +15,9 @@ fun doClipsAmountAction(clips: Collection<TrackClip<*>>, isDelete: Boolean) {
 }
 
 fun doClipsEditActionAction(clips: Collection<TrackClip<*>>, deltaX: Int = 0, deltaDuration: Int = 0,
-                            newTracks: List<Track>? = null) {
-    if (deltaX == 0 && deltaDuration == 0 && newTracks == null) return
-    runBlocking { EchoInMirror.undoManager.execute(ClipsEditAction(clips.toList(), deltaX, deltaDuration, newTracks)) }
+                            deltaStart: Int = 0, newTracks: List<Track>? = null) {
+    if (deltaX == 0 && deltaDuration == 0 && deltaStart == 0 && newTracks == null) return
+    runBlocking { EchoInMirror.undoManager.execute(ClipsEditAction(clips.toList(), deltaX, deltaDuration, deltaStart, newTracks)) }
 }
 
 class ClipsAmountAction(private val clips: Collection<TrackClip<*>>, isDelete: Boolean) :
@@ -53,7 +53,7 @@ class ClipsAmountAction(private val clips: Collection<TrackClip<*>>, isDelete: B
 
 class ClipsEditAction(
     private val clips: Collection<TrackClip<*>>,
-    private val deltaX: Int, private val deltaDuration: Int,
+    private val deltaX: Int, private val deltaDuration: Int, private val deltaStart: Int = 0,
     private val newTracks: List<Track>? = null
 ) : ReversibleAction() {
     override val name = "片段编辑 (${clips.size}个)"
@@ -68,13 +68,16 @@ class ClipsEditAction(
         }
         if (newTracks != null) tracks.addAll(newTracks)
     }
+    @Suppress("DuplicatedCode")
     override suspend fun perform(isForward: Boolean): Boolean {
         if (deltaX != 0 || deltaDuration != 0) {
             val x = if (isForward) deltaX else -deltaX
             val duration = if (isForward) deltaDuration else -deltaDuration
+            val start = if (isForward) deltaStart else -deltaStart
             clips.forEach {
-                it.time += x
-                it.duration += duration
+                if (x != 0) it.time += x
+                if (duration != 0) it.duration += duration
+                if (start != 0) it.start += start
             }
         }
         if (newTracks != null) {

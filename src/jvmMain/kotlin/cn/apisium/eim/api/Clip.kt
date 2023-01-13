@@ -71,7 +71,12 @@ interface Clip {
     val id: String
     @get:JsonSerialize(using = ClipFactoryNameSerializer::class)
     val factory: ClipFactory<*>
+    @get:JsonIgnore
     val defaultDuration: Int
+    @get:JsonIgnore
+    val isExpandable: Boolean
+    @get:JsonIgnore
+    val maxDuration: Int
 }
 
 interface MidiClip : Clip {
@@ -84,6 +89,9 @@ interface AudioClip : Clip {
 
 abstract class AbstractClip<T: Clip>(json: JsonNode?, override val factory: ClipFactory<T>) : Clip {
     override val id = json?.get("id")?.asText() ?: randomId()
+    override val isExpandable = false
+    override val defaultDuration = -1
+    override val maxDuration = -1
 
     override fun toString(): String {
         return "MidiClipImpl(factory=$factory, id='$id')"

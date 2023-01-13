@@ -23,6 +23,7 @@ class AudioClipImpl(json: JsonNode?, factory: ClipFactory<AudioClip>): AbstractC
     override val audioSource: ResampledAudioSource = DefaultResampledAudioSource(target,
         EchoInMirror.currentPosition.sampleRate.toDouble() / target.sampleRate)
     override val defaultDuration get() = EchoInMirror.currentPosition.convertSamplesToPPQ(audioSource.length)
+    override val maxDuration get() = defaultDuration
     override val thumbnail = AudioThumbnail(target)
 }
 

@@ -76,14 +76,23 @@ private suspend fun AwaitPointerEventScope.handleDragEvent(clip: TrackClip<*>, i
         var minClipDuration = Int.MAX_VALUE
         var selectedClipsLeft = Int.MAX_VALUE
         var trackToIndex: HashMap<Track, Int>? = null
+        var allowExpandableLeft = -Int.MAX_VALUE
+        var allowExpandableRight = Int.MAX_VALUE
         if (event.buttons.isPrimaryPressed) {
             val fourDp = 4 * density
-            resizeDirectionRight = change.position.x > size.width - fourDp
-            action = if (change.position.x < fourDp || resizeDirectionRight) {
+            val rdr = change.position.x > size.width - fourDp
+            resizeDirectionRight = rdr
+            action = if (change.position.x < fourDp || rdr) {
                 selectedClips.forEach {
                     val left = it.time
                     if (left < selectedClipsLeft) selectedClipsLeft = left
-                    if (it.duration < minClipDuration) minClipDuration = it.duration
+                    val duration = it.duration
+                    if (!it.clip.isExpandable) {
+                        if (allowExpandableLeft < it.start) allowExpandableLeft = it.start
+                        if (it.clip.maxDuration > 0 && it.clip.maxDuration - duration < allowExpandableRight)
+                            allowExpandableRight = it.clip.maxDuration - duration
+                    }
+                    if (duration < minClipDuration) minClipDuration = duration
                 }
                 EditAction.RESIZE
             } else {
@@ -120,7 +129,7 @@ private suspend fun AwaitPointerEventScope.handleDragEvent(clip: TrackClip<*>, i
                     val x = deltaX
                     deltaY = 0
                     deltaX = 0
-                    doClipsEditActionAction(selectedClips.toList(), x, 0,
+                    doClipsEditActionAction(selectedClips.toList(), x, 0, 0,
                         if (y == 0) null
                         else try {
                             selectedClips.map { trackHeights[trackToIndex!![it.track]!! + y].track }
@@ -139,7 +148,11 @@ private suspend fun AwaitPointerEventScope.handleDragEvent(clip: TrackClip<*>, i
                     var x = ((it.position.x - change.position.x) / noteWidth.value.toPx()).fitInUnit(noteUnit)
                     if (resizeDirectionRight) {
                         if (minClipDuration + x < noteUnit) x = noteUnit - minClipDuration
-                    } else if (x < -selectedClipsLeft) x = -selectedClipsLeft
+                        if (allowExpandableRight < x) x = allowExpandableRight
+                    } else {
+                        if (x < -selectedClipsLeft) x = -selectedClipsLeft
+                        if (-allowExpandableLeft > x) x = -allowExpandableLeft
+                    }
                     if (x != deltaX) deltaX = x
                     it.consume()
                 }
@@ -148,7 +161,7 @@ private suspend fun AwaitPointerEventScope.handleDragEvent(clip: TrackClip<*>, i
                     val x = deltaX
                     deltaX = 0
                     if (resizeDirectionRight) doClipsEditActionAction(selectedClips.toList(), deltaDuration = x)
-                    else doClipsEditActionAction(selectedClips.toList(), x, -x)
+                    else doClipsEditActionAction(selectedClips.toList(), x, -x, x)
                 }
             }
             else -> { }
@@ -196,9 +209,7 @@ internal fun TrackContent(track: Track, index: Int, density: Density): Int {
                                         .height - trackHeights[index].height).toDp()
                                 } else if (action == EditAction.RESIZE) {
                                     if (resizeDirectionRight) clipEndPPQOnMove += deltaX
-                                    else {
-                                        // TODO
-                                    }
+                                    else clipStartPPQOnMove += deltaX
                                 }
                             }
                             val widthInPPQ = clipEndPPQOnMove.toFloat().coerceAtMost(scrollXPPQ + contentPPQ) -
@@ -241,7 +252,9 @@ internal fun TrackContent(track: Track, index: Int, density: Density): Int {
                                             trackColor.toOnSurfaceColor()
                                                 .copy(animateFloatAsState(if (isSelected) 1F else 0.7F).value),
                                             trackHeight, noteWidth,
-                                            (scrollXPPQ - clipStartPPQOnMove + it.start).coerceAtLeast(0F),
+                                            (scrollXPPQ - clipStartPPQOnMove).coerceAtLeast(0F) +
+                                                    (it.start + if (isSelected && action == EditAction.RESIZE &&
+                                                        !resizeDirectionRight) deltaX else 0),
                                             widthInPPQ
                                         )
                                     }

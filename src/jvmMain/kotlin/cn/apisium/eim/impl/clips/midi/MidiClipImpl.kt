@@ -17,7 +17,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 
 class MidiClipImpl(json: JsonNode?, factory: ClipFactory<MidiClip>) : AbstractClip<MidiClip>(json, factory), MidiClip {
     override val notes = DefaultNoteMessageList()
-    override val defaultDuration = -1
+    override val isExpandable = true
 
     init {
         if (json != null) {
@@ -92,7 +92,7 @@ class MidiClipFactoryImpl : ClipFactory<MidiClip> {
             clip.clip.notes.forEach {
                 val y = trackHeightPx - trackHeightPx / 128 * it.note
                 drawLine(
-                    contentColor, Offset( noteWidthPx * (it.time - startPPQ), y),
+                    contentColor, Offset(noteWidthPx * (it.time - startPPQ), y),
                     Offset(noteWidthPx * (it.time + it.duration - startPPQ), y),
                     height
                 )
