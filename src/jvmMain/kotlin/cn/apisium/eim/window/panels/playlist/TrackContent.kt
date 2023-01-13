@@ -183,28 +183,40 @@ internal fun TrackContent(track: Track, index: Int, density: Density): Int {
                         val scrollXPPQ = horizontalScrollState.value / noteWidth.value.toPx()
                         val contentPPQ = contentWidth.value / noteWidth.value.value
                         if (it.time <= scrollXPPQ + contentPPQ && it.time + it.duration >= scrollXPPQ) {
-                            val endPPQ = (it.time + it.duration).toFloat().coerceAtMost(scrollXPPQ + contentPPQ)
-                            val widthPPQ = (endPPQ - it.time +
-                                    if (isSelected && action == EditAction.RESIZE) {
-                                        if (resizeDirectionRight) deltaX else -deltaX
-                                    } else 0).coerceAtMost(contentPPQ)
+                            val clipStartPPQ = it.time
+                            val clipEndPPQ = clipStartPPQ + it.duration
+                            var clipStartPPQOnMove = clipStartPPQ
+                            var clipEndPPQOnMove = clipEndPPQ
+                            var y = Dp.Zero
+                            if (isSelected) {
+                                if (action == EditAction.MOVE) {
+                                    clipStartPPQOnMove += deltaX
+                                    clipEndPPQOnMove += deltaX
+                                    if (deltaY != 0) y = (trackHeights[(deltaY + index).coerceAtMost(trackHeights.size - 1)]
+                                        .height - trackHeights[index].height).toDp()
+                                } else if (action == EditAction.RESIZE) {
+                                    if (resizeDirectionRight) clipEndPPQOnMove += deltaX
+                                    else {
+                                        // TODO
+                                    }
+                                }
+                            }
+                            val widthInPPQ = clipEndPPQOnMove.toFloat().coerceAtMost(scrollXPPQ + contentPPQ) -
+                                    clipStartPPQOnMove.toFloat().coerceAtLeast(scrollXPPQ)
                             Box(Modifier
-                                .absoluteOffset(noteWidth.value * (it.time - scrollXPPQ).coerceAtLeast(0F))
-                                .size(noteWidth.value * widthPPQ, trackHeight)
+                                .absoluteOffset(noteWidth.value * (clipStartPPQ - scrollXPPQ).coerceAtLeast(0F))
                                 .pointerInput(it, track, index) {
                                     forEachGesture { awaitPointerEventScope { handleDragEvent(it, index, track) } }
                                 }
+                                .size(noteWidth.value * widthInPPQ, trackHeight)
                                 .run {
-                                    var x = 0
-                                    var y = Dp.Zero
-                                    if (isSelected) {
-                                        if (action == EditAction.MOVE) {
-                                            x += deltaX
-                                            if (deltaY != 0) y = (trackHeights[(deltaY + index).coerceAtMost(trackHeights.size - 1)]
-                                                .height - trackHeights[index].height).toDp()
-                                        } else if (action == EditAction.RESIZE && !resizeDirectionRight) x += deltaX
-                                    }
-                                    absoluteOffset(noteWidth.value * x, y)
+                                    if (clipStartPPQ != clipStartPPQOnMove) {
+                                        absoluteOffset(noteWidth.value * (
+                                                if (clipStartPPQOnMove < scrollXPPQ) {
+                                                    if (deltaX < 0) -(clipStartPPQ - scrollXPPQ).coerceAtLeast(0F) else 0F
+                                                } else clipStartPPQOnMove - clipStartPPQ.toFloat().coerceAtLeast(scrollXPPQ)), y)
+                                    } else if (y.value != 0F) absoluteOffset(Dp.Zero, y)
+                                    else this
                                 }
                             ) {
                                 if (!deletionList.contains(it)) {
@@ -229,8 +241,8 @@ internal fun TrackContent(track: Track, index: Int, density: Density): Int {
                                             trackColor.toOnSurfaceColor()
                                                 .copy(animateFloatAsState(if (isSelected) 1F else 0.7F).value),
                                             trackHeight, noteWidth,
-                                            (scrollXPPQ - it.time).coerceAtLeast(0F),
-                                            widthPPQ
+                                            (scrollXPPQ - clipStartPPQOnMove + it.start).coerceAtLeast(0F),
+                                            widthInPPQ
                                         )
                                     }
                                     Spacer(RESIZE_HAND_MODIFIER)

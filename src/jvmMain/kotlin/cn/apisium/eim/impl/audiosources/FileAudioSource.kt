@@ -59,7 +59,7 @@ class DefaultFileAudioSource(override val file: String) : FileAudioSource {
         var consumed = 0
         if (isFlac) {
             if ((lastPos + buffers[0].size - start).absoluteValue > 4) {
-                flacDecoder.seek(start)
+                flacDecoder.seek(start.coerceIn(0, length))
                 buffer.empty()
             }
             readFromByteArray(buffers, this::readFlac)

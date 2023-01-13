@@ -51,17 +51,31 @@ class AudioClipFactoryImpl: ClipFactory<AudioClip> {
         val channels = clip.clip.thumbnail.channels
         val startSeconds = curPos.convertPPQToSeconds(startPPQ)
         val endSeconds = curPos.convertPPQToSeconds(startPPQ + widthPPQ)
+        val isDrawMinAndMax = noteWidth.value.value < 1
         Canvas(Modifier.fillMaxSize()) {
             val channelHeight = (trackHeight.toPx() - 4) / channels
             val halfChannelHeight = channelHeight / 2
-            clip.clip.thumbnail.query(size.width.toDouble(), startSeconds, endSeconds, STEP_IN_PX) { x, ch, min, max ->
-                val y = 2 + channelHeight * ch + halfChannelHeight
-                drawLine(
-                    contentColor,
-                    Offset(x, y - max.absoluteValue * halfChannelHeight),
-                    Offset(x, y + min.absoluteValue * halfChannelHeight),
-                    STEP_IN_PX
-                )
+            if (isDrawMinAndMax) {
+                clip.clip.thumbnail.query(size.width.toDouble(), startSeconds, endSeconds, 0.5F) { x, ch, min, max ->
+                    val y = 2 + channelHeight * ch + halfChannelHeight
+                    drawLine(
+                        contentColor,
+                        Offset(x, y - max.absoluteValue * halfChannelHeight),
+                        Offset(x, y + min.absoluteValue * halfChannelHeight),
+                        0.5F
+                    )
+                }
+            } else {
+                clip.clip.thumbnail.query(size.width.toDouble(), startSeconds, endSeconds, STEP_IN_PX) { x, ch, min, max ->
+                    val y = 2 + channelHeight * ch + halfChannelHeight
+                    val v = if (max.absoluteValue > min.absoluteValue) max else min
+                    drawLine(
+                        contentColor,
+                        Offset(x, y),
+                        Offset(x, y - v * halfChannelHeight),
+                        STEP_IN_PX
+                    )
+                }
             }
         }
     }

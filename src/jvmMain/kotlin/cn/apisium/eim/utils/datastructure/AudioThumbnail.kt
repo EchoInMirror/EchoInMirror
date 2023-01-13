@@ -4,7 +4,7 @@ import cn.apisium.eim.api.AudioSource
 import kotlin.math.ceil
 import kotlin.math.roundToInt
 
-private const val DEFAULT_SAMPLES_PRE_THUMB_SAMPLE = 64
+private const val DEFAULT_SAMPLES_PRE_THUMB_SAMPLE = 32
 
 class AudioThumbnail(
     val channels: Int,
