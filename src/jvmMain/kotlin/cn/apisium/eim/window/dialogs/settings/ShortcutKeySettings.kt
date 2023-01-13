@@ -14,10 +14,11 @@ import androidx.compose.ui.input.key.*
 import androidx.compose.ui.unit.dp
 import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.api.Command
-import cn.apisium.eim.api.sortedStrKeys
+import cn.apisium.eim.api.sortedKeys
 import cn.apisium.eim.components.ReadonlyTextField
 import cn.apisium.eim.impl.CommandManagerImpl
 import cn.apisium.eim.utils.clickableWithIcon
+import cn.apisium.eim.utils.toMutableStateSet
 import java.awt.event.KeyEvent
 
 internal object ShortcutKeySettings : Tab {
@@ -52,8 +53,8 @@ internal object ShortcutKeySettings : Tab {
                 ) {
                     Text(command.displayName, Modifier.weight(1f))
                     var curKey by remember { mutableStateOf(key) }
-                    val keyCompose = remember { key.split(" ").toMutableStateList() }
-                    val preKeyCompose = remember { mutableStateListOf<String>() }
+                    val keyCompose = remember { key.split(" ").map { Key(it.toLong()) }.toMutableStateSet() }
+                    val preKeyCompose = remember { mutableStateListOf<Key>() }
 
                     fun cancel() {
                         keyCompose.clear()
@@ -65,13 +66,9 @@ internal object ShortcutKeySettings : Tab {
 
                     fun done() {
                         selectKey = ""
-                        keyCompose.sortedStrKeys().apply {
-                            keyCompose.clear()
-                            forEach {
-                                keyCompose.add(it)
-                            }
+                        val keyStr = keyCompose.sortedKeys().joinToString(separator = " ") {
+                            it.keyCode.toString()
                         }
-                        val keyStr = keyCompose.joinToString(separator = " ")
                         if (keyStr.isEmpty() || keyStr in commandManager.commands || keyStr in commandManager.customCommand) {
                             cancel()
                             return
@@ -113,15 +110,11 @@ internal object ShortcutKeySettings : Tab {
 
                             if (it.key == Key.Escape) cancel()
                             else if (it.key == Key.Enter) return@onKeyEvent false
-                            else {
-                                if (it.key.keyCode.toString() !in keyCompose) {
-                                    keyCompose.add(it.key.keyCode.toString())
-                                }
-                            }
+                            else keyCompose.add(it.key)
                             true
                         }) {
-                        Text(keyCompose.joinToString(separator = "+") {
-                            KeyEvent.getKeyText(Key(it.toLong()).nativeKeyCode)
+                        Text(keyCompose.sortedKeys().joinToString(separator = "+") {
+                            KeyEvent.getKeyText(it.nativeKeyCode)
                         }, Modifier.fillMaxWidth())
                     }
                     Spacer(Modifier.weight(0.5f))
