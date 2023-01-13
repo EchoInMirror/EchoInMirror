@@ -1,14 +1,13 @@
 package cn.apisium.eim.impl.clips.midi
 
-import androidx.compose.foundation.ScrollState
-import androidx.compose.foundation.background
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import cn.apisium.eim.api.*
 import cn.apisium.eim.api.processor.Track
 import cn.apisium.eim.data.midi.*
@@ -84,14 +83,20 @@ class MidiClipFactoryImpl : ClipFactory<MidiClip> {
 
     @Composable
     override fun playlistContent(clip: TrackClip<MidiClip>, track: Track, contentColor: Color, trackHeight: Dp,
-                                 noteWidth: MutableState<Dp>, contentWidth: Dp, scrollState: ScrollState) {
-        val height = (trackHeight / 128).coerceAtLeast(0.5.dp)
+                                 noteWidth: MutableState<Dp>, startPPQ: Float, widthPPQ: Float) {
         clip.clip.notes.read()
-        clip.clip.notes.forEach {
-            Box(
-                Modifier.size(noteWidth.value * it.duration, height)
-                .absoluteOffset(noteWidth.value * it.time, trackHeight - trackHeight / 128 * it.note)
-                .background(contentColor))
+        Canvas(Modifier.fillMaxSize()) {
+            val noteWidthPx = noteWidth.value.toPx()
+            val trackHeightPx = trackHeight.toPx()
+            val height = (trackHeightPx / 128).coerceAtLeast(1F)
+            clip.clip.notes.forEach {
+                val y = trackHeightPx - trackHeightPx / 128 * it.note
+                drawLine(
+                    contentColor, Offset( noteWidthPx * (it.time - startPPQ), y),
+                    Offset(noteWidthPx * (it.time + it.duration - startPPQ), y),
+                    height
+                )
+            }
         }
     }
 

@@ -42,7 +42,7 @@ val horizontalScrollState = ScrollState(0).apply {
     openMaxValue = (noteWidth.value * EchoInMirror.currentPosition.projectDisplayPPQ).value.toInt()
 }
 
-val noteWidthRange = 0.02f..3.2f
+val noteWidthRange = 0.02f..5f
 val noteWidthSliderRange = (noteWidthRange.start / 0.4F)..(noteWidthRange.endInclusive / 0.4F)
 fun Density.calcScroll(event: PointerEvent, noteWidth: MutableState<Dp>, horizontalScrollState: ScrollState,
                        coroutineScope: CoroutineScope, onVerticalScroll: (PointerInputChange) -> Unit) {
@@ -105,14 +105,12 @@ fun Playlist() {
                     remember(width, localDensity) {
                         with (localDensity) { horizontalScrollState.openMaxValue = width.toPx().toInt() }
                     }
-                    Column(Modifier.horizontalScroll(horizontalScrollState).verticalScroll(verticalScrollState)
-                        .width(width).fillMaxSize()) {
+                    Column(Modifier.verticalScroll(verticalScrollState).fillMaxSize()) {
                         Divider()
                         var i = 0
                         EchoInMirror.bus!!.subTracks.forEach {
-                            key(it.id) { i += TrackContent(it, i) }
+                            key(it.id) { i += TrackContent(it, i, localDensity) }
                         }
-                        TextButton({ }, Modifier.width(0.dp)) { }
                     }
                     TrackSelection(localDensity)
                     PlayHead(noteWidth, horizontalScrollState, contentWidth)

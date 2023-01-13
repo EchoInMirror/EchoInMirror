@@ -15,7 +15,6 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.*
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -160,7 +159,7 @@ private suspend fun AwaitPointerEventScope.handleDragEvent(clip: TrackClip<*>, i
 @Suppress("DuplicatedCode")
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-internal fun TrackContent(track: Track, index: Int): Int {
+internal fun TrackContent(track: Track, index: Int, density: Density): Int {
     Box(Modifier.fillMaxWidth().height(trackHeight)) {
         Box(Modifier.fillMaxSize().pointerInput(track) {
             detectTapGestures(onDoubleTap = {
@@ -179,52 +178,65 @@ internal fun TrackContent(track: Track, index: Int): Int {
         track.clips.forEach {
             key(it) {
                 Box {
-                    val isSelected = selectedClips.contains(it)
-                    Box(Modifier
-                        .size(noteWidth.value * (it.duration + if (isSelected && action == EditAction.RESIZE) {
-                            if (resizeDirectionRight) deltaX else -deltaX
-                        } else 0), trackHeight)
-                        .absoluteOffset(noteWidth.value * it.time)
-                        .pointerInput(it, track, index) {
-                            forEachGesture { awaitPointerEventScope { handleDragEvent(it, index, track) } }
-                        }
-                        .run {
-                            if (isSelected) {
-                                if (action == EditAction.MOVE) return@run absoluteOffset(noteWidth.value * deltaX,
-                                    if (deltaY == 0) Dp.Zero
-                                    else with(LocalDensity.current) {
-                                        (trackHeights[(deltaY + index).coerceAtMost(trackHeights.size - 1)]
-                                            .height - trackHeights[index].height).toDp()
+                    with (density) {
+                        val isSelected = selectedClips.contains(it)
+                        val scrollXPPQ = horizontalScrollState.value / noteWidth.value.toPx()
+                        val contentPPQ = contentWidth.value / noteWidth.value.value
+                        if (it.time <= scrollXPPQ + contentPPQ && it.time + it.duration >= scrollXPPQ) {
+                            val endPPQ = (it.time + it.duration).toFloat().coerceAtMost(scrollXPPQ + contentPPQ)
+                            val widthPPQ = (endPPQ - it.time +
+                                    if (isSelected && action == EditAction.RESIZE) {
+                                        if (resizeDirectionRight) deltaX else -deltaX
+                                    } else 0).coerceAtMost(contentPPQ)
+                            Box(Modifier
+                                .absoluteOffset(noteWidth.value * (it.time - scrollXPPQ).coerceAtLeast(0F))
+                                .size(noteWidth.value * widthPPQ, trackHeight)
+                                .pointerInput(it, track, index) {
+                                    forEachGesture { awaitPointerEventScope { handleDragEvent(it, index, track) } }
+                                }
+                                .run {
+                                    var x = 0
+                                    var y = Dp.Zero
+                                    if (isSelected) {
+                                        if (action == EditAction.MOVE) {
+                                            x += deltaX
+                                            if (deltaY != 0) y = (trackHeights[(deltaY + index).coerceAtMost(trackHeights.size - 1)]
+                                                .height - trackHeights[index].height).toDp()
+                                        } else if (action == EditAction.RESIZE && !resizeDirectionRight) x += deltaX
                                     }
-                                )
-                                else if (action == EditAction.RESIZE && !resizeDirectionRight)
-                                    return@run absoluteOffset(noteWidth.value * deltaX, Dp.Zero)
-                            }
-                            return@run this
-                        }
-                    ) {
-                        if (!deletionList.contains(it)) {
-                            val trackColor = track.color.copy(0.8F)
-                            Box(
-                                Modifier
-                                    .fillMaxSize()
-                                    .background(trackColor, MaterialTheme.shapes.extraSmall)
-                                    .run {
-                                        if (isSelected) border(2.dp, MaterialTheme.colorScheme.primary,
-                                            MaterialTheme.shapes.extraSmall)
-                                        else this
-                                    }
-                                    .clip(MaterialTheme.shapes.extraSmall)
-                                    .pointerHoverIcon(action.toPointerIcon(PointerIconDefaults.Hand))
+                                    absoluteOffset(noteWidth.value * x, y)
+                                }
                             ) {
-                                @Suppress("TYPE_MISMATCH")
-                                it.clip.factory.playlistContent(it, track,
-                                    trackColor.toOnSurfaceColor().copy(animateFloatAsState(if (isSelected) 1F else 0.7F).value),
-                                    trackHeight, noteWidth, contentWidth, horizontalScrollState
-                                )
+                                if (!deletionList.contains(it)) {
+                                    val trackColor = track.color.copy(0.8F)
+                                    Box(
+                                        Modifier
+                                            .fillMaxSize()
+                                            .background(trackColor, MaterialTheme.shapes.extraSmall)
+                                            .run {
+                                                if (isSelected) border(
+                                                    2.dp, MaterialTheme.colorScheme.primary,
+                                                    MaterialTheme.shapes.extraSmall
+                                                )
+                                                else this
+                                            }
+                                            .clip(MaterialTheme.shapes.extraSmall)
+                                            .pointerHoverIcon(action.toPointerIcon(PointerIconDefaults.Hand))
+                                    ) {
+                                        @Suppress("TYPE_MISMATCH")
+                                        it.clip.factory.playlistContent(
+                                            it, track,
+                                            trackColor.toOnSurfaceColor()
+                                                .copy(animateFloatAsState(if (isSelected) 1F else 0.7F).value),
+                                            trackHeight, noteWidth,
+                                            (scrollXPPQ - it.time).coerceAtLeast(0F),
+                                            widthPPQ
+                                        )
+                                    }
+                                    Spacer(RESIZE_HAND_MODIFIER)
+                                    Spacer(RESIZE_HAND_MODIFIER.align(Alignment.TopEnd))
+                                }
                             }
-                            Spacer(RESIZE_HAND_MODIFIER)
-                            Spacer(RESIZE_HAND_MODIFIER.align(Alignment.TopEnd))
                         }
                     }
                 }
@@ -233,7 +245,7 @@ internal fun TrackContent(track: Track, index: Int): Int {
     }
     Divider()
     var i = index + 1
-    track.subTracks.forEach { i += TrackContent(it, i) }
+    track.subTracks.forEach { i += TrackContent(it, i, density) }
     return i - index
 }
 

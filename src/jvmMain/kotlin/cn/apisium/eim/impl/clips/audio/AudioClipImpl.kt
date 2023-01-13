@@ -1,14 +1,12 @@
 package cn.apisium.eim.impl.clips.audio
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.api.*
@@ -28,6 +26,8 @@ class AudioClipImpl(json: JsonNode?, factory: ClipFactory<AudioClip>): AbstractC
     override val thumbnail = AudioThumbnail(target)
 }
 
+private const val STEP_IN_PX = 0.5F
+
 class AudioClipFactoryImpl: ClipFactory<AudioClip> {
     override val name = "AudioClip"
     override fun createClip() = AudioClipImpl(null, this)
@@ -45,35 +45,23 @@ class AudioClipFactoryImpl: ClipFactory<AudioClip> {
 
     @Composable
     override fun playlistContent(clip: TrackClip<AudioClip>, track: Track, contentColor: Color, trackHeight: Dp,
-                                 noteWidth: MutableState<Dp>, contentWidth: Dp, scrollState: ScrollState) {
-        with(LocalDensity.current) {
-            val noteWidthPx = noteWidth.value.toPx()
-            val scrollX = scrollState.value
-            val frameStartPPQ = scrollX / noteWidthPx
-            val frameLengthPPQ = contentWidth.toPx() / noteWidthPx
-            var endPPQ = (clip.time + clip.duration).toFloat()
-            if (clip.time > frameStartPPQ + frameLengthPPQ || endPPQ < frameStartPPQ) return
-            val startPPQ = (frameStartPPQ - (clip.time - clip.start)).coerceAtLeast(clip.start.toFloat())
-            endPPQ = startPPQ + frameLengthPPQ.coerceAtMost(clip.duration.toFloat())
-            val curPos = EchoInMirror.currentPosition
+                                 noteWidth: MutableState<Dp>, startPPQ: Float, widthPPQ: Float) {
+        val curPos = EchoInMirror.currentPosition
 
-            val channels = clip.clip.thumbnail.channels
-            val startSeconds = curPos.convertPPQToSeconds(startPPQ)
-            val endSeconds = curPos.convertPPQToSeconds(endPPQ)
-            val widthInPx = (endPPQ - startPPQ) * noteWidthPx.toDouble()
-            Canvas(Modifier.fillMaxSize()) {
-                val channelHeight = (trackHeight.toPx() - 4) / channels
-                val halfChannelHeight = channelHeight / 2
-                clip.clip.thumbnail.query(widthInPx, startSeconds, endSeconds, 0.3F) { x, ch, min, max ->
-                    val y = 2 + channelHeight * ch + halfChannelHeight
-                    val curX = startPPQ * noteWidthPx + x
-                    drawLine(
-                        contentColor,
-                        Offset(curX, y - max.absoluteValue * halfChannelHeight),
-                        Offset(curX, y + min.absoluteValue * halfChannelHeight),
-                        0.3F
-                    )
-                }
+        val channels = clip.clip.thumbnail.channels
+        val startSeconds = curPos.convertPPQToSeconds(startPPQ)
+        val endSeconds = curPos.convertPPQToSeconds(startPPQ + widthPPQ)
+        Canvas(Modifier.fillMaxSize()) {
+            val channelHeight = (trackHeight.toPx() - 4) / channels
+            val halfChannelHeight = channelHeight / 2
+            clip.clip.thumbnail.query(size.width.toDouble(), startSeconds, endSeconds, STEP_IN_PX) { x, ch, min, max ->
+                val y = 2 + channelHeight * ch + halfChannelHeight
+                drawLine(
+                    contentColor,
+                    Offset(x, y - max.absoluteValue * halfChannelHeight),
+                    Offset(x, y + min.absoluteValue * halfChannelHeight),
+                    STEP_IN_PX
+                )
             }
         }
     }

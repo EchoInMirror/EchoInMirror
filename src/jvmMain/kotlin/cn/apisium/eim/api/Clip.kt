@@ -1,6 +1,5 @@
 package cn.apisium.eim.api
 
-import androidx.compose.foundation.ScrollState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
@@ -45,7 +44,7 @@ interface ClipFactory<T: Clip> {
     fun getEditor(clip: TrackClip<T>, track: Track): ClipEditor?
     @Composable
     fun playlistContent(clip: TrackClip<T>, track: Track, contentColor: Color, trackHeight: Dp,
-                        noteWidth: MutableState<Dp>, contentWidth: Dp, scrollState: ScrollState
+                        noteWidth: MutableState<Dp>, startPPQ: Float, widthPPQ: Float
     )
 }
 
