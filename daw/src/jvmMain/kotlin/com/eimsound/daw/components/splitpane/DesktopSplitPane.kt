@@ -1,0 +1,167 @@
+package com.eimsound.daw.components.splitpane
+
+import androidx.compose.foundation.layout.Box
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.layout.Placeable
+import androidx.compose.ui.unit.Constraints
+import kotlin.math.roundToInt
+
+private fun Constraints.maxByDirection(isHorizontal: Boolean): Int = if (isHorizontal) maxWidth else maxHeight
+private fun Constraints.minByDirection(isHorizontal: Boolean): Int = if (isHorizontal) minWidth else minHeight
+private fun Placeable.valueByDirection(isHorizontal: Boolean): Int = if (isHorizontal) width else height
+
+/**
+ * Internal implementation of split pane that used in all public composable functions
+ *
+ * @param modifier the modifier to apply to this layout
+ * @param isHorizontal describes is it horizontal of vertical split pane
+ * @param splitPaneState the state object to be used to control or observe the split pane state
+ * @param minimalSizesConfiguration data class ([MinimalSizes]) that provides minimal size for split pane parts
+ * @param first first part of split pane, left or top according to [isHorizontal]
+ * @param second second part of split pane, right or bottom according to [isHorizontal]
+ * @param splitter separator composable, by default [Splitter] is used
+ * */
+@Composable
+internal fun SplitPane(
+    modifier: Modifier,
+    isHorizontal: Boolean,
+    splitPaneState: SplitPaneState,
+    minimalSizesConfiguration: MinimalSizes,
+    first: (@Composable () -> Unit)?,
+    second: (@Composable () -> Unit)?,
+    splitter: Splitter
+) {
+    if (first == null || second == null) {
+        first?.let { Box(modifier) { it() } }
+        second?.let { Box(modifier) { it() } }
+        return
+    }
+    
+    Layout(
+        {
+            Box {
+                first()
+            }
+            Box {
+                splitter.measuredPart()
+            }
+            Box {
+                second()
+            }
+            Box {
+                splitter.handlePart()
+            }
+        },
+        modifier,
+    ) { measurables, constraints ->
+        with(minimalSizesConfiguration) {
+            val firstMinSizePx = firstPlaceableMinimalSize.value * density
+            val secondMinSizePx = secondPlaceableMinimalSize.value * density
+
+            with(splitPaneState) {
+                val constrainedMin = constraints.minByDirection(isHorizontal) + firstMinSizePx
+                val constrainedMax =
+                    (constraints.maxByDirection(isHorizontal).toFloat() - secondMinSizePx).let {
+                        if (it <= 0 || it <= constrainedMin) {
+                            constraints.maxByDirection(isHorizontal).toFloat()
+                        } else {
+                            it
+                        }
+                    }
+
+                if (minPosition != constrainedMin) {
+                    maxPosition = constrainedMin
+                }
+
+                if (maxPosition != constrainedMax) {
+                    maxPosition =
+                        if (firstMinSizePx + secondMinSizePx < constraints.maxByDirection(isHorizontal)) {
+                            constrainedMax
+                        } else {
+                            minPosition
+                        }
+                }
+
+                val constrainedPosition =
+                    (constraints.maxByDirection(isHorizontal) - (firstMinSizePx + secondMinSizePx)).let {
+                        if (it > 0f) {
+                            calcPosition(it).coerceIn(constrainedMin, constrainedMax).roundToInt()
+                        } else {
+                            constrainedMin.roundToInt()
+                        }
+                    }
+
+
+                val firstPlaceable = measurables[0].measure(
+                    if (isHorizontal) {
+                        constraints.copy(
+                            minWidth = 0,
+                            maxWidth = constrainedPosition
+                        )
+                    } else {
+                        constraints.copy(
+                            minHeight = 0,
+                            maxHeight = constrainedPosition
+                        )
+                    }
+                )
+
+                val splitterPlaceable = measurables[1].measure(constraints)
+                val splitterSize = splitterPlaceable.valueByDirection(isHorizontal)
+                val secondPlaceablePosition = constrainedPosition + splitterSize
+
+                val secondPlaceableSize =
+                    (constraints.maxByDirection(isHorizontal) - secondPlaceablePosition).coerceIn(
+                        0,
+                        if (secondPlaceablePosition < constraints.maxByDirection(isHorizontal)) {
+                            constraints.maxByDirection(isHorizontal) - secondPlaceablePosition
+                        } else {
+                            constraints.maxByDirection(isHorizontal)
+                        }
+                    )
+
+                val secondPlaceable = measurables[2].measure(
+                    if (isHorizontal) {
+                        constraints.copy(
+                            minWidth = 0,
+                            maxWidth = secondPlaceableSize
+                        )
+                    } else {
+                        constraints.copy(
+                            minHeight = 0,
+                            maxHeight = secondPlaceableSize
+                        )
+                    }
+                )
+
+                val handlePlaceable = measurables[3].measure(constraints)
+                val handleSize = handlePlaceable.valueByDirection(isHorizontal)
+                // TODO support RTL
+                val handlePosition = when (splitter.alignment) {
+                    SplitterHandleAlignment.BEFORE -> constrainedPosition + splitterSize - handleSize
+                    SplitterHandleAlignment.ABOVE -> constrainedPosition + (splitterSize - handleSize) / 2
+                    SplitterHandleAlignment.AFTER -> constrainedPosition
+                }
+
+                layout(constraints.maxWidth, constraints.maxHeight) {
+                    firstPlaceable.place(0, 0)
+                    if (isHorizontal) {
+                        secondPlaceable.place(secondPlaceablePosition, 0)
+                        splitterPlaceable.place(constrainedPosition, 0)
+                        if (moveEnabled) {
+                            handlePlaceable.place(handlePosition, 0)
+                        }
+                    } else {
+                        secondPlaceable.place(0, secondPlaceablePosition)
+                        splitterPlaceable.place(0, constrainedPosition)
+                        if (moveEnabled) {
+                            handlePlaceable.place(0, handlePosition)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

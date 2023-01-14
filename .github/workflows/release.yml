@@ -34,12 +34,12 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build with Gradle
-        run: ./gradlew shadowJar
+        run: ./gradlew :daw:shadowJar
 
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: build/libs/EchoInMirror.jar
-          asset_name: NekoMaid.jar
+          file: daw/build/libs/daw.jar
+          asset_name: EchoInMirror.jar
           tag: ${{ github.ref }}
