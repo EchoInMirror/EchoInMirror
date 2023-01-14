@@ -6,9 +6,11 @@ import cn.apisium.eim.EchoInMirror
 import cn.apisium.eim.IS_DEBUG
 import cn.apisium.eim.ROOT_PATH
 import cn.apisium.eim.api.*
+import cn.apisium.eim.api.processor.NativeAudioPluginDescription
 import cn.apisium.eim.commands.*
 import cn.apisium.eim.data.midi.getMidiEvents
 import cn.apisium.eim.data.midi.getNoteMessages
+import cn.apisium.eim.impl.processor.nativeAudioPluginManager
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 //import cn.apisium.eim.api.processor.NativeAudioPluginDescription
@@ -71,14 +73,14 @@ class CommandManagerImpl : CommandManager {
                         val audioClip = EchoInMirror.clipManager.defaultAudioClipFactory.createClip()
                         subTrack2.clips.add(EchoInMirror.clipManager.createTrackClip(audioClip))
 
-//                        var proQ: NativeAudioPluginDescription? = null
-//                        var spire: NativeAudioPluginDescription? = null
-//                        EchoInMirror.audioProcessorManager.nativeAudioPluginManager.descriptions.forEach {
-//                            if (it.name == "FabFilter Pro-Q 3") proQ = it
-//                            if (it.name == "Spire-1.5") spire = it
-//                        }
+                        var proQ: NativeAudioPluginDescription? = null
+                        var spire: NativeAudioPluginDescription? = null
+                        EchoInMirror.audioProcessorManager.nativeAudioPluginManager.descriptions.forEach {
+                            if (it.name == "FabFilter Pro-Q 3") proQ = it
+                            if (it.name == "Spire-1.5") spire = it
+                        }
 //                        subTrack2.preProcessorsChain.add(EchoInMirror.audioProcessorManager.nativeAudioPluginManager.createAudioProcessor(spire!!))
-//                        track.postProcessorsChain.add(EchoInMirror.audioProcessorManager.nativeAudioPluginManager.createAudioProcessor(proQ!!))
+                        track.postProcessorsChain.add(EchoInMirror.audioProcessorManager.nativeAudioPluginManager.createAudioProcessor(proQ!!))
                     }
 
                     track.subTracks.add(subTrack1)

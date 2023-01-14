@@ -52,7 +52,10 @@ open class ProcessAudioProcessorImpl(
             midiBuffer.clear()
 
             val input = inputStream!!
-            input.read()
+            do {
+                val id = input.read()
+                handleInput(id)
+            } while (id != 1)
             for (i in 0 until outputChannels) {
                 for (j in 0 until buffers[i].size) {
                     buffers[i][j] = input.readFloat()
@@ -143,6 +146,18 @@ open class ProcessAudioProcessorImpl(
             inputStream = null
             outputStream = null
             isLaunched = false
+        }
+    }
+
+    private fun handleInput(id: Int) {
+        val input = inputStream!!
+        when (id) {
+            2 -> println(input.read()) // transport play
+            3 -> {
+                val index = input.readInt()
+                val value = input.readFloat()
+                println("$index $value")
+            }
         }
     }
 }

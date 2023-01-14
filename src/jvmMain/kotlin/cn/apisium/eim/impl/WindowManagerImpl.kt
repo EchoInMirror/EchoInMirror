@@ -28,7 +28,7 @@ class WindowManagerImpl: WindowManager {
     override val dialogs = mutableStateMapOf<@Composable () -> Unit, Boolean>()
     override val panels = mutableStateListOf(Mixer, Editor, UndoList)
     override var mainWindow: ComposeWindow? = null
-    override var isDarkTheme by mutableStateOf(true)
+    override var isDarkTheme by mutableStateOf(false)
     override var activePanel: Panel? = null
     override var isMainWindowOpened by mutableStateOf(false)
 

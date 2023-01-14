@@ -231,7 +231,7 @@ internal fun TrackContent(track: Track, index: Int, density: Density): Int {
                                 }
                             ) {
                                 if (!deletionList.contains(it)) {
-                                    val trackColor = track.color.copy(0.8F)
+                                    val trackColor = track.color.copy(0.85F)
                                     Box(
                                         Modifier
                                             .fillMaxSize()
@@ -250,7 +250,7 @@ internal fun TrackContent(track: Track, index: Int, density: Density): Int {
                                         it.clip.factory.playlistContent(
                                             it, track,
                                             trackColor.toOnSurfaceColor()
-                                                .copy(animateFloatAsState(if (isSelected) 1F else 0.7F).value),
+                                                .copy(animateFloatAsState(if (isSelected) 1F else 0.8F).value),
                                             trackHeight, noteWidth,
                                             (scrollXPPQ - clipStartPPQOnMove).coerceAtLeast(0F) +
                                                     (it.start + if (isSelected && action == EditAction.RESIZE &&

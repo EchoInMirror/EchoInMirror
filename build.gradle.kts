@@ -34,9 +34,9 @@ kotlin {
         }
         withJava()
     }
-    @Suppress("UNUSED_VARIABLE", "OPT_IN_IS_NOT_ENABLED")
+    @Suppress("OPT_IN_IS_NOT_ENABLED")
     sourceSets {
-        val jvmMain by getting {
+        named("jvmMain") {
             dependencies {
                 implementation(compose.desktop.currentOs) {
                     exclude("org.jetbrains.compose.material")
@@ -70,7 +70,7 @@ kotlin {
             }
         }
 
-        val jvmTest by getting {
+        named("jvmTest") {
             dependencies {
                 implementation(kotlin("test-junit"))
             }
