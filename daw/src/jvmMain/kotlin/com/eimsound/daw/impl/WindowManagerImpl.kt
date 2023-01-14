@@ -28,7 +28,7 @@ class WindowManagerImpl: WindowManager {
     override val dialogs = mutableStateMapOf<@Composable () -> Unit, Boolean>()
     override val panels = mutableStateListOf(Mixer, Editor, UndoList)
     override var mainWindow: ComposeWindow? = null
-    override var isDarkTheme by mutableStateOf(false)
+    override var isDarkTheme by mutableStateOf(true)
     override var activePanel: Panel? = null
     override var isMainWindowOpened by mutableStateOf(false)
 
@@ -85,7 +85,7 @@ class WindowManagerImpl: WindowManager {
             val (bus, loadBus) = EchoInMirror.trackManager.createBus(DefaultProjectInformation(path))
             EchoInMirror.bus = bus
             bus.prepareToPlay(EchoInMirror.currentPosition.sampleRate, EchoInMirror.currentPosition.bufferSize)
-            val player = JvmAudioPlayer(EchoInMirror.currentPosition, bus)
+            val player = JvmAudioPlayer("Jvm", EchoInMirror.currentPosition, bus)
             EchoInMirror.player = player
 
             while (mainWindow == null) delay(25)

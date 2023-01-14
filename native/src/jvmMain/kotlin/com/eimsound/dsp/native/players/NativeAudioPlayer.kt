@@ -1,15 +1,23 @@
 package com.eimsound.dsp.native.players
 
 import com.eimsound.audioprocessor.AbstractAudioPlayer
+import com.eimsound.audioprocessor.AudioPlayerFactory
 import com.eimsound.audioprocessor.AudioProcessor
 import com.eimsound.audioprocessor.CurrentPosition
 import com.eimsound.daw.utils.ByteBufInputStream
 import com.eimsound.daw.utils.ByteBufOutputStream
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import java.util.*
 
-class NativeAudioPlayer(currentPosition: CurrentPosition, processor: AudioProcessor, private val execFile: String,
-                        private vararg val commands: String) : AbstractAudioPlayer(currentPosition, processor), Runnable {
+class NativeAudioPlayer(
+    type: String, name: String,
+    currentPosition: CurrentPosition,
+    processor: AudioProcessor,
+    private val execFile: String,
+    private vararg val commands: String,
+) : AbstractAudioPlayer("[$type] $name", currentPosition, processor), Runnable {
     private var thread: Thread? = null
     private var process: Process? = null
     private var inputStream: ByteBufInputStream? = null
@@ -30,8 +38,14 @@ class NativeAudioPlayer(currentPosition: CurrentPosition, processor: AudioProces
         val flag1 = p.inputStream.read() == 1
         val flag2 = p.inputStream.read() == 2
         val isBigEndian = flag1 && flag2
-        inputStream = ByteBufInputStream(isBigEndian, p.inputStream)
+        val input = ByteBufInputStream(isBigEndian, p.inputStream)
+        inputStream = input
         outputStream = ByteBufOutputStream(isBigEndian, p.outputStream)
+
+        if (input.read() != 1) throw RuntimeException("Failed to open audio player")
+
+        println(input.readString())
+        println("Input latency: ${input.readInt()}, output latency: ${input.readInt()}, sample rate: ${input.readFloat()}, buffer size: ${input.readInt()}")
 
         p.onExit().thenAccept { process = null }
         process = p
@@ -87,5 +101,24 @@ class NativeAudioPlayer(currentPosition: CurrentPosition, processor: AudioProces
 
             if (currentPosition.isPlaying) currentPosition.update(currentPosition.timeInSamples + bufferSize)
         }
+    }
+}
+
+class NativeAudioPlayerFactory(
+    private val execFile: String,
+    private vararg val commands: String,
+) : AudioPlayerFactory {
+    override val name = "Native"
+    override suspend fun getPlayers() = withContext(Dispatchers.IO) {
+        ProcessBuilder(execFile, "-O", "-A").start().inputStream
+            .readAllBytes().decodeToString().split("\$EIM\$").filter { it.isNotEmpty() }
+    }
+    override fun create(name: String, currentPosition: CurrentPosition, processor: AudioProcessor): NativeAudioPlayer {
+        val res = "[(.+?)] ".toRegex().find(name) ?: throw IllegalArgumentException("No such player: $name")
+        return NativeAudioPlayer(
+            res.groupValues[0].trimStart('[').trimEnd(']'),
+            name.substring(res.range.last + 1),
+            currentPosition, processor, execFile, *commands
+        )
     }
 }

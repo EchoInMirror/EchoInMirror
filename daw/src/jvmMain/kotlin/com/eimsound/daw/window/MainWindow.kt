@@ -45,16 +45,17 @@ fun ApplicationScope.MainWindow() {
         false
     }) {
         CLIPBOARD_MANAGER = LocalClipboardManager.current
+        System.setProperty("eim.window.handler", window.windowHandle.toString())
         (EchoInMirror.windowManager as WindowManagerImpl).mainWindow = window
         window.exceptionHandler = WindowExceptionHandler {
             it.printStackTrace()
         }
-        val density = LocalDensity.current.density
-        val dropParent = remember(density) { PlatformDropTargetModifier(density, window) }
 
         Box {
             Row {
                 SideBar()
+                val density = LocalDensity.current.density
+                val dropParent = remember(density) { PlatformDropTargetModifier(density, window) }
                 Scaffold(
                     Modifier.then(dropParent),
                     topBar = { EimAppBar() },

@@ -4,6 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.eimsound.audioprocessor.AudioPlayer
+import com.eimsound.audioprocessor.AudioPlayerManager
 import com.eimsound.audioprocessor.AudioProcessorManager
 import com.eimsound.audioprocessor.CurrentPosition
 import com.eimsound.daw.api.*
@@ -14,6 +15,7 @@ import com.eimsound.daw.api.window.WindowManager
 import com.eimsound.daw.data.defaultQuantification
 import com.eimsound.daw.impl.*
 import com.eimsound.daw.impl.clips.ClipManagerImpl
+import com.eimsound.daw.impl.processor.AudioPlayerManagerImpl
 import com.eimsound.daw.impl.processor.AudioProcessorManagerImpl
 import com.eimsound.daw.impl.processor.TrackManagerImpl
 import com.eimsound.daw.plugin.EIMPluginManager
@@ -33,6 +35,7 @@ object EchoInMirror {
     val pluginManager: PluginManager = EIMPluginManager()
     val windowManager: WindowManager = WindowManagerImpl()
     val clipManager: ClipManager = ClipManagerImpl()
+    val audioPlayerManager: AudioPlayerManager = AudioPlayerManagerImpl()
     val audioProcessorManager: AudioProcessorManager = AudioProcessorManagerImpl()
     val trackManager: TrackManager = TrackManagerImpl()
     val undoManager: UndoManager = DefaultUndoManager()

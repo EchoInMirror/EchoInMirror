@@ -1,8 +1,6 @@
 package com.eimsound.dsp.native.players
 
-import com.eimsound.audioprocessor.AbstractAudioPlayer
-import com.eimsound.audioprocessor.AudioProcessor
-import com.eimsound.audioprocessor.CurrentPosition
+import com.eimsound.audioprocessor.*
 import com.eimsound.dsp.native.getAudioFormat
 import com.eimsound.dsp.native.getSampleBits
 import kotlinx.coroutines.runBlocking
@@ -10,8 +8,8 @@ import java.util.*
 import javax.sound.sampled.AudioSystem
 import javax.sound.sampled.SourceDataLine
 
-class JvmAudioPlayer(currentPosition: CurrentPosition, processor: AudioProcessor) :
-    AbstractAudioPlayer(currentPosition, processor), Runnable {
+class JvmAudioPlayer(name: String, currentPosition: CurrentPosition, processor: AudioProcessor) :
+    AbstractAudioPlayer(name, currentPosition, processor), Runnable {
     private var thread: Thread? = null
     private var sdl: SourceDataLine? = null
     private var sampleRate = 44800
@@ -94,4 +92,11 @@ class JvmAudioPlayer(currentPosition: CurrentPosition, processor: AudioProcessor
             }
         }
     }
+}
+
+class JvmAudioPlayerFactory : AudioPlayerFactory {
+    override val name = "JVM"
+    override suspend fun getPlayers() = AudioSystem.getMixerInfo().map { it.name }
+    override fun create(name: String, currentPosition: CurrentPosition, processor: AudioProcessor) =
+        JvmAudioPlayer(name, currentPosition, processor)
 }

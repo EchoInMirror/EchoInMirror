@@ -5,11 +5,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 
 interface AudioPlayer: AutoCloseable {
+    val name: String
     val cpuLoad: Float
     fun open(sampleRate: Int, bufferSize: Int, bits: Int)
 }
-abstract class AbstractAudioPlayer(val currentPosition: CurrentPosition, var processor: AudioProcessor):
-    AudioPlayer {
+abstract class AbstractAudioPlayer(
+    override val name: String,
+    val currentPosition: CurrentPosition,
+    var processor: AudioProcessor,
+): AudioPlayer {
     final override var cpuLoad by mutableStateOf(0F)
         private set
     private var lastTime = 0L
@@ -24,4 +28,16 @@ abstract class AbstractAudioPlayer(val currentPosition: CurrentPosition, var pro
             times = 0
         }
     }
+}
+
+interface AudioPlayerFactory {
+    val name: String
+    suspend fun getPlayers(): List<String>
+    fun create(name: String, currentPosition: CurrentPosition, processor: AudioProcessor): AudioPlayer
+}
+
+interface AudioPlayerManager {
+    val factories: Map<String, AudioPlayerFactory>
+    fun registerFactory(factory: AudioPlayerFactory)
+    fun create(factory: String, name: String, currentPosition: CurrentPosition, processor: AudioProcessor): AudioPlayer
 }
