@@ -18,6 +18,7 @@ import cn.apisium.eim.api.sortedKeys
 import cn.apisium.eim.components.ReadonlyTextField
 import cn.apisium.eim.impl.CommandManagerImpl
 import cn.apisium.eim.utils.clickableWithIcon
+import cn.apisium.eim.utils.mutableStateSetOf
 import cn.apisium.eim.utils.toMutableStateSet
 import java.awt.event.KeyEvent
 
@@ -54,6 +55,7 @@ internal object ShortcutKeySettings : Tab {
                     Text(command.displayName, Modifier.weight(1f))
                     var curKey by remember { mutableStateOf(key) }
                     val keyCompose = remember { key.split(" ").map { Key(it.toLong()) }.toMutableStateSet() }
+                    val keyDown = remember { mutableStateSetOf<Key>() }
                     val preKeyCompose = remember { mutableStateListOf<Key>() }
 
                     fun cancel() {
@@ -100,17 +102,26 @@ internal object ShortcutKeySettings : Tab {
                             } else {
                                 selectKey = curKey
                                 preKeyCompose.clear()
+                                keyDown.clear()
                                 keyCompose.forEach {
                                     preKeyCompose.add(it)
                                 }
                                 keyCompose.clear()
                             }
                         }.onKeyEvent {
-                            if (it.type != KeyEventType.KeyDown || selectKey != curKey) return@onKeyEvent false
-
-                            if (it.key == Key.Escape) cancel()
-                            else if (it.key == Key.Enter) return@onKeyEvent false
-                            else keyCompose.add(it.key)
+                            if (selectKey != curKey) return@onKeyEvent false
+                            if (it.type == KeyEventType.KeyDown) {
+                                if (it.key == Key.Escape) cancel()
+                                else if (it.key == Key.Enter) return@onKeyEvent false
+                                else {
+                                    keyDown.add(it.key)
+                                    keyCompose.add(it.key)
+                                }
+                            } else if (it.type == KeyEventType.KeyUp) {
+                                keyDown.remove(it.key)
+                                if (keyDown.isEmpty())
+                                    done()
+                            }
                             true
                         }) {
                         Text(keyCompose.sortedKeys().joinToString(separator = "+") {
