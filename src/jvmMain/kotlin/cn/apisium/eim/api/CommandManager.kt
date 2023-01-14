@@ -49,6 +49,7 @@ fun Collection<Key>.sortedKeys(): List<Key> {
     ret.addAll(list.sortedBy { it.keyCode })
     return ret
 }
+
 fun Array<Key>.sortedKeys() = toList().sortedKeys()
 fun Collection<Key>.getKeys() = sortedKeys().joinToString(" ") { it.keyCode.toString() }
 fun Array<Key>.getKeys() = sortedKeys().getKeys()
