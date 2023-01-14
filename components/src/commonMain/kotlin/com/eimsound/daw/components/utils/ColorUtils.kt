@@ -1,4 +1,4 @@
-package com.eimsound.daw.utils
+package com.eimsound.daw.components.utils
 
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.LocalAbsoluteTonalElevation
@@ -9,7 +9,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.util.lerp
-import com.eimsound.daw.EchoInMirror
 
 val lightColors = arrayListOf<Color>()
 val darkColors = arrayListOf<Color>()
@@ -26,7 +25,7 @@ val ColorScheme.warning: Color
 val ColorScheme.success: Color
     get() = Color(69, 155, 100)
 
-fun randomColor(isDarkColor: Boolean? = !EchoInMirror.windowManager.isDarkTheme) =
+fun randomColor(isDarkColor: Boolean? = null) =
     (if (isDarkColor == null) colors else if (isDarkColor) darkColors else lightColors).random()
 
 fun Color.toOnSurfaceColor() = if (luminance() > 0.5f) Color.Black else Color.White

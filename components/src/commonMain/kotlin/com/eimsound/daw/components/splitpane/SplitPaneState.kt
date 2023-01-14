@@ -12,9 +12,9 @@ open class SplitPaneState(
 
     var position by mutableStateOf(0F)
 
-    internal var minPosition: Float = 0f
+    var minPosition: Float = 0f
 
-    internal var maxPosition: Float = Float.POSITIVE_INFINITY
+    var maxPosition: Float = Float.POSITIVE_INFINITY
 
     open fun dispatchRawMovement(delta: Float) {
         val movableArea = maxPosition - minPosition

@@ -4,6 +4,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
 import com.eimsound.audioprocessor.*
 import com.eimsound.audioprocessor.data.midi.MidiEvent
+import com.eimsound.audioprocessor.data.midi.MidiNoteRecorder
 import com.eimsound.audioprocessor.data.midi.noteOff
 import com.eimsound.audioprocessor.dsp.calcPanLeftChannel
 import com.eimsound.audioprocessor.dsp.calcPanRightChannel
@@ -11,9 +12,9 @@ import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.api.DefaultTrackClipList
 import com.eimsound.daw.api.ProjectInformation
 import com.eimsound.daw.api.processor.*
+import com.eimsound.daw.components.utils.randomColor
 import com.eimsound.daw.data.midi.*
 import com.eimsound.daw.utils.LevelMeterImpl
-import com.eimsound.daw.utils.randomColor
 import com.fasterxml.jackson.annotation.JsonAutoDetect
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty

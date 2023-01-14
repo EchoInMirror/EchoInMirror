@@ -14,8 +14,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.eimsound.daw.components.ColorPicker
 import com.eimsound.daw.components.FloatingDialogProvider
-import com.eimsound.daw.utils.HsvColor
-import com.eimsound.daw.utils.randomColor
+import com.eimsound.daw.components.utils.HsvColor
+import com.eimsound.daw.components.utils.randomColor
 
 private val KEY = Any()
 

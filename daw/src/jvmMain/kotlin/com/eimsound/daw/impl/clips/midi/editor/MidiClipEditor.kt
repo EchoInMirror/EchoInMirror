@@ -12,8 +12,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import com.eimsound.audioprocessor.data.midi.noteOff
-import com.eimsound.audioprocessor.data.midi.noteOn
+import com.eimsound.audioprocessor.data.midi.*
 import com.eimsound.audioprocessor.projectDisplayPPQ
 import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.actions.doNoteAmountAction
@@ -26,9 +25,6 @@ import com.eimsound.daw.components.PlayHead
 import com.eimsound.daw.components.Timeline
 import com.eimsound.daw.components.splitpane.VerticalSplitPane
 import com.eimsound.daw.components.splitpane.rememberSplitPaneState
-import com.eimsound.daw.data.midi.NoteMessage
-import com.eimsound.daw.data.midi.NoteMessageImpl
-import com.eimsound.daw.data.midi.NoteMessageWithInfo
 import com.eimsound.daw.utils.CLIPBOARD_MANAGER
 import com.eimsound.daw.utils.OBJECT_MAPPER
 import com.eimsound.daw.utils.mutableStateSetOf
@@ -111,7 +107,8 @@ class MidiClipEditor(private val clip: TrackClip<MidiClip>, private val track: T
     override fun copy() {
         if (selectedNotes.isEmpty()) return
         CLIPBOARD_MANAGER?.setText(AnnotatedString(OBJECT_MAPPER.writeValueAsString(
-            NoteMessageWithInfo(EchoInMirror.currentPosition.ppq, selectedNotes.toSet()))))
+            NoteMessageWithInfo(EchoInMirror.currentPosition.ppq, selectedNotes.toSet())
+        )))
     }
 
     override fun cut() {

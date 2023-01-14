@@ -8,9 +8,9 @@ import androidx.compose.ui.unit.Dp
 import com.eimsound.audioprocessor.CurrentPosition
 import com.eimsound.audioprocessor.ResampledAudioSource
 import com.eimsound.audioprocessor.data.AudioThumbnail
+import com.eimsound.audioprocessor.data.midi.MidiNoteRecorder
+import com.eimsound.audioprocessor.data.midi.NoteMessageList
 import com.eimsound.daw.api.processor.Track
-import com.eimsound.daw.data.midi.MidiNoteRecorder
-import com.eimsound.daw.data.midi.NoteMessageList
 import com.eimsound.daw.utils.IManualState
 import com.eimsound.daw.utils.NoSuchFactoryException
 import com.eimsound.daw.utils.randomId

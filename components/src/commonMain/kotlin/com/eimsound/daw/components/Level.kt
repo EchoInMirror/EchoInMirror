@@ -14,9 +14,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.unit.dp
+import com.eimsound.daw.components.utils.warning
 import com.eimsound.daw.utils.ExperimentalEIMApi
 import com.eimsound.daw.utils.LevelMeter
-import com.eimsound.daw.utils.warning
 
 @OptIn(ExperimentalEIMApi::class)
 @Composable

@@ -23,8 +23,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.zIndex
 import com.eimsound.daw.EchoInMirror
+import com.eimsound.daw.components.utils.HorizontalResize
 import com.eimsound.daw.data.getEditUnit
-import com.eimsound.daw.utils.HorizontalResize
 import com.eimsound.daw.utils.fitInUnit
 import com.eimsound.daw.utils.x
 

@@ -6,6 +6,10 @@ import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAll
+import com.eimsound.audioprocessor.data.midi.NoteMessage
+import com.eimsound.audioprocessor.data.midi.defaultNoteMessage
+import com.eimsound.audioprocessor.data.midi.toNoteOffEvent
+import com.eimsound.audioprocessor.data.midi.toNoteOnEvent
 import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.actions.doNoteAmountAction
 import com.eimsound.daw.actions.doNoteMessageEditAction
@@ -13,11 +17,9 @@ import com.eimsound.daw.api.MidiClip
 import com.eimsound.daw.api.TrackClip
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.components.KEYBOARD_KEYS
+import com.eimsound.daw.components.utils.HorizontalResize
+import com.eimsound.daw.components.utils.Move
 import com.eimsound.daw.data.getEditUnit
-import com.eimsound.daw.data.midi.NoteMessage
-import com.eimsound.daw.data.midi.defaultNoteMessage
-import com.eimsound.daw.data.midi.toNoteOffEvent
-import com.eimsound.daw.data.midi.toNoteOnEvent
 import com.eimsound.daw.utils.*
 import com.eimsound.daw.window.panels.playlist.EditAction
 import com.eimsound.daw.window.panels.playlist.calcScroll

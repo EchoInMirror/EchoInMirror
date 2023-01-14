@@ -13,14 +13,14 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import com.eimsound.audioprocessor.data.midi.NoteMessage
 import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.actions.doNoteVelocityAction
 import com.eimsound.daw.api.MidiClip
 import com.eimsound.daw.api.TrackClip
 import com.eimsound.daw.components.EditorGrid
 import com.eimsound.daw.components.KEYBOARD_DEFAULT_WIDTH
-import com.eimsound.daw.data.midi.NoteMessage
-import com.eimsound.daw.utils.Stroke1_5PX
+import com.eimsound.daw.components.utils.Stroke1_5PX
 import com.eimsound.daw.window.panels.playlist.EditAction
 import kotlin.math.roundToInt
 

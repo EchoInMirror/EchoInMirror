@@ -10,12 +10,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import com.eimsound.audioprocessor.*
 import com.eimsound.audioprocessor.data.AudioThumbnail
+import com.eimsound.audioprocessor.data.midi.MidiNoteRecorder
 import com.eimsound.audiosources.DefaultFileAudioSource
 import com.eimsound.audiosources.DefaultResampledAudioSource
 import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.api.*
 import com.eimsound.daw.api.processor.Track
-import com.eimsound.daw.data.midi.MidiNoteRecorder
 import com.fasterxml.jackson.databind.JsonNode
 import kotlin.math.absoluteValue
 

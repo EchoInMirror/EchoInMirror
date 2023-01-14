@@ -10,12 +10,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import com.eimsound.audioprocessor.CurrentPosition
 import com.eimsound.audioprocessor.convertPPQToSamples
+import com.eimsound.audioprocessor.data.midi.*
 import com.eimsound.daw.api.AbstractClip
 import com.eimsound.daw.api.ClipFactory
 import com.eimsound.daw.api.MidiClip
 import com.eimsound.daw.api.TrackClip
 import com.eimsound.daw.api.processor.Track
-import com.eimsound.daw.data.midi.*
 import com.eimsound.daw.impl.clips.midi.editor.MidiClipEditor
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper

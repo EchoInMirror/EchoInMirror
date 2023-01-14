@@ -15,6 +15,7 @@ pluginManagement {
 rootProject.name = "EchoInMirror"
 
 include(
+    ":components",
     ":utils",
     ":audio-sources",
     ":dsp",

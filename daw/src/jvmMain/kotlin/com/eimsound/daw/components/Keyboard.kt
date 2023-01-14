@@ -19,9 +19,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.eimsound.audioprocessor.data.midi.KEY_NAMES
 import com.eimsound.daw.EchoInMirror
+import com.eimsound.daw.components.utils.toOnSurfaceColor
 import com.eimsound.daw.data.defaultScale
 import com.eimsound.daw.utils.clickableWithIcon
-import com.eimsound.daw.utils.toOnSurfaceColor
 import com.eimsound.daw.utils.x
 import com.eimsound.daw.utils.y
 

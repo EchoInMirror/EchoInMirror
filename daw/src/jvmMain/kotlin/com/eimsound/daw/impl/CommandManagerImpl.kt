@@ -6,13 +6,13 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.input.key.*
 import com.eimsound.audioprocessor.NativeAudioPluginDescription
 import com.eimsound.audioprocessor.data.midi.getMidiEvents
+import com.eimsound.audioprocessor.data.midi.getNoteMessages
 import com.eimsound.audioprocessor.oneBarPPQ
 import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.IS_DEBUG
 import com.eimsound.daw.ROOT_PATH
 import com.eimsound.daw.api.*
 import com.eimsound.daw.commands.*
-import com.eimsound.daw.data.midi.getNoteMessages
 import com.eimsound.daw.impl.processor.nativeAudioPluginManager
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue

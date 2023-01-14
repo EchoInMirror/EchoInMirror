@@ -1,4 +1,4 @@
-package com.eimsound.daw.data.midi
+package com.eimsound.audioprocessor.data.midi
 
 import org.junit.Test
 import kotlin.test.assertContentEquals

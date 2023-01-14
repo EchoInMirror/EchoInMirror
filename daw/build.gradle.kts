@@ -34,7 +34,8 @@ kotlin {
     sourceSets {
         named("jvmMain") {
             dependencies {
-                implementation(project(":utils"))
+                api(project(":components"))
+                api(project(":utils"))
                 api(project(":api"))
                 api(project(":native"))
                 api(project(":audio-sources"))
@@ -42,7 +43,6 @@ kotlin {
                 api(compose.desktop.currentOs) {
                     exclude("org.jetbrains.compose.material")
                 }
-                api("org.jetbrains.compose.ui:ui-util:${ComposeBuildConfig.composeVersion}")
                 api(compose.materialIconsExtended)
                 @OptIn(ExperimentalComposeLibrary::class) implementation(compose.material3)
                 api("com.fasterxml.jackson.module:jackson-module-kotlin:2.14.+")
@@ -52,9 +52,7 @@ kotlin {
                 api("org.apache.commons:commons-lang3:3.12.0")
                 api("org.pf4j:pf4j:3.8.0")
                 api("org.slf4j:slf4j-simple:2.0.3")
-                implementation("com.github.ajalt.colormath:colormath:3.2.1") {
-                    exclude("org.jetbrains.kotlin")
-                }
+                implementation("org.jetbrains.compose.ui:ui-util:${ComposeBuildConfig.composeVersion}")
                 implementation("org.ocpsoft.prettytime:prettytime:5.0.6.Final")
             }
         }

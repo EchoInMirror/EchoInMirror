@@ -23,6 +23,8 @@ import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import com.eimsound.audioprocessor.data.midi.MidiEvent
+import com.eimsound.audioprocessor.data.midi.NoteMessage
+import com.eimsound.audioprocessor.data.midi.colorSaturation
 import com.eimsound.audioprocessor.projectDisplayPPQ
 import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.api.MidiClip
@@ -32,9 +34,11 @@ import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.components.EditorGrid
 import com.eimsound.daw.components.KEYBOARD_KEYS
 import com.eimsound.daw.components.dragdrop.dropTarget
+import com.eimsound.daw.components.utils.BorderCornerRadius2PX
+import com.eimsound.daw.components.utils.Stroke1PX
+import com.eimsound.daw.components.utils.Stroke1_5PX
+import com.eimsound.daw.components.utils.saturate
 import com.eimsound.daw.data.defaultScale
-import com.eimsound.daw.data.midi.NoteMessage
-import com.eimsound.daw.data.midi.colorSaturation
 import com.eimsound.daw.utils.*
 import com.eimsound.daw.window.panels.playlist.EditAction
 import kotlin.math.absoluteValue

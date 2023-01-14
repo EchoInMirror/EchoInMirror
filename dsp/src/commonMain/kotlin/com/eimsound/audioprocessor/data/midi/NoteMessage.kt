@@ -1,9 +1,6 @@
-package com.eimsound.daw.data.midi
+package com.eimsound.audioprocessor.data.midi
 
 import androidx.compose.runtime.mutableStateOf
-import com.eimsound.audioprocessor.data.midi.noteOff
-import com.eimsound.audioprocessor.data.midi.noteOn
-import com.eimsound.audioprocessor.data.midi.toMidiEvent
 import com.eimsound.daw.utils.IManualState
 import com.eimsound.daw.utils.mapValue
 import com.fasterxml.jackson.annotation.JsonInclude

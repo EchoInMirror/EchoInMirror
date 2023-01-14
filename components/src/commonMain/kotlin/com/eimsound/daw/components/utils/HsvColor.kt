@@ -1,6 +1,6 @@
 @file:Suppress("unused", "MemberVisibilityCanBePrivate")
 
-package com.eimsound.daw.utils
+package com.eimsound.daw.components.utils
 
 /**
  * A representation of Color in Hue, Saturation and Value form.

@@ -18,8 +18,8 @@ import androidx.compose.ui.zIndex
 import com.eimsound.audioprocessor.projectDisplayPPQ
 import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.components.*
-import com.eimsound.daw.utils.HorizontalResize
-import com.eimsound.daw.utils.Move
+import com.eimsound.daw.components.utils.HorizontalResize
+import com.eimsound.daw.components.utils.Move
 import com.eimsound.daw.utils.openMaxValue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch

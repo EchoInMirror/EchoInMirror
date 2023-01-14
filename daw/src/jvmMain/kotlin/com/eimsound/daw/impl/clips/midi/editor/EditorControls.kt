@@ -24,7 +24,7 @@ import com.eimsound.daw.components.FloatingDialog
 import com.eimsound.daw.components.MenuItem
 import com.eimsound.daw.components.TIMELINE_HEIGHT
 import com.eimsound.daw.components.silder.Slider
-import com.eimsound.daw.utils.toOnSurfaceColor
+import com.eimsound.daw.components.utils.toOnSurfaceColor
 import com.eimsound.daw.window.panels.playlist.noteWidthSliderRange
 import kotlin.math.roundToInt
 

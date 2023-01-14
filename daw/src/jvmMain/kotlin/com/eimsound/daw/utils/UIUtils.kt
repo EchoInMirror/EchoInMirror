@@ -16,6 +16,7 @@ import androidx.compose.ui.platform.ClipboardManager
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.eimsound.daw.EchoInMirror
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.apache.commons.lang3.SystemUtils
 import org.ocpsoft.prettytime.PrettyTime
@@ -179,3 +180,5 @@ fun selectInExplorer(file: File) {
         else if (SystemUtils.IS_OS_WINDOWS) Runtime.getRuntime().exec("explorer.exe /select,\"${file.absolutePath}\"")
     }
 }
+
+fun randomColor() = com.eimsound.daw.components.utils.randomColor(!EchoInMirror.windowManager.isDarkTheme)

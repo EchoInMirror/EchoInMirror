@@ -1,4 +1,4 @@
-package com.eimsound.daw.data.midi
+package com.eimsound.audioprocessor.data.midi
 
 @Suppress("PropertyName", "DEPRECATION")
 class MidiNoteRecorder : Iterable<Int> {

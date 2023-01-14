@@ -26,6 +26,9 @@ import com.eimsound.daw.actions.doClipsEditActionAction
 import com.eimsound.daw.api.TrackClip
 import com.eimsound.daw.api.defaultMidiClipFactory
 import com.eimsound.daw.api.processor.Track
+import com.eimsound.daw.components.utils.HorizontalResize
+import com.eimsound.daw.components.utils.Zero
+import com.eimsound.daw.components.utils.toOnSurfaceColor
 import com.eimsound.daw.data.getEditUnit
 import com.eimsound.daw.utils.*
 import kotlin.math.absoluteValue

@@ -7,8 +7,8 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.unit.dp
-import com.eimsound.daw.utils.HorizontalResize
-import com.eimsound.daw.utils.VerticalResize
+import com.eimsound.daw.components.utils.HorizontalResize
+import com.eimsound.daw.components.utils.VerticalResize
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
