@@ -76,7 +76,7 @@ class JvmAudioPlayer(name: String, currentPosition: CurrentPosition, processor: 
 
             for (j in 0 until channels) {
                 for (i in 0 until bufferSize) {
-                    var value = (buffers[j][i] * sampleBits).toInt()
+                    var value = (buffers[j][i].coerceIn(-1F, 1F) * sampleBits).toInt()
                     for (k in 0 until bits) {
                         outputBuffer[i * channels * bits + j * bits + k] = value.toByte()
                         value = value shr 8

@@ -10,9 +10,9 @@ import org.jflac.util.RingBuffer
 import org.tritonus.sampled.file.WaveAudioFileReader
 import org.tritonus.share.sampled.FloatSampleTools
 import java.io.BufferedInputStream
-import java.io.File
 import java.io.FileInputStream
 import java.io.InputStream
+import java.nio.file.Path
 import javax.sound.sampled.AudioFileFormat
 import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioSystem
@@ -20,8 +20,8 @@ import kotlin.math.absoluteValue
 
 private const val MB500 = 500 * 1024 * 1024
 
-class DefaultFileAudioSource(override val file: String) : FileAudioSource {
-    private val format = AudioSystem.getAudioFileFormat(File(file))
+class DefaultFileAudioSource(override val file: Path) : FileAudioSource {
+    private val format = AudioSystem.getAudioFileFormat(file.toFile())
     private val isWav = format.type == AudioFileFormat.Type.WAVE
     private val isFlac = format.type == FlacFileFormatType.FLAC
 
@@ -45,15 +45,15 @@ class DefaultFileAudioSource(override val file: String) : FileAudioSource {
 
     init {
         if (isWav) {
-            stream = WaveAudioFileReader().getAudioInputStream(RandomFileInputStream(file)).apply { mark(0) }
+            stream = WaveAudioFileReader().getAudioInputStream(RandomFileInputStream(file.toFile())).apply { mark(0) }
         } else if (isFlac) {
-            stream = RandomFileInputStream(file)
+            stream = RandomFileInputStream(file.toFile())
             buffer = RingBuffer()
             buffer.resize(frameSize * 2)
             flacDecoder = FLACDecoder(stream).apply { readMetadata() }
         } else {
             if (length * frameSize > MB500) throw IllegalArgumentException("File is large than 500mb!")
-            stream = AudioSystem.getAudioInputStream(BufferedInputStream(FileInputStream(file)))
+            stream = AudioSystem.getAudioInputStream(BufferedInputStream(FileInputStream(file.toFile())))
         }
     }
 

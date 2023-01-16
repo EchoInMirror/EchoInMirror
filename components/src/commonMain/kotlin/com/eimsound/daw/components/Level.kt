@@ -31,10 +31,9 @@ fun Level(
     val rightX = stroke + gapWidth
     val left = peak.left
     val right = peak.right
-    val errorColor = MaterialTheme.colorScheme.error
     val warningColor = MaterialTheme.colorScheme.warning
-    val leftColor by animateColorAsState(left.getLevelColor(color, warningColor, errorColor), tween(300))
-    val rightColor by animateColorAsState(right.getLevelColor(color, warningColor, errorColor), tween(300))
+    val leftColor by animateColorAsState(left.getLevelColor(color, color, warningColor), tween(200))
+    val rightColor by animateColorAsState(right.getLevelColor(color, color, warningColor), tween(200))
     val aniLeft by animateFloatAsState(left.toDisplayPercentage())
     val aniRight by animateFloatAsState(right.toDisplayPercentage())
     Canvas(modifier.width((stroke * 2 + gapWidth).dp)) {

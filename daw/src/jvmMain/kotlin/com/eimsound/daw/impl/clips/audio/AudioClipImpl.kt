@@ -17,15 +17,26 @@ import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.api.*
 import com.eimsound.daw.api.processor.Track
 import com.fasterxml.jackson.databind.JsonNode
+import java.nio.file.Paths
+import kotlin.io.path.name
 import kotlin.math.absoluteValue
 
 class AudioClipImpl(json: JsonNode?, factory: ClipFactory<AudioClip>): AbstractClip<AudioClip>(json, factory), AudioClip {
-    private val target = DefaultFileAudioSource("E:\\CloudMusic\\Halozy - Kiss & Crazy (extended mix).flac")
+    private val target = DefaultFileAudioSource(Paths.get("E:\\CloudMusic\\Halozy - Kiss & Crazy (extended mix).flac"))
     override val audioSource: ResampledAudioSource = DefaultResampledAudioSource(target,
         EchoInMirror.currentPosition.sampleRate.toDouble() / target.sampleRate)
     override val defaultDuration get() = EchoInMirror.currentPosition.convertSamplesToPPQ(audioSource.length)
     override val maxDuration get() = defaultDuration
     override val thumbnail = AudioThumbnail(target)
+    override val name: String?
+        get() {
+            var source: AudioSource? = target
+            while (source != null) {
+                if (source is FileAudioSource) return source.file.name
+                source = source.source
+            }
+            return null
+        }
 }
 
 private const val STEP_IN_PX = 0.5F
@@ -46,7 +57,7 @@ class AudioClipFactoryImpl: ClipFactory<AudioClip> {
     }
 
     @Composable
-    override fun playlistContent(clip: TrackClip<AudioClip>, track: Track, contentColor: Color, trackHeight: Dp,
+    override fun playlistContent(clip: TrackClip<AudioClip>, track: Track, contentColor: Color,
                                  noteWidth: MutableState<Dp>, startPPQ: Float, widthPPQ: Float) {
         val curPos = EchoInMirror.currentPosition
 
@@ -55,26 +66,35 @@ class AudioClipFactoryImpl: ClipFactory<AudioClip> {
         val endSeconds = curPos.convertPPQToSeconds(startPPQ + widthPPQ)
         val isDrawMinAndMax = noteWidth.value.value < 1
         Canvas(Modifier.fillMaxSize()) {
-            val channelHeight = (trackHeight.toPx() - 4) / channels
+            val channelHeight = (size.height / channels) - 2
             val halfChannelHeight = channelHeight / 2
+            val drawHalfChannelHeight = halfChannelHeight - 1
             if (isDrawMinAndMax) {
                 clip.clip.thumbnail.query(size.width.toDouble(), startSeconds, endSeconds, 0.5F) { x, ch, min, max ->
                     val y = 2 + channelHeight * ch + halfChannelHeight
+                    if (min == 0F && max == 0F) {
+                        drawLine(contentColor, Offset(x, y), Offset(x + STEP_IN_PX, y), STEP_IN_PX)
+                        return@query
+                    }
                     drawLine(
                         contentColor,
-                        Offset(x, y - max.absoluteValue * halfChannelHeight),
-                        Offset(x, y + min.absoluteValue * halfChannelHeight),
+                        Offset(x, y - max.absoluteValue * drawHalfChannelHeight),
+                        Offset(x, y + min.absoluteValue * drawHalfChannelHeight),
                         0.5F
                     )
                 }
             } else {
                 clip.clip.thumbnail.query(size.width.toDouble(), startSeconds, endSeconds, STEP_IN_PX) { x, ch, min, max ->
-                    val y = 2 + channelHeight * ch + halfChannelHeight
                     val v = if (max.absoluteValue > min.absoluteValue) max else min
+                    val y = 2 + channelHeight * ch + halfChannelHeight
+                    if (v == 0F) {
+                        drawLine(contentColor, Offset(x, y), Offset(x + STEP_IN_PX, y), STEP_IN_PX)
+                        return@query
+                    }
                     drawLine(
                         contentColor,
                         Offset(x, y),
-                        Offset(x, y - v * halfChannelHeight),
+                        Offset(x, y - v * drawHalfChannelHeight),
                         STEP_IN_PX
                     )
                 }

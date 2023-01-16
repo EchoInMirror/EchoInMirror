@@ -33,9 +33,9 @@ private val BOTTOM = ParagraphStyle(lineHeight = 16.sp,
 
 fun calcDrag(x0: Float, noteWidth: Float, range: IntRange?, onRangeChange: ((IntRange) -> Unit)?) {
     val x = x0.coerceAtLeast(0F)
-    if (range == null) EchoInMirror.currentPosition.setCurrentTime((x / noteWidth).toInt())
+    val newValue = (x / noteWidth).fitInUnit(getEditUnit())
+    if (range == null) EchoInMirror.currentPosition.setCurrentTime(newValue)
     else if (onRangeChange != null) {
-        val newValue = (x / noteWidth).fitInUnit(getEditUnit())
         onRangeChange(if (x - range.first * noteWidth < range.last * noteWidth - x) {
             if (newValue > range.last) range.last..newValue else newValue..range.last
         } else {
