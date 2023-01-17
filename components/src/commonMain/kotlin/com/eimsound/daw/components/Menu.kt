@@ -48,10 +48,13 @@ fun MenuItem(
 @Composable
 fun Menu(
     menuItems: @Composable (closeDialog: () -> Unit) -> Unit,
-    content: @Composable () -> Unit
+    modifier: Modifier = Modifier,
+    boxModifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
 ) {
     FloatingDialog({ size, close ->
-        Surface(Modifier.widthIn(size.width.dp).width(IntrinsicSize.Min), MaterialTheme.shapes.extraSmall,
+        Surface(
+            Modifier.widthIn(size.width.dp).width(IntrinsicSize.Min), MaterialTheme.shapes.extraSmall,
             shadowElevation = 5.dp, tonalElevation = 5.dp
         ) {
             Box {
@@ -61,7 +64,7 @@ fun Menu(
                 }
             }
         }
-    }) {
-        ReadonlyTextField(content = content)
+    }, modifier = boxModifier) {
+        ReadonlyTextField(content = content, modifier = modifier)
     }
 }
