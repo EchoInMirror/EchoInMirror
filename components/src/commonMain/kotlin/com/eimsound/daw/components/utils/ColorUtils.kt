@@ -46,14 +46,14 @@ fun Color.saturate(value: Float): Color {
     val chroma = max - min
 
     val h = when {
-        chroma < 1e-7 -> Float.NaN
+        chroma < 1e-7 -> 0.0F
         r == max -> (g - b) / chroma
         g == max -> 2 + (b - r) / chroma
         b == max -> 4 + (r - g) / chroma
         else -> 0.0F
     } * 60F
 
-    return Color.hsv(h, (if (max == 0F) 0F else chroma / max) * value, max, alpha)
+    return Color.hsv(h.coerceIn(0F, 360F), (if (max == 0F) 0F else chroma / max) * value, max, alpha)
 }
 
 @Suppress("unused")

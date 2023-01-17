@@ -21,8 +21,10 @@ import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
+import com.eimsound.daw.components.utils.Zero
 
 private data class FloatingDialog(val onClose: ((Any) -> Unit)?, val position: Offset?,
                                   val hasOverlay: Boolean, val content: @Composable () -> Unit) {
@@ -107,12 +109,12 @@ fun FloatingDialog(dialogContent: @Composable (size: Size, closeDialog: () -> Un
 }
 
 @Composable
-fun Dialog(onOk: (() -> Unit)? = null, onCancel: (() -> Unit)? = null,
+fun Dialog(onOk: (() -> Unit)? = null, onCancel: (() -> Unit)? = null, hasPadding: Boolean = true, minWidth: Dp = 250.dp,
            modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
-    Surface(modifier.widthIn(min = 250.dp).width(IntrinsicSize.Max),
+    Surface(modifier.widthIn(min = minWidth).width(IntrinsicSize.Max),
         shape = MaterialTheme.shapes.extraSmall, tonalElevation = 5.dp, shadowElevation = 5.dp) {
         val flag = onOk != null || onCancel != null
-        Column(Modifier.padding(16.dp, 16.dp, 16.dp, if (flag) 0.dp else 16.dp)) {
+        Column(if (hasPadding) Modifier.padding(16.dp, 16.dp, 16.dp, if (flag) Dp.Zero else 16.dp) else Modifier) {
             content()
             if (flag) Row {
                 Filled()
@@ -120,5 +122,13 @@ fun Dialog(onOk: (() -> Unit)? = null, onCancel: (() -> Unit)? = null,
                 if (onOk != null) TextButton(onOk) { Text("确认") }
             }
         }
+    }
+}
+
+@Composable
+fun MenuDialog(content: @Composable ColumnScope.() -> Unit) {
+    Surface(Modifier.width(IntrinsicSize.Min),
+        shape = MaterialTheme.shapes.extraSmall, tonalElevation = 5.dp, shadowElevation = 5.dp) {
+        Column(content = content)
     }
 }

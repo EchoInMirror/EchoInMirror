@@ -32,6 +32,11 @@ interface ClipEditor {
     fun selectAll()
 }
 
+interface MidiClipEditor: ClipEditor {
+    fun copyAsString(): String
+    fun pasteFromString(value: String)
+}
+
 interface ClipFactory<T: Clip> {
     val name: String
     fun createClip(): T

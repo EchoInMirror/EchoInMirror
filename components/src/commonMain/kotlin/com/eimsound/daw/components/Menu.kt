@@ -38,8 +38,8 @@ fun MenuItem(
                 maxWidth = 280.dp,
                 minHeight = minHeight
             )
-            .padding(padding)
-            .pointerHoverIcon(if (enabled) PointerIconDefaults.Hand else PointerIconDefaults.Default),
+            .pointerHoverIcon(if (enabled) PointerIconDefaults.Hand else PointerIconDefaults.Default)
+            .padding(padding),
         verticalAlignment = Alignment.CenterVertically,
         content = content
     )

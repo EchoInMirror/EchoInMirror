@@ -16,7 +16,7 @@ import com.eimsound.daw.api.ClipFactory
 import com.eimsound.daw.api.MidiClip
 import com.eimsound.daw.api.TrackClip
 import com.eimsound.daw.api.processor.Track
-import com.eimsound.daw.impl.clips.midi.editor.MidiClipEditor
+import com.eimsound.daw.impl.clips.midi.editor.DefaultMidiClipEditor
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 
@@ -40,7 +40,7 @@ class MidiClipFactoryImpl : ClipFactory<MidiClip> {
     override val name = "MIDIClip"
     override fun createClip() = MidiClipImpl(null, this)
     override fun createClip(path: String, json: JsonNode) = MidiClipImpl(json, this)
-    override fun getEditor(clip: TrackClip<MidiClip>, track: Track) = MidiClipEditor(clip, track)
+    override fun getEditor(clip: TrackClip<MidiClip>, track: Track) = DefaultMidiClipEditor(clip, track)
 
     override fun processBlock(clip: TrackClip<MidiClip>, buffers: Array<FloatArray>, position: CurrentPosition,
                               midiBuffer: ArrayList<Int>, noteRecorder: MidiNoteRecorder, pendingNoteOns: LongArray) {

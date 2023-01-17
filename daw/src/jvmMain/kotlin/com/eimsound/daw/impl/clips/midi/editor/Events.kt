@@ -16,6 +16,7 @@ import com.eimsound.daw.actions.doNoteMessageEditAction
 import com.eimsound.daw.api.MidiClip
 import com.eimsound.daw.api.TrackClip
 import com.eimsound.daw.api.processor.Track
+import com.eimsound.daw.components.FloatingDialogProvider
 import com.eimsound.daw.components.KEYBOARD_KEYS
 import com.eimsound.daw.components.utils.HorizontalResize
 import com.eimsound.daw.components.utils.Move
@@ -61,7 +62,10 @@ private fun stopAllNotes(track: Track) {
 @OptIn(ExperimentalComposeUiApi::class)
 @Suppress("DuplicatedCode")
 internal suspend fun PointerInputScope.handleMouseEvent(coroutineScope: CoroutineScope,
-                                                        clip: TrackClip<MidiClip>, track: Track) {
+                                                        editor: DefaultMidiClipEditor,
+                                                        floatingDialogProvider: FloatingDialogProvider) {
+    val clip = editor.clip
+    val track = editor.track
     forEachGesture {
         awaitPointerEventScope {
             var event: PointerEvent
@@ -163,7 +167,8 @@ internal suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutin
                         } else if (event.buttons.isSecondaryPressed) {
                             selectedNotes = hashSetOf()
                             action = EditAction.NONE
-                            break
+                            openEditorMenu(floatingDialogProvider, event.changes[0].position, editor)
+                            continue
                         }
                     }
                 }

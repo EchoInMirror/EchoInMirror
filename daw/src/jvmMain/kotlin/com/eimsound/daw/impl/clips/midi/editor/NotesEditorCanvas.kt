@@ -21,18 +21,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerIconDefaults
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalDensity
 import com.eimsound.audioprocessor.data.midi.MidiEvent
 import com.eimsound.audioprocessor.data.midi.NoteMessage
 import com.eimsound.audioprocessor.data.midi.colorSaturation
 import com.eimsound.audioprocessor.projectDisplayPPQ
 import com.eimsound.daw.EchoInMirror
-import com.eimsound.daw.api.MidiClip
-import com.eimsound.daw.api.TrackClip
 import com.eimsound.daw.api.asMidiTrackClipOrNull
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.components.EditorGrid
 import com.eimsound.daw.components.KEYBOARD_KEYS
+import com.eimsound.daw.components.LocalFloatingDialogProvider
 import com.eimsound.daw.components.dragdrop.dropTarget
 import com.eimsound.daw.components.utils.BorderCornerRadius2PX
 import com.eimsound.daw.components.utils.Stroke1PX
@@ -66,16 +67,20 @@ private data class BackingTrack(val track: Track, val notes: ArrayList<NoteDrawO
 
 @Suppress("DuplicatedCode")
 @Composable
-internal fun NotesEditorCanvas(trackClip: TrackClip<MidiClip>, selectedTrack: Track) {
+internal fun NotesEditorCanvas(editor: DefaultMidiClipEditor) {
     val coroutineScope = rememberCoroutineScope()
+    val floatingDialogProvider = LocalFloatingDialogProvider.current
     Box(
         Modifier.fillMaxSize().clipToBounds().background(MaterialTheme.colorScheme.background)
-        .scrollable(verticalScrollState, Orientation.Vertical, reverseDirection = true)
-        .pointerInput(coroutineScope, trackClip, selectedTrack) { handleMouseEvent(coroutineScope, trackClip, selectedTrack) }
-        .dropTarget({ _, _ -> true }) { _, pos ->
-            println(pos)
-            true
-        }
+            .scrollable(verticalScrollState, Orientation.Vertical, reverseDirection = true)
+            .onGloballyPositioned { offsetOfRoot = it.positionInRoot() }
+            .pointerInput(coroutineScope, editor) {
+                handleMouseEvent(coroutineScope, editor, floatingDialogProvider)
+            }
+            .dropTarget({ _, _ -> true }) { _, pos ->
+                println(pos)
+                true
+            }
     ) {
         val highlightNoteColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.05F)
         val outlineColor = MaterialTheme.colorScheme.surfaceVariant
@@ -85,6 +90,7 @@ internal fun NotesEditorCanvas(trackClip: TrackClip<MidiClip>, selectedTrack: Tr
         remember(displayPPQ, localDensity) {
             with (localDensity) { horizontalScrollState.openMaxValue = (noteWidth.value.toPx() * displayPPQ).toInt() }
         }
+        val trackClip = editor.clip
         val range = remember(trackClip.time, trackClip.duration) { trackClip.time..(trackClip.time + trackClip.duration) }
         EditorGrid(noteWidth, horizontalScrollState, range)
         Spacer(Modifier.fillMaxSize().drawWithCache {
@@ -106,7 +112,7 @@ internal fun NotesEditorCanvas(trackClip: TrackClip<MidiClip>, selectedTrack: Tr
             selectedNotes.removeIf { !allNotes.contains(it) }
 
             val notesInViewList = arrayListOf<NoteMessage>()
-            val trackColor = selectedTrack.color
+            val trackColor = editor.track.color
             for ((index, it) in clip.notes.withIndex()) {
                 val y = (KEYBOARD_KEYS - 1 - it.note) * noteHeightPx - verticalScrollValue
                 val x = (startTime + it.time) * noteWidthPx - horizontalScrollValue

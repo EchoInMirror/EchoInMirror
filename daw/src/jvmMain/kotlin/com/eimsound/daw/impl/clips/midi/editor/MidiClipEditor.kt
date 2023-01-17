@@ -9,15 +9,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.eimsound.audioprocessor.data.midi.*
 import com.eimsound.audioprocessor.projectDisplayPPQ
 import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.actions.doNoteAmountAction
-import com.eimsound.daw.api.ClipEditor
 import com.eimsound.daw.api.MidiClip
+import com.eimsound.daw.api.MidiClipEditor
 import com.eimsound.daw.api.TrackClip
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.components.Keyboard
@@ -26,7 +25,10 @@ import com.eimsound.daw.components.Timeline
 import com.eimsound.daw.components.splitpane.VerticalSplitPane
 import com.eimsound.daw.components.splitpane.rememberSplitPaneState
 import com.eimsound.daw.data.getEditUnit
-import com.eimsound.daw.utils.*
+import com.eimsound.daw.utils.OBJECT_MAPPER
+import com.eimsound.daw.utils.fitInUnitCeil
+import com.eimsound.daw.utils.mutableStateSetOf
+import com.eimsound.daw.utils.openMaxValue
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.module.kotlin.kotlinModule
@@ -44,15 +46,18 @@ val horizontalScrollState = ScrollState(0).apply {
 }
 
 @Composable
-private fun EditorContent(clip: TrackClip<MidiClip>, track: Track) {
+private fun EditorContent(editor: DefaultMidiClipEditor) {
     VerticalSplitPane(splitPaneState = rememberSplitPaneState(100F)) {
         first(0.dp) {
             Column(Modifier.fillMaxSize()) {
                 val localDensity = LocalDensity.current
                 var contentWidth by remember { mutableStateOf(0.dp) }
+                val clip = editor.clip
                 val range = remember(clip.time, clip.duration) { clip.time..(clip.time + clip.duration) }
                 Timeline(Modifier.zIndex(3F), noteWidth, horizontalScrollState, range, 68.dp)
-                Box(Modifier.weight(1F).onGloballyPositioned { with(localDensity) { contentWidth = it.size.width.toDp() } }) {
+                Box(Modifier.weight(1F).onGloballyPositioned {
+                    with(localDensity) { contentWidth = it.size.width.toDp() }
+                }) {
                     Row(Modifier.fillMaxSize().zIndex(-1F)) {
                         Surface(Modifier.verticalScroll(verticalScrollState).zIndex(5f), shadowElevation = 4.dp) {
                             Keyboard(
@@ -61,7 +66,7 @@ private fun EditorContent(clip: TrackClip<MidiClip>, track: Track) {
                                 Modifier, noteHeight
                             )
                         }
-                        NotesEditorCanvas(clip, track)
+                        NotesEditorCanvas(editor)
                     }
                     PlayHead(noteWidth, horizontalScrollState, contentWidth, 68.dp)
                     VerticalScrollbar(
@@ -71,27 +76,25 @@ private fun EditorContent(clip: TrackClip<MidiClip>, track: Track) {
                 }
             }
         }
-        second(20.dp) { EventEditor(clip) }
+        second(20.dp) { EventEditor(editor.clip) }
 
         splitter { visiblePart { Divider() } }
     }
 }
 
-class MidiClipEditor(private val clip: TrackClip<MidiClip>, private val track: Track) : ClipEditor {
+class DefaultMidiClipEditor(internal val clip: TrackClip<MidiClip>, internal val track: Track) : MidiClipEditor {
     private var copiedNotes: List<NoteMessage>? = null
     @Composable
     override fun content() {
         Row(Modifier.fillMaxSize()) {
             Column(Modifier.width(200.dp)) { EditorControls(clip.clip) }
             Surface(Modifier.fillMaxSize(), shadowElevation = 2.dp) {
-                Column {
-                    Box {
-                        Column(Modifier.fillMaxSize()) { EditorContent(clip, track) }
-                        HorizontalScrollbar(
-                            rememberScrollbarAdapter(horizontalScrollState),
-                            Modifier.align(Alignment.TopStart).fillMaxWidth()
-                        )
-                    }
+                Box {
+                    Column(Modifier.fillMaxSize()) { EditorContent(this@DefaultMidiClipEditor) }
+                    HorizontalScrollbar(
+                        rememberScrollbarAdapter(horizontalScrollState),
+                        Modifier.align(Alignment.TopStart).fillMaxWidth()
+                    )
                 }
             }
         }
@@ -103,14 +106,14 @@ class MidiClipEditor(private val clip: TrackClip<MidiClip>, private val track: T
         selectedNotes = hashSetOf()
     }
 
-    fun copyAsString() = if (selectedNotes.isEmpty()) "" else OBJECT_MAPPER.writeValueAsString(
+    override fun copyAsString() = if (selectedNotes.isEmpty()) "" else OBJECT_MAPPER.writeValueAsString(
         NoteMessageWithInfo(EchoInMirror.currentPosition.ppq, selectedNotes.toSet())
     )
 
-    fun copyToClipboardAsString() {
-        if (selectedNotes.isEmpty()) return
-        CLIPBOARD_MANAGER?.setText(AnnotatedString(copyAsString()))
-    }
+//    fun copyToClipboardAsString() {
+//        if (selectedNotes.isEmpty()) return
+//        CLIPBOARD_MANAGER?.setText(AnnotatedString(copyAsString()))
+//    }
 
     override fun copy() {
         if (selectedNotes.isEmpty()) return
@@ -131,14 +134,14 @@ class MidiClipEditor(private val clip: TrackClip<MidiClip>, private val track: T
         delete()
     }
 
-    fun pasteFromString(content: String) {
+    override fun pasteFromString(value: String) {
         try {
             val data = ObjectMapper()
                 .registerModule(kotlinModule())
                 .registerModule(
                     SimpleModule()
                     .addAbstractTypeMapping(NoteMessage::class.java, NoteMessageImpl::class.java))
-                .readValue<NoteMessageWithInfo>(content)
+                .readValue<NoteMessageWithInfo>(value)
             val scale = EchoInMirror.currentPosition.ppq.toDouble() / data.ppq
             data.notes.forEach {
                 it.time = (it.time * scale).roundToInt()
@@ -149,9 +152,9 @@ class MidiClipEditor(private val clip: TrackClip<MidiClip>, private val track: T
         } catch (ignored: Throwable) { ignored.printStackTrace() }
     }
 
-    fun pasteFromClipboard() {
-        pasteFromString(CLIPBOARD_MANAGER?.getText()?.text ?: return)
-    }
+//    fun pasteFromClipboard() {
+//        pasteFromString(CLIPBOARD_MANAGER?.getText()?.text ?: return)
+//    }
 
     override fun selectAll() {
         selectedNotes = clip.clip.notes.toHashSet()
