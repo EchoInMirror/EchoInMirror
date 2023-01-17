@@ -87,12 +87,12 @@ class MidiClipFactoryImpl : ClipFactory<MidiClip> {
     }
 
     @Composable
-    override fun playlistContent(clip: TrackClip<MidiClip>, track: Track, contentColor: Color, trackHeight: Dp,
+    override fun playlistContent(clip: TrackClip<MidiClip>, track: Track, contentColor: Color,
                                  noteWidth: MutableState<Dp>, startPPQ: Float, widthPPQ: Float) {
         clip.clip.notes.read()
         Canvas(Modifier.fillMaxSize()) {
             val noteWidthPx = noteWidth.value.toPx()
-            val trackHeightPx = trackHeight.toPx()
+            val trackHeightPx = size.height
             val height = (trackHeightPx / 128).coerceAtLeast(1F)
             clip.clip.notes.forEach {
                 val y = trackHeightPx - trackHeightPx / 128 * it.note

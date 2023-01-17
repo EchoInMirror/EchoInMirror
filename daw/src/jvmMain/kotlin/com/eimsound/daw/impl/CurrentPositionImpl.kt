@@ -43,6 +43,7 @@ class CurrentPositionImpl: CurrentPosition {
     }
 
     override fun setPPQPosition(ppqPosition: Double) {
+        if (this.ppqPosition == ppqPosition) return
         this.ppqPosition = ppqPosition.coerceAtLeast(0.0)
         timeInSeconds = this.ppqPosition / bpm * 60.0
         timeInSamples = (timeInSeconds * sampleRate).toLong()
@@ -52,6 +53,7 @@ class CurrentPositionImpl: CurrentPosition {
     }
 
     override fun setCurrentTime(timeInPPQ: Int) {
+        if (this.timeInPPQ == timeInPPQ) return
         this.timeInPPQ = timeInPPQ.coerceIn(projectRange).coerceAtLeast(0)
         ppqPosition = this.timeInPPQ.toDouble() / ppq
         timeInSeconds = ppqPosition / bpm * 60.0

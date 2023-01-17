@@ -43,7 +43,7 @@ interface ClipFactory<T: Clip> {
     }
     fun getEditor(clip: TrackClip<T>, track: Track): ClipEditor?
     @Composable
-    fun playlistContent(clip: TrackClip<T>, track: Track, contentColor: Color, trackHeight: Dp,
+    fun playlistContent(clip: TrackClip<T>, track: Track, contentColor: Color,
                         noteWidth: MutableState<Dp>, startPPQ: Float, widthPPQ: Float
     )
 }
@@ -69,6 +69,7 @@ val ClipManager.defaultAudioClipFactory get() = factories["AudioClip"] as ClipFa
 
 interface Clip {
     val id: String
+    val name: String?
     @get:JsonSerialize(using = ClipFactoryNameSerializer::class)
     val factory: ClipFactory<*>
     @get:JsonIgnore
@@ -89,6 +90,7 @@ interface AudioClip : Clip {
 
 abstract class AbstractClip<T: Clip>(json: JsonNode?, override val factory: ClipFactory<T>) : Clip {
     override val id = json?.get("id")?.asText() ?: randomId()
+    override val name: String? = null
     override val isExpandable = false
     override val defaultDuration = -1
     override val maxDuration = -1

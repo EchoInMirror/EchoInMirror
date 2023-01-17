@@ -25,10 +25,8 @@ import com.eimsound.daw.components.PlayHead
 import com.eimsound.daw.components.Timeline
 import com.eimsound.daw.components.splitpane.VerticalSplitPane
 import com.eimsound.daw.components.splitpane.rememberSplitPaneState
-import com.eimsound.daw.utils.CLIPBOARD_MANAGER
-import com.eimsound.daw.utils.OBJECT_MAPPER
-import com.eimsound.daw.utils.mutableStateSetOf
-import com.eimsound.daw.utils.openMaxValue
+import com.eimsound.daw.data.getEditUnit
+import com.eimsound.daw.utils.*
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.module.kotlin.kotlinModule
@@ -80,6 +78,7 @@ private fun EditorContent(clip: TrackClip<MidiClip>, track: Track) {
 }
 
 class MidiClipEditor(private val clip: TrackClip<MidiClip>, private val track: Track) : ClipEditor {
+    private var copiedNotes: List<NoteMessage>? = null
     @Composable
     override fun content() {
         Row(Modifier.fillMaxSize()) {
@@ -104,22 +103,35 @@ class MidiClipEditor(private val clip: TrackClip<MidiClip>, private val track: T
         selectedNotes = hashSetOf()
     }
 
+    fun copyAsString() = if (selectedNotes.isEmpty()) "" else OBJECT_MAPPER.writeValueAsString(
+        NoteMessageWithInfo(EchoInMirror.currentPosition.ppq, selectedNotes.toSet())
+    )
+
+    fun copyToClipboardAsString() {
+        if (selectedNotes.isEmpty()) return
+        CLIPBOARD_MANAGER?.setText(AnnotatedString(copyAsString()))
+    }
+
     override fun copy() {
         if (selectedNotes.isEmpty()) return
-        CLIPBOARD_MANAGER?.setText(AnnotatedString(OBJECT_MAPPER.writeValueAsString(
-            NoteMessageWithInfo(EchoInMirror.currentPosition.ppq, selectedNotes.toSet())
-        )))
+        val startTime = selectedNotes.minOf { it.time }
+        copiedNotes = selectedNotes.map { it.copy(time = it.time - startTime) }
+    }
+
+    override fun paste() {
+        if (copiedNotes == null) return
+        val startTime = EchoInMirror.currentPosition.timeInPPQ.fitInUnitCeil(getEditUnit())
+        val notes = copiedNotes!!.map { it.copy(time = it.time + startTime) }
+        clip.doNoteAmountAction(notes, false)
     }
 
     override fun cut() {
         if (EchoInMirror.selectedTrack == null) return
         copy()
-        clip.doNoteAmountAction(selectedNotes, true)
-        selectedNotes = hashSetOf()
+        delete()
     }
 
-    override fun paste() {
-        val content = CLIPBOARD_MANAGER?.getText()?.text ?: return
+    fun pasteFromString(content: String) {
         try {
             val data = ObjectMapper()
                 .registerModule(kotlinModule())
@@ -135,6 +147,10 @@ class MidiClipEditor(private val clip: TrackClip<MidiClip>, private val track: T
             clip.doNoteAmountAction(data.notes)
             selectedNotes = data.notes.toHashSet()
         } catch (ignored: Throwable) { ignored.printStackTrace() }
+    }
+
+    fun pasteFromClipboard() {
+        pasteFromString(CLIPBOARD_MANAGER?.getText()?.text ?: return)
     }
 
     override fun selectAll() {

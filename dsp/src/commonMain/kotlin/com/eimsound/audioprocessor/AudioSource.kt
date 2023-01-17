@@ -1,5 +1,7 @@
 package com.eimsound.audioprocessor
 
+import java.nio.file.Path
+
 interface AudioSource {
     val name: String
     val source: AudioSource?
@@ -10,7 +12,7 @@ interface AudioSource {
 }
 
 interface FileAudioSource : AudioSource, AutoCloseable {
-    val file: String
+    val file: Path
     val isRandomAccessable: Boolean
 }
 

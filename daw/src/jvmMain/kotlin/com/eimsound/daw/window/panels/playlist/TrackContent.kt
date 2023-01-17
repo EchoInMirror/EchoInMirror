@@ -9,12 +9,14 @@ import androidx.compose.foundation.gestures.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Divider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.*
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -234,8 +236,8 @@ internal fun TrackContent(track: Track, index: Int, density: Density): Int {
                                 }
                             ) {
                                 if (!deletionList.contains(it)) {
-                                    val trackColor = track.color.copy(0.85F)
-                                    Box(
+                                    val trackColor = track.color.copy(0.7F)
+                                    Column(
                                         Modifier
                                             .fillMaxSize()
                                             .background(trackColor, MaterialTheme.shapes.extraSmall)
@@ -249,12 +251,18 @@ internal fun TrackContent(track: Track, index: Int, density: Density): Int {
                                             .clip(MaterialTheme.shapes.extraSmall)
                                             .pointerHoverIcon(action.toPointerIcon(PointerIconDefaults.Hand))
                                     ) {
+                                        val contentColor = trackColor.toOnSurfaceColor()
+                                        Text(
+                                            it.clip.name ?: track.name,
+                                            Modifier.fillMaxWidth().background(track.color).padding(horizontal = 4.dp),
+                                            contentColor, style = MaterialTheme.typography.labelMedium,
+                                            maxLines = 1, overflow = TextOverflow.Ellipsis
+                                        )
                                         @Suppress("TYPE_MISMATCH")
                                         it.clip.factory.playlistContent(
                                             it, track,
-                                            trackColor.toOnSurfaceColor()
-                                                .copy(animateFloatAsState(if (isSelected) 1F else 0.8F).value),
-                                            trackHeight, noteWidth,
+                                            contentColor.copy(animateFloatAsState(if (isSelected) 1F else 0.8F).value),
+                                            noteWidth,
                                             (scrollXPPQ - clipStartPPQOnMove).coerceAtLeast(0F) +
                                                     (it.start + if (isSelected && action == EditAction.RESIZE &&
                                                         !resizeDirectionRight) deltaX else 0),
