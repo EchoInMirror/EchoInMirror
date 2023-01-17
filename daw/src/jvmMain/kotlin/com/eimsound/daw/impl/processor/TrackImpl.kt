@@ -13,7 +13,7 @@ import com.eimsound.daw.api.DefaultTrackClipList
 import com.eimsound.daw.api.ProjectInformation
 import com.eimsound.daw.api.processor.*
 import com.eimsound.daw.components.utils.randomColor
-import com.eimsound.daw.data.midi.*
+
 import com.eimsound.daw.utils.LevelMeterImpl
 import com.fasterxml.jackson.annotation.JsonAutoDetect
 import com.fasterxml.jackson.annotation.JsonInclude

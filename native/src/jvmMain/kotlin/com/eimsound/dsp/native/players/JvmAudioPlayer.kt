@@ -18,6 +18,8 @@ class JvmAudioPlayer(name: String, currentPosition: CurrentPosition, processor: 
     private var channels = 2
     private var buffers = arrayOf(FloatArray(bufferSize), FloatArray(bufferSize))
     private var outputBuffer = ByteArray(2 * bufferSize * bits)
+    override var outputLatency: Int = 0
+    override var inputLatency: Int = 0
 
     override fun open(sampleRate: Int, bufferSize: Int, bits: Int) {
         if (thread != null) return

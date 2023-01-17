@@ -25,6 +25,8 @@ class NativeAudioPlayer(
     private var bufferSize = 0
     private var channels = 2
     private var buffers = arrayOf(FloatArray(bufferSize), FloatArray(bufferSize))
+    override var inputLatency: Int = 0
+    override var outputLatency: Int = 0
 
     @Suppress("DuplicatedCode")
     override fun open(sampleRate: Int, bufferSize: Int, bits: Int) {
@@ -45,7 +47,9 @@ class NativeAudioPlayer(
         if (input.read() != 1) throw RuntimeException("Failed to open audio player")
 
         println(input.readString())
-        println("Input latency: ${input.readInt()}, output latency: ${input.readInt()}, sample rate: ${input.readFloat()}, buffer size: ${input.readInt()}")
+        this.inputLatency = input.readInt()
+        this.outputLatency = input.readInt()
+        println("Input latency: ${this.inputLatency}, output latency: ${this.outputLatency}, sample rate: ${input.readFloat()}, buffer size: ${input.readInt()}")
 
         p.onExit().thenAccept { process = null }
         process = p
