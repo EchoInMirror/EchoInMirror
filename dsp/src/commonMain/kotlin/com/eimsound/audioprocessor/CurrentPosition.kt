@@ -4,15 +4,15 @@ interface CurrentPosition {
     var bpm: Double
     val timeInSamples: Long
     val timeInSeconds: Double
-    var ppq: Int
+    val ppq: Int
     val timeInPPQ: Int
-    var ppqPosition: Double
+    val ppqPosition: Double
     var isPlaying: Boolean
     var isLooping: Boolean
     var isRecording: Boolean
     val isRealtime: Boolean
-    var bufferSize: Int
-    var sampleRate: Int
+    val bufferSize: Int
+    val sampleRate: Int
     var timeSigNumerator: Int
     var timeSigDenominator: Int
     var projectRange: IntRange
@@ -22,6 +22,7 @@ interface CurrentPosition {
     fun update(timeInSamples: Long)
     fun setPPQPosition(ppqPosition: Double)
     fun setCurrentTime(timeInPPQ: Int)
+    fun setSampleRateAndBufferSize(sampleRate: Int, bufferSize: Int)
 }
 
 fun CurrentPosition.convertPPQToSamples(ppq: Int) = (ppq.toDouble() / this.ppq / bpm * 60.0 * sampleRate).toLong()

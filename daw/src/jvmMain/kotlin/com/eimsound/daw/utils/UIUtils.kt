@@ -17,7 +17,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.eimsound.daw.EchoInMirror
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.apache.commons.lang3.SystemUtils
 import org.ocpsoft.prettytime.PrettyTime
 import java.awt.Component
@@ -30,7 +29,6 @@ import java.util.*
 import javax.swing.JFileChooser
 
 private val ZERO_DATE = Date(0)
-val OBJECT_MAPPER = jacksonObjectMapper()
 var CLIPBOARD_MANAGER: ClipboardManager? = null
 val TIME_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneId.systemDefault())
 val TIME_PRETTIER = PrettyTime()

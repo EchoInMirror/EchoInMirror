@@ -177,8 +177,7 @@ class NativeAudioPluginFactoryImpl(private val configFile: Path, private val nat
         if (description !is NativeAudioPluginDescription)
             throw NoSuchAudioProcessorException(description.identifier ?: "Unknown", name)
         return NativeAudioPluginImpl(description, this).apply {
-            launch(nativeHostPath.absolutePathString(), "-L",
-                jacksonObjectMapper().run { writeValueAsString(writeValueAsString(description)) })
+            launch(nativeHostPath.absolutePathString())
         }
     }
 

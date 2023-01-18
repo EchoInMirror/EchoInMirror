@@ -1,18 +1,24 @@
 package com.eimsound.audioprocessor
 
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 
 interface AudioPlayer : AutoCloseable {
+    val factory: AudioPlayerFactory
     val name: String
     val cpuLoad: Float
     val inputLatency: Int
     val outputLatency: Int
-    fun open(sampleRate: Int, bufferSize: Int, bits: Int)
+    val availableSampleRates: IntArray
+    val availableBufferSizes: IntArray
+    @Composable fun controls()
+    fun onClose(callback: () -> Unit)
 }
 
 abstract class AbstractAudioPlayer(
+    override val factory: AudioPlayerFactory,
     override val name: String,
     val currentPosition: CurrentPosition,
     var processor: AudioProcessor,
@@ -22,6 +28,10 @@ abstract class AbstractAudioPlayer(
     private var lastTime = 0L
     private var time = 0L
     private var times = 0
+    protected var closeCallback: (() -> Unit)? = null
+    override val availableSampleRates = intArrayOf(44100, 48000, 88200, 96000)
+    override val availableBufferSizes = intArrayOf(256, 512, 1024, 2048, 4096)
+
     protected fun enterProcessBlock() {
         lastTime = System.nanoTime()
     }
@@ -34,6 +44,11 @@ abstract class AbstractAudioPlayer(
             times = 0
         }
     }
+
+    @Composable
+    override fun controls() { }
+
+    override fun onClose(callback: () -> Unit) { closeCallback = callback }
 }
 
 interface AudioPlayerFactory {
@@ -46,4 +61,5 @@ interface AudioPlayerManager {
     val factories: Map<String, AudioPlayerFactory>
     fun registerFactory(factory: AudioPlayerFactory)
     fun create(factory: String, name: String, currentPosition: CurrentPosition, processor: AudioProcessor): AudioPlayer
+    fun createDefaultPlayer(currentPosition: CurrentPosition, processor: AudioProcessor): AudioPlayer
 }

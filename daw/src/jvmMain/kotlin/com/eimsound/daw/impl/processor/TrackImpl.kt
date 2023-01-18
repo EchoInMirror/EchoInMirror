@@ -8,6 +8,7 @@ import com.eimsound.audioprocessor.data.midi.MidiNoteRecorder
 import com.eimsound.audioprocessor.data.midi.noteOff
 import com.eimsound.audioprocessor.dsp.calcPanLeftChannel
 import com.eimsound.audioprocessor.dsp.calcPanRightChannel
+import com.eimsound.daw.Configuration
 import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.api.DefaultTrackClipList
 import com.eimsound.daw.api.ProjectInformation
@@ -359,6 +360,15 @@ class BusImpl(
                 }
             }
             else -> {}
+        }
+
+        if (position.isRealtime && Configuration.autoCutOver0db) {
+            repeat(buffers.size) { ch ->
+                repeat(buffers[ch].size) {
+                    if (buffers[ch][it] > 1f) buffers[ch][it] = 1f
+                    else if (buffers[ch][it] < -1f) buffers[ch][it] = -1f
+                }
+            }
         }
     }
 }

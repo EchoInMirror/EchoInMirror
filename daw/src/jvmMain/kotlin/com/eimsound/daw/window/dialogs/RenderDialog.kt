@@ -15,7 +15,10 @@ import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.api.processor.ChannelType
 import com.eimsound.daw.components.*
 import com.eimsound.dsp.native.JvmRenderer
-import kotlinx.coroutines.*
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import java.awt.Dimension
 import java.io.File
 import java.time.LocalDateTime
@@ -198,13 +201,13 @@ val ExportDialog = @Composable {
 
                         var renderProcess by remember { mutableStateOf(0f) }
                         var renderJob by remember { mutableStateOf<Job?>(null) }
-                        var renderTimeInSecond by remember { mutableStateOf(0f) }
+                        var renderStartTime by remember { mutableStateOf(0L) }
                         var lastRenderBlockTime: Long
                         var renderRate by remember { mutableStateOf(1f) }
                         var renderBlockSize: Int
                         if (isRendering) {
                             Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("已用时: ${formatSecondTime(renderTimeInSecond)}")
+                                Text("已用时: ${formatSecondTime((System.currentTimeMillis() - renderStartTime) / 1000F)}")
                                 Text("剩余: ${formatSecondTime(timeInSecond * (1 - renderProcess) / renderRate)}")
                                 Text("已渲染: ${formatSecondTime(timeInSecond * renderProcess)}")
                                 Text("%.1f 倍快于实时".format(renderRate))
@@ -220,26 +223,25 @@ val ExportDialog = @Composable {
                                     renderJob?.cancel()
                                 isRendering = false
                             } else {
-                                if (filename.isEmpty())
-                                    return@Button
+                                if (filename.isEmpty()) return@Button
                                 val renderer = EchoInMirror.bus?.let { JvmRenderer(it) }
-                                val curposition = EchoInMirror.currentPosition
+                                val curPosition = EchoInMirror.currentPosition
                                 val audioFile = File("./${filename}.${renderFormat.extend}")
 
                                 isRendering = true
-                                renderTimeInSecond = 0f
+                                renderStartTime = System.currentTimeMillis()
                                 renderBlockSize = 0
                                 lastRenderBlockTime = 0
 
                                 window.size = Dimension(300, 200)
 
-                                EchoInMirror.player!!.close()
+                                EchoInMirror.player?.close()
                                 renderJob = GlobalScope.launch {
                                     renderer?.start(
-                                        curposition.projectRange,
-                                        curposition.sampleRate,
-                                        curposition.ppq,
-                                        curposition.bpm,
+                                        curPosition.projectRange,
+                                        curPosition.sampleRate,
+                                        curPosition.ppq,
+                                        curPosition.bpm,
                                         audioFile,
                                         renderFormat,
                                         bits,
@@ -248,20 +250,17 @@ val ExportDialog = @Composable {
                                     ) {
                                         renderProcess = it
                                         if (it < 1f) {
-                                            renderBlockSize += curposition.bufferSize
-                                            if (renderBlockSize >= curposition.sampleRate) {
+                                            renderBlockSize += curPosition.bufferSize
+                                            if (renderBlockSize >= curPosition.sampleRate) {
                                                 val newTime = System.currentTimeMillis()
                                                 renderRate = 1000f / (newTime - lastRenderBlockTime)
                                                 lastRenderBlockTime = newTime
                                                 renderBlockSize = 0
                                             }
+                                        } else {
+                                            isRendering = false
+                                            EchoInMirror.player = EchoInMirror.createAudioPlayer()
                                         }
-                                    }
-                                }
-                                GlobalScope.launch {
-                                    while (!renderJob!!.isCompleted) {
-                                        delay(10)
-                                        renderTimeInSecond += 0.01f
                                     }
                                 }
                             }

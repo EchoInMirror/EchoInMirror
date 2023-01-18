@@ -51,4 +51,28 @@ object EchoInMirror {
             }
         }
     var selectedClip by mutableStateOf<TrackClip<*>?>(null)
+
+    fun createAudioPlayer(): AudioPlayer {
+        var ret: AudioPlayer? = null
+        if (Configuration.audioDeviceFactoryName.isNotEmpty()) {
+            try {
+                ret = audioPlayerManager.create(Configuration.audioDeviceFactoryName,
+                    Configuration.audioDeviceName, currentPosition, bus!!)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+        if (ret == null) ret = audioPlayerManager.createDefaultPlayer(currentPosition, bus!!)
+        var flag = false
+        if (Configuration.audioDeviceFactoryName != ret.factory.name) {
+            Configuration.audioDeviceFactoryName = ret.factory.name
+            flag = true
+        }
+        if (Configuration.audioDeviceName != ret.name) {
+            Configuration.audioDeviceName = ret.name
+            flag = true
+        }
+        if (flag) Configuration.save()
+        return ret
+    }
 }

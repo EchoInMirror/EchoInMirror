@@ -25,12 +25,12 @@ import com.eimsound.daw.components.Timeline
 import com.eimsound.daw.components.splitpane.VerticalSplitPane
 import com.eimsound.daw.components.splitpane.rememberSplitPaneState
 import com.eimsound.daw.data.getEditUnit
-import com.eimsound.daw.utils.OBJECT_MAPPER
 import com.eimsound.daw.utils.fitInUnitCeil
 import com.eimsound.daw.utils.mutableStateSetOf
 import com.eimsound.daw.utils.openMaxValue
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.module.SimpleModule
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.kotlinModule
 import com.fasterxml.jackson.module.kotlin.readValue
 import kotlin.math.roundToInt
@@ -106,7 +106,7 @@ class DefaultMidiClipEditor(internal val clip: TrackClip<MidiClip>, internal val
         selectedNotes = hashSetOf()
     }
 
-    override fun copyAsString() = if (selectedNotes.isEmpty()) "" else OBJECT_MAPPER.writeValueAsString(
+    override fun copyAsString() = if (selectedNotes.isEmpty()) "" else jacksonObjectMapper().writeValueAsString(
         NoteMessageWithInfo(EchoInMirror.currentPosition.ppq, selectedNotes.toSet())
     )
 

@@ -15,7 +15,6 @@ import com.eimsound.daw.window.dialogs.settings.SettingsWindow
 import com.eimsound.daw.window.panels.Editor
 import com.eimsound.daw.window.panels.Mixer
 import com.eimsound.daw.window.panels.UndoList
-import com.eimsound.dsp.native.players.JvmAudioPlayer
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
@@ -85,14 +84,13 @@ class WindowManagerImpl: WindowManager {
             val (bus, loadBus) = EchoInMirror.trackManager.createBus(DefaultProjectInformation(path))
             EchoInMirror.bus = bus
             bus.prepareToPlay(EchoInMirror.currentPosition.sampleRate, EchoInMirror.currentPosition.bufferSize)
-            val player = JvmAudioPlayer("Jvm", EchoInMirror.currentPosition, bus)
-            EchoInMirror.player = player
 
             while (mainWindow == null) delay(25)
 
             loadBus()
 
-            player.open(EchoInMirror.currentPosition.sampleRate, EchoInMirror.currentPosition.bufferSize, 2)
+            val player = EchoInMirror.createAudioPlayer()
+            EchoInMirror.player = player
         }
     }
 }

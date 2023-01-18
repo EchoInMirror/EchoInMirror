@@ -1,10 +1,7 @@
 package com.eimsound.daw.impl.processor
 
 import androidx.compose.runtime.mutableStateMapOf
-import com.eimsound.audioprocessor.AudioPlayerFactory
-import com.eimsound.audioprocessor.AudioPlayerManager
-import com.eimsound.audioprocessor.AudioProcessor
-import com.eimsound.audioprocessor.CurrentPosition
+import com.eimsound.audioprocessor.*
 import com.eimsound.daw.Configuration
 import com.eimsound.daw.utils.NoSuchFactoryException
 import com.eimsound.dsp.native.players.JvmAudioPlayerFactory
@@ -29,4 +26,9 @@ class AudioPlayerManagerImpl : AudioPlayerManager {
         currentPosition: CurrentPosition,
         processor: AudioProcessor
     ) = factories[factory]?.create(name, currentPosition, processor) ?: throw NoSuchFactoryException(factory)
+
+    override fun createDefaultPlayer(currentPosition: CurrentPosition, processor: AudioProcessor): AudioPlayer {
+        val factory = factories.values.firstOrNull() ?: throw NoSuchFactoryException("No audio player factory")
+        return factory.create("", currentPosition, processor)
+    }
 }

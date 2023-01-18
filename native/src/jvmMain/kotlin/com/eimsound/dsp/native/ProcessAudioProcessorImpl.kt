@@ -3,6 +3,7 @@ package com.eimsound.dsp.native
 import com.eimsound.audioprocessor.*
 import com.eimsound.daw.utils.ByteBufInputStream
 import com.eimsound.daw.utils.ByteBufOutputStream
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -95,7 +96,7 @@ open class ProcessAudioProcessorImpl(
                 args.add(handler)
             }
             args.addAll(commands)
-            val pb = ProcessBuilder(execFile, *args.toTypedArray())
+            val pb = ProcessBuilder(execFile, "-L", "#", *args.toTypedArray())
 
             pb.redirectOutput(ProcessBuilder.Redirect.INHERIT)
             val p = pb.start()
@@ -104,6 +105,10 @@ open class ProcessAudioProcessorImpl(
             val flag2 = p.errorStream.read() == 2
             val isBigEndian = flag1 && flag2
             val input = ByteBufInputStream(isBigEndian, p.errorStream)
+            val output = ByteBufOutputStream(isBigEndian, p.outputStream)
+
+            output.writeString(jacksonObjectMapper().writeValueAsString(description))
+            output.flush()
 
             val id = input.read()
             if (id == 127) {
@@ -120,7 +125,6 @@ open class ProcessAudioProcessorImpl(
             }
 
             try {
-                val output = ByteBufOutputStream(isBigEndian, p.outputStream)
                 inputChannelsCount = input.readInt()
                 outputChannelsCount = input.readInt()
 

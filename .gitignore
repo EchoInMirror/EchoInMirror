@@ -1,6 +1,7 @@
 EIMHost.exe
 test_project
 *.wav
+*.log
 ffmpeg
 
 .gradle

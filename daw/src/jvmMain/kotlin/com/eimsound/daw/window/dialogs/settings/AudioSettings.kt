@@ -7,11 +7,24 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import com.eimsound.audioprocessor.AudioProcessor
 import com.eimsound.daw.Configuration
 import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.components.*
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
+
+@Composable
+private fun Latency(title: String, latency: Int) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(title, Modifier.weight(1f))
+        Text(
+            "${(latency * 1000.0 / EchoInMirror.currentPosition.sampleRate).roundToInt()} 毫秒 / $latency 个采样",
+            Modifier.weight(1f)
+        )
+    }
+}
 
 internal object AudioSettings : Tab {
     @Composable
@@ -24,104 +37,119 @@ internal object AudioSettings : Tab {
         Icon(Icons.Filled.SettingsInputComponent, "Audio Settings")
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
+    @OptIn(DelicateCoroutinesApi::class)
     @Composable
     override fun content() {
         Column {
-            var selectedFactoryName by remember { mutableStateOf(Configuration.audioFactoryName) }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("音频工厂:", Modifier.weight(1f))
                 Menu({ close ->
                     EchoInMirror.audioPlayerManager.factories.forEach { (name, _) ->
                         MenuItem(
-                            selectedFactoryName == name,
+                            Configuration.audioDeviceFactoryName == name,
                             {
-                                selectedFactoryName = name
-                                Configuration.audioFactoryName = name
+                                if (Configuration.audioDeviceFactoryName == name) return@MenuItem
+                                EchoInMirror.player?.close()
+                                Configuration.audioDeviceName = ""
+                                Configuration.audioDeviceFactoryName = name
                                 Configuration.save()
                                 close()
-                            }
+
+                                GlobalScope.launch {
+                                    EchoInMirror.player = EchoInMirror.createAudioPlayer()
+                                }
+                            }, modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(name)
                         }
                     }
                 }, boxModifier = Modifier.weight(1f)) {
-                    Text(selectedFactoryName, Modifier.fillMaxWidth())
+                    Text(Configuration.audioDeviceFactoryName, Modifier.fillMaxWidth())
                 }
-                Spacer(Modifier.weight(.5f))
             }
-            Spacer(Modifier.height(10.dp))
+            Gap(8)
 
             Row(verticalAlignment = Alignment.CenterVertically) {
-                var selectedPlayerName by remember { mutableStateOf(EchoInMirror.player?.name ?: "未选定") }
                 Text("音频设备:", Modifier.weight(1f))
                 Menu({ close ->
-                    var playerNams by remember { mutableStateOf(emptyList<String>()) }
-                    LaunchedEffect(selectedFactoryName) {
-                        playerNams = EchoInMirror.audioPlayerManager.factories[selectedFactoryName]!!.getPlayers()
+                    var playerNames by remember { mutableStateOf(emptyList<String>()) }
+                    LaunchedEffect(Configuration.audioDeviceName) {
+                        playerNames = EchoInMirror.audioPlayerManager.factories[Configuration.audioDeviceFactoryName]!!.getPlayers()
                     }
-                    playerNams.forEach { playerName ->
+                    playerNames.forEach { playerName ->
                         MenuItem(
-                            selectedPlayerName == playerName,
+                            Configuration.audioDeviceName == playerName,
                             {
+                                if (Configuration.audioDeviceName == playerName) return@MenuItem
                                 EchoInMirror.player?.close()
-                                EchoInMirror.player =
-                                    EchoInMirror.audioPlayerManager.factories[selectedFactoryName]!!.create(
-                                        playerName,
-                                        EchoInMirror.currentPosition,
-                                        EchoInMirror.bus as AudioProcessor
-                                    )
-                                selectedPlayerName = playerName
+                                Configuration.audioDeviceName = playerName
+                                Configuration.save()
                                 close()
-                            }
+
+                                GlobalScope.launch {
+                                    EchoInMirror.player = EchoInMirror.createAudioPlayer()
+                                }
+                            }, modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(playerName)
                         }
 
                     }
                 }, boxModifier = Modifier.weight(1f)) {
-                    Text(selectedPlayerName, Modifier.fillMaxWidth())
+                    Text(Configuration.audioDeviceName, Modifier.fillMaxWidth())
                 }
-                Spacer(Modifier.weight(.5f))
             }
-            Spacer(Modifier.height(10.dp))
+            Gap(8)
             Row(verticalAlignment = Alignment.CenterVertically) {
-                var bufferSize by remember { mutableStateOf(EchoInMirror.currentPosition.bufferSize) }
-                Text("设备区块大小:", Modifier.weight(1f))
+                Text("缓冲区大小:", Modifier.weight(1f))
                 Menu({ close ->
-                    arrayOf(128, 256, 512, 1024).forEach {
+                    EchoInMirror.player?.availableBufferSizes?.forEach {
                         MenuItem(
-                            bufferSize == it,
+                            EchoInMirror.currentPosition.bufferSize == it,
                             {
-                                bufferSize = it
                                 EchoInMirror.player?.close()
-                                EchoInMirror.currentPosition.bufferSize = it
+                                EchoInMirror.currentPosition.setSampleRateAndBufferSize(
+                                    EchoInMirror.currentPosition.sampleRate,
+                                    it
+                                )
+                                Configuration.save()
                                 close()
-                            }
+
+                                GlobalScope.launch {
+                                    EchoInMirror.player = EchoInMirror.createAudioPlayer()
+                                }
+                            }, modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("${it}个采样")
+                            Text("$it 个采样")
                         }
                     }
                 }, boxModifier = Modifier.weight(1f)) {
-                    Text("${bufferSize}个采样", Modifier.fillMaxWidth())
+                    Text("${EchoInMirror.currentPosition.bufferSize} 个采样", Modifier.fillMaxWidth())
                 }
-                Spacer(Modifier.weight(.5f))
             }
 
-            Spacer(Modifier.height(10.dp))
+            Gap(8)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 var sampleRate by remember { mutableStateOf(EchoInMirror.currentPosition.sampleRate) }
                 Text("采样率:", Modifier.weight(1f))
                 Menu({ close ->
-                    arrayOf(48000, 44100).forEach {
+                    EchoInMirror.player?.availableSampleRates?.forEach {
                         MenuItem(
                             sampleRate == it,
                             {
                                 sampleRate = it
                                 EchoInMirror.player?.close()
-                                EchoInMirror.currentPosition.sampleRate = it
+                                EchoInMirror.currentPosition.setSampleRateAndBufferSize(
+                                    it,
+                                    EchoInMirror.currentPosition.bufferSize
+                                )
+                                Configuration.save()
                                 close()
-                            }
+
+                                GlobalScope.launch {
+                                    EchoInMirror.player = EchoInMirror.createAudioPlayer()
+                                }
+                            }, modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(it.toString())
                         }
@@ -129,62 +157,34 @@ internal object AudioSettings : Tab {
                 }, boxModifier = Modifier.weight(1f)) {
                     Text(sampleRate.toString(), Modifier.fillMaxWidth())
                 }
-                Spacer(Modifier.weight(.5f))
             }
 
-            Spacer(Modifier.height(10.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                var shareDevice by remember { mutableStateOf(Configuration.stopAudioOutputOnBlur) }
                 Text("后台共享音频设备")
                 Checkbox(
-                    shareDevice,
+                    Configuration.stopAudioOutputOnBlur,
                     {
-                        shareDevice = it
                         Configuration.stopAudioOutputOnBlur = it
                         Configuration.save()
                     }
                 )
             }
 
-            Spacer(Modifier.height(10.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                var autoCutOver0db by remember { mutableStateOf(Configuration.autoCutOver0db) }
                 Text("对超过 0db 的音频进行削波")
                 Checkbox(
-                    autoCutOver0db,
+                    Configuration.autoCutOver0db,
                     {
-                        autoCutOver0db = it
                         Configuration.autoCutOver0db = it
                         Configuration.save()
                     }
                 )
             }
 
-            Spacer(Modifier.height(10.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                val inputDelay by mutableStateOf(EchoInMirror.player?.inputLatency ?: 0)
-                Text("输入延迟:", Modifier.weight(1f))
-                Text(
-                    "${inputDelay / EchoInMirror.currentPosition.sampleRate * 1000} 毫秒 / $inputDelay 个采样",
-                    Modifier.weight(1f)
-                )
-
-                Spacer(Modifier.weight(.5f))
-            }
-
-            Spacer(Modifier.height(10.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                val outputDelay by mutableStateOf(EchoInMirror.player?.outputLatency ?: 0)
-                Text("输入延迟:", Modifier.weight(1f))
-                Text(
-                    "${outputDelay / EchoInMirror.currentPosition.sampleRate * 1000} 毫秒 / $outputDelay 个采样",
-                    Modifier.weight(1f)
-                )
-
-                Spacer(Modifier.weight(.5f))
-            }
+            Latency("输入延迟", EchoInMirror.player?.inputLatency ?: 0)
+            Latency("输出延迟", EchoInMirror.player?.outputLatency ?: 0)
+            Gap(8)
+            EchoInMirror.player?.controls()
         }
-
-
     }
 }

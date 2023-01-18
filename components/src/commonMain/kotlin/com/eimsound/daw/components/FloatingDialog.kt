@@ -64,7 +64,7 @@ class FloatingDialogProvider {
                     Box(Modifier.graphicsLayer(alpha = alpha, shadowElevation = if (alpha == 1F) 0F else 5F)) { dialog.content() }
                 }) { measurables, constraints ->
                     var height = constraints.maxHeight - dialog.position.y.toInt() - 25
-                    var width = constraints.maxWidth - dialog.position.x.toInt() - 25
+                    var width = constraints.maxWidth - dialog.position.x.toInt() - 12
                     val isTooSmall = height < 40
                     val isTooRight = width < 100
                     if (isTooSmall) height = constraints.maxHeight - 50

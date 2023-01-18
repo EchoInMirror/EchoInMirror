@@ -33,11 +33,11 @@ interface Renderer {
     )
 }
 
-class RenderPosition(override var ppq: Int, override var sampleRate: Int, range: IntRange) : CurrentPosition {
+class RenderPosition(override var ppq: Int, override val sampleRate: Int, range: IntRange) : CurrentPosition {
     override var bpm = 140.0
     override var timeInSeconds = 0.0
     override var ppqPosition = 0.0
-    override var bufferSize = 1024
+    override val bufferSize = 1024
     override var timeSigNumerator = 4
     override var timeSigDenominator = 4
     override var projectRange = range
@@ -70,6 +70,10 @@ class RenderPosition(override var ppq: Int, override var sampleRate: Int, range:
     }
 
     override fun update(timeInSamples: Long) {
+        throw UnsupportedOperationException()
+    }
+
+    override fun setSampleRateAndBufferSize(sampleRate: Int, bufferSize: Int) {
         throw UnsupportedOperationException()
     }
 }

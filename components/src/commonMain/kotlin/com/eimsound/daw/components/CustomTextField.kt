@@ -97,9 +97,9 @@ fun CustomTextField(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ReadonlyTextField(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+fun ReadonlyTextField(modifier: Modifier = Modifier, enabled: Boolean = false, content: @Composable () -> Unit) {
     Box(modifier) {
-        TextFieldDefaults.TextFieldDecorationBox("", content, true,
+        TextFieldDefaults.TextFieldDecorationBox("", content, enabled,
             singleLine = true,
             visualTransformation = VisualTransformation.None,
             interactionSource = remember { MutableInteractionSource() },

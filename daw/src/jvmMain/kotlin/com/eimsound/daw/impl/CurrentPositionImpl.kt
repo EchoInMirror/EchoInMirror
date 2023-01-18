@@ -60,4 +60,9 @@ class CurrentPositionImpl: CurrentPosition {
         timeInSamples = (timeInSeconds * sampleRate).toLong()
         EchoInMirror.bus?.onSuddenChange()
     }
+
+    override fun setSampleRateAndBufferSize(sampleRate: Int, bufferSize: Int) {
+        this.sampleRate = sampleRate
+        this.bufferSize = bufferSize
+    }
 }

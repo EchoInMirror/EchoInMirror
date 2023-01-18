@@ -97,7 +97,7 @@ internal fun StatusBar() {
                     Filled()
                     BusChannelType()
                     StatusBarItem("CpuLoad", Icons.Filled.Memory) {
-                        Text((EchoInMirror.player!!.cpuLoad * 100).roundToInt().toString() + "%")
+                        Text(((EchoInMirror.player?.cpuLoad ?: 0F) * 100).roundToInt().toString() + "%")
                     }
                 }
             }
