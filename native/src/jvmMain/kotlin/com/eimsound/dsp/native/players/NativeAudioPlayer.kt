@@ -30,12 +30,12 @@ class NativeAudioPlayer(
     private var outputStream: ByteBufOutputStream
     private val mutex = Mutex()
     private var channels = 2
-    private val hasControls: Boolean
-    private val buffers: Array<FloatArray>
-    override val inputLatency: Int
-    override val outputLatency: Int
-    override val availableSampleRates: IntArray
-    override val availableBufferSizes: IntArray
+    private var hasControls = false
+    private lateinit var buffers: Array<FloatArray>
+    override var inputLatency = 0
+    override var outputLatency = 0
+    override lateinit var availableSampleRates: IntArray
+    override lateinit var availableBufferSizes: IntArray
     override var name = super.name
 
     init {
@@ -53,41 +53,24 @@ class NativeAudioPlayer(
                 add("-R")
                 add(currentPosition.sampleRate.toString())
             })
-            pb.redirectError(ProcessBuilder.Redirect.INHERIT)
+            pb.redirectOutput(ProcessBuilder.Redirect.INHERIT)
             val p = pb.start()
             process = p
 
-            val flag1 = p.inputStream.read() == 1
-            val flag2 = p.inputStream.read() == 2
+            val flag1 = p.errorStream.read() == 1
+            val flag2 = p.errorStream.read() == 2
             val isBigEndian = flag1 && flag2
-            val input = ByteBufInputStream(isBigEndian, p.inputStream)
-            val output = ByteBufOutputStream(isBigEndian, p.outputStream)
+            inputStream = ByteBufInputStream(isBigEndian, p.errorStream)
+            outputStream = ByteBufOutputStream(isBigEndian, p.outputStream)
 
-            output.writeString(name)
-            output.flush()
+            outputStream.writeString(name)
+            outputStream.flush()
 
-            if (input.read() != 1) throw RuntimeException("Failed to open audio player")
-
-            this.name = input.readString()
-            println(this.name)
-            inputLatency = input.readInt()
-            outputLatency = input.readInt()
-            val sampleRate = input.readInt()
-            val bufferSize = input.readInt()
-            if (sampleRate != currentPosition.sampleRate || bufferSize != currentPosition.bufferSize) {
-                currentPosition.setSampleRateAndBufferSize(sampleRate, bufferSize)
-            }
-            availableSampleRates = IntArray(input.readInt()) { input.readInt() }
-            availableBufferSizes = IntArray(input.readInt()) { input.readInt() }
-            hasControls = input.readBoolean()
+            if (inputStream.read() != 1) throw RuntimeException("Failed to open audio player")
 
             p.onExit().thenAccept { close() }
 
-            buffers = arrayOf(FloatArray(bufferSize), FloatArray(bufferSize))
-            processor.prepareToPlay(sampleRate, bufferSize)
-
-            inputStream = input
-            outputStream = output
+            readDeviceInfo()
 
             thread = Thread(this)
             thread!!.start()
@@ -107,6 +90,7 @@ class NativeAudioPlayer(
             thread = null
         }
         closeCallback?.invoke()
+        closeCallback = null
     }
 
     @Composable
@@ -145,21 +129,43 @@ class NativeAudioPlayer(
                     exitProcessBlock()
 
                     mutex.withLock {
-                        if (inputStream.read() == 0) {
-                            val output = outputStream
-                            output.write(0)
-                            output.write(channels)
-                            for (j in 0 until channels) {
-                                for (i in 0 until bufferSize) output.writeFloat(buffers[j][i])
+                        when (inputStream.read()) {
+                            0 -> {
+                                outputStream.write(0)
+                                outputStream.write(channels)
+                                for (j in 0 until channels) {
+                                    for (i in 0 until bufferSize) outputStream.writeFloat(buffers[j][i])
+                                }
+                                outputStream.flush()
                             }
-                            output.flush()
+                            1 -> readDeviceInfo()
+                            else -> throw EOFException()
                         }
                     }
                 }
 
                 if (currentPosition.isPlaying) currentPosition.update(currentPosition.timeInSamples + bufferSize)
             }
-        } catch (ignored: EOFException) { } catch (ignored: InterruptedException) { }
+        } catch (ignored: EOFException) { } catch (ignored: InterruptedException) { } finally {
+            close()
+        }
+    }
+
+    private fun readDeviceInfo() {
+        name = inputStream.readString()
+        inputLatency = inputStream.readInt()
+        outputLatency = inputStream.readInt()
+        val sampleRate = inputStream.readInt()
+        val bufferSize = inputStream.readInt()
+        if (sampleRate != currentPosition.sampleRate || bufferSize != currentPosition.bufferSize) {
+            currentPosition.setSampleRateAndBufferSize(sampleRate, bufferSize)
+        }
+        availableSampleRates = IntArray(inputStream.readInt()) { inputStream.readInt() }
+        availableBufferSizes = IntArray(inputStream.readInt()) { inputStream.readInt() }
+        hasControls = inputStream.readBoolean()
+
+        buffers = arrayOf(FloatArray(bufferSize), FloatArray(bufferSize))
+        processor.prepareToPlay(sampleRate, bufferSize)
     }
 }
 

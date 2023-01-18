@@ -60,6 +60,7 @@ class JvmAudioPlayer(
             thread = null
         }
         closeCallback?.invoke()
+        closeCallback = null
     }
 
     @Suppress("DuplicatedCode")
