@@ -21,6 +21,7 @@ import com.eimsound.daw.api.TrackClip
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.components.Keyboard
 import com.eimsound.daw.components.PlayHead
+import com.eimsound.daw.components.TIMELINE_HEIGHT
 import com.eimsound.daw.components.Timeline
 import com.eimsound.daw.components.splitpane.VerticalSplitPane
 import com.eimsound.daw.components.splitpane.rememberSplitPaneState
@@ -48,7 +49,7 @@ val horizontalScrollState = ScrollState(0).apply {
 @Composable
 private fun EditorContent(editor: DefaultMidiClipEditor) {
     VerticalSplitPane(splitPaneState = rememberSplitPaneState(100F)) {
-        first(0.dp) {
+        first(TIMELINE_HEIGHT) {
             Column(Modifier.fillMaxSize()) {
                 val localDensity = LocalDensity.current
                 var contentWidth by remember { mutableStateOf(0.dp) }

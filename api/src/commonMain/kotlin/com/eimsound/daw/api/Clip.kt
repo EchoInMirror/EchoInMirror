@@ -8,6 +8,7 @@ import androidx.compose.ui.unit.Dp
 import com.eimsound.audioprocessor.CurrentPosition
 import com.eimsound.audioprocessor.ResampledAudioSource
 import com.eimsound.audioprocessor.data.AudioThumbnail
+import com.eimsound.audioprocessor.data.EnvelopePointList
 import com.eimsound.audioprocessor.data.midi.MidiNoteRecorder
 import com.eimsound.audioprocessor.data.midi.NoteMessageList
 import com.eimsound.daw.api.processor.Track
@@ -85,8 +86,14 @@ interface Clip {
     val maxDuration: Int
 }
 
+interface MidiCCEvent {
+    val id: Int
+    val points: EnvelopePointList
+}
+
 interface MidiClip : Clip {
     val notes: NoteMessageList
+    val events: MutableList<MidiCCEvent>
 }
 interface AudioClip : Clip {
     val audioSource: ResampledAudioSource

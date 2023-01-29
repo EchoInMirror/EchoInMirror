@@ -22,7 +22,6 @@ import com.eimsound.daw.components.FloatingDialog
 import com.eimsound.daw.components.MenuItem
 import com.eimsound.daw.data.defaultScale
 import com.eimsound.daw.data.quantificationUnits
-import com.eimsound.daw.utils.rem
 
 @Composable
 fun getAppBarFont() = TextStyle(MaterialTheme.colorScheme.onBackground, 18.sp, fontWeight = FontWeight.Bold,
@@ -195,7 +194,7 @@ private fun TimeSignature() {
 @Composable
 private fun BPM() {
     AppBarItem(subTitle = "BPM") {
-        BasicTextField("%.2f" % EchoInMirror.currentPosition.bpm, {
+        BasicTextField("%.2f".format(EchoInMirror.currentPosition.bpm), {
             EchoInMirror.currentPosition.bpm = it.toDoubleOrNull()?.coerceIn(1.0, 600.0) ?: return@BasicTextField
         }, Modifier.width(IntrinsicSize.Min), textStyle = getAppBarFont(), singleLine = true)
     }

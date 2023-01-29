@@ -4,7 +4,6 @@ package com.eimsound.daw.impl
 //import cn.apisium.eim.impl.processor.nativeAudioPluginManager
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.input.key.*
-import com.eimsound.audioprocessor.NativeAudioPluginDescription
 import com.eimsound.audioprocessor.data.midi.getMidiEvents
 import com.eimsound.audioprocessor.data.midi.getNoteMessages
 import com.eimsound.audioprocessor.oneBarPPQ
@@ -13,7 +12,6 @@ import com.eimsound.daw.IS_DEBUG
 import com.eimsound.daw.ROOT_PATH
 import com.eimsound.daw.api.*
 import com.eimsound.daw.commands.*
-import com.eimsound.daw.impl.processor.nativeAudioPluginManager
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import kotlinx.coroutines.*
@@ -75,14 +73,14 @@ class CommandManagerImpl : CommandManager {
                         val audioClip = EchoInMirror.clipManager.defaultAudioClipFactory.createClip()
                         subTrack2.clips.add(EchoInMirror.clipManager.createTrackClip(audioClip))
 
-                        var proQ: NativeAudioPluginDescription? = null
-                        var spire: NativeAudioPluginDescription? = null
-                        EchoInMirror.audioProcessorManager.nativeAudioPluginManager.descriptions.forEach {
-                            if (it.name == "FabFilter Pro-Q 3") proQ = it
-                            if (it.name == "Spire-1.5") spire = it
-                        }
+//                        var proQ: NativeAudioPluginDescription? = null
+//                        var spire: NativeAudioPluginDescription? = null
+//                        EchoInMirror.audioProcessorManager.nativeAudioPluginManager.descriptions.forEach {
+//                            if (it.name == "FabFilter Pro-Q 3") proQ = it
+//                            if (it.name == "Spire-1.5") spire = it
+//                        }
 //                        subTrack2.preProcessorsChain.add(EchoInMirror.audioProcessorManager.nativeAudioPluginManager.createAudioProcessor(spire!!))
-                        track.postProcessorsChain.add(EchoInMirror.audioProcessorManager.nativeAudioPluginManager.createAudioProcessor(proQ!!))
+//                        track.postProcessorsChain.add(EchoInMirror.audioProcessorManager.nativeAudioPluginManager.createAudioProcessor(proQ!!))
                     }
 
                     track.subTracks.add(subTrack1)

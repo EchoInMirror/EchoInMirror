@@ -14,5 +14,16 @@ fun Int.fitInUnitCeil(unit: Int) = ceil(toDouble() / unit).toInt() * unit
 
 fun Float.fitInUnit(unit: Int) = (this / unit).roundToInt() * unit
 
+inline fun <T> List<T>.binarySearch(comparator: (T) -> Boolean): Int {
+    var l = 0
+    var r = size - 1
+    while (l < r) {
+        val mid = (l + r) ushr 1
+        if (comparator(this[mid])) l = mid + 1
+        else r = mid
+    }
+    return l
+}
+
 @Suppress("NOTHING_TO_INLINE")
-inline operator fun String.rem(other: Any?) = format(other)
+inline fun Float.coerceIn(range: IntRange) = coerceIn(range.first.toFloat(), range.last.toFloat())

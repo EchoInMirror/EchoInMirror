@@ -30,6 +30,7 @@ import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.components.*
 import com.eimsound.daw.components.icons.Crown
 import com.eimsound.daw.components.icons.DebugStepOver
+import com.eimsound.daw.utils.binarySearch
 import com.eimsound.daw.utils.clickableWithIcon
 import com.eimsound.daw.window.dialogs.openColorPicker
 import kotlinx.coroutines.launch
@@ -57,16 +58,8 @@ internal fun getAllTrackHeights(defaultHeight: Float, density: Float): ArrayList
 }
 
 // binary search drop track by trackHeights and currentY
-internal fun binarySearchTrackByHeight(trackHeights: ArrayList<TrackToHeight>, y: Float): Int {
-    var l = 0
-    var r = trackHeights.size - 1
-    while (l < r) {
-        val mid = (l + r) / 2
-        if (trackHeights[mid].height < y) l = mid + 1
-        else r = mid
-    }
-    return l
-}
+internal fun binarySearchTrackByHeight(trackHeights: ArrayList<TrackToHeight>, y: Float) =
+    trackHeights.binarySearch { it.height <= y }
 
 private suspend fun AwaitPointerEventScope.handleDrag(track: Track, parentTrack: Track, isDragging: MutableState<Boolean>) {
     val down = awaitFirstDownOnPass(PointerEventPass.Final, false)

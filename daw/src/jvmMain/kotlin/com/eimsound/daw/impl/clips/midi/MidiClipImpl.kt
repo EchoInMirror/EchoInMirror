@@ -10,23 +10,32 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import com.eimsound.audioprocessor.CurrentPosition
 import com.eimsound.audioprocessor.convertPPQToSamples
+import com.eimsound.audioprocessor.data.DefaultEnvelopePointList
+import com.eimsound.audioprocessor.data.EnvelopePoint
 import com.eimsound.audioprocessor.data.midi.*
-import com.eimsound.daw.api.AbstractClip
-import com.eimsound.daw.api.ClipFactory
-import com.eimsound.daw.api.MidiClip
-import com.eimsound.daw.api.TrackClip
+import com.eimsound.daw.api.*
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.impl.clips.midi.editor.DefaultMidiClipEditor
+import com.eimsound.daw.utils.binarySearch
+import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 
+data class MidiCCEventImpl(override val id: Int, override val points: DefaultEnvelopePointList) : MidiCCEvent
+object MidiCCEventImplTypeReference : TypeReference<MutableList<MidiCCEventImpl>>()
+
 class MidiClipImpl(json: JsonNode?, factory: ClipFactory<MidiClip>) : AbstractClip<MidiClip>(json, factory), MidiClip {
     override val notes = DefaultNoteMessageList()
+    override val events = mutableListOf<MidiCCEvent>(MidiCCEventImpl(1, DefaultEnvelopePointList().apply {
+        add(EnvelopePoint(0, 0F))
+        add(EnvelopePoint(600, 80F))
+    }))
     override val isExpandable = true
 
     init {
         if (json != null) {
             notes.addAll(json["notes"].traverse(jacksonObjectMapper()).readValueAs(NoteMessageListTypeReference))
+            events.addAll(json["events"].traverse(jacksonObjectMapper()).readValueAs(MidiCCEventImplTypeReference))
             notes.update()
         }
     }
@@ -50,15 +59,8 @@ class MidiClipFactoryImpl : ClipFactory<MidiClip> {
         val notes = c.notes
         if (clip.currentIndex == -1) {
             // use binary search to find the first note that is after the start of the block
-            var l = 0
-            var r = notes.size - 1
             val startPPQ = position.timeInPPQ - startTime
-            while (l < r) {
-                val mid = (l + r) ushr 1
-                if (notes[mid].time > startPPQ) r = mid
-                else l = mid + 1
-            }
-            clip.currentIndex = l
+            clip.currentIndex = notes.binarySearch { it.time <= startPPQ }
         }
         for (i in clip.currentIndex..notes.lastIndex) {
             val note = notes[i]

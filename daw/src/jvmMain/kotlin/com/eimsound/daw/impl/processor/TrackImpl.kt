@@ -16,6 +16,7 @@ import com.eimsound.daw.api.processor.*
 import com.eimsound.daw.components.utils.randomColor
 
 import com.eimsound.daw.utils.LevelMeterImpl
+import com.eimsound.daw.utils.binarySearch
 import com.fasterxml.jackson.annotation.JsonAutoDetect
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
@@ -126,16 +127,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
             }
             val startTime = position.timeInPPQ
             val blockEndSample = position.timeInSamples + position.bufferSize
-            if (lastClipIndex == -1) {
-                var l = 0
-                var r = clips.size - 1
-                while (l < r) {
-                    val mid = (l + r) ushr 1
-                    if (clips[mid].time > startTime) r = mid
-                    else l = mid + 1
-                }
-                lastClipIndex = l
-            }
+            if (lastClipIndex == -1) lastClipIndex = clips.binarySearch { it.time < startTime }
             for (i in lastClipIndex..clips.lastIndex) {
                 val clip = clips[i]
                 val startTimeInSamples = position.convertPPQToSamples(clip.time)
