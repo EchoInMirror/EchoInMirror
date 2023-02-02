@@ -1,3 +1,5 @@
+@file:Suppress("PrivatePropertyName")
+
 package com.eimsound.daw.components.utils
 
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -11,6 +13,7 @@ import org.jetbrains.skiko.Cursor
 
 val BorderCornerRadius2PX = CornerRadius(2f)
 val Stroke1PX = Stroke(1f)
+val Stroke2PX = Stroke(2f)
 val Stroke1_5PX = Stroke(1.5f)
 private val HORIZONTAL_RESIZE_CURSOR = PointerIcon(Cursor(Cursor.E_RESIZE_CURSOR))
 private val VERTICAL_RESIZE_CURSOR = PointerIcon(Cursor(Cursor.S_RESIZE_CURSOR))

@@ -27,7 +27,7 @@ object MidiCCEventImplTypeReference : TypeReference<MutableList<MidiCCEventImpl>
 class MidiClipImpl(json: JsonNode?, factory: ClipFactory<MidiClip>) : AbstractClip<MidiClip>(json, factory), MidiClip {
     override val notes = DefaultNoteMessageList()
     override val events = mutableListOf<MidiCCEvent>(MidiCCEventImpl(1, DefaultEnvelopePointList().apply {
-        add(EnvelopePoint(0, 0F))
+        add(EnvelopePoint(0, 0F, 0.2F))
         add(EnvelopePoint(600, 80F))
     }))
     override val isExpandable = true

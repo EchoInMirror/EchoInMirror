@@ -124,11 +124,16 @@ internal fun EventEditor(clip: TrackClip<MidiClip>) {
     Column(Modifier.fillMaxSize()) {
         Surface(Modifier.fillMaxWidth().zIndex(2f), shadowElevation = 5.dp) {
             Row {
-                Text("力度", Modifier.clickableWithIcon {
+                Text("力度", (
+                        if (selectedEvent == VelocityEvent) Modifier.background(MaterialTheme.colorScheme.primary.copy(0.2F))
+                        else Modifier)
+                    .clickableWithIcon {
                     selectedEvent = VelocityEvent
                 }.padding(4.dp, 2.dp), style = MaterialTheme.typography.labelLarge)
                 clip.clip.events.forEach {
-                    Text("CC:${it.id}", Modifier.clickableWithIcon {
+                    Text("CC:${it.id}", (
+                            if (selectedEvent.name == "CC:${it.id}") Modifier.background(MaterialTheme.colorScheme.primary.copy(0.2F))
+                            else Modifier).clickableWithIcon {
                         selectedEvent = CCEvent(it)
                     }.padding(4.dp, 2.dp), style = MaterialTheme.typography.labelLarge)
                 }
