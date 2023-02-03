@@ -10,11 +10,13 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.util.fastAll
 import com.eimsound.audioprocessor.data.EnvelopePoint
 import com.eimsound.audioprocessor.data.EnvelopePointList
+import com.eimsound.audioprocessor.data.EnvelopeType
 import com.eimsound.daw.components.utils.Stroke1PX
 import com.eimsound.daw.components.utils.Stroke2PX
 import com.eimsound.daw.utils.binarySearch
@@ -23,6 +25,69 @@ import com.eimsound.daw.utils.mutableStateSetOf
 import kotlin.math.absoluteValue
 import kotlin.math.max
 import kotlin.math.min
+
+fun DrawScope.drawEnvelope(type: EnvelopeType, color: Color, tension: Float, x0: Float, x1: Float, value0: Float, value1: Float) {
+    if (value0 == value1) {
+        val y0True = (1 - value0) * size.height
+        drawLine(color, Offset(x0, y0True), Offset(x1, y0True), 2F)
+        return
+    }
+    when (type) {
+        EnvelopeType.SMOOTH -> {
+            val controlPoint1X: Float
+            val controlPoint1Y: Float
+            val controlPoint2X: Float
+            val controlPoint2Y: Float
+            if (tension > 0) {
+                val dx = (x1 - x0) * tension
+                controlPoint1X = x0 + dx
+                controlPoint1Y = value0
+                controlPoint2X = x0 + x1 - dx
+                controlPoint2Y = value1
+            } else {
+                val dy = (value1 - value0).absoluteValue * -tension
+                val y0 = value0 + value1 - dy
+                val y1 = min(value0, value1) + dy
+                controlPoint1X = x0
+                controlPoint1Y = if (value0 > value1) y0 else y1
+                controlPoint2X = x1
+                controlPoint2Y = if (value0 > value1) y1 else y0
+            }
+            drawPath(Path().apply {
+                val height = size.height
+                moveTo(x0, (1 - value0) * height)
+                cubicTo(controlPoint1X, (1 - controlPoint1Y) * height, controlPoint2X, (1 - controlPoint2Y) * height, x1, (1 - value1) * height)
+            }, color, style = Stroke2PX)
+        }
+        EnvelopeType.EXPONENTIAL -> {
+            val controlPoint1X: Float
+            val controlPoint1Y: Float
+            val controlPoint2X: Float
+            val controlPoint2Y: Float
+            if (tension > 0) {
+                controlPoint1X = x0
+                controlPoint1Y = value0 + (value1 - value0) * tension
+                controlPoint2X = x1 + (x0 - x1) * tension
+                controlPoint2Y = value1
+            } else {
+                controlPoint1X = x0 + (x0 - x1) * tension
+                controlPoint1Y = value0
+                controlPoint2X = x1
+                controlPoint2Y = value1 + (value1 - value0) * tension
+            }
+            drawPath(Path().apply {
+                val height = size.height
+                moveTo(x0, (1 - value0) * height)
+                cubicTo(controlPoint1X, (1 - controlPoint1Y) * height, controlPoint2X, (1 - controlPoint2Y) * height, x1, (1 - value1) * height)
+            }, color, style = Stroke2PX)
+        }
+        EnvelopeType.SQUARE -> {
+            val y0True = (1 - value0) * size.height
+            drawLine(color, Offset(x0, y0True), Offset(x1 - 0.5F, y0True), 2F)
+            drawLine(color, Offset(x1 - 0.5F, y0True), Offset(x1, (1 - value1) * size.height), 2F)
+        }
+    }
+}
 
 private fun AwaitPointerEventScope.getSelectedPoint(position: Offset, points: EnvelopePointList, start: Float,
                                                     valueRange: IntRange, noteWidth: MutableState<Dp>): Int {
@@ -40,7 +105,7 @@ private var isSelection = false
 @Composable
 fun EnvelopeEditor(points: EnvelopePointList, start: Float, color: Color, valueRange: IntRange, noteWidth: MutableState<Dp>) {
     val lastIndex = remember { intArrayOf(0) }
-    var hoveredIndex = remember { mutableStateOf(-1) }
+    val hoveredIndex = remember { mutableStateOf(-1) }
     val selectionStartX = remember { mutableStateOf(0F) }
     val selectionStartY = remember { mutableStateOf(0F) }
     val selectedX = remember { mutableStateOf(0F) }
@@ -134,21 +199,10 @@ fun EnvelopeEditor(points: EnvelopePointList, start: Float, color: Color, valueR
             if (cur.time > end) break
             val next = points.getOrNull(i + 1)
 
-            drawPath(Path().apply {
-                val startX = (cur.time - start) * noteWidthPx
-                val startY = size.height * (1 - cur.value.coerceIn(valueRange) / range)
-                val endX = if (next == null) size.width else (next.time - start) * noteWidthPx
-                val endY = size.height * (1 - (next ?: cur).value.coerceIn(valueRange) / range)
-                val tension = cur.tension - 0.5F
-                // get control point by exponential function
-                val controlX = (endX - startX) * 0.5F + startX + tension * (endY - startY)
-                val controlY = (endY - startY) * 0.5F + startY + tension * (startX - endX)
-                moveTo(startX, startY)
-                quadraticBezierTo(controlX, controlY, endX, endY)
-
-            }, color, style = Stroke2PX)
-
-            
+            val startX = (cur.time - start) * noteWidthPx
+            val endX = if (next == null) size.width else (next.time - start) * noteWidthPx
+            drawEnvelope(cur.type, color, cur.tension, startX, endX,
+                cur.value.coerceIn(valueRange) / range, (next ?: cur).value.coerceIn(valueRange) / range)
         }
 
         // draw points

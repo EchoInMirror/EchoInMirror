@@ -10,6 +10,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import com.eimsound.audioprocessor.CurrentPosition
 import com.eimsound.audioprocessor.convertPPQToSamples
+import com.eimsound.audioprocessor.convertSamplesToPPQ
 import com.eimsound.audioprocessor.data.DefaultEnvelopePointList
 import com.eimsound.audioprocessor.data.EnvelopePoint
 import com.eimsound.audioprocessor.data.midi.*
@@ -31,6 +32,7 @@ class MidiClipImpl(json: JsonNode?, factory: ClipFactory<MidiClip>) : AbstractCl
         add(EnvelopePoint(600, 80F))
     }))
     override val isExpandable = true
+    val ccPrevValues = ByteArray(128)
 
     init {
         if (json != null) {
@@ -53,7 +55,7 @@ class MidiClipFactoryImpl : ClipFactory<MidiClip> {
 
     override fun processBlock(clip: TrackClip<MidiClip>, buffers: Array<FloatArray>, position: CurrentPosition,
                               midiBuffer: ArrayList<Int>, noteRecorder: MidiNoteRecorder, pendingNoteOns: LongArray) {
-        val c = clip.clip
+        val c = clip.clip as MidiClipImpl
         val blockEndSample = position.timeInSamples + position.bufferSize
         val startTime = clip.time
         val notes = c.notes
@@ -61,6 +63,18 @@ class MidiClipFactoryImpl : ClipFactory<MidiClip> {
             // use binary search to find the first note that is after the start of the block
             val startPPQ = position.timeInPPQ - startTime
             clip.currentIndex = notes.binarySearch { it.time <= startPPQ }
+        }
+        clip.clip.events.forEach {
+            if (it.id !in 0..127) return@forEach
+            for (i in 0 until position.bufferSize step position.ppq) {
+                val ppq = position.convertSamplesToPPQ(position.timeInSamples + i) - startTime
+                val value = it.points.getValue(ppq).toInt()
+                val byteValue = value.toByte()
+                if (byteValue == c.ccPrevValues[it.id]) continue
+                c.ccPrevValues[it.id] = byteValue
+                midiBuffer.add(controllerEvent(0, it.id, value).rawData)
+                midiBuffer.add(i)
+            }
         }
         for (i in clip.currentIndex..notes.lastIndex) {
             val note = notes[i]

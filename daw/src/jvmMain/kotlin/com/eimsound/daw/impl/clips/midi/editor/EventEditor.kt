@@ -108,7 +108,7 @@ data class CCEvent(val event: MidiCCEvent) : EventType {
     @Composable
     override fun Editor(clip: TrackClip<MidiClip>) {
         EnvelopeEditor(event.points,
-            clip.start + clip.time + with (LocalDensity.current) { horizontalScrollState.value / noteWidth.value.toPx() },
+            clip.start - clip.time + with (LocalDensity.current) { horizontalScrollState.value / noteWidth.value.toPx() },
             clip.track?.color ?: MaterialTheme.colorScheme.primary,
             range,
             noteWidth
