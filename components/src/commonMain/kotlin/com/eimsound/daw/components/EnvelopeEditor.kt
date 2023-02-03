@@ -21,6 +21,7 @@ import com.eimsound.daw.components.utils.Stroke1PX
 import com.eimsound.daw.components.utils.Stroke2PX
 import com.eimsound.daw.utils.binarySearch
 import com.eimsound.daw.utils.coerceIn
+import com.eimsound.daw.utils.mapValue
 import com.eimsound.daw.utils.mutableStateSetOf
 import kotlin.math.absoluteValue
 import kotlin.math.max
@@ -100,7 +101,7 @@ private fun AwaitPointerEventScope.getSelectedPoint(position: Offset, points: En
         (size.height * (1 - point.value.coerceIn(valueRange) / range) - position.y).absoluteValue < 8) pointIndex else -1
 }
 
-private var isSelection = false
+private var isSelection by mutableStateOf(false)
 
 @Composable
 fun EnvelopeEditor(points: EnvelopePointList, start: Float, color: Color, valueRange: IntRange, noteWidth: MutableState<Dp>) {
@@ -122,21 +123,24 @@ fun EnvelopeEditor(points: EnvelopePointList, start: Float, color: Color, valueR
                     when (event.type) {
                         PointerEventType.Move -> {
                             // find the hovered point
-                            val x = event.changes[0].position.x
-                            val y = event.changes[0].position.y
                             val tmpId = getSelectedPoint(event.changes[0].position, points, start, valueRange, noteWidth)
                             if (tmpId != hoveredIndex.value) hoveredIndex.value = tmpId
                             continue
                         }
                         PointerEventType.Press -> {
+                            val x = event.changes[0].position.x
+                            val y = event.changes[0].position.y
                             if (event.keyboardModifiers.isCtrlPressed || event.buttons.isForwardPressed) {
+                                selectedPoints.clear()
+                                selectionStartX.value = x
+                                selectionStartY.value = y
+                                selectedX.value = x
+                                selectedY.value = y
                                 isSelection = true
                                 break
                             }
                             isSelection = false
                             // find the selected point
-                            val x = event.changes[0].position.x
-                            val y = event.changes[0].position.y
                             val tmpId = getSelectedPoint(event.changes[0].position, points, start, valueRange, noteWidth)
                             if (tmpId != -1) selectedPoints.add(points[tmpId])
                             continue
@@ -156,28 +160,31 @@ fun EnvelopeEditor(points: EnvelopePointList, start: Float, color: Color, valueR
                     ) { change, _ -> change.consume() }
                 } while (drag != null && !drag.isConsumed)
                 if (drag == null) {
+                    isSelection = false
                     return@awaitPointerEventScope
                 }
 
-                if (isSelection) {
-                    selectionStartX.value = down.position.x
-                    selectionStartY.value = down.position.y
-                }
-
                 drag(drag.id) {
-                    if (isSelection) {
-                        selectedX.value = it.position.x
-                        selectedY.value = it.position.y
-//                        selectedPoints.clear()
-//                        selectedPoints.addAll(points.filter { it.time >= start + selectionStartX.value / noteWidth.value.toPx() &&
-//                                it.time <= start + it.time / noteWidth.value.toPx() })
-                    } else {
-//                        selectedX.value = down.position.x
-//                        selectedY.value = down.position.y
-                    }
+                    selectedX.value = it.position.x
+                    selectedY.value = it.position.y
                     it.consume()
                 }
 
+                if (isSelection) {
+                    val noteWidthPx = noteWidth.value.toPx()
+                    val startX = min(selectionStartX.value, selectedX.value) / noteWidthPx
+                    val startY = min(selectionStartY.value, selectedY.value)
+                    val endX = max(selectionStartX.value, selectedX.value) / noteWidthPx
+                    val endY = max(selectionStartY.value, selectedY.value)
+                    selectedPoints.addAll(points.filter {
+                        val y = size.height * (1 - mapValue(it.value, valueRange))
+                        it.time >= start + startX && it.time <= start + endX && y >= startY && y <= endY
+                    })
+                } else {
+                    // TODO
+                }
+
+                isSelection = false
                 selectionStartX.value = 0F
                 selectionStartY.value = 0F
                 selectedX.value = 0F
@@ -202,7 +209,7 @@ fun EnvelopeEditor(points: EnvelopePointList, start: Float, color: Color, valueR
             val startX = (cur.time - start) * noteWidthPx
             val endX = if (next == null) size.width else (next.time - start) * noteWidthPx
             drawEnvelope(cur.type, color, cur.tension, startX, endX,
-                cur.value.coerceIn(valueRange) / range, (next ?: cur).value.coerceIn(valueRange) / range)
+                mapValue(cur.value, valueRange), mapValue((next ?: cur).value, valueRange))
         }
 
         // draw points

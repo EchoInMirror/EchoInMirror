@@ -85,7 +85,6 @@ class DefaultEnvelopePointList : EnvelopePointList, ArrayList<EnvelopePoint>() {
         val cur = this[currentIndex]
         if (currentIndex >= size - 1) return cur.value
         val next = this[currentIndex + 1]
-        println((position - cur.time).toFloat() / (next.time - cur.time))
         return cur.type.getValue(
             cur.tension,
             (position - cur.time).toFloat() / (next.time - cur.time),
