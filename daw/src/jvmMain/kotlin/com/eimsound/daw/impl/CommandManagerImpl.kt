@@ -54,6 +54,9 @@ class CommandManagerImpl : CommandManager {
                     val factory = apm.factories["EIMAudioProcessorFactory"]!!
                     val desc = factory.descriptions.find { it.name == "KarplusStrongSynthesizer" }!!
                     subTrack1.preProcessorsChain.add(factory.createAudioProcessor(desc))
+                    val time = EchoInMirror.currentPosition.oneBarPPQ
+                    val clip2 = EchoInMirror.clipManager.defaultMidiClipFactory.createClip()
+                    subTrack1.clips.add(EchoInMirror.clipManager.createTrackClip(clip2, time, time))
                     if (IS_DEBUG) {
                         val midi = withContext(Dispatchers.IO) {
                             MidiSystem.getSequence(File("E:\\Midis\\UTMR&C VOL 1-14 [MIDI FILES] for other DAWs FINAL by Hunter UT\\VOL 13\\13.Darren Porter - To Feel Again LD.mid"))
@@ -67,9 +70,6 @@ class CommandManagerImpl : CommandManager {
                                 4 * 32 * EchoInMirror.currentPosition.ppq
                             )
                         )
-                        val time = EchoInMirror.currentPosition.oneBarPPQ
-                        val clip2 = EchoInMirror.clipManager.defaultMidiClipFactory.createClip()
-                        subTrack1.clips.add(EchoInMirror.clipManager.createTrackClip(clip2, time, time))
                         val audioClip = EchoInMirror.clipManager.defaultAudioClipFactory.createClip()
                         subTrack2.clips.add(EchoInMirror.clipManager.createTrackClip(audioClip))
 

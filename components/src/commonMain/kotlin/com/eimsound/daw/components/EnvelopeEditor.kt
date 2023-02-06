@@ -19,10 +19,7 @@ import com.eimsound.audioprocessor.data.EnvelopePointList
 import com.eimsound.audioprocessor.data.EnvelopeType
 import com.eimsound.daw.components.utils.Stroke1PX
 import com.eimsound.daw.components.utils.Stroke2PX
-import com.eimsound.daw.utils.binarySearch
-import com.eimsound.daw.utils.coerceIn
-import com.eimsound.daw.utils.mapValue
-import com.eimsound.daw.utils.mutableStateSetOf
+import com.eimsound.daw.utils.*
 import kotlin.math.absoluteValue
 import kotlin.math.max
 import kotlin.math.min
@@ -43,16 +40,19 @@ fun DrawScope.drawEnvelope(type: EnvelopeType, color: Color, tension: Float, x0:
                 val dx = (x1 - x0) * tension
                 controlPoint1X = x0 + dx
                 controlPoint1Y = value0
-                controlPoint2X = x0 + x1 - dx
+                controlPoint2X = x1 - dx
                 controlPoint2Y = value1
             } else {
                 val dy = (value1 - value0).absoluteValue * -tension
-                val y0 = value0 + value1 - dy
-                val y1 = min(value0, value1) + dy
+                if (value0 > value1) {
+                    controlPoint1Y = value0 - dy
+                    controlPoint2Y = value1 + dy
+                } else {
+                    controlPoint1Y = value1 - dy
+                    controlPoint2Y = value1 + dy
+                }
                 controlPoint1X = x0
-                controlPoint1Y = if (value0 > value1) y0 else y1
                 controlPoint2X = x1
-                controlPoint2Y = if (value0 > value1) y1 else y0
             }
             drawPath(Path().apply {
                 val height = size.height
@@ -112,6 +112,7 @@ fun EnvelopeEditor(points: EnvelopePointList, start: Float, color: Color, valueR
     val selectedX = remember { mutableStateOf(0F) }
     val selectedY = remember { mutableStateOf(0F) }
     val selectedPoints = remember { mutableStateSetOf<EnvelopePoint>() }
+    val startValue by rememberUpdatableValue(start)
     val primaryColor = MaterialTheme.colorScheme.primary
 
     Canvas(Modifier.fillMaxSize().pointerInput(points, lastIndex, valueRange) {
@@ -123,7 +124,7 @@ fun EnvelopeEditor(points: EnvelopePointList, start: Float, color: Color, valueR
                     when (event.type) {
                         PointerEventType.Move -> {
                             // find the hovered point
-                            val tmpId = getSelectedPoint(event.changes[0].position, points, start, valueRange, noteWidth)
+                            val tmpId = getSelectedPoint(event.changes[0].position, points, startValue, valueRange, noteWidth)
                             if (tmpId != hoveredIndex.value) hoveredIndex.value = tmpId
                             continue
                         }
@@ -141,7 +142,8 @@ fun EnvelopeEditor(points: EnvelopePointList, start: Float, color: Color, valueR
                             }
                             isSelection = false
                             // find the selected point
-                            val tmpId = getSelectedPoint(event.changes[0].position, points, start, valueRange, noteWidth)
+                            selectedPoints.clear()
+                            val tmpId = getSelectedPoint(event.changes[0].position, points, startValue, valueRange, noteWidth)
                             if (tmpId != -1) selectedPoints.add(points[tmpId])
                             continue
                         }
@@ -200,26 +202,30 @@ fun EnvelopeEditor(points: EnvelopePointList, start: Float, color: Color, valueR
         lastIndex[0] = startIdx
         val range = valueRange.last - valueRange.first
 
-        // draw line
+        val first = points.firstOrNull()
+        if (first == null || first.time > start) {
+            val y = size.height * (1 - mapValue(first?.value ?: valueRange.first.toFloat(), valueRange))
+            drawLine(if (first == null || !selectedPoints.contains(first)) color else primaryColor,
+                Offset(0F, y),
+                Offset(if (first == null) size.width else (first.time - start) * noteWidthPx, y)
+            )
+        }
+
+        // draw points
+        val hoveredId = hoveredIndex.value
         for (i in startIdx until points.size) {
             val cur = points[i]
             if (cur.time > end) break
             val next = points.getOrNull(i + 1)
-
             val startX = (cur.time - start) * noteWidthPx
             val endX = if (next == null) size.width else (next.time - start) * noteWidthPx
-            drawEnvelope(cur.type, color, cur.tension, startX, endX,
+            val drawColor = if (selectedPoints.contains(cur)) primaryColor else color
+            drawEnvelope(cur.type, drawColor, cur.tension, startX, endX,
                 mapValue(cur.value, valueRange), mapValue((next ?: cur).value, valueRange))
-        }
 
-        // draw points
-        val selectedId = hoveredIndex.value
-        for (i in startIdx until points.size) {
-            val cur = points[i]
-            if (cur.time > end) break
-            drawCircle(if (selectedPoints.contains(cur)) primaryColor else color, if (selectedId == i) 8F else 4F,
+            drawCircle(drawColor, if (hoveredId == i) 8F else 4F,
                 Offset(
-                    (cur.time - start) * noteWidthPx,
+                    startX,
                     size.height * (1 - cur.value.coerceIn(valueRange) / range)
                 )
             )

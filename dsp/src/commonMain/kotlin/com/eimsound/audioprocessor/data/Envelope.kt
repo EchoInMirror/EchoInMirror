@@ -7,7 +7,6 @@ import com.fasterxml.jackson.annotation.JsonEnumDefaultValue
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
 import kotlin.math.absoluteValue
-import kotlin.math.min
 
 enum class EnvelopeType {
     @JsonEnumDefaultValue
@@ -25,10 +24,13 @@ enum class EnvelopeType {
                     controlPoint2 = value1
                 } else {
                     val dy = (value1 - value0).absoluteValue * -tension
-                    val y0 = value0 + value1 - dy
-                    val y1 = min(value0, value1) + dy
-                    controlPoint1 = if (value0 > value1) y0 else y1
-                    controlPoint2 = if (value0 > value1) y1 else y0
+                    if (value0 > value1) {
+                        controlPoint1 = value0 - dy
+                        controlPoint2 = value1 + dy
+                    } else {
+                        controlPoint1 = value1 - dy
+                        controlPoint2 = value1 + dy
+                    }
                 }
                 val tmp = 1 - t
                 value0 * tmp * tmp * tmp + 3 * controlPoint1 * tmp * tmp * t +

@@ -1,8 +1,11 @@
 package com.eimsound.daw.utils
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import com.aventrix.jnanoid.jnanoid.NanoIdUtils
 import kotlin.math.ceil
 import kotlin.math.roundToInt
+import kotlin.reflect.KProperty
 
 fun mapValue(value: Int, start1: Int, stop1: Int) = ((value - start1) / (stop1 - start1).toFloat()).coerceIn(0f, 1f)
 fun mapValue(value: Float, start1: Float, stop1: Float) = ((value - start1) / (stop1 - start1)).coerceIn(0f, 1f)
@@ -28,3 +31,15 @@ inline fun <T> List<T>.binarySearch(comparator: (T) -> Boolean): Int {
 
 @Suppress("NOTHING_TO_INLINE")
 inline fun Float.coerceIn(range: IntRange) = coerceIn(range.first.toFloat(), range.last.toFloat())
+
+class UpdatableValueDelegate<T>(var value: T) {
+    operator fun getValue(thisRef: Any?, property: KProperty<*>) = value
+    operator fun setValue(thisRef: Any?, property: KProperty<*>, newValue: T) { value = newValue }
+}
+
+@Composable
+fun <T> rememberUpdatableValue(value: T): UpdatableValueDelegate<T> {
+    val obj = remember { UpdatableValueDelegate(value) }
+    obj.value = value
+    return obj
+}
