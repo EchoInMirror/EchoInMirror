@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -18,21 +17,9 @@ import androidx.compose.ui.zIndex
 import com.eimsound.audioprocessor.projectDisplayPPQ
 import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.components.*
-import com.eimsound.daw.components.utils.HorizontalResize
-import com.eimsound.daw.components.utils.Move
 import com.eimsound.daw.utils.openMaxValue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-
-enum class EditAction {
-    NONE, MOVE, RESIZE, SELECT, DELETE;
-    @OptIn(ExperimentalComposeUiApi::class)
-    fun toPointerIcon(default: PointerIcon = PointerIconDefaults.Default) = when(this) {
-        MOVE -> PointerIconDefaults.Move
-        RESIZE -> PointerIconDefaults.HorizontalResize
-        else -> default
-    }
-}
 
 var noteWidth = mutableStateOf(0.2.dp)
 var trackHeight by mutableStateOf(70.dp)

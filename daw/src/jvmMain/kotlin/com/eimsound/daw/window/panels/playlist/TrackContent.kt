@@ -28,8 +28,7 @@ import com.eimsound.daw.actions.doClipsEditActionAction
 import com.eimsound.daw.api.TrackClip
 import com.eimsound.daw.api.defaultMidiClipFactory
 import com.eimsound.daw.api.processor.Track
-import com.eimsound.daw.components.utils.HorizontalResize
-import com.eimsound.daw.components.utils.Zero
+import com.eimsound.daw.components.utils.*
 import com.eimsound.daw.components.utils.toOnSurfaceColor
 import com.eimsound.daw.data.getEditUnit
 import com.eimsound.daw.utils.*
@@ -37,6 +36,7 @@ import kotlin.math.absoluteValue
 
 internal var action by mutableStateOf(EditAction.NONE)
 
+@Suppress("PrivatePropertyName")
 @OptIn(ExperimentalComposeUiApi::class)
 private val RESIZE_HAND_MODIFIER = Modifier.width(4.dp).fillMaxHeight()
     .pointerHoverIcon(PointerIconDefaults.HorizontalResize)

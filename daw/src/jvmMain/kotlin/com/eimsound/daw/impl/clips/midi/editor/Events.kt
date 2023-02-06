@@ -15,11 +15,11 @@ import com.eimsound.daw.actions.doNoteAmountAction
 import com.eimsound.daw.actions.doNoteMessageEditAction
 import com.eimsound.daw.components.FloatingDialogProvider
 import com.eimsound.daw.components.KEYBOARD_KEYS
+import com.eimsound.daw.components.utils.EditAction
 import com.eimsound.daw.components.utils.HorizontalResize
 import com.eimsound.daw.components.utils.Move
 import com.eimsound.daw.data.getEditUnit
 import com.eimsound.daw.utils.*
-import com.eimsound.daw.window.panels.playlist.EditAction
 import com.eimsound.daw.window.panels.playlist.calcScroll
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch

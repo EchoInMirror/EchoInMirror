@@ -34,13 +34,9 @@ import com.eimsound.daw.components.EditorGrid
 import com.eimsound.daw.components.KEYBOARD_KEYS
 import com.eimsound.daw.components.LocalFloatingDialogProvider
 import com.eimsound.daw.components.dragdrop.dropTarget
-import com.eimsound.daw.components.utils.BorderCornerRadius2PX
-import com.eimsound.daw.components.utils.Stroke1PX
-import com.eimsound.daw.components.utils.Stroke1_5PX
-import com.eimsound.daw.components.utils.saturate
+import com.eimsound.daw.components.utils.*
 import com.eimsound.daw.data.defaultScale
 import com.eimsound.daw.utils.*
-import com.eimsound.daw.window.panels.playlist.EditAction
 import kotlin.math.absoluteValue
 
 internal var selectionStartX = 0F

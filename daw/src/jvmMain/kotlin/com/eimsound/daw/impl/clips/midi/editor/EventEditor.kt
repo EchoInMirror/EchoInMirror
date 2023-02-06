@@ -11,7 +11,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.AnnotatedString
@@ -27,10 +26,9 @@ import com.eimsound.daw.api.MidiClipEditor
 import com.eimsound.daw.components.EditorGrid
 import com.eimsound.daw.components.EnvelopeEditor
 import com.eimsound.daw.components.KEYBOARD_DEFAULT_WIDTH
-import com.eimsound.daw.components.utils.Stroke1_5PX
+import com.eimsound.daw.components.utils.EditAction
 import com.eimsound.daw.data.getEditUnit
 import com.eimsound.daw.utils.clickableWithIcon
-import com.eimsound.daw.window.panels.playlist.EditAction
 import kotlin.math.roundToInt
 
 interface EventType {
@@ -59,17 +57,15 @@ object VelocityEvent : EventType {
                 val offsetX = if (action == EditAction.MOVE) deltaX * noteWidthPx else 0f
                 val scrollX = horizontalScrollState.value
                 val startTime = editor.clip.time
+                val trackColor = track.color
                 notesInView.forEach {
                     val isSelected = editor.selectedNotes.contains(it)
-                    val x = (startTime + it.time) * noteWidthPx - scrollX + 2 + (if (isSelected) offsetX else 0f)
-                    val y = size.height * (1 - it.velocity / 127F) + (if (isSelected || selectedNote == it) offsetOfDelta else 0f)
-                    drawLine(track.color, Offset(x, y.coerceIn(0f, size.height - 1)), Offset(x, size.height), 4f)
-                }
-                editor.selectedNotes.forEach {
-                    val x = (startTime + it.time) * noteWidthPx - scrollX + offsetX
-                    val y = (size.height * (1 - it.velocity / 127F) + offsetOfDelta).coerceIn(0f, size.height - 1)
-                    drawRect(primaryColor, Offset(x, y),
-                        Size(4f, size.height - y), style = Stroke1_5PX)
+                    val x = (startTime + it.time) * noteWidthPx - scrollX + (if (isSelected) offsetX else 0f)
+                    val y = (size.height * (1 - it.velocity / 127F) + (if (isSelected || selectedNote == it) offsetOfDelta else 0f))
+                        .coerceIn(0f, size.height - 1)
+                    val color = if (isSelected) primaryColor else trackColor
+                    drawLine(color, Offset(x, y), Offset(x, size.height), 2f)
+                    drawCircle(color, 4F, Offset(x, y))
                 }
             }.pointerInput(editor) {
                 detectDragGestures({

@@ -18,13 +18,12 @@ import androidx.compose.ui.util.fastAll
 import com.eimsound.audioprocessor.data.EnvelopePoint
 import com.eimsound.audioprocessor.data.EnvelopePointList
 import com.eimsound.audioprocessor.data.EnvelopeType
+import com.eimsound.daw.components.utils.EditAction
 import com.eimsound.daw.components.utils.Stroke1PX
 import com.eimsound.daw.components.utils.Stroke2PX
 import com.eimsound.daw.utils.*
 import kotlinx.coroutines.launch
-import kotlin.math.absoluteValue
-import kotlin.math.max
-import kotlin.math.min
+import kotlin.math.*
 
 fun DrawScope.drawEnvelope(type: EnvelopeType, color: Color, tension: Float, x0: Float, x1: Float, value0: Float, value1: Float) {
     if (value0 == value1) {
@@ -106,17 +105,16 @@ private fun PointerInputScope.getSelectedPoint(position: Offset, points: Envelop
 
 private var copiedPoints: List<EnvelopePoint>? = null
 
-class EnvelopeEditor(private val points: EnvelopePointList, private val valueRange: IntRange) {
+class EnvelopeEditor(private val points: EnvelopePointList, private val valueRange: IntRange, private val supportDecimal: Boolean = false) {
     private val selectedPoints = mutableStateSetOf<EnvelopePoint>()
     private var selectionStartX by mutableStateOf(0F)
     private var selectionStartY by mutableStateOf(0F)
     private var selectedX by mutableStateOf(0F)
     private var selectedY by mutableStateOf(0F)
-    private var isSelection by mutableStateOf(false)
+    private var action by mutableStateOf(EditAction.NONE)
     private var hoveredIndex by mutableStateOf(-1)
     private var startIndex = 0
     private var startValue = 0F
-    private var isMoving = false
 
     fun copy() { copiedPoints = selectedPoints.toList() }
 
@@ -129,7 +127,8 @@ class EnvelopeEditor(private val points: EnvelopePointList, private val valueRan
         Canvas(Modifier.fillMaxSize().pointerInput(points, valueRange) {
             detectTapGestures(onDoubleTap = {
                 if (getSelectedPoint(it, points, startValue, valueRange, noteWidth) != -1) return@detectTapGestures
-                val newValue = (1 - it.y / size.height) * (valueRange.last - valueRange.first) + valueRange.first
+                var newValue = (1 - it.y / size.height) * (valueRange.last - valueRange.first) + valueRange.first
+                if (!supportDecimal) newValue = round(newValue)
                 val targetX = startValue + it.x / noteWidth.value.toPx()
                 val newPoint = EnvelopePoint(targetX.fitInUnit(editUnit), newValue.coerceIn(valueRange))
                 points.add(newPoint)
@@ -158,14 +157,16 @@ class EnvelopeEditor(private val points: EnvelopePointList, private val valueRan
                                     selectionStartY = y
                                     selectedX = x
                                     selectedY = y
-                                    isSelection = true
+                                    action = EditAction.SELECT
                                     break
                                 }
-                                isSelection = false
                                 // find the selected point
                                 selectedPoints.clear()
                                 val tmpId = getSelectedPoint(event.changes[0].position, points, startValue, valueRange, noteWidth)
-                                if (tmpId != -1) selectedPoints.add(points[tmpId])
+                                if (tmpId != -1) {
+                                    selectedPoints.add(points[tmpId])
+                                    action = EditAction.MOVE
+                                }
                                 continue
                             }
                         }
@@ -183,14 +184,26 @@ class EnvelopeEditor(private val points: EnvelopePointList, private val valueRan
                         ) { change, _ -> change.consume() }
                     } while (drag != null && !drag.isConsumed)
                     if (drag == null) {
-                        isSelection = false
+                        action = EditAction.NONE
                         return@awaitPointerEventScope
                     }
-                    if (!isSelection) isMoving = true
+                    var selectedPointsLeft = Int.MAX_VALUE
+                    var selectedPointsRight = Int.MIN_VALUE
+                    var selectedPointsTop = valueRange.last.toFloat()
+                    var selectedPointsBottom = valueRange.first.toFloat()
+                    if (action == EditAction.MOVE) {
+                        selectedPoints.forEach {
+                            if (it.time < selectedPointsLeft) selectedPointsLeft = it.time
+                            if (it.time > selectedPointsRight) selectedPointsRight = it.time
+                            if (it.value < selectedPointsTop) selectedPointsTop = it.value
+                            if (it.value > selectedPointsBottom) selectedPointsBottom = it.value
+                        }
+                    }
 
                     drag(drag.id) {
-                        if (it.position.y != selectedY) selectedY = it.position.y
-                        val tmpX = if (isSelection) it.position.x else it.position.x.fitInUnit(editUnit).toFloat()
+                        val y = it.position.y
+                        if (it.position.y != selectedY) selectedY = y
+                        val tmpX = if (action == EditAction.MOVE) it.position.x else it.position.x.fitInUnit(editUnit).toFloat()
                         if (selectedX != tmpX) selectedX = tmpX
                         if (horizontalScrollState != null) {
                             if (it.position.x < 10) scope.launch { horizontalScrollState.scrollBy(-3F) }
@@ -199,7 +212,7 @@ class EnvelopeEditor(private val points: EnvelopePointList, private val valueRan
                         it.consume()
                     }
 
-                    if (isSelection) {
+                    if (action == EditAction.SELECT) {
                         val noteWidthPx = noteWidth.value.toPx()
                         val startX = min(selectionStartX, selectedX) / noteWidthPx
                         val startY = min(selectionStartY, selectedY)
@@ -213,8 +226,7 @@ class EnvelopeEditor(private val points: EnvelopePointList, private val valueRan
                         // TODO
                     }
 
-                    isMoving = false
-                    isSelection = false
+                    action = EditAction.NONE
                     selectionStartX = 0F
                     selectionStartY = 0F
                     selectedX = 0F
@@ -256,7 +268,7 @@ class EnvelopeEditor(private val points: EnvelopePointList, private val valueRan
             }
 
             // draw selection area
-            if (isSelection) {
+            if (action == EditAction.SELECT) {
                 val startX = min(selectionStartX, selectedX)
                 val startY = min(selectionStartY, selectedY)
                 val endX = max(selectionStartX, selectedX)
