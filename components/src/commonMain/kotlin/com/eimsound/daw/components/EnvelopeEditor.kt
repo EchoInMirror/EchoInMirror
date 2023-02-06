@@ -90,157 +90,171 @@ fun DrawScope.drawEnvelope(type: EnvelopeType, color: Color, tension: Float, x0:
     }
 }
 
-private fun AwaitPointerEventScope.getSelectedPoint(position: Offset, points: EnvelopePointList, start: Float,
+private fun PointerInputScope.getSelectedPoint(position: Offset, points: EnvelopePointList, start: Float,
                                                     valueRange: IntRange, noteWidth: MutableState<Dp>): Int {
     val noteWidthPx = noteWidth.value.toPx()
     val targetX = start + position.x / noteWidthPx
     val pointIndex = points.binarySearch { it.time < targetX }
     val point = points[pointIndex]
     val range = valueRange.last - valueRange.first
-    return if ((point.time - targetX).absoluteValue < 8F / noteWidthPx &&
-        (size.height * (1 - point.value.coerceIn(valueRange) / range) - position.y).absoluteValue < 8) pointIndex else -1
+    fun checkIsSelectedPoint(point: EnvelopePoint?) = point != null && (point.time - targetX).absoluteValue < 8F / noteWidthPx &&
+            (size.height * (1 - point.value.coerceIn(valueRange) / range) - position.y).absoluteValue < 8
+    return if (checkIsSelectedPoint(point)) pointIndex else if (checkIsSelectedPoint(points.getOrNull(pointIndex - 1))) pointIndex - 1 else -1
 }
 
-private var isSelection by mutableStateOf(false)
+class EnvelopeEditor(private val points: EnvelopePointList, private val valueRange: IntRange) {
+    private val selectedPoints = mutableStateSetOf<EnvelopePoint>()
+    private var selectionStartX by mutableStateOf(0F)
+    private var selectionStartY by mutableStateOf(0F)
+    private var selectedX by mutableStateOf(0F)
+    private var selectedY by mutableStateOf(0F)
+    private var isSelection by mutableStateOf(false)
+    private var hoveredIndex by mutableStateOf(-1)
+    private var startIndex = 0
+    private var startValue = 0F
 
-@Composable
-fun EnvelopeEditor(points: EnvelopePointList, start: Float, color: Color, valueRange: IntRange, noteWidth: MutableState<Dp>) {
-    val lastIndex = remember { intArrayOf(0) }
-    val hoveredIndex = remember { mutableStateOf(-1) }
-    val selectionStartX = remember { mutableStateOf(0F) }
-    val selectionStartY = remember { mutableStateOf(0F) }
-    val selectedX = remember { mutableStateOf(0F) }
-    val selectedY = remember { mutableStateOf(0F) }
-    val selectedPoints = remember { mutableStateSetOf<EnvelopePoint>() }
-    val startValue by rememberUpdatableValue(start)
-    val primaryColor = MaterialTheme.colorScheme.primary
+    fun copy() {
 
-    Canvas(Modifier.fillMaxSize().pointerInput(points, lastIndex, valueRange) {
-        forEachGesture {
-            awaitPointerEventScope {
-                var event: PointerEvent
-                do {
-                    event = awaitPointerEvent(PointerEventPass.Main)
-                    when (event.type) {
-                        PointerEventType.Move -> {
-                            // find the hovered point
-                            val tmpId = getSelectedPoint(event.changes[0].position, points, startValue, valueRange, noteWidth)
-                            if (tmpId != hoveredIndex.value) hoveredIndex.value = tmpId
-                            continue
-                        }
-                        PointerEventType.Press -> {
-                            val x = event.changes[0].position.x
-                            val y = event.changes[0].position.y
-                            if (event.keyboardModifiers.isCtrlPressed || event.buttons.isForwardPressed) {
-                                selectedPoints.clear()
-                                selectionStartX.value = x
-                                selectionStartY.value = y
-                                selectedX.value = x
-                                selectedY.value = y
-                                isSelection = true
-                                break
+    }
+
+    @Composable
+    fun Content(start: Float, color: Color, noteWidth: MutableState<Dp>, editUnit: Int = 24) {
+        val primaryColor = MaterialTheme.colorScheme.primary
+        startValue = start
+
+        Canvas(Modifier.fillMaxSize().pointerInput(points, valueRange) {
+            detectTapGestures(onDoubleTap = {
+                if (getSelectedPoint(it, points, startValue, valueRange, noteWidth) != -1) return@detectTapGestures
+                val newValue = (1 - it.y / size.height) * (valueRange.last - valueRange.first) + valueRange.first
+                val targetX = startValue + it.x / noteWidth.value.toPx()
+                val newPoint = EnvelopePoint(targetX.fitInUnit(editUnit), newValue.coerceIn(valueRange))
+                points.add(newPoint)
+                points.sort()
+                points.update()
+            })
+        }.pointerInput(points, valueRange) {
+            forEachGesture {
+                awaitPointerEventScope {
+                    var event: PointerEvent
+                    do {
+                        event = awaitPointerEvent(PointerEventPass.Main)
+                        when (event.type) {
+                            PointerEventType.Move -> {
+                                // find the hovered point
+                                val tmpId = getSelectedPoint(event.changes[0].position, points, startValue, valueRange, noteWidth)
+                                if (tmpId != hoveredIndex) hoveredIndex = tmpId
+                                continue
                             }
-                            isSelection = false
-                            // find the selected point
-                            selectedPoints.clear()
-                            val tmpId = getSelectedPoint(event.changes[0].position, points, startValue, valueRange, noteWidth)
-                            if (tmpId != -1) selectedPoints.add(points[tmpId])
-                            continue
+                            PointerEventType.Press -> {
+                                val x = event.changes[0].position.x
+                                val y = event.changes[0].position.y
+                                if (event.keyboardModifiers.isCtrlPressed || event.buttons.isForwardPressed) {
+                                    selectedPoints.clear()
+                                    selectionStartX = x
+                                    selectionStartY = y
+                                    selectedX = x
+                                    selectedY = y
+                                    isSelection = true
+                                    break
+                                }
+                                isSelection = false
+                                // find the selected point
+                                selectedPoints.clear()
+                                val tmpId = getSelectedPoint(event.changes[0].position, points, startValue, valueRange, noteWidth)
+                                if (tmpId != -1) selectedPoints.add(points[tmpId])
+                                continue
+                            }
                         }
-                    }
-                } while (!event.changes.fastAll(PointerInputChange::changedToDownIgnoreConsumed))
-                val down = event.changes[0]
+                    } while (!event.changes.fastAll(PointerInputChange::changedToDownIgnoreConsumed))
+                    val down = event.changes[0]
 //            val downX = down.position.x + horizontalScrollState.value
 //            val downY = down.position.y + verticalScrollState.value
 
-                var drag: PointerInputChange?
-                do {
-                    @Suppress("INVISIBLE_MEMBER")
-                    drag = awaitPointerSlopOrCancellation(
-                        down.id, down.type,
-                        triggerOnMainAxisSlop = false
-                    ) { change, _ -> change.consume() }
-                } while (drag != null && !drag.isConsumed)
-                if (drag == null) {
+                    var drag: PointerInputChange?
+                    do {
+                        @Suppress("INVISIBLE_MEMBER")
+                        drag = awaitPointerSlopOrCancellation(
+                            down.id, down.type,
+                            triggerOnMainAxisSlop = false
+                        ) { change, _ -> change.consume() }
+                    } while (drag != null && !drag.isConsumed)
+                    if (drag == null) {
+                        isSelection = false
+                        return@awaitPointerEventScope
+                    }
+
+                    drag(drag.id) {
+                        selectedX = it.position.x
+                        selectedY = it.position.y
+                        it.consume()
+                    }
+
+                    if (isSelection) {
+                        val noteWidthPx = noteWidth.value.toPx()
+                        val startX = min(selectionStartX, selectedX) / noteWidthPx
+                        val startY = min(selectionStartY, selectedY)
+                        val endX = max(selectionStartX, selectedX) / noteWidthPx
+                        val endY = max(selectionStartY, selectedY)
+                        selectedPoints.addAll(points.filter {
+                            val y = size.height * (1 - mapValue(it.value, valueRange))
+                            it.time >= start + startX && it.time <= start + endX && y >= startY && y <= endY
+                        })
+                    } else {
+                        // TODO
+                    }
+
                     isSelection = false
-                    return@awaitPointerEventScope
+                    selectionStartX = 0F
+                    selectionStartY = 0F
+                    selectedX = 0F
+                    selectedX = 0F
                 }
-
-                drag(drag.id) {
-                    selectedX.value = it.position.x
-                    selectedY.value = it.position.y
-                    it.consume()
-                }
-
-                if (isSelection) {
-                    val noteWidthPx = noteWidth.value.toPx()
-                    val startX = min(selectionStartX.value, selectedX.value) / noteWidthPx
-                    val startY = min(selectionStartY.value, selectedY.value)
-                    val endX = max(selectionStartX.value, selectedX.value) / noteWidthPx
-                    val endY = max(selectionStartY.value, selectedY.value)
-                    selectedPoints.addAll(points.filter {
-                        val y = size.height * (1 - mapValue(it.value, valueRange))
-                        it.time >= start + startX && it.time <= start + endX && y >= startY && y <= endY
-                    })
-                } else {
-                    // TODO
-                }
-
-                isSelection = false
-                selectionStartX.value = 0F
-                selectionStartY.value = 0F
-                selectedX.value = 0F
-                selectedX.value = 0F
             }
-        }
-    }) {
-        val noteWidthPx = noteWidth.value.toPx()
-        val end = start + size.width / noteWidthPx
-        // binary search for start point
-        points.read()
-        val startIdx = (points.binarySearch { it.time < start } - 1).coerceAtLeast(0)
-        lastIndex[0] = startIdx
-        val range = valueRange.last - valueRange.first
+        }) {
+            val noteWidthPx = noteWidth.value.toPx()
+            val end = start + size.width / noteWidthPx
+            // binary search for start point
+            points.read()
+            startIndex = (points.binarySearch { it.time < start } - 1).coerceAtLeast(0)
+            val range = valueRange.last - valueRange.first
 
-        val first = points.firstOrNull()
-        if (first == null || first.time > start) {
-            val y = size.height * (1 - mapValue(first?.value ?: valueRange.first.toFloat(), valueRange))
-            drawLine(if (first == null || !selectedPoints.contains(first)) color else primaryColor,
-                Offset(0F, y),
-                Offset(if (first == null) size.width else (first.time - start) * noteWidthPx, y)
-            )
-        }
-
-        // draw points
-        val hoveredId = hoveredIndex.value
-        for (i in startIdx until points.size) {
-            val cur = points[i]
-            if (cur.time > end) break
-            val next = points.getOrNull(i + 1)
-            val startX = (cur.time - start) * noteWidthPx
-            val endX = if (next == null) size.width else (next.time - start) * noteWidthPx
-            val drawColor = if (selectedPoints.contains(cur)) primaryColor else color
-            drawEnvelope(cur.type, drawColor, cur.tension, startX, endX,
-                mapValue(cur.value, valueRange), mapValue((next ?: cur).value, valueRange))
-
-            drawCircle(drawColor, if (hoveredId == i) 8F else 4F,
-                Offset(
-                    startX,
-                    size.height * (1 - cur.value.coerceIn(valueRange) / range)
+            val first = points.firstOrNull()
+            if (first == null || first.time > start) {
+                val y = size.height * (1 - mapValue(first?.value ?: valueRange.first.toFloat(), valueRange))
+                drawLine(if (first == null || !selectedPoints.contains(first)) color else primaryColor,
+                    Offset(0F, y),
+                    Offset(if (first == null) size.width else (first.time - start) * noteWidthPx, y)
                 )
-            )
-        }
+            }
 
-        // draw selection area
-        if (isSelection) {
-            val startX = min(selectionStartX.value, selectedX.value)
-            val startY = min(selectionStartY.value, selectedY.value)
-            val endX = max(selectionStartX.value, selectedX.value)
-            val endY = max(selectionStartY.value, selectedY.value)
-            val pos = Offset(startX, startY)
-            val size = Size(endX - startX, endY - startY)
-            drawRect(primaryColor.copy(0.1F), pos, size)
-            drawRect(primaryColor, pos, size, style = Stroke1PX)
+            // draw points
+            val hoveredId = hoveredIndex
+            for (i in startIndex until points.size) {
+                val cur = points[i]
+                if (cur.time > end) break
+                val next = points.getOrNull(i + 1)
+                val startX = (cur.time - start) * noteWidthPx
+                val endX = if (next == null) size.width else (next.time - start) * noteWidthPx
+                val isSelected = selectedPoints.contains(cur)
+                drawEnvelope(cur.type, if (isSelected || selectedPoints.contains(next)) primaryColor else color, cur.tension, startX, endX,
+                    mapValue(cur.value, valueRange), mapValue((next ?: cur).value, valueRange))
+
+                drawCircle(if (isSelected) primaryColor else color, if (hoveredId == i) 8F else 4F,
+                    Offset(startX, size.height * (1 - cur.value.coerceIn(valueRange) / range))
+                )
+            }
+
+            // draw selection area
+            if (isSelection) {
+                val startX = min(selectionStartX, selectedX)
+                val startY = min(selectionStartY, selectedY)
+                val endX = max(selectionStartX, selectedX)
+                val endY = max(selectionStartY, selectedY)
+                val pos = Offset(startX, startY)
+                val size = Size(endX - startX, endY - startY)
+                drawRect(primaryColor.copy(0.1F), pos, size)
+                drawRect(primaryColor, pos, size, style = Stroke1PX)
+            }
         }
     }
 }

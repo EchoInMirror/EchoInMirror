@@ -1,9 +1,7 @@
 package com.eimsound.daw.window
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -17,6 +15,7 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowExceptionHandler
 import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.components.LocalFloatingDialogProvider
+import com.eimsound.daw.components.LocalSnackbarHost
 import com.eimsound.daw.components.app.*
 import com.eimsound.daw.components.dragdrop.PlatformDropTargetModifier
 import com.eimsound.daw.components.splitpane.HorizontalSplitPane
@@ -59,6 +58,7 @@ fun ApplicationScope.MainWindow() {
                 Scaffold(
                     Modifier.then(dropParent),
                     topBar = { EimAppBar() },
+                    snackbarHost = { SnackbarHost(LocalSnackbarHost.current) },
                     content = {
                         Column {
                             Box(Modifier.weight(1F).padding(top = APP_BAR_HEIGHT)) {

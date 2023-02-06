@@ -36,59 +36,68 @@ import com.fasterxml.jackson.module.kotlin.kotlinModule
 import com.fasterxml.jackson.module.kotlin.readValue
 import kotlin.math.roundToInt
 
-var selectedNotes by mutableStateOf(hashSetOf<NoteMessage>())
-val backingTracks = mutableStateSetOf<Track>()
-var startNoteIndex = 0
-var noteHeight by mutableStateOf(16.dp)
-var noteWidth = mutableStateOf(0.4.dp)
-val verticalScrollState = ScrollState(noteHeight.value.toInt() * 50)
-val horizontalScrollState = ScrollState(0).apply {
-    openMaxValue = (noteWidth.value * EchoInMirror.currentPosition.projectDisplayPPQ).value.toInt()
-}
-
 @Composable
 private fun EditorContent(editor: DefaultMidiClipEditor) {
-    VerticalSplitPane(splitPaneState = rememberSplitPaneState(100F)) {
-        first(TIMELINE_HEIGHT) {
-            Column(Modifier.fillMaxSize()) {
-                val localDensity = LocalDensity.current
-                var contentWidth by remember { mutableStateOf(0.dp) }
-                val clip = editor.clip
-                val range = remember(clip.time, clip.duration) { clip.time..(clip.time + clip.duration) }
-                Timeline(Modifier.zIndex(3F), noteWidth, horizontalScrollState, range, 68.dp)
-                Box(Modifier.weight(1F).onGloballyPositioned {
-                    with(localDensity) { contentWidth = it.size.width.toDp() }
-                }) {
-                    Row(Modifier.fillMaxSize().zIndex(-1F)) {
-                        Surface(Modifier.verticalScroll(verticalScrollState).zIndex(5f), shadowElevation = 4.dp) {
-                            Keyboard(
-                                { it, p -> EchoInMirror.selectedTrack?.playMidiEvent(noteOn(0, it, (127 * p).toInt())) },
-                                { it, _ -> EchoInMirror.selectedTrack?.playMidiEvent(noteOff(0, it)) },
-                                Modifier, noteHeight
-                            )
+    editor.apply {
+        VerticalSplitPane(splitPaneState = rememberSplitPaneState(100F)) {
+            first(TIMELINE_HEIGHT) {
+                Column(Modifier.fillMaxSize()) {
+                    val localDensity = LocalDensity.current
+                    var contentWidth by remember { mutableStateOf(0.dp) }
+                    val clip = clip
+                    val range = remember(clip.time, clip.duration) { clip.time..(clip.time + clip.duration) }
+                    Timeline(Modifier.zIndex(3F), noteWidth, horizontalScrollState, range, 68.dp)
+                    Box(Modifier.weight(1F).onGloballyPositioned {
+                        with(localDensity) { contentWidth = it.size.width.toDp() }
+                    }) {
+                        Row(Modifier.fillMaxSize().zIndex(-1F)) {
+                            Surface(Modifier.verticalScroll(verticalScrollState).zIndex(5f), shadowElevation = 4.dp) {
+                                Keyboard(
+                                    { it, p -> EchoInMirror.selectedTrack?.playMidiEvent(noteOn(0, it, (127 * p).toInt())) },
+                                    { it, _ -> EchoInMirror.selectedTrack?.playMidiEvent(noteOff(0, it)) },
+                                    Modifier, noteHeight
+                                )
+                            }
+                            NotesEditorCanvas(editor)
                         }
-                        NotesEditorCanvas(editor)
+                        PlayHead(noteWidth, horizontalScrollState, contentWidth, 68.dp)
+                        VerticalScrollbar(
+                            rememberScrollbarAdapter(verticalScrollState),
+                            Modifier.align(Alignment.CenterEnd).fillMaxHeight()
+                        )
                     }
-                    PlayHead(noteWidth, horizontalScrollState, contentWidth, 68.dp)
-                    VerticalScrollbar(
-                        rememberScrollbarAdapter(verticalScrollState),
-                        Modifier.align(Alignment.CenterEnd).fillMaxHeight()
-                    )
                 }
             }
-        }
-        second(20.dp) { EventEditor(editor.clip) }
+            second(20.dp) { EventEditor(editor) }
 
-        splitter { visiblePart { Divider() } }
+            splitter { visiblePart { Divider() } }
+        }
     }
 }
 
-class DefaultMidiClipEditor(internal val clip: TrackClip<MidiClip>, internal val track: Track) : MidiClipEditor {
-    private var copiedNotes: List<NoteMessage>? = null
+private var copiedNotes: List<NoteMessage>? = null
+
+class DefaultMidiClipEditor(override val clip: TrackClip<MidiClip>, override val track: Track) : MidiClipEditor {
+    internal val selectedNotes = mutableStateSetOf<NoteMessage>()
+    internal val backingTracks = mutableStateSetOf<Track>()
+    internal var startNoteIndex = 0
+    internal var noteHeight by mutableStateOf(16.dp)
+    internal var noteWidth = mutableStateOf(0.4.dp)
+    internal val verticalScrollState = ScrollState(noteHeight.value.toInt() * 50)
+    internal val horizontalScrollState = ScrollState(0).apply {
+        openMaxValue = (noteWidth.value * EchoInMirror.currentPosition.projectDisplayPPQ).value.toInt()
+    }
+    internal var playOnEdit by mutableStateOf(true)
+    internal var defaultVelocity by mutableStateOf(70)
+    internal val playingNotes = arrayListOf<MidiEvent>()
+    internal val deletionList = mutableStateSetOf<NoteMessage>()
+    internal var currentSelectedNote by mutableStateOf<NoteMessage?>(null)
+    internal var notesInView by mutableStateOf(arrayListOf<NoteMessage>())
+
     @Composable
-    override fun content() {
+    override fun Content() {
         Row(Modifier.fillMaxSize()) {
-            Column(Modifier.width(200.dp)) { EditorControls(clip.clip) }
+            Column(Modifier.width(200.dp)) { EditorControls(this@DefaultMidiClipEditor) }
             Surface(Modifier.fillMaxSize(), shadowElevation = 2.dp) {
                 Box {
                     Column(Modifier.fillMaxSize()) { EditorContent(this@DefaultMidiClipEditor) }
@@ -104,7 +113,7 @@ class DefaultMidiClipEditor(internal val clip: TrackClip<MidiClip>, internal val
     override fun delete() {
         if (selectedNotes.isEmpty()) return
         clip.doNoteAmountAction(selectedNotes, true)
-        selectedNotes = hashSetOf()
+        selectedNotes.clear()
     }
 
     override fun copyAsString() = if (selectedNotes.isEmpty()) "" else jacksonObjectMapper().writeValueAsString(
@@ -149,7 +158,8 @@ class DefaultMidiClipEditor(internal val clip: TrackClip<MidiClip>, internal val
                 it.duration = (it.duration * scale).roundToInt()
             }
             clip.doNoteAmountAction(data.notes)
-            selectedNotes = data.notes.toHashSet()
+            selectedNotes.clear()
+            selectedNotes.addAll(data.notes)
         } catch (ignored: Throwable) { ignored.printStackTrace() }
     }
 
@@ -158,6 +168,7 @@ class DefaultMidiClipEditor(internal val clip: TrackClip<MidiClip>, internal val
 //    }
 
     override fun selectAll() {
-        selectedNotes = clip.clip.notes.toHashSet()
+        selectedNotes.clear()
+        selectedNotes.addAll(clip.clip.notes)
     }
 }

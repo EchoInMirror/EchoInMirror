@@ -25,7 +25,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import java.io.File
 
 interface ClipEditor {
-    @Composable fun content()
+    @Composable fun Content()
     fun delete()
     fun copy()
     fun cut()
@@ -34,6 +34,8 @@ interface ClipEditor {
 }
 
 interface MidiClipEditor: ClipEditor {
+    val clip: TrackClip<MidiClip>
+    val track: Track
     fun copyAsString(): String
     fun pasteFromString(value: String)
 }

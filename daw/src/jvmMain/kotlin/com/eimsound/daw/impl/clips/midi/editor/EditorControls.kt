@@ -17,7 +17,6 @@ import androidx.compose.ui.unit.dp
 import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.actions.doNoteDisabledAction
 import com.eimsound.daw.actions.doNoteVelocityAction
-import com.eimsound.daw.api.MidiClip
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.components.CustomTextField
 import com.eimsound.daw.components.FloatingDialog
@@ -38,7 +37,7 @@ private fun dfsTrackIndex(track: Track, target: Track, index: String): String? {
 }
 
 @Composable
-private fun TrackItem(track: Track, index: String, depth: Int = 0) {
+private fun TrackItem(track: Track, backingTracks: MutableSet<Track>, index: String, depth: Int = 0) {
     val isSelected = EchoInMirror.selectedClip?.clip == track
     MenuItem(isSelected || backingTracks.contains(track), {
         if (!backingTracks.remove(track)) backingTracks.add(track)
@@ -48,18 +47,18 @@ private fun TrackItem(track: Track, index: String, depth: Int = 0) {
         Text(index + " " + track.name, Modifier.fillMaxWidth().padding(start = 6.dp, end = 12.dp), maxLines = 1,
             style = MaterialTheme.typography.labelLarge, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal)
     }
-    track.subTracks.forEachIndexed { i, it -> TrackItem(it, index + "." + (i + 1), depth + 1) }
+    track.subTracks.forEachIndexed { i, it -> TrackItem(it, backingTracks, index + "." + (i + 1), depth + 1) }
 }
 
 @Composable
-internal fun EditorControls(clip: MidiClip) {
+internal fun EditorControls(editor: DefaultMidiClipEditor) {
     val track = EchoInMirror.selectedTrack
     FloatingDialog({ size, _ ->
         Surface(Modifier.width(IntrinsicSize.Max).widthIn(min = size.width.dp), shape = MaterialTheme.shapes.extraSmall,
             tonalElevation = 5.dp, shadowElevation = 5.dp) {
             val stateVertical = rememberScrollState(0)
             Column(Modifier.verticalScroll(stateVertical).padding(vertical = 4.dp)) {
-                EchoInMirror.bus!!.subTracks.forEachIndexed { index, it -> TrackItem(it, (index + 1).toString()) }
+                EchoInMirror.bus!!.subTracks.forEachIndexed { index, it -> TrackItem(it, editor.backingTracks, (index + 1).toString()) }
             }
         }
     }) {
@@ -81,43 +80,46 @@ internal fun EditorControls(clip: MidiClip) {
         }
     }
     Column(Modifier.padding(10.dp)) {
-        Slider(noteWidth.value.value / 0.4f, { noteWidth.value = 0.4.dp * it }, valueRange = noteWidthSliderRange)
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("试听音符", Modifier.weight(1f), style = MaterialTheme.typography.labelLarge)
-            Checkbox(playOnEdit, { playOnEdit = !playOnEdit })
-        }
+        Slider(editor.noteWidth.value.value / 0.4f, { editor.noteWidth.value = 0.4.dp * it }, valueRange = noteWidthSliderRange)
 
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            clip.notes.read()
-            var delta by remember { mutableStateOf(0) }
-            val cur = currentSelectedNote
-            val velocity = if (selectedNotes.isEmpty()) defaultVelocity else (cur ?: selectedNotes.first()).velocity
-            val trueValue = velocity + (if (selectedNotes.isEmpty()) 0 else delta)
-            CustomTextField(trueValue.toString(), { str ->
-                val v = str.toIntOrNull()?.coerceIn(0, 127) ?: return@CustomTextField
-                if (selectedNotes.isEmpty()) defaultVelocity = v
-                else clip.doNoteVelocityAction(selectedNotes.toTypedArray(), v - velocity)
-            }, Modifier.width(60.dp).padding(end = 10.dp), label = { Text("力度") })
-            Slider(trueValue.toFloat() / 127,
-                {
-                    if (selectedNotes.isEmpty()) defaultVelocity = (it * 127).roundToInt()
-                    else delta = (it * 127).roundToInt() - velocity
-                }, Modifier.weight(1f), onValueChangeFinished = {
-                    if (selectedNotes.isNotEmpty()) clip.doNoteVelocityAction(selectedNotes.toTypedArray(), delta)
-                    delta = 0
-                }
-            )
-        }
+        editor.apply {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("试听音符", Modifier.weight(1f), style = MaterialTheme.typography.labelLarge)
+                Checkbox(playOnEdit, { playOnEdit = !playOnEdit })
+            }
 
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            clip.notes.read()
-            Text("禁用", Modifier.weight(1f), style = MaterialTheme.typography.labelLarge)
-            val cur = currentSelectedNote ?: selectedNotes.firstOrNull()
-            val curState = cur?.disabled ?: true
-            Checkbox(curState, {
-                if (cur == null) return@Checkbox
-                clip.doNoteDisabledAction(selectedNotes.toTypedArray(), !curState)
-            })
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                editor.clip.clip.notes.read()
+                var delta by remember { mutableStateOf(0) }
+                val cur = currentSelectedNote
+                val velocity = if (editor.selectedNotes.isEmpty()) defaultVelocity else (cur ?: editor.selectedNotes.first()).velocity
+                val trueValue = velocity + (if (editor.selectedNotes.isEmpty()) 0 else delta)
+                CustomTextField(trueValue.toString(), { str ->
+                    val v = str.toIntOrNull()?.coerceIn(0, 127) ?: return@CustomTextField
+                    if (editor.selectedNotes.isEmpty()) defaultVelocity = v
+                    else editor.clip.clip.doNoteVelocityAction(editor.selectedNotes.toTypedArray(), v - velocity)
+                }, Modifier.width(60.dp).padding(end = 10.dp), label = { Text("力度") })
+                Slider(trueValue.toFloat() / 127,
+                    {
+                        if (editor.selectedNotes.isEmpty()) defaultVelocity = (it * 127).roundToInt()
+                        else delta = (it * 127).roundToInt() - velocity
+                    }, Modifier.weight(1f), onValueChangeFinished = {
+                        if (editor.selectedNotes.isNotEmpty()) editor.clip.clip.doNoteVelocityAction(editor.selectedNotes.toTypedArray(), delta)
+                        delta = 0
+                    }
+                )
+            }
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                editor.clip.clip.notes.read()
+                Text("禁用", Modifier.weight(1f), style = MaterialTheme.typography.labelLarge)
+                val cur = currentSelectedNote ?: editor.selectedNotes.firstOrNull()
+                val curState = cur?.disabled ?: true
+                Checkbox(curState, {
+                    if (cur == null) return@Checkbox
+                    editor.clip.clip.doNoteDisabledAction(editor.selectedNotes.toTypedArray(), !curState)
+                })
+            }
         }
     }
 }

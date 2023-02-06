@@ -13,9 +13,6 @@ import com.eimsound.audioprocessor.data.midi.toNoteOnEvent
 import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.actions.doNoteAmountAction
 import com.eimsound.daw.actions.doNoteMessageEditAction
-import com.eimsound.daw.api.MidiClip
-import com.eimsound.daw.api.TrackClip
-import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.components.FloatingDialogProvider
 import com.eimsound.daw.components.KEYBOARD_KEYS
 import com.eimsound.daw.components.utils.HorizontalResize
@@ -31,31 +28,33 @@ import kotlin.math.roundToInt
 private var currentX = 0
 private var lastSelectedNoteDuration = 0
 
-private fun Density.getClickedNotes(x: Float, y: Float, clip: TrackClip<MidiClip>,
+private fun Density.getClickedNotes(x: Float, y: Float, editor: DefaultMidiClipEditor,
                                     block: Density.(NoteMessage) -> Boolean = { true }): NoteMessage? {
-    currentNote = KEYBOARD_KEYS - ((y + verticalScrollState.value) / noteHeight.toPx()).toInt() - 1
-    currentX = ((x + horizontalScrollState.value) / noteWidth.value.toPx() - clip.time).roundToInt()
-    for (i in startNoteIndex..clip.clip.notes.lastIndex) {
-        val note = clip.clip.notes[i]
-        val startTime = note.time
-        if (startTime > currentX) break
-        if (note.note == currentNote && startTime <= currentX && startTime + note.duration >= currentX && block(note))
-            return note
+    editor.apply {
+        currentNote = KEYBOARD_KEYS - ((y + verticalScrollState.value) / noteHeight.toPx()).toInt() - 1
+        currentX = ((x + horizontalScrollState.value) / noteWidth.value.toPx() - clip.time).roundToInt()
+        for (i in startNoteIndex..clip.clip.notes.lastIndex) {
+            val note = clip.clip.notes[i]
+            val startTime = note.time
+            if (startTime > currentX) break
+            if (note.note == currentNote && startTime <= currentX && startTime + note.duration >= currentX && block(note))
+                return note
+        }
     }
     return null
 }
 
-private fun playNote(note: NoteMessage, track: Track) {
-    if (!playOnEdit) return
+private fun playNote(note: NoteMessage, editor: DefaultMidiClipEditor) {
+    if (!editor.playOnEdit) return
     if (EchoInMirror.currentPosition.isPlaying) return
-    playingNotes.add(note.toNoteOffEvent())
-    track.playMidiEvent(note.toNoteOnEvent())
+    editor.playingNotes.add(note.toNoteOffEvent())
+    editor.track.playMidiEvent(note.toNoteOnEvent())
 }
 
-private fun stopAllNotes(track: Track) {
-    if (playingNotes.isNotEmpty()) {
-        if (!EchoInMirror.currentPosition.isPlaying) playingNotes.forEach { track.playMidiEvent(it) }
-        playingNotes.clear()
+private fun stopAllNotes(editor: DefaultMidiClipEditor) {
+    if (editor.playingNotes.isNotEmpty()) {
+        if (!EchoInMirror.currentPosition.isPlaying) editor.playingNotes.forEach { editor.track.playMidiEvent(it) }
+        editor.playingNotes.clear()
     }
 }
 
@@ -64,9 +63,7 @@ private fun stopAllNotes(track: Track) {
 internal suspend fun PointerInputScope.handleMouseEvent(coroutineScope: CoroutineScope,
                                                         editor: DefaultMidiClipEditor,
                                                         floatingDialogProvider: FloatingDialogProvider) {
-    val clip = editor.clip
-    val track = editor.track
-    forEachGesture {
+    forEachGesture { editor.apply {
         awaitPointerEventScope {
             var event: PointerEvent
             var selectedNotesLeft = Int.MAX_VALUE
@@ -78,7 +75,7 @@ internal suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutin
                 when (event.type) {
                     PointerEventType.Move -> {
                         var cursor0 = PointerIconDefaults.Default
-                        getClickedNotes(event.x, event.y, clip)?.let {
+                        getClickedNotes(event.x, event.y, editor)?.let {
                             val startTime = clip.time + it.time
                             val startX = startTime * noteWidth.value.toPx() - horizontalScrollState.value
                             val endX = (startTime + it.duration) * noteWidth.value.toPx() - horizontalScrollState.value
@@ -111,7 +108,7 @@ internal suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutin
                                 action = EditAction.SELECT
                                 break
                             }
-                            var currentSelectNote = getClickedNotes(event.x, event.y, clip)
+                            var currentSelectNote = getClickedNotes(event.x, event.y, editor)
                             if (currentSelectNote == null) {
                                 val noteUnit = getEditUnit()
                                 currentSelectedNote?.apply { lastSelectedNoteDuration = duration }
@@ -120,15 +117,17 @@ internal suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutin
                                 clip.doNoteAmountAction(listOf(currentSelectNote), false)
                                 clip.clip.notes.sort()
                                 clip.clip.notes.update()
-                                selectedNotes = hashSetOf(currentSelectNote)
+                                selectedNotes.clear()
+                                selectedNotes.add(currentSelectNote)
                             } else if (!selectedNotes.contains(currentSelectNote)) {
-                                selectedNotes = hashSetOf(currentSelectNote)
+                                selectedNotes.clear()
+                                selectedNotes.add(currentSelectNote)
                                 action = EditAction.MOVE
                             }
                             currentSelectedNote = currentSelectNote
                             lastSelectedNoteDuration = currentSelectNote.duration
 
-                            playNote(currentSelectNote, track)
+                            playNote(currentSelectNote, editor)
 
                             // check is move or resize
                             // if user click on start 4px and end -4px is resize
@@ -160,12 +159,12 @@ internal suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutin
                             action = EditAction.SELECT
                             break
                         } else if (event.buttons.isTertiaryPressed) {
-                            selectedNotes = hashSetOf()
-                            getClickedNotes(event.x, event.y, clip) ?.let(deletionList::add)
+                            selectedNotes.clear()
+                            getClickedNotes(event.x, event.y, editor) ?.let(deletionList::add)
                             action = EditAction.DELETE
                             break
                         } else if (event.buttons.isSecondaryPressed) {
-                            selectedNotes = hashSetOf()
+                            selectedNotes.clear()
                             action = EditAction.NONE
                             openEditorMenu(floatingDialogProvider, event.changes[0].position, editor)
                             continue
@@ -188,12 +187,12 @@ internal suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutin
                     clip.doNoteAmountAction(deletionList, true)
                     deletionList.clear()
                 }
-                stopAllNotes(track)
+                stopAllNotes(editor)
                 action = EditAction.NONE
                 return@awaitPointerEventScope
             }
             if (action == EditAction.SELECT) {
-                selectedNotes = hashSetOf()
+                selectedNotes.clear()
                 selectionStartX = downX
                 selectionStartY = (downY / noteHeight.toPx()).toInt()
                 selectionX = selectionStartX
@@ -208,7 +207,7 @@ internal suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutin
                         selectionY = ((it.position.y.coerceAtMost(size.height.toFloat()) + verticalScrollState.value) /
                                 noteHeight.toPx()).roundToInt()
                     }
-                    EditAction.DELETE -> getClickedNotes(it.position.x, it.position.y, clip) { note ->
+                    EditAction.DELETE -> getClickedNotes(it.position.x, it.position.y, editor) { note ->
                         !deletionList.contains(note)
                     }?.let(deletionList::add)
                     EditAction.MOVE, EditAction.RESIZE -> {
@@ -224,9 +223,9 @@ internal suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutin
                             if (selectedNotesBottom + y < 0) y = -selectedNotesBottom
                             if (y != deltaY) {
                                 deltaY = y
-                                stopAllNotes(track)
+                                stopAllNotes(editor)
                                 val note = currentSelectedNote
-                                if (note != null) playNote(note.copy(note = note.note - y), track)
+                                if (note != null) playNote(note.copy(note = note.note - y), editor)
                             }
                         } else {
                             if (resizeDirectionRight) {
@@ -287,7 +286,7 @@ internal suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutin
             deltaX = 0
             deltaY = 0
             action = EditAction.NONE
-            stopAllNotes(track)
+            stopAllNotes(editor)
         }
-    }
+    } }
 }
