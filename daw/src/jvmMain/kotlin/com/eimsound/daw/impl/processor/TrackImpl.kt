@@ -200,13 +200,14 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
     }
 
     override fun close() {
-        EchoInMirror.windowManager.clearTrackUIState(this)
+        if (EchoInMirror.selectedTrack == this) EchoInMirror.selectedTrack = null
         preProcessorsChain.forEach { it.close() }
         preProcessorsChain.clear()
         subTracks.forEach { it.close() }
         subTracks.clear()
         postProcessorsChain.forEach { it.close() }
         postProcessorsChain.clear()
+        super.close()
     }
 
     override fun playMidiEvent(midiEvent: MidiEvent, time: Int) {

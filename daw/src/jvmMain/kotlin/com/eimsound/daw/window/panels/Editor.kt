@@ -69,7 +69,7 @@ object Editor: Panel {
                 Icon(Icons.Outlined.Report, null, Modifier.size(22.dp))
                 Gap(4)
                 Text("请先选择一个 Clip.", fontWeight = FontWeight.Bold)
-            } else editor.content()
+            } else editor.Content()
         }
     }
 }

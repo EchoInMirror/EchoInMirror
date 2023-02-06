@@ -1,6 +1,7 @@
 package com.eimsound.daw.components
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.gestures.*
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
@@ -20,6 +21,7 @@ import com.eimsound.audioprocessor.data.EnvelopeType
 import com.eimsound.daw.components.utils.Stroke1PX
 import com.eimsound.daw.components.utils.Stroke2PX
 import com.eimsound.daw.utils.*
+import kotlinx.coroutines.launch
 import kotlin.math.absoluteValue
 import kotlin.math.max
 import kotlin.math.min
@@ -102,6 +104,8 @@ private fun PointerInputScope.getSelectedPoint(position: Offset, points: Envelop
     return if (checkIsSelectedPoint(point)) pointIndex else if (checkIsSelectedPoint(points.getOrNull(pointIndex - 1))) pointIndex - 1 else -1
 }
 
+private var copiedPoints: List<EnvelopePoint>? = null
+
 class EnvelopeEditor(private val points: EnvelopePointList, private val valueRange: IntRange) {
     private val selectedPoints = mutableStateSetOf<EnvelopePoint>()
     private var selectionStartX by mutableStateOf(0F)
@@ -112,13 +116,13 @@ class EnvelopeEditor(private val points: EnvelopePointList, private val valueRan
     private var hoveredIndex by mutableStateOf(-1)
     private var startIndex = 0
     private var startValue = 0F
+    private var isMoving = false
 
-    fun copy() {
-
-    }
+    fun copy() { copiedPoints = selectedPoints.toList() }
 
     @Composable
-    fun Content(start: Float, color: Color, noteWidth: MutableState<Dp>, editUnit: Int = 24) {
+    fun Content(start: Float, color: Color, noteWidth: MutableState<Dp>, editUnit: Int = 24, horizontalScrollState: ScrollState? = null) {
+        val scope = rememberCoroutineScope()
         val primaryColor = MaterialTheme.colorScheme.primary
         startValue = start
 
@@ -132,7 +136,7 @@ class EnvelopeEditor(private val points: EnvelopePointList, private val valueRan
                 points.sort()
                 points.update()
             })
-        }.pointerInput(points, valueRange) {
+        }.pointerInput(points, valueRange, editUnit) {
             forEachGesture {
                 awaitPointerEventScope {
                     var event: PointerEvent
@@ -182,10 +186,16 @@ class EnvelopeEditor(private val points: EnvelopePointList, private val valueRan
                         isSelection = false
                         return@awaitPointerEventScope
                     }
+                    if (!isSelection) isMoving = true
 
                     drag(drag.id) {
-                        selectedX = it.position.x
-                        selectedY = it.position.y
+                        if (it.position.y != selectedY) selectedY = it.position.y
+                        val tmpX = if (isSelection) it.position.x else it.position.x.fitInUnit(editUnit).toFloat()
+                        if (selectedX != tmpX) selectedX = tmpX
+                        if (horizontalScrollState != null) {
+                            if (it.position.x < 10) scope.launch { horizontalScrollState.scrollBy(-3F) }
+                            else if (it.position.x > size.width - 10) scope.launch { horizontalScrollState.scrollBy(3F) }
+                        }
                         it.consume()
                     }
 
@@ -203,6 +213,7 @@ class EnvelopeEditor(private val points: EnvelopePointList, private val valueRan
                         // TODO
                     }
 
+                    isMoving = false
                     isSelection = false
                     selectionStartX = 0F
                     selectionStartY = 0F

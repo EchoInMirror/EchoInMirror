@@ -26,14 +26,13 @@ import com.eimsound.daw.components.Timeline
 import com.eimsound.daw.components.splitpane.VerticalSplitPane
 import com.eimsound.daw.components.splitpane.rememberSplitPaneState
 import com.eimsound.daw.data.getEditUnit
-import com.eimsound.daw.utils.fitInUnitCeil
-import com.eimsound.daw.utils.mutableStateSetOf
-import com.eimsound.daw.utils.openMaxValue
+import com.eimsound.daw.utils.*
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.kotlinModule
 import com.fasterxml.jackson.module.kotlin.readValue
+import java.util.WeakHashMap
 import kotlin.math.roundToInt
 
 @Composable
@@ -79,7 +78,7 @@ private var copiedNotes: List<NoteMessage>? = null
 
 class DefaultMidiClipEditor(override val clip: TrackClip<MidiClip>, override val track: Track) : MidiClipEditor {
     internal val selectedNotes = mutableStateSetOf<NoteMessage>()
-    internal val backingTracks = mutableStateSetOf<Track>()
+    internal val backingTracks: IManualStateValue<WeakHashMap<Track, Unit>> = ManualStateValue(WeakHashMap<Track, Unit>())
     internal var startNoteIndex = 0
     internal var noteHeight by mutableStateOf(16.dp)
     internal var noteWidth = mutableStateOf(0.4.dp)

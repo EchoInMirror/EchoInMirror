@@ -20,6 +20,10 @@ interface IManualStateValue <T> : IManualState {
     var value: T
     operator fun getValue(thisRef: Any?, property: KProperty<*>): T
     operator fun setValue(thisRef: Any?, property: KProperty<*>, value: T)
+    fun readValue(): T {
+        read()
+        return value
+    }
 }
 
 inline fun <T> IManualStateValue<T>.updateOn(block: (T) -> Unit) {

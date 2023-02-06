@@ -130,7 +130,7 @@ internal fun NotesEditorCanvas(editor: DefaultMidiClipEditor) {
                 notesInView = notesInViewList
                 // get note draw nodes - end
 
-                backingTracks.forEach { track ->
+                backingTracks.readValue().forEach { (track, _) ->
                     if (track == EchoInMirror.selectedTrack) return@forEach
                     track.clips.read()
                     val color = track.color

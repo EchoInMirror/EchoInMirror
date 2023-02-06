@@ -151,6 +151,7 @@ open class ProcessAudioProcessorImpl(
             outputStream = null
             isLaunched = false
         }
+        super.close()
     }
 
     private fun handleInput(id: Int) {

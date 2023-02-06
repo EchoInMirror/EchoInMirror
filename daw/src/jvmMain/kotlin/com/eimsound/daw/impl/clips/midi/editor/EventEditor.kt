@@ -28,6 +28,7 @@ import com.eimsound.daw.components.EditorGrid
 import com.eimsound.daw.components.EnvelopeEditor
 import com.eimsound.daw.components.KEYBOARD_DEFAULT_WIDTH
 import com.eimsound.daw.components.utils.Stroke1_5PX
+import com.eimsound.daw.data.getEditUnit
 import com.eimsound.daw.utils.clickableWithIcon
 import com.eimsound.daw.window.panels.playlist.EditAction
 import kotlin.math.roundToInt
@@ -113,7 +114,7 @@ data class CCEvent(val event: MidiCCEvent) : EventType {
             envEditor.Content(
                 clip.start - clip.time + with (LocalDensity.current) { horizontalScrollState.value / noteWidth.value.toPx() },
                 clip.track?.color ?: MaterialTheme.colorScheme.primary,
-                noteWidth
+                noteWidth, getEditUnit(), horizontalScrollState
             )
         }
     }

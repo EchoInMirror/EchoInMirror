@@ -3,7 +3,6 @@ package com.eimsound.daw.api.window
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.awt.ComposeWindow
-import com.eimsound.daw.api.processor.Track
 import java.nio.file.Path
 
 interface WindowManager {
@@ -16,7 +15,6 @@ interface WindowManager {
 
     fun registerPanel(panel: Panel)
     fun unregisterPanel(panel: Panel)
-    fun clearTrackUIState(track: Track)
     fun openProject(path: Path)
     fun closeMainWindow(isExit: Boolean = false)
 }

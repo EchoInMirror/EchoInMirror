@@ -5,10 +5,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.awt.ComposeWindow
 import com.eimsound.daw.*
 import com.eimsound.daw.api.DefaultProjectInformation
-import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.api.window.Panel
 import com.eimsound.daw.api.window.WindowManager
-import com.eimsound.daw.impl.clips.midi.editor.backingTracks
 import com.eimsound.daw.window.dialogs.ExportDialog
 import com.eimsound.daw.window.dialogs.QuickLoadDialog
 import com.eimsound.daw.window.dialogs.settings.SettingsWindow
@@ -50,11 +48,6 @@ class WindowManagerImpl: WindowManager {
         for ((dialog, visible) in dialogs) {
             if (visible) dialog()
         }
-    }
-
-    override fun clearTrackUIState(track: Track) {
-        if (EchoInMirror.selectedTrack == track) EchoInMirror.selectedTrack = null
-        backingTracks.remove(track)
     }
 
     override fun closeMainWindow(isExit: Boolean) {

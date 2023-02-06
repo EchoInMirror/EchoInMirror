@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.ser.std.StdSerializer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.util.WeakHashMap
 
 interface AudioProcessorDescription {
     val name: String
@@ -20,6 +21,8 @@ interface AudioProcessorDescription {
     val isInstrument: Boolean?
     val identifier: String?
 }
+
+interface AudioProcessorListener
 
 interface AudioProcessor: AutoCloseable {
     @get:JsonProperty
@@ -35,9 +38,10 @@ interface AudioProcessor: AutoCloseable {
     fun prepareToPlay(sampleRate: Int, bufferSize: Int) { }
     fun onSuddenChange() { }
     fun onClick() { }
+    fun addListener(listener: AudioProcessorListener)
+    fun removeListener(listener: AudioProcessorListener)
     suspend fun save(path: String)
     suspend fun load(path: String, json: JsonNode)
-    override fun close() { }
 }
 
 abstract class AbstractAudioProcessor(
@@ -51,6 +55,8 @@ abstract class AbstractAudioProcessor(
     @Suppress("CanBePrimaryConstructorProperty")
     override val description = description
     override var name = description.name
+    private val _listeners = WeakHashMap<AudioProcessorListener, Unit>()
+    protected val listeners: Set<AudioProcessorListener> get() = _listeners.keys
 
     override suspend fun save(path: String) {
         withContext(Dispatchers.IO) {
@@ -67,6 +73,11 @@ abstract class AbstractAudioProcessor(
         name = json["name"]?.asText() ?: ""
         json["id"]?.asText()?.let { if (it.isNotEmpty()) id = it }
     }
+
+    override fun addListener(listener: AudioProcessorListener) { _listeners[listener] = Unit }
+    override fun removeListener(listener: AudioProcessorListener) { _listeners.remove(listener) }
+
+    override fun close() { }
 }
 
 @JsonInclude(JsonInclude.Include.NON_NULL)

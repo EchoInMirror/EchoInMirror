@@ -24,7 +24,9 @@ import com.eimsound.daw.components.MenuItem
 import com.eimsound.daw.components.TIMELINE_HEIGHT
 import com.eimsound.daw.components.silder.Slider
 import com.eimsound.daw.components.utils.toOnSurfaceColor
+import com.eimsound.daw.utils.IManualStateValue
 import com.eimsound.daw.window.panels.playlist.noteWidthSliderRange
+import java.util.WeakHashMap
 import kotlin.math.roundToInt
 
 private fun dfsTrackIndex(track: Track, target: Track, index: String): String? {
@@ -37,10 +39,11 @@ private fun dfsTrackIndex(track: Track, target: Track, index: String): String? {
 }
 
 @Composable
-private fun TrackItem(track: Track, backingTracks: MutableSet<Track>, index: String, depth: Int = 0) {
+private fun TrackItem(track: Track, backingTracks: IManualStateValue<WeakHashMap<Track, Unit>>, index: String, depth: Int = 0) {
     val isSelected = EchoInMirror.selectedClip?.clip == track
-    MenuItem(isSelected || backingTracks.contains(track), {
-        if (!backingTracks.remove(track)) backingTracks.add(track)
+    MenuItem(isSelected || backingTracks.readValue().contains(track), {
+        if (backingTracks.value.remove(track) == null) backingTracks.value[track] = Unit
+        backingTracks.update()
     }, minHeight = 28.dp, padding = PaddingValues(), modifier = Modifier.height(IntrinsicSize.Min)) {
         Spacer(Modifier.width(6.dp * depth))
         Spacer(Modifier.width(6.dp).fillMaxHeight().background(track.color))
