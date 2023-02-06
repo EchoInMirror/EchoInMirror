@@ -110,7 +110,7 @@ data class CCEvent(val event: MidiCCEvent) : EventType {
             envEditor.Content(
                 clip.start - clip.time + with (LocalDensity.current) { horizontalScrollState.value / noteWidth.value.toPx() },
                 clip.track?.color ?: MaterialTheme.colorScheme.primary,
-                noteWidth, getEditUnit(), horizontalScrollState
+                noteWidth, getEditUnit(), horizontalScrollState, editor.clip.time
             )
         }
     }
