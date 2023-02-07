@@ -39,6 +39,7 @@ internal suspend fun PointerInputScope.handleMouseEvent(scope: CoroutineScope) {
                     PointerEventType.Press -> {
                         if (event.buttons.isPrimaryPressed) {
                             if (event.keyboardModifiers.isCtrlPressed) action = EditAction.SELECT
+                            selectedClips.clear()
                             break
                         } else if (event.buttons.isForwardPressed) {
                             action = EditAction.SELECT
@@ -67,7 +68,6 @@ internal suspend fun PointerInputScope.handleMouseEvent(scope: CoroutineScope) {
             var trackHeights: ArrayList<TrackToHeight>? = null
             when (action) {
                 EditAction.SELECT -> {
-                    selectedClips.clear()
                     selectionStartX = downX
                     selectionStartY = dragStartY
                     selectionX = selectionStartX

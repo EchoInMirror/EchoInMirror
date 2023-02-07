@@ -28,8 +28,8 @@ enum class EnvelopeType {
                         controlPoint1 = value0 - dy
                         controlPoint2 = value1 + dy
                     } else {
-                        controlPoint1 = value1 - dy
-                        controlPoint2 = value1 + dy
+                        controlPoint1 = value0 + dy
+                        controlPoint2 = value1 - dy
                     }
                 }
                 val tmp = 1 - t

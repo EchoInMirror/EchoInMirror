@@ -6,7 +6,6 @@ import androidx.compose.foundation.gestures.*
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -50,8 +49,8 @@ fun DrawScope.drawEnvelope(type: EnvelopeType, color: Color, tension: Float, x0:
                     controlPoint1Y = value0 - dy
                     controlPoint2Y = value1 + dy
                 } else {
-                    controlPoint1Y = value1 - dy
-                    controlPoint2Y = value1 + dy
+                    controlPoint1Y = value0 + dy
+                    controlPoint2Y = value1 - dy
                 }
                 controlPoint1X = x0
                 controlPoint2X = x1
@@ -59,7 +58,8 @@ fun DrawScope.drawEnvelope(type: EnvelopeType, color: Color, tension: Float, x0:
             drawPath(Path().apply {
                 val height = size.height
                 moveTo(x0, (1 - value0) * height)
-                cubicTo(controlPoint1X, (1 - controlPoint1Y) * height, controlPoint2X, (1 - controlPoint2Y) * height, x1, (1 - value1) * height)
+                cubicTo(controlPoint1X, (1 - controlPoint1Y) * height, controlPoint2X,
+                    (1 - controlPoint2Y) * height, x1, (1 - value1) * height)
             }, color, style = Stroke2PX)
         }
         EnvelopeType.EXPONENTIAL -> {
@@ -81,7 +81,8 @@ fun DrawScope.drawEnvelope(type: EnvelopeType, color: Color, tension: Float, x0:
             drawPath(Path().apply {
                 val height = size.height
                 moveTo(x0, (1 - value0) * height)
-                cubicTo(controlPoint1X, (1 - controlPoint1Y) * height, controlPoint2X, (1 - controlPoint2Y) * height, x1, (1 - value1) * height)
+                cubicTo(controlPoint1X, (1 - controlPoint1Y) * height, controlPoint2X,
+                    (1 - controlPoint2Y) * height, x1, (1 - value1) * height)
             }, color, style = Stroke2PX)
         }
         EnvelopeType.SQUARE -> {
@@ -139,7 +140,6 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange, pr
     fun cut() { copy(); delete() }
     fun selectAll() { selectedPoints.addAll(points) }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     @Composable
     fun Content(start: Float, color: Color, noteWidth: MutableState<Dp>, editUnit: Int = 24,
                 horizontalScrollState: ScrollState? = null, clipStartTime: Int = 0) {
@@ -186,10 +186,11 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange, pr
                                     break
                                 }
                                 // find the selected point
-                                val (pointId, tmpId) = getSelectedPoint(event.changes[0].position, points, startValue, valueRange, noteWidth)
+                                val (pointId, tmpId) = getSelectedPoint(event.changes[0].position, points,
+                                    startValue, valueRange, noteWidth)
                                 if (tmpId == -1) {
-                                    if ((pointId >= 0 && pointId < points.size - 1) &&
-                                        (selectedPoints.contains(points[pointId]) || selectedPoints.isEmpty())) {
+                                    if (pointId >= 0 && pointId < points.size - 1) {
+                                        if (!selectedPoints.contains(points[pointId])) selectedPoints.clear()
                                         currentAdjustingPoint = pointId
                                         action = EditAction.RESIZE
                                         break
@@ -239,7 +240,7 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange, pr
                     drag(drag.id) {
                         var y = it.position.y
                         if (action == EditAction.RESIZE) {
-                            y = -((y - downY) / size.height).coerceIn(-1F, 1F)
+                            y = -((y - downY) / size.height).coerceIn(-2F, 2F)
                             if (offsetTension != y) offsetTension = y
                         } else {
                             var x = it.position.x
@@ -333,7 +334,7 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange, pr
                             (if (isNextSelected) tmpOffsetX else 0F)) * noteWidthPx
                     val curValue = cur.value + (if (isSelected) tmpOffsetY else 0F)
                     val nextPoint = next ?: cur
-                    drawEnvelope(cur.type, if (isSelected || isNextSelected) primaryColor else color,
+                    drawEnvelope(cur.type, if (isSelected) primaryColor else color,
                         cur.tension, startX, endX, mapValue(curValue, valueRange),
                         mapValue(nextPoint.value + (if (isNextSelected) tmpOffsetY else 0F), valueRange))
 
@@ -362,7 +363,7 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange, pr
                     val startX = (cur.time - start) * noteWidthPx
                     val endX = if (next == null) size.width else (next.time - start) * noteWidthPx
                     val isSelected = selectedPoints.contains(cur)
-                    drawEnvelope(cur.type, if (isSelected || selectedPoints.contains(next)) primaryColor else color,
+                    drawEnvelope(cur.type, if (isSelected) primaryColor else color,
                         (cur.tension + (if (isSelected || currentAdjustingPoint == i) tmpOffsetTension else 0F)).coerceIn(-1F, 1F),
                         startX, endX, mapValue(cur.value, valueRange), mapValue((next ?: cur).value, valueRange))
 
