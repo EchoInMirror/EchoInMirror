@@ -26,7 +26,7 @@ kotlin {
                     exclude("com.googlecode.soundlibs", "tritonus_share")
                 }
                 implementation("com.github.trilarion:vorbis-support:1.1.0")
-                implementation("org.jflac:jflac-codec:1.5.0")
+                implementation("org.jflac:jflac-codec:1.5.2")
             }
         }
         named("jvmMain") {

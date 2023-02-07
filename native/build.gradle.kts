@@ -23,10 +23,10 @@ kotlin {
 
                 implementation(project(":utils"))
                 implementation(compose.runtime)
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
-                implementation("com.fasterxml.jackson.module:jackson-module-kotlin:${extra["eim.jackson.version"]}")
-                implementation("org.apache.commons:commons-lang3:3.12.0")
-                implementation("org.slf4j:slf4j-simple:2.0.3")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${extra["eim.dependencies.kotlinx.coroutines"]}")
+                implementation("com.fasterxml.jackson.module:jackson-module-kotlin:${extra["eim.dependencies.jackson"]}")
+                implementation("org.apache.commons:commons-lang3:${extra["eim.dependencies.commons.lang"]}")
+                implementation("org.slf4j:slf4j-simple:${extra["eim.dependencies.slf4j"]}")
 
                 @Suppress("OPT_IN_IS_NOT_ENABLED")
                 @OptIn(ExperimentalComposeLibrary::class)

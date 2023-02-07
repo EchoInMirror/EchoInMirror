@@ -44,13 +44,13 @@ kotlin {
                 }
                 api(compose.materialIconsExtended)
                 @OptIn(ExperimentalComposeLibrary::class) implementation(compose.material3)
-                api("com.fasterxml.jackson.module:jackson-module-kotlin:${extra["eim.jackson.version"]}")
+                api("com.fasterxml.jackson.module:jackson-module-kotlin:${extra["eim.dependencies.jackson"]}")
 //                @OptIn(ExperimentalComposeLibrary::class) implementation(compose.desktop.components.splitPane)
 
                 api("commons-io:commons-io:2.11.0")
-                api("org.apache.commons:commons-lang3:3.12.0")
+                api("org.apache.commons:commons-lang3:${extra["eim.dependencies.commons.lang"]}")
                 api("org.pf4j:pf4j:3.8.0")
-                api("org.slf4j:slf4j-simple:2.0.3")
+                api("org.slf4j:slf4j-simple:${extra["eim.dependencies.slf4j"]}")
                 implementation("org.jetbrains.compose.ui:ui-util:${ComposeBuildConfig.composeVersion}")
                 implementation("org.ocpsoft.prettytime:prettytime:5.0.6.Final")
             }

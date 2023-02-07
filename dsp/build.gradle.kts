@@ -15,8 +15,8 @@ kotlin {
             dependencies {
                 api(project(":utils"))
                 implementation(compose.runtime)
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
-                implementation("com.fasterxml.jackson.module:jackson-module-kotlin:${extra["eim.jackson.version"]}")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${extra["eim.dependencies.kotlinx.coroutines"]}")
+                implementation("com.fasterxml.jackson.module:jackson-module-kotlin:${extra["eim.dependencies.jackson"]}")
             }
         }
         named("commonTest") {
