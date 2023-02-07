@@ -26,6 +26,7 @@ import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.components.utils.HorizontalResize
 import com.eimsound.daw.data.getEditUnit
 import com.eimsound.daw.utils.fitInUnit
+import com.eimsound.daw.utils.range
 import com.eimsound.daw.utils.x
 
 private val BOTTOM = ParagraphStyle(lineHeight = 16.sp,
@@ -134,7 +135,7 @@ fun Timeline(modifier: Modifier = Modifier, noteWidth: MutableState<Dp>, scrollS
                 val end = range.last * noteWidthPx - scrollState.value + offsetXValue
                 // draw a rect with rangeColor in startPPQ to endPPQ
                 drawRect(rangeColor, Offset(start, 0F),
-                    Size((range.last - range.first) * noteWidthPx, size.height))
+                    Size(range.range * noteWidthPx, size.height))
 
                 // draw two 2px lines in above rect start and end with primaryColor
                 val width = if (isInRange) 4F else 2F

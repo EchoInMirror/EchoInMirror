@@ -14,6 +14,7 @@ import com.eimsound.audioprocessor.convertPPQToSamples
 import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.api.processor.ChannelType
 import com.eimsound.daw.components.*
+import com.eimsound.daw.utils.range
 import com.eimsound.dsp.native.JvmRenderer
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
@@ -49,7 +50,7 @@ val ExportDialog = @Composable {
                         var isRendering by remember { mutableStateOf(false) }
 
                         val position = EchoInMirror.currentPosition
-                        val endPPQ = position.projectRange.last - position.projectRange.first
+                        val endPPQ = position.projectRange.range
                         val timeInSecond = position.convertPPQToSamples(endPPQ).toFloat() / position.sampleRate
                         var filename by remember {
                             mutableStateOf(

@@ -3,6 +3,7 @@ package com.eimsound.dsp.native
 import com.eimsound.audioprocessor.*
 import com.eimsound.daw.utils.ByteBufOutputStream
 import com.eimsound.daw.utils.CachedBufferInputStream
+import com.eimsound.daw.utils.range
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.runBlocking
@@ -40,7 +41,7 @@ class JvmRenderer(private val renderTarget: Renderable) : Renderer {
         val channels = 2
         val bits0 = bits / 8
         val position = RenderPosition(ppq, sampleRate, range)
-        val fullLengthInPPQ = range.last - range.first
+        val fullLengthInPPQ = range.range
         val fullLength = channels * bits0 * position.convertPPQToSamples(fullLengthInPPQ)
         val buffers =
             arrayOf(FloatArray(position.bufferSize), FloatArray(position.bufferSize))
