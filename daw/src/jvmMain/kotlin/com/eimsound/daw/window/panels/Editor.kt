@@ -19,31 +19,12 @@ import com.eimsound.daw.api.window.Panel
 import com.eimsound.daw.api.window.PanelDirection
 import com.eimsound.daw.commands.*
 import com.eimsound.daw.components.Gap
+import com.eimsound.daw.utils.BasicEditor
 
-object Editor: Panel {
+object Editor: Panel, BasicEditor {
     override val name = "编辑器"
     override val direction = PanelDirection.Horizontal
     private var editor: ClipEditor? = null
-
-    init {
-        EchoInMirror.commandManager.apply {
-            registerCommandHandler(DeleteCommand) {
-                if (EchoInMirror.windowManager.activePanel == Editor) editor?.delete()
-            }
-            registerCommandHandler(CopyCommand) {
-                if (EchoInMirror.windowManager.activePanel == Editor) editor?.copy()
-            }
-            registerCommandHandler(CutCommand) {
-                if (EchoInMirror.windowManager.activePanel == Editor) editor?.cut()
-            }
-            registerCommandHandler(PasteCommand) {
-                if (EchoInMirror.windowManager.activePanel == Editor) editor?.paste()
-            }
-            registerCommandHandler(SelectAllCommand) {
-                if (EchoInMirror.windowManager.activePanel == Editor) editor?.selectAll()
-            }
-        }
-    }
 
     @Composable
     override fun Icon() {
@@ -62,7 +43,7 @@ object Editor: Panel {
                 @Suppress("TYPE_MISMATCH")
                 val res = if (clip != null && track != null) clip.clip.factory.getEditor(clip, track)
                 else null
-                this@Editor.editor = res
+                editor = res
                 res
             }
             if (editor == null) Row(Modifier.fillMaxSize(), Arrangement.Center, Alignment.CenterVertically) {
@@ -72,4 +53,10 @@ object Editor: Panel {
             } else editor.Editor()
         }
     }
+
+    override fun copy() { editor?.copy() }
+    override fun paste() { editor?.paste() }
+    override fun cut() { editor?.cut() }
+    override fun delete() { editor?.delete() }
+    override fun selectAll() { editor?.selectAll() }
 }

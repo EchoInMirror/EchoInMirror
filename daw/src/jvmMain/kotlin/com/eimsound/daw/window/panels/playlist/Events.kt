@@ -13,9 +13,9 @@ import kotlin.math.roundToInt
 internal var dragStartY = 0F
 
 @Suppress("DuplicatedCode")
-internal suspend fun PointerInputScope.handleMouseEvent(scope: CoroutineScope) {
+internal suspend fun PointerInputScope.handleMouseEvent(playlist: Playlist, scope: CoroutineScope) {
     forEachGesture {
-        awaitPointerEventScope {
+        awaitPointerEventScope { playlist.apply {
             var event: PointerEvent
             do {
                 event = awaitPointerEvent(PointerEventPass.Initial)
@@ -145,5 +145,5 @@ internal suspend fun PointerInputScope.handleMouseEvent(scope: CoroutineScope) {
             }
             action = EditAction.NONE
         }
-    }
+    } }
 }

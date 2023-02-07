@@ -28,6 +28,9 @@ class TrackClipImpl <T: Clip> (override val clip: T, time: Int = 0, duration: In
         currentIndex = -1
     }
 
+    override fun copy(time: Int, duration: Int, start: Int, clip: T, currentIndex: Int, track: Track?) =
+        TrackClipImpl(clip, time, duration, start, track)
+
     override fun toString(): String {
         return "TrackClipImpl(clip=$clip, time=$time, duration=$duration)"
     }

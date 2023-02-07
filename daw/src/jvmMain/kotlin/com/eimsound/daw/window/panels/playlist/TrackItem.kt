@@ -1,4 +1,4 @@
-@file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
+@file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE", "PrivatePropertyName")
 
 package com.eimsound.daw.window.panels.playlist
 
@@ -61,142 +61,159 @@ internal fun getAllTrackHeights(defaultHeight: Float, density: Float): ArrayList
 internal fun binarySearchTrackByHeight(trackHeights: ArrayList<TrackToHeight>, y: Float) =
     trackHeights.binarySearch { it.height <= y }
 
-private suspend fun AwaitPointerEventScope.handleDrag(track: Track, parentTrack: Track, isDragging: MutableState<Boolean>) {
+private suspend fun AwaitPointerEventScope.handleDrag(playlist: Playlist, track: Track, parentTrack: Track,
+                                                      isDragging: MutableState<Boolean>) {
     val down = awaitFirstDownOnPass(PointerEventPass.Final, false)
     awaitPointerSlopOrCancellation(down.id, down.type, triggerOnMainAxisSlop = false) { change, _ ->
-        trackHeights = getAllTrackHeights(trackHeight.toPx(), density)
-        isDragging.value = true
-        var lastTrack: Track? = null
-        var lastFlags: TrackMoveFlags? = null
-        var currentY: Float
-        drag(down.id) {
-            currentY = dragStartY + it.position.y - change.position.y
-            // binary search drop track by trackHeights and currentY
-            val cur = binarySearchTrackByHeight(trackHeights, currentY)
-            val dropTrack = trackHeights[cur].track
+        playlist.apply {
+            trackHeights = getAllTrackHeights(trackHeight.toPx(), density)
+            isDragging.value = true
+            var lastTrack: Track? = null
+            var lastFlags: TrackMoveFlags? = null
+            var currentY: Float
+            drag(down.id) {
+                currentY = dragStartY + it.position.y - change.position.y
+                // binary search drop track by trackHeights and currentY
+                val cur = binarySearchTrackByHeight(trackHeights, currentY)
+                val dropTrack = trackHeights[cur].track
+                lastFlags?.isAbove = false
+                lastFlags?.isChild = false
+                if (dropTrack == track) return@drag
+                lastTrack = dropTrack
+                val flags0 = trackMovingFlags[dropTrack] ?: return@drag
+                lastFlags = flags0
+                if (currentY - (if (cur == 0) 0F else trackHeights[cur - 1].height) < 6) flags0.isAbove = true
+                else flags0.isChild = true
+            }
+            if (lastTrack != null) {
+                // dfs search drop track is not the child of current track
+                var dropTrack = lastTrack
+                var flag = false
+                while (dropTrack != null) {
+                    if (dropTrack == track) {
+                        flag = true
+                        break
+                    }
+                    dropTrack = trackMovingFlags[dropTrack]?.parent
+                }
+                if (!flag) lastFlags?.let {
+                    if (it.isAbove) track.doReorderAction(
+                        parentTrack.subTracks, it.parent.subTracks,
+                        it.parent.subTracks.indexOf(lastTrack)
+                    )
+                    else if (it.isChild) track.doReorderAction(parentTrack.subTracks, lastTrack!!.subTracks)
+                }
+            }
             lastFlags?.isAbove = false
             lastFlags?.isChild = false
-            if (dropTrack == track) return@drag
-            lastTrack = dropTrack
-            val flags0 = trackMovingFlags[dropTrack] ?: return@drag
-            lastFlags = flags0
-            if (currentY - (if (cur == 0) 0F else trackHeights[cur - 1].height) < 6) flags0.isAbove = true
-            else flags0.isChild = true
         }
-        if (lastTrack != null) {
-            // dfs search drop track is not the child of current track
-            var dropTrack = lastTrack
-            var flag = false
-            while (dropTrack != null) {
-                if (dropTrack == track) {
-                    flag = true
-                    break
-                }
-                dropTrack = trackMovingFlags[dropTrack]?.parent
-            }
-            if (!flag) lastFlags?.let {
-                if (it.isAbove) track.doReorderAction(
-                    parentTrack.subTracks, it.parent.subTracks,
-                    it.parent.subTracks.indexOf(lastTrack)
-                )
-                else if (it.isChild) track.doReorderAction(parentTrack.subTracks, lastTrack!!.subTracks)
-            }
-        }
-        lastFlags?.isAbove = false
-        lastFlags?.isChild = false
         isDragging.value = false
     }
 }
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-private fun TrackItem(track: Track, parentTrack: Track, index: Int, depth: Int = 0) {
+private fun TrackItem(playlist: Playlist, track: Track, parentTrack: Track, index: Int, depth: Int = 0) {
     val isDragging = remember { mutableStateOf(false) }
     val primaryColor = MaterialTheme.colorScheme.primary
     val flags = trackMovingFlags[track]
     val alpha by animateFloatAsState(flags?.let { if (it.isAbove || it.isChild) 0.4F else 0F } ?: 0F)
-    Row(Modifier.height(trackHeight).padding(start = TRACK_COLOR_WIDTH * depth)
-        .background(track.color.copy(animateFloatAsState(if (EchoInMirror.selectedTrack == track) 0.1F else 0F).value))
-        .onPointerEvent(PointerEventType.Press) { EchoInMirror.selectedTrack = track }
-        .drawWithContent {
-            drawContent()
-            if (flags == null || !(flags.isChild || flags.isAbove)) return@drawWithContent
-            val left = TRACK_COLOR_WIDTH.toPx()
-            if (flags.isChild) drawRect(primaryColor, Offset(left, 0F), Size(size.width - left, size.height), alpha = alpha)
-            else if (flags.isAbove) drawRect(primaryColor, Offset(left, 0F), Size(size.width - left, 2F), alpha = alpha)
-        }
-        .pointerInput(track, parentTrack) {
-            trackMovingFlags[track] = TrackMoveFlags(parentTrack)
-            forEachGesture { awaitPointerEventScope { handleDrag(track, parentTrack, isDragging) } }
-        }
-        .alpha(animateFloatAsState(if (isDragging.value) 0.3F else 1F).value)
-    ) {
-        val localFloatingDialogProvider = LocalFloatingDialogProvider.current
-        Spacer(Modifier.fillMaxHeight().width(8.dp).background(track.color).clickableWithIcon {
-            openColorPicker(localFloatingDialogProvider, track.color) { track.color = it }
-        })
-        Row(Modifier.weight(1F).padding(8.dp, 4.dp)) {
-            Text(index.toString(),
-                Modifier.width(20.dp),
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1
-            )
-            Column(Modifier.fillMaxHeight(), Arrangement.SpaceBetween) {
-                Text(track.name, style = MaterialTheme.typography.labelLarge, overflow = TextOverflow.Ellipsis, maxLines = 1)
-                if (trackHeight.value > 54) SegmentedButtons {
-                    SegmentedButton({ track.isMute = !track.isMute }, track.isMute, false) {
-                        Icon(if (track.isMute) Icons.Filled.VolumeOff else Icons.Filled.VolumeUp, null, TRACK_ITEM_ICON_SIZE)
+    playlist.apply {
+        Row(Modifier.height(trackHeight).padding(start = TRACK_COLOR_WIDTH * depth)
+            .background(track.color.copy(animateFloatAsState(if (EchoInMirror.selectedTrack == track) 0.1F else 0F).value))
+            .onPointerEvent(PointerEventType.Press) { EchoInMirror.selectedTrack = track }
+            .drawWithContent {
+                drawContent()
+                if (flags == null || !(flags.isChild || flags.isAbove)) return@drawWithContent
+                val left = TRACK_COLOR_WIDTH.toPx()
+                if (flags.isChild) drawRect(
+                    primaryColor,
+                    Offset(left, 0F),
+                    Size(size.width - left, size.height),
+                    alpha = alpha
+                )
+                else if (flags.isAbove) drawRect(
+                    primaryColor,
+                    Offset(left, 0F),
+                    Size(size.width - left, 2F),
+                    alpha = alpha
+                )
+            }
+            .pointerInput(track, parentTrack) {
+                trackMovingFlags[track] = TrackMoveFlags(parentTrack)
+                forEachGesture { awaitPointerEventScope { handleDrag(playlist, track, parentTrack, isDragging) } }
+            }
+            .alpha(animateFloatAsState(if (isDragging.value) 0.3F else 1F).value)
+        ) {
+            val localFloatingDialogProvider = LocalFloatingDialogProvider.current
+            Spacer(Modifier.fillMaxHeight().width(8.dp).background(track.color).clickableWithIcon {
+                openColorPicker(localFloatingDialogProvider, track.color) { track.color = it }
+            })
+            Row(Modifier.weight(1F).padding(8.dp, 4.dp)) {
+                Text(index.toString(),
+                    Modifier.width(20.dp),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1
+                )
+                Column(Modifier.fillMaxHeight(), Arrangement.SpaceBetween) {
+                    Text(track.name, style = MaterialTheme.typography.labelLarge, overflow = TextOverflow.Ellipsis, maxLines = 1)
+                    if (trackHeight.value > 54) SegmentedButtons {
+                        SegmentedButton({ track.isMute = !track.isMute }, track.isMute, false) {
+                            Icon(if (track.isMute) Icons.Filled.VolumeOff else Icons.Filled.VolumeUp, null, TRACK_ITEM_ICON_SIZE)
+                        }
+                        SegmentedDivider()
+                        SegmentedButton({ track.isSolo = !track.isSolo }, track.isSolo, false) {
+                            Icon(Crown, null, TRACK_ITEM_ICON_SIZE)
+                        }
+                        SegmentedDivider()
+                        SegmentedButton({ track.isDisabled = !track.isDisabled }, track.isDisabled, false) {
+                            Icon(DebugStepOver, null, TRACK_ITEM_ICON_SIZE)
+                        }
                     }
-                    SegmentedDivider()
-                    SegmentedButton({ track.isSolo = !track.isSolo }, track.isSolo, false) {
-                        Icon(Crown, null, TRACK_ITEM_ICON_SIZE)
-                    }
-                    SegmentedDivider()
-                    SegmentedButton({ track.isDisabled = !track.isDisabled }, track.isDisabled, false) {
-                        Icon(DebugStepOver, null, TRACK_ITEM_ICON_SIZE)
-                    }
+                    if (trackHeight.value > 40) VolumeSlider(track, Modifier.fillMaxWidth().offset((-4).dp), false)
                 }
-                if (trackHeight.value > 40) VolumeSlider(track, Modifier.fillMaxWidth().offset((-4).dp), false)
+            }
+
+            Canvas(Modifier.fillMaxHeight().width(5.dp)) {
+                val y = size.height * (1F - track.levelMeter.maxLevel.toPercentage())
+                drawRect(primaryColor, Offset(0F, y), Size(size.width, size.height - y))
+                // drawLine(outlineColor, Offset(size.width / 2, y), Offset(size.width / 2, size.height), 0.5F)
+                // drawLine(outlineColor, Offset.Zero, Offset(0F, size.height), 0.5F)
             }
         }
-
-        Canvas(Modifier.fillMaxHeight().width(5.dp)) {
-            val y = size.height * (1F - track.levelMeter.maxLevel.toPercentage())
-            drawRect(primaryColor, Offset(0F, y), Size(size.width, size.height - y))
-            // drawLine(outlineColor, Offset(size.width / 2, y), Offset(size.width / 2, size.height), 0.5F)
-            // drawLine(outlineColor, Offset.Zero, Offset(0F, size.height), 0.5F)
-        }
+        track.subTracks.forEachIndexed { i, it -> key(it.id) {
+            Divider(Modifier.offset(8.dp * (depth + 1)))
+            TrackItem(playlist, it, track, i + 1, depth + 1)
+        } }
     }
-    track.subTracks.forEachIndexed { i, it -> key(it.id) {
-        Divider(Modifier.offset(8.dp * (depth + 1)))
-        TrackItem(it, track, i + 1, depth + 1)
-    } }
 }
 
 @Composable
-internal fun TrackItems() {
+internal fun TrackItems(playlist: Playlist) {
     val scope = rememberCoroutineScope()
-    Column(Modifier.pointerInput(scope) {
-        detectDragGestures({ dragStartY = it.y + verticalScrollState.value }) { change, _ ->
-            if (change.position.y < 10) scope.launch { verticalScrollState.scrollBy(-3F) }
-            else if (change.position.y > size.height - 10) scope.launch { verticalScrollState.scrollBy(3F) }
-        }
-    }.verticalScroll(verticalScrollState)) {
-        Divider()
-        val bus = EchoInMirror.bus!!
-        bus.subTracks.forEachIndexed { i, it ->
-            key(it.id) {
-                TrackItem(it, bus, i + 1)
-                Divider()
+    playlist.apply {
+        Column(Modifier.pointerInput(scope) {
+            detectDragGestures({ dragStartY = it.y + verticalScrollState.value }) { change, _ ->
+                if (change.position.y < 10) scope.launch { verticalScrollState.scrollBy(-3F) }
+                else if (change.position.y > size.height - 10) scope.launch { verticalScrollState.scrollBy(3F) }
             }
-        }
-        TextButton({
-            runBlocking {
-                EchoInMirror.trackManager.createTrack().doAddOrRemoveTrackAction(EchoInMirror.bus!!.subTracks)
+        }.verticalScroll(verticalScrollState)) {
+            Divider()
+            val bus = EchoInMirror.bus!!
+            bus.subTracks.forEachIndexed { i, it ->
+                key(it.id) {
+                    TrackItem(playlist, it, bus, i + 1)
+                    Divider()
+                }
             }
-        }, Modifier.fillMaxWidth()) {
-            Text("创建轨道")
+            TextButton({
+                runBlocking {
+                    EchoInMirror.trackManager.createTrack().doAddOrRemoveTrackAction(EchoInMirror.bus!!.subTracks)
+                }
+            }, Modifier.fillMaxWidth()) {
+                Text("创建轨道")
+            }
         }
     }
 }

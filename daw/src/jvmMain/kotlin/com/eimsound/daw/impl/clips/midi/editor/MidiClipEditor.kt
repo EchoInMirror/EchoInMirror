@@ -151,7 +151,7 @@ class DefaultMidiClipEditor(override val clip: TrackClip<MidiClip>, override val
     override fun paste() {
         if (isEventPanelActive) selectedEvent?.paste()
         else {
-            if (copiedNotes == null) return
+            if (copiedNotes?.isEmpty() == true) return
             val startTime = EchoInMirror.currentPosition.timeInPPQ.fitInUnitCeil(getEditUnit())
             val notes = copiedNotes!!.map { it.copy(time = it.time + startTime) }
             clip.doNoteAmountAction(notes, false)

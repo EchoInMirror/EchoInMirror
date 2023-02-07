@@ -152,7 +152,9 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange, pr
         copiedPoints = copyAsObject()
     }
     override fun paste() {
-        val result = eventHandler?.onPastePoints(this, copiedPoints ?: return) ?: return
+        val tmp = copiedPoints ?: return
+        if (tmp.isEmpty()) return
+        val result = eventHandler?.onPastePoints(this, tmp) ?: return
         selectedPoints.clear()
         selectedPoints.addAll(result)
     }

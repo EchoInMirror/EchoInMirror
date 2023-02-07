@@ -28,7 +28,7 @@ import com.eimsound.daw.utils.Border
 import com.eimsound.daw.utils.CLIPBOARD_MANAGER
 import com.eimsound.daw.utils.Logo
 import com.eimsound.daw.utils.border
-import com.eimsound.daw.window.panels.playlist.Playlist
+import com.eimsound.daw.window.panels.playlist.mainPlaylist
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -71,7 +71,7 @@ fun ApplicationScope.MainWindow() {
                                         VerticalSplitPane(splitPaneState = bottomBarHeightState) {
                                             first(0.dp) {
                                                 Box(Modifier.fillMaxSize().border(start = Border(0.6.dp, contentWindowColor))) {
-                                                    Playlist()
+                                                    @Suppress("DEPRECATION") mainPlaylist.Content()
                                                 }
                                             }
                                             second(0.dp) {

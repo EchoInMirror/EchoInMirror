@@ -117,6 +117,9 @@ interface TrackClip<T: Clip> {
     @get:JsonIgnore
     var track: Track?
     fun reset()
+    fun copy(time: Int = this.time, duration: Int = this.duration, start: Int = this.start,
+             clip: T = this.clip, currentIndex: Int = this.currentIndex, track: Track? = this.track
+    ): TrackClip<T>
 }
 
 @Suppress("UNCHECKED_CAST", "unused")

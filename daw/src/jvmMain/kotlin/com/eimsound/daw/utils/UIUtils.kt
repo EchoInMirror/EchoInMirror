@@ -17,6 +17,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.eimsound.daw.EchoInMirror
+import com.eimsound.daw.api.window.Panel
 import org.apache.commons.lang3.SystemUtils
 import org.ocpsoft.prettytime.PrettyTime
 import java.awt.Component
@@ -28,6 +29,7 @@ import java.time.format.DateTimeFormatter
 import java.util.*
 import javax.swing.JFileChooser
 
+@Suppress("PrivatePropertyName")
 private val ZERO_DATE = Date(0)
 var CLIPBOARD_MANAGER: ClipboardManager? = null
 val TIME_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneId.systemDefault())
@@ -175,8 +177,10 @@ fun openInBrowser(uri: URI) = Desktop.getDesktop().browse(uri)
 fun selectInExplorer(file: File) {
     Desktop.getDesktop().apply {
         if (isSupported(Desktop.Action.BROWSE_FILE_DIR)) browseFileDirectory(file)
-        else if (SystemUtils.IS_OS_WINDOWS) Runtime.getRuntime().exec("explorer.exe /select,\"${file.absolutePath}\"")
+        else if (SystemUtils.IS_OS_WINDOWS) Runtime.getRuntime().exec(arrayOf("explorer.exe", "/select,\"${file.absolutePath}\""))
     }
 }
 
 fun randomColor() = com.eimsound.daw.components.utils.randomColor(!EchoInMirror.windowManager.isDarkTheme)
+
+fun Panel.isActive() = EchoInMirror.windowManager.activePanel == this
