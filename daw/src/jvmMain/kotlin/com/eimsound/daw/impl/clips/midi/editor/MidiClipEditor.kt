@@ -43,9 +43,12 @@ private fun EditorContent(editor: DefaultMidiClipEditor) {
                 Column(Modifier.fillMaxSize()) {
                     val localDensity = LocalDensity.current
                     var contentWidth by remember { mutableStateOf(0.dp) }
-                    val clip = clip
                     val range = remember(clip.time, clip.duration) { clip.time..(clip.time + clip.duration) }
-                    Timeline(Modifier.zIndex(3F), noteWidth, horizontalScrollState, range, 68.dp)
+                    Timeline(Modifier.zIndex(3F), noteWidth, horizontalScrollState, range, 68.dp) {
+                        clip.time = it.first
+                        clip.duration = it.range
+                        editor.track.clips.update()
+                    }
                     Box(Modifier.weight(1F).onGloballyPositioned {
                         with(localDensity) { contentWidth = it.size.width.toDp() }
                     }) {
@@ -82,8 +85,6 @@ class DefaultMidiClipEditor(override val clip: TrackClip<MidiClip>, override val
     val horizontalScrollState = ScrollState(0).apply {
         openMaxValue = (noteWidth.value * EchoInMirror.currentPosition.projectDisplayPPQ).value.toInt()
     }
-    var playOnEdit by mutableStateOf(true)
-    var defaultVelocity by mutableStateOf(70)
     var selectedEvent: EventType? by mutableStateOf(VelocityEvent(this))
     internal val backingTracks: IManualStateValue<WeakHashMap<Track, Unit>> = ManualStateValue(WeakHashMap<Track, Unit>())
     internal var startNoteIndex = 0
@@ -95,6 +96,8 @@ class DefaultMidiClipEditor(override val clip: TrackClip<MidiClip>, override val
 
     companion object {
         var copiedNotes: List<NoteMessage>? = null
+        var playOnEdit by mutableStateOf(true)
+        var defaultVelocity by mutableStateOf(70)
     }
 
     @Composable

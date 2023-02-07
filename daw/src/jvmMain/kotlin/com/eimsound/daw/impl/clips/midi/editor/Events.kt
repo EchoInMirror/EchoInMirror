@@ -45,7 +45,7 @@ private fun Density.getClickedNotes(x: Float, y: Float, editor: DefaultMidiClipE
 }
 
 private fun playNote(note: NoteMessage, editor: DefaultMidiClipEditor) {
-    if (!editor.playOnEdit) return
+    if (!DefaultMidiClipEditor.playOnEdit) return
     if (EchoInMirror.currentPosition.isPlaying) return
     editor.playingNotes.add(note.toNoteOffEvent())
     editor.track.playMidiEvent(note.toNoteOnEvent())
@@ -114,7 +114,7 @@ internal suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutin
                                 val noteUnit = getEditUnit()
                                 currentSelectedNote?.apply { lastSelectedNoteDuration = duration }
                                 currentSelectNote = defaultNoteMessage(currentNote, currentX.fitInUnit(noteUnit),
-                                    lastSelectedNoteDuration.coerceAtLeast(noteUnit), defaultVelocity)
+                                    lastSelectedNoteDuration.coerceAtLeast(noteUnit), DefaultMidiClipEditor.defaultVelocity)
                                 clip.doNoteAmountAction(listOf(currentSelectNote), false)
                                 clip.clip.notes.sort()
                                 clip.clip.notes.update()

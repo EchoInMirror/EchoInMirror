@@ -21,6 +21,7 @@ kotlin {
                 implementation("be.tarsos.dsp:core:2.5")
                 implementation("com.googlecode.soundlibs:mp3spi:1.9.5.4") {
                     exclude("com.googlecode.soundlibs", "tritonus_share")
+                    exclude("junit")
                 }
                 implementation("com.googlecode.soundlibs:tritonus-all:0.3.7.2") {
                     exclude("com.googlecode.soundlibs", "tritonus_share")

@@ -26,7 +26,7 @@ import com.eimsound.daw.components.silder.Slider
 import com.eimsound.daw.components.utils.toOnSurfaceColor
 import com.eimsound.daw.utils.IManualStateValue
 import com.eimsound.daw.window.panels.playlist.noteWidthSliderRange
-import java.util.WeakHashMap
+import java.util.*
 import kotlin.math.roundToInt
 
 private fun dfsTrackIndex(track: Track, target: Track, index: String): String? {
@@ -88,26 +88,28 @@ internal fun EditorControls(editor: DefaultMidiClipEditor) {
         editor.apply {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("试听音符", Modifier.weight(1f), style = MaterialTheme.typography.labelLarge)
-                Checkbox(playOnEdit, { playOnEdit = !playOnEdit })
+                Checkbox(DefaultMidiClipEditor.playOnEdit, { DefaultMidiClipEditor.playOnEdit = !DefaultMidiClipEditor.playOnEdit })
             }
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 editor.clip.clip.notes.read()
                 var delta by remember { mutableStateOf(0) }
                 val cur = currentSelectedNote
-                val velocity = if (editor.selectedNotes.isEmpty()) defaultVelocity else (cur ?: editor.selectedNotes.first()).velocity
+                val velocity = if (editor.selectedNotes.isEmpty()) DefaultMidiClipEditor.defaultVelocity else
+                        (cur ?: editor.selectedNotes.first()).velocity
                 val trueValue = velocity + (if (editor.selectedNotes.isEmpty()) 0 else delta)
                 CustomTextField(trueValue.toString(), { str ->
                     val v = str.toIntOrNull()?.coerceIn(0, 127) ?: return@CustomTextField
-                    if (editor.selectedNotes.isEmpty()) defaultVelocity = v
+                    if (editor.selectedNotes.isEmpty()) DefaultMidiClipEditor.defaultVelocity = v
                     else editor.clip.clip.doNoteVelocityAction(editor.selectedNotes.toTypedArray(), v - velocity)
                 }, Modifier.width(60.dp).padding(end = 10.dp), label = { Text("力度") })
                 Slider(trueValue.toFloat() / 127,
                     {
-                        if (editor.selectedNotes.isEmpty()) defaultVelocity = (it * 127).roundToInt()
+                        if (editor.selectedNotes.isEmpty()) DefaultMidiClipEditor.defaultVelocity = (it * 127).roundToInt()
                         else delta = (it * 127).roundToInt() - velocity
                     }, Modifier.weight(1f), onValueChangeFinished = {
-                        if (editor.selectedNotes.isNotEmpty()) editor.clip.clip.doNoteVelocityAction(editor.selectedNotes.toTypedArray(), delta)
+                        if (editor.selectedNotes.isNotEmpty()) editor.clip.clip
+                            .doNoteVelocityAction(editor.selectedNotes.toTypedArray(), delta)
                         delta = 0
                     }
                 )

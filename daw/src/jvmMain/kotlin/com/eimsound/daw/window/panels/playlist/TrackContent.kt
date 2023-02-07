@@ -29,7 +29,6 @@ import com.eimsound.daw.api.TrackClip
 import com.eimsound.daw.api.defaultMidiClipFactory
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.components.utils.*
-import com.eimsound.daw.components.utils.toOnSurfaceColor
 import com.eimsound.daw.data.getEditUnit
 import com.eimsound.daw.utils.*
 import kotlin.math.absoluteValue
@@ -81,7 +80,7 @@ private suspend fun AwaitPointerEventScope.handleDragEvent(clip: TrackClip<*>, i
         var minClipDuration = Int.MAX_VALUE
         var selectedClipsLeft = Int.MAX_VALUE
         var trackToIndex: HashMap<Track, Int>? = null
-        var allowExpandableLeft = -Int.MAX_VALUE
+        var allowExpandableLeft = Int.MIN_VALUE
         var allowExpandableRight = Int.MAX_VALUE
         if (event.buttons.isPrimaryPressed) {
             val fourDp = 4 * density
@@ -153,10 +152,10 @@ private suspend fun AwaitPointerEventScope.handleDragEvent(clip: TrackClip<*>, i
                     var x = ((it.position.x - change.position.x) / noteWidth.value.toPx()).fitInUnit(noteUnit)
                     if (resizeDirectionRight) {
                         if (minClipDuration + x < noteUnit) x = noteUnit - minClipDuration
-                        if (allowExpandableRight < x) x = allowExpandableRight
+                        if (allowExpandableRight != Int.MAX_VALUE && allowExpandableRight < x) x = allowExpandableRight
                     } else {
                         if (x < -selectedClipsLeft) x = -selectedClipsLeft
-                        if (-allowExpandableLeft > x) x = -allowExpandableLeft
+                        if (allowExpandableLeft != Int.MIN_VALUE && -allowExpandableLeft > x) x = -allowExpandableLeft
                     }
                     if (x != deltaX) deltaX = x
                     it.consume()

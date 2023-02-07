@@ -29,6 +29,7 @@ import com.eimsound.daw.utils.fitInUnit
 import com.eimsound.daw.utils.range
 import com.eimsound.daw.utils.x
 
+@Suppress("PrivatePropertyName")
 private val BOTTOM = ParagraphStyle(lineHeight = 16.sp,
     lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Bottom, LineHeightStyle.Trim.FirstLineTop))
 
@@ -63,7 +64,7 @@ fun Timeline(modifier: Modifier = Modifier, noteWidth: MutableState<Dp>, scrollS
         val textMeasurer = rememberTextMeasurer()
         var isInRange by remember { mutableStateOf(false) }
         val obj = remember { arrayOf(range) }
-        remember(range) { obj[0] = range }
+        obj[0] = range
 
         Canvas(Modifier.fillMaxSize().pointerInput(Unit) {
             forEachGesture {
@@ -97,7 +98,7 @@ fun Timeline(modifier: Modifier = Modifier, noteWidth: MutableState<Dp>, scrollS
                     if (drag != null) {
                         !drag(drag.id) {
                             calcDrag(it.position.x + scrollState.value - offsetX.toPx(), noteWidth.value.toPx(),
-                                if (isInRange) range else null, onRangeChange)
+                                if (isInRange) obj[0] else null, onRangeChange)
                             it.consume()
                         }
                     }

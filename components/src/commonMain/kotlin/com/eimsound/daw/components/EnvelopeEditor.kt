@@ -139,6 +139,7 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange, pr
 
     companion object {
         var copiedPoints: List<EnvelopePoint>? = null
+        var defaultTension = 0F
     }
 
     private fun copyAsObject(): List<EnvelopePoint> {
@@ -190,7 +191,7 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange, pr
                 var newValue = (1 - it.y / size.height) * valueRange.range + valueRange.first
                 if (!isDecimal) newValue = round(newValue)
                 val targetX = startValue + it.x / noteWidth.value.toPx()
-                val newPoint = EnvelopePoint(targetX.fitInUnit(editUnitValue), newValue.coerceIn(valueRange))
+                val newPoint = EnvelopePoint(targetX.fitInUnit(editUnitValue), newValue.coerceIn(valueRange), defaultTension)
                 eventHandler?.onAddPoints(this@EnvelopeEditor, listOf(newPoint))
             })
         }.pointerInput(Unit) {
@@ -313,9 +314,12 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange, pr
                         }
                         EditAction.MOVE ->
                             eventHandler?.onMovePoints(this@EnvelopeEditor, selectedPoints.toList(), offsetX.toInt(), offsetY)
-                        EditAction.RESIZE ->
+                        EditAction.RESIZE -> {
+                            val point = points[currentAdjustingPoint]
+                            defaultTension = (point.tension + offsetTension).coerceIn(-1F, 1F)
                             eventHandler?.onTensionChanged(this@EnvelopeEditor, if (selectedPoints.isEmpty())
-                                listOf(points[currentAdjustingPoint]) else selectedPoints.toList(), offsetTension)
+                                listOf(point) else selectedPoints.toList(), offsetTension)
+                        }
                         else -> {}
                     }
 
