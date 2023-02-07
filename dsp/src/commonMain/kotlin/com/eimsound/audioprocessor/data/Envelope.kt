@@ -55,11 +55,11 @@ enum class EnvelopeType {
 }
 
 class EnvelopePoint(
-    val time: Int,
-    val value: Float,
+    var time: Int,
+    var value: Float,
     tension: Float = 0F,
     @get:JsonInclude(value = JsonInclude.Include.NON_DEFAULT)
-    val type: EnvelopeType = EnvelopeType.SMOOTH
+    var type: EnvelopeType = EnvelopeType.SMOOTH
 ) {
     var tension = tension.coerceIn(-1F, 1F)
         set(value) { field = value.coerceIn(-1F, 1F) }

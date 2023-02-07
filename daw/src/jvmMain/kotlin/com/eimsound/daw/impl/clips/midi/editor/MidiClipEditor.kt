@@ -32,7 +32,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.kotlinModule
 import com.fasterxml.jackson.module.kotlin.readValue
-import java.util.WeakHashMap
+import java.util.*
 import kotlin.math.roundToInt
 
 @Composable
@@ -74,24 +74,26 @@ private fun EditorContent(editor: DefaultMidiClipEditor) {
     }
 }
 
-private var copiedNotes: List<NoteMessage>? = null
-
 class DefaultMidiClipEditor(override val clip: TrackClip<MidiClip>, override val track: Track) : MidiClipEditor {
-    internal val selectedNotes = mutableStateSetOf<NoteMessage>()
-    internal val backingTracks: IManualStateValue<WeakHashMap<Track, Unit>> = ManualStateValue(WeakHashMap<Track, Unit>())
-    internal var startNoteIndex = 0
-    internal var noteHeight by mutableStateOf(16.dp)
-    internal var noteWidth = mutableStateOf(0.4.dp)
-    internal val verticalScrollState = ScrollState(noteHeight.value.toInt() * 50)
-    internal val horizontalScrollState = ScrollState(0).apply {
+    val selectedNotes = mutableStateSetOf<NoteMessage>()
+    var noteHeight by mutableStateOf(16.dp)
+    var noteWidth = mutableStateOf(0.4.dp)
+    val verticalScrollState = ScrollState(noteHeight.value.toInt() * 50)
+    val horizontalScrollState = ScrollState(0).apply {
         openMaxValue = (noteWidth.value * EchoInMirror.currentPosition.projectDisplayPPQ).value.toInt()
     }
-    internal var playOnEdit by mutableStateOf(true)
-    internal var defaultVelocity by mutableStateOf(70)
+    var playOnEdit by mutableStateOf(true)
+    var defaultVelocity by mutableStateOf(70)
+    internal val backingTracks: IManualStateValue<WeakHashMap<Track, Unit>> = ManualStateValue(WeakHashMap<Track, Unit>())
+    internal var startNoteIndex = 0
     internal val playingNotes = arrayListOf<MidiEvent>()
     internal val deletionList = mutableStateSetOf<NoteMessage>()
     internal var currentSelectedNote by mutableStateOf<NoteMessage?>(null)
     internal var notesInView by mutableStateOf(arrayListOf<NoteMessage>())
+
+    companion object {
+        var copiedNotes: List<NoteMessage>? = null
+    }
 
     @Composable
     override fun Content() {
@@ -115,7 +117,7 @@ class DefaultMidiClipEditor(override val clip: TrackClip<MidiClip>, override val
         selectedNotes.clear()
     }
 
-    override fun copyAsString() = if (selectedNotes.isEmpty()) "" else jacksonObjectMapper().writeValueAsString(
+    override fun copyAsString(): String = if (selectedNotes.isEmpty()) "" else jacksonObjectMapper().writeValueAsString(
         NoteMessageWithInfo(EchoInMirror.currentPosition.ppq, selectedNotes.toSet())
     )
 

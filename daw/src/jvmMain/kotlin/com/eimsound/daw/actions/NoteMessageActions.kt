@@ -15,7 +15,7 @@ import kotlinx.coroutines.runBlocking
 
 fun TrackClip<MidiClip>.doNoteAmountAction(noteMessage: Collection<NoteMessage>, isDelete: Boolean = false) {
     runBlocking { EchoInMirror.undoManager.execute(NoteAmountAction(this@doNoteAmountAction,
-        noteMessage.toSet(), isDelete)) }
+        noteMessage.toList(), isDelete)) }
 }
 
 fun TrackClip<MidiClip>.doNoteMessageEditAction(noteMessage: Collection<NoteMessage>, deltaX: Int, deltaY: Int, deltaDuration: Int) {
@@ -44,7 +44,7 @@ fun MidiClip.doNoteDisabledAction(noteMessage: Array<NoteMessage>, isDisabled: B
         noteMessage, isDisabled)) }
 }
 
-class NoteAmountAction(private val clip: TrackClip<MidiClip>, private val notes: Set<NoteMessage>, isDelete: Boolean) :
+class NoteAmountAction(private val clip: TrackClip<MidiClip>, private val notes: Collection<NoteMessage>, isDelete: Boolean) :
     ReversibleAction(isDelete) {
     override val name = (if (isDelete) "音符删除 (" else "音符添加 (") + notes.size + "个)"
     override val icon = if (isDelete) PencilMinus else PencilPlus
@@ -63,17 +63,28 @@ class NoteMessageEditAction(
     private val clip: TrackClip<MidiClip>, private val notes: Collection<NoteMessage>,
     private val deltaX: Int, private val deltaY: Int,
     private val deltaDuration: Int
-) : ReversibleAction() {
+) : UndoableAction {
+    private val oldNotes = notes.map { it.note }
     override val name = "音符编辑 (${notes.size}个)"
     override val icon = Icons.Default.Edit
-    override suspend fun perform(isForward: Boolean): Boolean {
-        val x = if (isForward) deltaX else -deltaX
-        val y = if (isForward) deltaY else -deltaY
-        val duration = if (isForward) deltaDuration else -deltaDuration
+
+    override suspend fun undo(): Boolean {
+        notes.forEachIndexed { index, noteMessage ->
+            noteMessage.time -= deltaX
+            noteMessage.note = oldNotes[index]
+            noteMessage.duration -= deltaDuration
+        }
+        clip.clip.notes.sort()
+        clip.reset()
+        clip.clip.notes.update()
+        return true
+    }
+
+    override suspend fun execute(): Boolean {
         notes.forEach {
-            it.time += x
-            it.note += y
-            it.duration += duration
+            it.time += deltaX
+            it.note += deltaY
+            it.duration += deltaDuration
         }
         clip.clip.notes.sort()
         clip.reset()

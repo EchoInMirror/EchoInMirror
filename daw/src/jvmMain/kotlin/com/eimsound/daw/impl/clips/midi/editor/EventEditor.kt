@@ -20,6 +20,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.eimsound.audioprocessor.data.midi.NoteMessage
+import com.eimsound.daw.actions.GlobalEnvelopeEditorEventHandler
 import com.eimsound.daw.actions.doNoteVelocityAction
 import com.eimsound.daw.api.MidiCCEvent
 import com.eimsound.daw.api.MidiClipEditor
@@ -102,7 +103,7 @@ data class CCEvent(val event: MidiCCEvent) : EventType {
     override val range = 0..127
     override val name = "CC:${event.id}"
     override val isInteger = true
-    private val envEditor = EnvelopeEditor(event.points, range)
+    private val envEditor = EnvelopeEditor(event.points, range, eventHandler = GlobalEnvelopeEditorEventHandler)
     @Composable
     override fun Editor(editor: MidiClipEditor) {
         if (editor !is DefaultMidiClipEditor) return
