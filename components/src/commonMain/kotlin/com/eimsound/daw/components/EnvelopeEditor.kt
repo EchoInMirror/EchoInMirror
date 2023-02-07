@@ -13,6 +13,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.input.pointer.*
+import androidx.compose.ui.text.ExperimentalTextApi
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.util.fastAll
 import com.eimsound.audioprocessor.data.EnvelopePoint
@@ -112,7 +115,7 @@ interface EnvelopeEditorEventHandler {
     fun onTensionChanged(editor: EnvelopeEditor, points: List<EnvelopePoint>, tension: Float)
 }
 
-class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange, private val supportDecimal: Boolean = false,
+class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange, private val isDecimal: Boolean = false,
                      private val eventHandler: EnvelopeEditorEventHandler? = null) {
     @Suppress("MemberVisibilityCanBePrivate")
     val selectedPoints = mutableStateSetOf<EnvelopePoint>()
@@ -140,11 +143,14 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange, pr
     fun cut() { copy(); delete() }
     fun selectAll() { selectedPoints.addAll(points) }
 
+    @OptIn(ExperimentalTextApi::class)
     @Composable
     fun Content(start: Float, color: Color, noteWidth: MutableState<Dp>, editUnit: Int = 24,
                 horizontalScrollState: ScrollState? = null, clipStartTime: Int = 0) {
         val scope = rememberCoroutineScope()
+        val measurer = rememberTextMeasurer(50)
         val primaryColor = MaterialTheme.colorScheme.primary
+        val textStyle = MaterialTheme.typography.labelMedium.copy(color)
         startValue = start
         clipStartTimeValue = clipStartTime
         editUnitValue = editUnit
@@ -155,7 +161,7 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange, pr
             detectTapGestures(onDoubleTap = {
                 if (getSelectedPoint(it, points, startValue, valueRange, noteWidth).second != -1) return@detectTapGestures
                 var newValue = (1 - it.y / size.height) * valueRange.range + valueRange.first
-                if (!supportDecimal) newValue = round(newValue)
+                if (!isDecimal) newValue = round(newValue)
                 val targetX = startValue + it.x / noteWidth.value.toPx()
                 val newPoint = EnvelopePoint(targetX.fitInUnit(editUnitValue), newValue.coerceIn(valueRange))
                 eventHandler?.onAddPoints(this@EnvelopeEditor, listOf(newPoint))
@@ -246,7 +252,7 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange, pr
                             var x = it.position.x
                             if (action == EditAction.MOVE) {
                                 y = -((y - downY) / size.height).coerceIn(-1F, 1F) * valueRange.range
-                                if (!supportDecimal) y = round(y)
+                                if (!isDecimal) y = round(y)
                                 x = (((x + (horizontalScrollState?.value?.toFloat() ?: 0F)).coerceAtLeast(0F) - downX) /
                                         noteWidth.value.toPx()).fitInUnit(editUnitValue).toFloat()
                                 if (selectedPointsLeft + x + clipStartTimeValue < 0) x = -(selectedPointsLeft.toFloat() + clipStartTimeValue)
@@ -307,6 +313,8 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange, pr
             val tmpOffsetY = offsetY
             val tmpOffsetTension = offsetTension
             val movingPoints = tempPoints
+            var lastTextX = Float.NEGATIVE_INFINITY
+            var lastTextY = Float.NEGATIVE_INFINITY
             if (action == EditAction.MOVE && movingPoints != null) {
                 val first = movingPoints.firstOrNull()
                 val isFirstSelected = first != null && selectedPoints.contains(first)
@@ -334,13 +342,21 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange, pr
                             (if (isNextSelected) tmpOffsetX else 0F)) * noteWidthPx
                     val curValue = cur.value + (if (isSelected) tmpOffsetY else 0F)
                     val nextPoint = next ?: cur
+                    val currentY = size.height * (1 - curValue.coerceIn(valueRange) / range)
+                    if (lastTextX + 34 < startX || (lastTextY - currentY).absoluteValue > 30) {
+                        lastTextX = startX
+                        lastTextY = currentY
+                        drawText(
+                            measurer,
+                            if (isDecimal) "%.2f".format(curValue) else curValue.toInt().toString(),
+                            Offset(startX + 6, if (currentY + 20 > size.height) currentY - 20 else currentY + 2),
+                            textStyle
+                        )
+                    }
                     drawEnvelope(cur.type, if (isSelected) primaryColor else color,
                         cur.tension, startX, endX, mapValue(curValue, valueRange),
                         mapValue(nextPoint.value + (if (isNextSelected) tmpOffsetY else 0F), valueRange))
-
-                    drawCircle(if (isSelected) primaryColor else color, 4F,
-                        Offset(startX, size.height * (1 - curValue.coerceIn(valueRange) / range))
-                    )
+                    drawCircle(if (isSelected) primaryColor else color, 4F, Offset(startX, currentY))
                 }
             } else {
                 startIndex = (points.binarySearch { it.time < start } - 1).coerceAtLeast(0)
@@ -363,13 +379,21 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange, pr
                     val startX = (cur.time - start) * noteWidthPx
                     val endX = if (next == null) size.width else (next.time - start) * noteWidthPx
                     val isSelected = selectedPoints.contains(cur)
+                    val currentY = size.height * (1 - cur.value.coerceIn(valueRange) / range)
+                    if (lastTextX + 34 < startX || (lastTextY - currentY).absoluteValue > 30) {
+                        lastTextX = startX
+                        lastTextY = currentY
+                        drawText(
+                            measurer,
+                            if (isDecimal) "%.2f".format(cur.value) else cur.value.toInt().toString(),
+                            Offset(startX + 6, if (currentY + 20 > size.height) currentY - 20 else currentY + 2),
+                            textStyle
+                        )
+                    }
                     drawEnvelope(cur.type, if (isSelected) primaryColor else color,
                         (cur.tension + (if (isSelected || currentAdjustingPoint == i) tmpOffsetTension else 0F)).coerceIn(-1F, 1F),
                         startX, endX, mapValue(cur.value, valueRange), mapValue((next ?: cur).value, valueRange))
-
-                    drawCircle(if (isSelected) primaryColor else color, if (hoveredId == i) 8F else 4F,
-                        Offset(startX, size.height * (1 - cur.value.coerceIn(valueRange) / range))
-                    )
+                    drawCircle(if (isSelected) primaryColor else color, if (hoveredId == i) 8F else 4F, Offset(startX, currentY))
                 }
             }
 

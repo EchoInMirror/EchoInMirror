@@ -170,7 +170,8 @@ internal fun EventEditor(editor: DefaultMidiClipEditor) {
                 }
             }
             Box(Modifier.weight(1f).fillMaxHeight().background(MaterialTheme.colorScheme.background)) {
-                EditorGrid(editor.noteWidth, editor.horizontalScrollState)
+                val range = remember(editor.clip.time, editor.clip.duration) { editor.clip.time..(editor.clip.time + editor.clip.duration) }
+                EditorGrid(editor.noteWidth, editor.horizontalScrollState, range)
                 selectedEvent.Editor(editor)
             }
         }
