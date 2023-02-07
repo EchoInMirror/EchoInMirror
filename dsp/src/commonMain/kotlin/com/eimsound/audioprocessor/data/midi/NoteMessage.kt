@@ -4,6 +4,7 @@ import androidx.compose.runtime.mutableStateOf
 import com.eimsound.daw.utils.IManualState
 import com.eimsound.daw.utils.mapValue
 import com.fasterxml.jackson.annotation.JsonInclude
+import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.SerializerProvider
@@ -25,7 +26,8 @@ interface NoteMessage {
 
 val NoteMessage.colorSaturation get() = 0.4F + 0.6F * if (disabled) 0F else mapValue(velocity, 0, 127)
 
-data class NoteMessageWithInfo(val ppq: Int, val notes: Collection<NoteMessage>)
+@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, property = "eim:class")
+data class SerializableNoteMessage(val ppq: Int, val notes: Collection<NoteMessage>)
 
 fun defaultNoteMessage(note: Int, time: Int, duration: Int = 0, velocity: Int = 70, disabled: Boolean = false) =
     NoteMessageImpl(note, time, duration, velocity, disabled)

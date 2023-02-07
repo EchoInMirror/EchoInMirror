@@ -44,7 +44,7 @@ kotlin {
                 }
                 api(compose.materialIconsExtended)
                 @OptIn(ExperimentalComposeLibrary::class) implementation(compose.material3)
-                api("com.fasterxml.jackson.module:jackson-module-kotlin:2.14.+")
+                api("com.fasterxml.jackson.module:jackson-module-kotlin:${extra["eim.jackson.version"]}")
 //                @OptIn(ExperimentalComposeLibrary::class) implementation(compose.desktop.components.splitPane)
 
                 api("commons-io:commons-io:2.11.0")

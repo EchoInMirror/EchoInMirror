@@ -103,6 +103,7 @@ internal suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutin
                         continue
                     }
                     PointerEventType.Press -> {
+                        isEventPanelActive = false
                         if (event.buttons.isPrimaryPressed) {
                             if (event.keyboardModifiers.isCtrlPressed) {
                                 action = EditAction.SELECT

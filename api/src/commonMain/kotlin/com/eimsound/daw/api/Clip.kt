@@ -12,9 +12,7 @@ import com.eimsound.audioprocessor.data.EnvelopePointList
 import com.eimsound.audioprocessor.data.midi.MidiNoteRecorder
 import com.eimsound.audioprocessor.data.midi.NoteMessageList
 import com.eimsound.daw.api.processor.Track
-import com.eimsound.daw.utils.IManualState
-import com.eimsound.daw.utils.NoSuchFactoryException
-import com.eimsound.daw.utils.randomId
+import com.eimsound.daw.utils.*
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.JsonNode
@@ -24,20 +22,14 @@ import com.fasterxml.jackson.databind.ser.std.StdSerializer
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import java.io.File
 
-interface ClipEditor {
-    @Composable fun Content()
-    fun delete()
-    fun copy()
-    fun cut()
-    fun paste()
-    fun selectAll()
+interface ClipEditor : BasicEditor {
+    @Composable
+    fun Editor()
 }
 
-interface MidiClipEditor: ClipEditor {
+interface MidiClipEditor: ClipEditor, SerializableEditor {
     val clip: TrackClip<MidiClip>
     val track: Track
-    fun copyAsString(): String
-    fun pasteFromString(value: String)
 }
 
 interface ClipFactory<T: Clip> {

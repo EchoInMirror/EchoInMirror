@@ -84,19 +84,21 @@ class DefaultMidiClipEditor(override val clip: TrackClip<MidiClip>, override val
     }
     var playOnEdit by mutableStateOf(true)
     var defaultVelocity by mutableStateOf(70)
+    var selectedEvent: EventType? by mutableStateOf(VelocityEvent(this))
     internal val backingTracks: IManualStateValue<WeakHashMap<Track, Unit>> = ManualStateValue(WeakHashMap<Track, Unit>())
     internal var startNoteIndex = 0
     internal val playingNotes = arrayListOf<MidiEvent>()
     internal val deletionList = mutableStateSetOf<NoteMessage>()
     internal var currentSelectedNote by mutableStateOf<NoteMessage?>(null)
     internal var notesInView by mutableStateOf(arrayListOf<NoteMessage>())
+    internal var isEventPanelActive = false
 
     companion object {
         var copiedNotes: List<NoteMessage>? = null
     }
 
     @Composable
-    override fun Content() {
+    override fun Editor() {
         Row(Modifier.fillMaxSize()) {
             Column(Modifier.width(200.dp)) { EditorControls(this@DefaultMidiClipEditor) }
             Surface(Modifier.fillMaxSize(), shadowElevation = 2.dp) {
@@ -112,47 +114,62 @@ class DefaultMidiClipEditor(override val clip: TrackClip<MidiClip>, override val
     }
 
     override fun delete() {
-        if (selectedNotes.isEmpty()) return
-        clip.doNoteAmountAction(selectedNotes, true)
-        selectedNotes.clear()
+        if (isEventPanelActive) selectedEvent?.delete()
+        else {
+            if (selectedNotes.isEmpty()) return
+            clip.doNoteAmountAction(selectedNotes, true)
+            selectedNotes.clear()
+        }
     }
 
-    override fun copyAsString(): String = if (selectedNotes.isEmpty()) "" else jacksonObjectMapper().writeValueAsString(
-        NoteMessageWithInfo(EchoInMirror.currentPosition.ppq, selectedNotes.toSet())
-    )
+    override fun copyAsString(): String {
+        val editor = selectedEvent
+        return if (isEventPanelActive && editor is SerializableEditor) editor.copyAsString()
+        else if (selectedNotes.isEmpty()) "" else jacksonObjectMapper().writeValueAsString(
+            SerializableNoteMessage(EchoInMirror.currentPosition.ppq, copyAsObject().toSet())
+        )
+    }
 
 //    fun copyToClipboardAsString() {
 //        if (selectedNotes.isEmpty()) return
 //        CLIPBOARD_MANAGER?.setText(AnnotatedString(copyAsString()))
 //    }
 
-    override fun copy() {
-        if (selectedNotes.isEmpty()) return
+    private fun copyAsObject(): List<NoteMessage> {
         val startTime = selectedNotes.minOf { it.time }
-        copiedNotes = selectedNotes.map { it.copy(time = it.time - startTime) }
+        return selectedNotes.map { it.copy(it.time - startTime) }
+    }
+
+    override fun copy() {
+        if (isEventPanelActive) selectedEvent?.copy()
+        else if (selectedNotes.isNotEmpty()) copiedNotes = copyAsObject()
     }
 
     override fun paste() {
-        if (copiedNotes == null) return
-        val startTime = EchoInMirror.currentPosition.timeInPPQ.fitInUnitCeil(getEditUnit())
-        val notes = copiedNotes!!.map { it.copy(time = it.time + startTime) }
-        clip.doNoteAmountAction(notes, false)
-    }
-
-    override fun cut() {
-        if (EchoInMirror.selectedTrack == null) return
-        copy()
-        delete()
+        if (isEventPanelActive) selectedEvent?.paste()
+        else {
+            if (copiedNotes == null) return
+            val startTime = EchoInMirror.currentPosition.timeInPPQ.fitInUnitCeil(getEditUnit())
+            val notes = copiedNotes!!.map { it.copy(time = it.time + startTime) }
+            clip.doNoteAmountAction(notes, false)
+            selectedNotes.clear()
+            selectedNotes.addAll(notes)
+        }
     }
 
     override fun pasteFromString(value: String) {
+        val editor = selectedEvent
+        if (isEventPanelActive && editor is SerializableEditor) {
+            editor.pasteFromString(value)
+            return
+        }
         try {
             val data = ObjectMapper()
                 .registerModule(kotlinModule())
                 .registerModule(
                     SimpleModule()
                     .addAbstractTypeMapping(NoteMessage::class.java, NoteMessageImpl::class.java))
-                .readValue<NoteMessageWithInfo>(value)
+                .readValue<SerializableNoteMessage>(value)
             val scale = EchoInMirror.currentPosition.ppq.toDouble() / data.ppq
             data.notes.forEach {
                 it.time = (it.time * scale).roundToInt()
@@ -169,7 +186,10 @@ class DefaultMidiClipEditor(override val clip: TrackClip<MidiClip>, override val
 //    }
 
     override fun selectAll() {
-        selectedNotes.clear()
-        selectedNotes.addAll(clip.clip.notes)
+        if (isEventPanelActive) selectedEvent?.selectAll()
+        else {
+            selectedNotes.clear()
+            selectedNotes.addAll(clip.clip.notes)
+        }
     }
 }

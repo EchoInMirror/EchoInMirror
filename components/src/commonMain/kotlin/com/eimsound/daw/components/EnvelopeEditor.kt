@@ -21,10 +21,13 @@ import androidx.compose.ui.util.fastAll
 import com.eimsound.audioprocessor.data.EnvelopePoint
 import com.eimsound.audioprocessor.data.EnvelopePointList
 import com.eimsound.audioprocessor.data.EnvelopeType
+import com.eimsound.audioprocessor.data.SerializableEnvelopePointList
 import com.eimsound.daw.components.utils.EditAction
 import com.eimsound.daw.components.utils.Stroke1PX
 import com.eimsound.daw.components.utils.Stroke2PX
 import com.eimsound.daw.utils.*
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import kotlinx.coroutines.launch
 import kotlin.math.*
 
@@ -110,13 +113,14 @@ private fun PointerInputScope.getSelectedPoint(position: Offset, points: Envelop
 
 interface EnvelopeEditorEventHandler {
     fun onAddPoints(editor: EnvelopeEditor, points: List<EnvelopePoint>)
+    fun onPastePoints(editor: EnvelopeEditor, points: List<EnvelopePoint>): List<EnvelopePoint>
     fun onRemovePoints(editor: EnvelopeEditor, points: List<EnvelopePoint>)
     fun onMovePoints(editor: EnvelopeEditor, points: List<EnvelopePoint>, offsetTime: Int, offsetValue: Float)
     fun onTensionChanged(editor: EnvelopeEditor, points: List<EnvelopePoint>, tension: Float)
 }
 
 class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange, private val isDecimal: Boolean = false,
-                     private val eventHandler: EnvelopeEditorEventHandler? = null) {
+                     private val eventHandler: EnvelopeEditorEventHandler? = null): SerializableEditor {
     @Suppress("MemberVisibilityCanBePrivate")
     val selectedPoints = mutableStateSetOf<EnvelopePoint>()
     private var selectionStartX by mutableStateOf(0F)
@@ -137,15 +141,38 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange, pr
         var copiedPoints: List<EnvelopePoint>? = null
     }
 
-    fun copy() { copiedPoints = selectedPoints.toList() }
-    fun paste() { eventHandler?.onAddPoints(this, copiedPoints ?: return) }
-    fun delete() { eventHandler?.onRemovePoints(this, selectedPoints.toList()) }
-    fun cut() { copy(); delete() }
-    fun selectAll() { selectedPoints.addAll(points) }
+    private fun copyAsObject(): List<EnvelopePoint> {
+        val startTime = selectedPoints.minOf { it.time }
+        return selectedPoints.map { it.copy(it.time - startTime, mapValue(it.value, valueRange)) }
+    }
+
+    override fun copy() {
+        if (selectedPoints.isEmpty()) return
+        copiedPoints = copyAsObject()
+    }
+    override fun paste() {
+        val result = eventHandler?.onPastePoints(this, copiedPoints ?: return) ?: return
+        selectedPoints.clear()
+        selectedPoints.addAll(result)
+    }
+    override fun copyAsString(): String = if (selectedPoints.isEmpty()) "" else jacksonObjectMapper().writeValueAsString(
+        SerializableEnvelopePointList(copyAsObject()))
+
+    override fun pasteFromString(value: String) {
+        try {
+            val result = eventHandler?.onPastePoints(this,
+                jacksonObjectMapper().readValue<SerializableEnvelopePointList>(value).points) ?: return
+            selectedPoints.clear()
+            selectedPoints.addAll(result)
+        } catch (ignored: Throwable) { }
+    }
+
+    override fun delete() { eventHandler?.onRemovePoints(this, selectedPoints.toList()) }
+    override fun selectAll() { selectedPoints.addAll(points) }
 
     @OptIn(ExperimentalTextApi::class)
     @Composable
-    fun Content(start: Float, color: Color, noteWidth: MutableState<Dp>, editUnit: Int = 24,
+    fun Editor(start: Float, color: Color, noteWidth: MutableState<Dp>, editUnit: Int = 24,
                 horizontalScrollState: ScrollState? = null, clipStartTime: Int = 0) {
         val scope = rememberCoroutineScope()
         val measurer = rememberTextMeasurer(50)

@@ -6,6 +6,7 @@ import com.eimsound.daw.utils.binarySearch
 import com.fasterxml.jackson.annotation.JsonEnumDefaultValue
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
+import com.fasterxml.jackson.annotation.JsonTypeInfo
 import kotlin.math.absoluteValue
 
 enum class EnvelopeType {
@@ -63,7 +64,12 @@ class EnvelopePoint(
 ) {
     var tension = tension.coerceIn(-1F, 1F)
         set(value) { field = value.coerceIn(-1F, 1F) }
+    fun copy(time: Int = this.time, value: Float = this.value, tension: Float = this.tension, type: EnvelopeType = this.type) =
+        EnvelopePoint(time, value, tension, type)
 }
+
+@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, property = "eim:class")
+data class SerializableEnvelopePointList(val points: List<EnvelopePoint>)
 
 interface EnvelopePointList : MutableList<EnvelopePoint>, IManualState {
     fun sort()

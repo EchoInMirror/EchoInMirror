@@ -107,7 +107,7 @@ internal fun SideBar() {
             (EchoInMirror.windowManager as WindowManagerImpl).panels.filter { it.direction != PanelDirection.Horizontal }.forEach {
                 key(it) {
                     NavigationRailItem(
-                        icon = { it.icon() },
+                        icon = { it.Icon() },
                         label = { Text(it.name) },
                         selected = sideBarSelectedItem == it,
                         onClick = {
@@ -127,7 +127,7 @@ internal fun SideBar() {
             EchoInMirror.windowManager.panels.filter { it.direction == PanelDirection.Horizontal }.forEach {
                 key(it) {
                     NavigationRailItem(
-                        icon = { it.icon() },
+                        icon = { it.Icon() },
                         label = { Text(it.name) },
                         selected = bottomBarSelectedItem == it,
                         onClick = {
@@ -155,7 +155,7 @@ internal fun SideBarContent() {
         Box(Modifier.fillMaxSize().border(start = Border(0.6.dp, contentWindowColor))) {
             val stateVertical = rememberScrollState(0)
             Box(Modifier.fillMaxSize().verticalScroll(stateVertical)) {
-                sideBarSelectedItem?.content()
+                sideBarSelectedItem?.Content()
             }
             VerticalScrollbar(
                 rememberScrollbarAdapter(stateVertical),

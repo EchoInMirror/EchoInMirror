@@ -28,6 +28,7 @@ kotlin {
                     exclude("org.jetbrains.kotlin")
                 }
                 implementation("org.jetbrains.compose.ui:ui-util:${ComposeBuildConfig.composeVersion}")
+                implementation("com.fasterxml.jackson.module:jackson-module-kotlin:${extra["eim.jackson.version"]}")
             }
         }
         named("jvmMain") {

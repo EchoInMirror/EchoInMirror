@@ -170,12 +170,12 @@ object Mixer: Panel {
     override val direction = PanelDirection.Horizontal
 
     @Composable
-    override fun icon() {
+    override fun Icon() {
         Icon(Icons.Default.Tune, "Mixer")
     }
 
     @Composable
-    override fun content() {
+    override fun Content() {
         Scrollable {
             Row {
                 val bus = EchoInMirror.bus!!

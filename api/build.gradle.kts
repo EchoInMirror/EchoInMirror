@@ -19,7 +19,7 @@ kotlin {
                 implementation(compose.runtime)
                 implementation(compose.ui)
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
-                implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.14.+")
+                implementation("com.fasterxml.jackson.module:jackson-module-kotlin:${extra["eim.jackson.version"]}")
             }
         }
         named("jvmMain") {

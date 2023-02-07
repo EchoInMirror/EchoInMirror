@@ -1,7 +1,10 @@
 package com.eimsound.daw.window
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -73,7 +76,7 @@ fun ApplicationScope.MainWindow() {
                                             }
                                             second(0.dp) {
                                                 Surface(tonalElevation = 2.dp, shadowElevation = 6.dp) {
-                                                    bottomBarSelectedItem?.content()
+                                                    bottomBarSelectedItem?.Content()
                                                 }
                                             }
                                         }

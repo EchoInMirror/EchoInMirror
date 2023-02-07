@@ -10,9 +10,8 @@ import com.eimsound.daw.components.EnvelopeEditor
 import com.eimsound.daw.components.EnvelopeEditorEventHandler
 import com.eimsound.daw.components.icons.PencilMinus
 import com.eimsound.daw.components.icons.PencilPlus
-import com.eimsound.daw.utils.ReversibleAction
-import com.eimsound.daw.utils.UndoableAction
-import com.eimsound.daw.utils.coerceIn
+import com.eimsound.daw.data.getEditUnit
+import com.eimsound.daw.utils.*
 import kotlinx.coroutines.runBlocking
 
 fun EnvelopePointList.doEnvelopePointsAmountAction(points: Collection<EnvelopePoint>, isDelete: Boolean = false) {
@@ -105,6 +104,13 @@ class EnvelopePointsTensionAction(
 object GlobalEnvelopeEditorEventHandler : EnvelopeEditorEventHandler {
     override fun onAddPoints(editor: EnvelopeEditor, points: List<EnvelopePoint>) {
         editor.points.doEnvelopePointsAmountAction(points)
+    }
+
+    override fun onPastePoints(editor: EnvelopeEditor, points: List<EnvelopePoint>): List<EnvelopePoint> {
+        val startTime = EchoInMirror.currentPosition.timeInPPQ.fitInUnitCeil(getEditUnit())
+        val notes = points.map { it.copy(it.time + startTime, it.value * editor.valueRange.range + editor.valueRange.first) }
+        editor.points.doEnvelopePointsAmountAction(notes)
+        return notes
     }
 
     override fun onRemovePoints(editor: EnvelopeEditor, points: List<EnvelopePoint>) {

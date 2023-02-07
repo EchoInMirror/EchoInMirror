@@ -9,6 +9,6 @@ enum class PanelDirection {
 interface Panel {
     val name: String
     val direction: PanelDirection
-    @Composable fun icon()
-    @Composable fun content()
+    @Composable fun Icon()
+    @Composable fun Content()
 }

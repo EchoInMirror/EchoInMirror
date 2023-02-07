@@ -8,9 +8,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.AnnotatedString
@@ -29,23 +33,26 @@ import com.eimsound.daw.components.EnvelopeEditor
 import com.eimsound.daw.components.KEYBOARD_DEFAULT_WIDTH
 import com.eimsound.daw.components.utils.EditAction
 import com.eimsound.daw.data.getEditUnit
+import com.eimsound.daw.utils.BasicEditor
+import com.eimsound.daw.utils.SerializableEditor
 import com.eimsound.daw.utils.clickableWithIcon
 import kotlin.math.roundToInt
 
-interface EventType {
+interface EventType : BasicEditor {
     val range: IntRange
     val name: String
     val isInteger: Boolean
     @Composable
-    fun Editor(editor: MidiClipEditor)
+    fun Editor()
 }
 
-object VelocityEvent : EventType {
+class VelocityEvent(private val editor: MidiClipEditor) : EventType {
     override val range = 0..127
     override val name = "力度"
     override val isInteger = true
+
     @Composable
-    override fun Editor(editor: MidiClipEditor) {
+    override fun Editor() {
         if (editor !is DefaultMidiClipEditor) return
         val primaryColor = MaterialTheme.colorScheme.primary
         var delta by remember { mutableStateOf(0) }
@@ -57,10 +64,10 @@ object VelocityEvent : EventType {
                 val offsetOfDelta = -delta / 127F * size.height
                 val offsetX = if (action == EditAction.MOVE) deltaX * noteWidthPx else 0f
                 val scrollX = horizontalScrollState.value
-                val startTime = editor.clip.time
+                val startTime = clip.time
                 val trackColor = track.color
                 notesInView.forEach {
-                    val isSelected = editor.selectedNotes.contains(it)
+                    val isSelected = selectedNotes.contains(it)
                     val x = (startTime + it.time) * noteWidthPx - scrollX + (if (isSelected) offsetX else 0f)
                     val y = (size.height * (1 - it.velocity / 127F) + (if (isSelected || selectedNote == it) offsetOfDelta else 0f))
                         .coerceIn(0f, size.height - 1)
@@ -72,12 +79,12 @@ object VelocityEvent : EventType {
                 detectDragGestures({
                     val x = it.x + horizontalScrollState.value
                     val noteWidthPx = noteWidth.value.toPx()
-                    val startTime = editor.clip.time
-                    for (i in startNoteIndex until editor.clip.clip.notes.size) {
-                        val note = editor.clip.clip.notes[i]
+                    val startTime = clip.time
+                    for (i in startNoteIndex until clip.clip.notes.size) {
+                        val note = clip.clip.notes[i]
                         val curX = (startTime + note.time) * noteWidthPx
                         if (curX <= x && x <= curX + 4) {
-                            if (editor.selectedNotes.isNotEmpty() && !editor.selectedNotes.contains(note)) continue
+                            if (selectedNotes.isNotEmpty() && !selectedNotes.contains(note)) continue
                             selectedNote = note
                             break
                         }
@@ -86,8 +93,8 @@ object VelocityEvent : EventType {
                     val cur = selectedNote
                     if (cur != null) {
                         selectedNote = null
-                        editor.clip.clip.doNoteVelocityAction(
-                            if (editor.selectedNotes.isEmpty()) arrayOf(cur) else editor.selectedNotes.toTypedArray(), delta)
+                        clip.clip.doNoteVelocityAction(
+                            if (selectedNotes.isEmpty()) arrayOf(cur) else selectedNotes.toTypedArray(), delta)
                     }
                     delta = 0
                 }) { it, _ ->
@@ -99,80 +106,92 @@ object VelocityEvent : EventType {
     }
 }
 
-data class CCEvent(val event: MidiCCEvent) : EventType {
+class CCEvent(private val editor: MidiClipEditor, event: MidiCCEvent) : EventType, SerializableEditor {
     override val range = 0..127
     override val name = "CC:${event.id}"
     override val isInteger = true
     private val envEditor = EnvelopeEditor(event.points, range, eventHandler = GlobalEnvelopeEditorEventHandler)
     @Composable
-    override fun Editor(editor: MidiClipEditor) {
+    override fun Editor() {
         if (editor !is DefaultMidiClipEditor) return
         editor.apply {
-            envEditor.Content(
+            envEditor.Editor(
                 clip.start - clip.time + with (LocalDensity.current) { horizontalScrollState.value / noteWidth.value.toPx() },
                 clip.track?.color ?: MaterialTheme.colorScheme.primary,
-                noteWidth, getEditUnit(), horizontalScrollState, editor.clip.time
+                noteWidth, getEditUnit(), horizontalScrollState, clip.time
             )
         }
     }
+
+    override fun copy() { envEditor.copy() }
+    override fun paste() { envEditor.paste() }
+    override fun cut() { envEditor.cut() }
+    override fun copyAsString() = envEditor.copyAsString()
+
+    override fun pasteFromString(value: String) { envEditor.pasteFromString(value) }
+
+    override fun delete() { envEditor.delete() }
+    override fun selectAll() { envEditor.selectAll() }
 }
 
-var selectedEvent: EventType by mutableStateOf(VelocityEvent)
-
-@OptIn(ExperimentalTextApi::class)
+@OptIn(ExperimentalTextApi::class, ExperimentalComposeUiApi::class)
 @Composable
 internal fun EventEditor(editor: DefaultMidiClipEditor) {
-    Column(Modifier.fillMaxSize()) {
-        Surface(Modifier.fillMaxWidth().zIndex(2f), shadowElevation = 5.dp) {
-            Row {
-                Text("力度", (
-                        if (selectedEvent == VelocityEvent) Modifier.background(MaterialTheme.colorScheme.primary.copy(0.2F))
-                        else Modifier)
-                    .clickableWithIcon {
-                    selectedEvent = VelocityEvent
-                }.padding(4.dp, 2.dp), style = MaterialTheme.typography.labelLarge)
-                editor.clip.clip.events.forEach {
-                    Text("CC:${it.id}", (
-                            if (selectedEvent.name == "CC:${it.id}") Modifier.background(MaterialTheme.colorScheme.primary.copy(0.2F))
-                            else Modifier).clickableWithIcon {
-                        selectedEvent = CCEvent(it)
-                    }.padding(4.dp, 2.dp), style = MaterialTheme.typography.labelLarge)
-                }
-            }
-        }
-
-        Row(Modifier.fillMaxSize()) {
-            Surface(Modifier.width(KEYBOARD_DEFAULT_WIDTH).fillMaxHeight().zIndex(2f), shadowElevation = 5.dp) {
-                val lineColor = MaterialTheme.colorScheme.outlineVariant
-                val style = MaterialTheme.typography.labelMedium
-                val measurer = rememberTextMeasurer()
-                Canvas(Modifier.fillMaxSize()) {
-                    val lines = (size.height / 50).toInt().coerceAtMost(5)
-                    val lineSize = size.height / lines
-                    val isInteger = selectedEvent.isInteger
-                    val last = selectedEvent.range.last
-                    val lastF = last.toFloat()
-                    for (i in 1..lines) {
-                        drawLine(
-                            lineColor,
-                            Offset(size.width - 10, lineSize * i),
-                            Offset(size.width, lineSize * i),
-                            1F
-                        )
-                        val value = (lastF / lines) * (lines - i)
-                        val result = measurer.measure(AnnotatedString(if (isInteger) value.roundToInt().toString() else "%.2F".format(value)), style)
-                        drawText(result, lineColor,
-                            Offset(size.width - 14 - result.size.width, (lineSize * i - result.size.height / 2)
-                                .coerceAtMost(size.height - result.size.height)))
+    editor.apply {
+        Column(Modifier.fillMaxSize().onPointerEvent(PointerEventType.Press, PointerEventPass.Initial) {
+            isEventPanelActive = true
+        }) {
+            Surface(Modifier.fillMaxWidth().zIndex(2f), shadowElevation = 5.dp) {
+                Row {
+                    Text("力度", (
+                            if (selectedEvent is VelocityEvent) Modifier.background(MaterialTheme.colorScheme.primary.copy(0.2F))
+                            else Modifier)
+                        .clickableWithIcon {
+                            selectedEvent = VelocityEvent(editor)
+                        }.padding(4.dp, 2.dp), style = MaterialTheme.typography.labelLarge)
+                    clip.clip.events.forEach {
+                        Text("CC:${it.id}", (
+                                if (selectedEvent?.name == "CC:${it.id}") Modifier.background(MaterialTheme.colorScheme.primary.copy(0.2F))
+                                else Modifier).clickableWithIcon {
+                            selectedEvent = CCEvent(editor, it)
+                        }.padding(4.dp, 2.dp), style = MaterialTheme.typography.labelLarge)
                     }
-                    val result = measurer.measure(AnnotatedString(if (isInteger) last.toString() else "$last.00"), style)
-                    drawText(result, lineColor, Offset(size.width - 14 - result.size.width, 0F))
                 }
             }
-            Box(Modifier.weight(1f).fillMaxHeight().background(MaterialTheme.colorScheme.background)) {
-                val range = remember(editor.clip.time, editor.clip.duration) { editor.clip.time..(editor.clip.time + editor.clip.duration) }
-                EditorGrid(editor.noteWidth, editor.horizontalScrollState, range)
-                selectedEvent.Editor(editor)
+
+            Row(Modifier.fillMaxSize()) {
+                Surface(Modifier.width(KEYBOARD_DEFAULT_WIDTH).fillMaxHeight().zIndex(2f), shadowElevation = 5.dp) {
+                    val lineColor = MaterialTheme.colorScheme.outlineVariant
+                    val style = MaterialTheme.typography.labelMedium
+                    val measurer = rememberTextMeasurer()
+                    Canvas(Modifier.fillMaxSize()) {
+                        val lines = (size.height / 50).toInt().coerceAtMost(5)
+                        val lineSize = size.height / lines
+                        val isInteger = selectedEvent?.isInteger ?: false
+                        val last = selectedEvent?.range?.last ?: 127
+                        val lastF = last.toFloat()
+                        for (i in 1..lines) {
+                            drawLine(
+                                lineColor,
+                                Offset(size.width - 10, lineSize * i),
+                                Offset(size.width, lineSize * i),
+                                1F
+                            )
+                            val value = (lastF / lines) * (lines - i)
+                            val result = measurer.measure(AnnotatedString(if (isInteger) value.roundToInt().toString() else "%.2F".format(value)), style)
+                            drawText(result, lineColor,
+                                Offset(size.width - 14 - result.size.width, (lineSize * i - result.size.height / 2)
+                                    .coerceAtMost(size.height - result.size.height)))
+                        }
+                        val result = measurer.measure(AnnotatedString(if (isInteger) last.toString() else "$last.00"), style)
+                        drawText(result, lineColor, Offset(size.width - 14 - result.size.width, 0F))
+                    }
+                }
+                Box(Modifier.weight(1f).fillMaxHeight().background(MaterialTheme.colorScheme.background)) {
+                    val range = remember(clip.time, clip.duration) { clip.time..(clip.time + clip.duration) }
+                    EditorGrid(noteWidth, horizontalScrollState, range)
+                    selectedEvent?.Editor()
+                }
             }
         }
     }

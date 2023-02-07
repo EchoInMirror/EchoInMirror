@@ -31,13 +31,13 @@ object UndoList: Panel {
     override val direction = PanelDirection.Vertical
 
     @Composable
-    override fun icon() {
+    override fun Icon() {
         Icon(Icons.Default.SettingsBackupRestore, "undo")
     }
 
     @OptIn(DelicateCoroutinesApi::class)
     @Composable
-    override fun content() {
+    override fun Content() {
         Column(Modifier.padding(vertical = 4.dp)) {
             Row(
                 Modifier.fillMaxWidth().clickableWithIcon {
