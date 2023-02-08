@@ -9,6 +9,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.eimsound.audioprocessor.data.midi.*
@@ -139,10 +140,10 @@ class DefaultMidiClipEditor(override val clip: TrackClip<MidiClip>, override val
         )
     }
 
-//    fun copyToClipboardAsString() {
-//        if (selectedNotes.isEmpty()) return
-//        CLIPBOARD_MANAGER?.setText(AnnotatedString(copyAsString()))
-//    }
+    fun copyToClipboardAsString() {
+        if (selectedNotes.isEmpty()) return
+        CLIPBOARD_MANAGER?.setText(AnnotatedString(copyAsString()))
+    }
 
     private fun copyAsObject(): List<NoteMessage> {
         val startTime = selectedNotes.minOf { it.time }
@@ -190,9 +191,9 @@ class DefaultMidiClipEditor(override val clip: TrackClip<MidiClip>, override val
         } catch (ignored: Throwable) { ignored.printStackTrace() }
     }
 
-//    fun pasteFromClipboard() {
-//        pasteFromString(CLIPBOARD_MANAGER?.getText()?.text ?: return)
-//    }
+    fun pasteFromClipboard() {
+        pasteFromString(CLIPBOARD_MANAGER?.getText()?.text ?: return)
+    }
 
     override fun selectAll() {
         if (isEventPanelActive) selectedEvent?.selectAll()
