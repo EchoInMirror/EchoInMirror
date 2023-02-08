@@ -13,11 +13,20 @@ interface AudioSource {
 
 interface FileAudioSource : AudioSource, AutoCloseable {
     val file: Path
-    val isRandomAccessable: Boolean
+    val isRandomAccessible: Boolean
 }
 
 interface ResampledAudioSource : AudioSource {
     var factor: Double
+}
+
+class EmptyAudioSource : AudioSource {
+    override val name: String = "Empty"
+    override val source: AudioSource? = null
+    override val sampleRate = 44100F
+    override val channels = 2
+    override val length = 0L
+    override fun getSamples(start: Long, buffers: Array<FloatArray>) = 0
 }
 
 //interface AudioSourceManager {

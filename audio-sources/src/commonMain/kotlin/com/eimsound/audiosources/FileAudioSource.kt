@@ -30,7 +30,7 @@ class DefaultFileAudioSource(override val file: Path) : FileAudioSource {
     override val sampleRate = format.format.sampleRate
     override val channels = format.format.channels
     override val length = format.frameLength.toLong()
-    override val isRandomAccessable = isWav || isFlac
+    override val isRandomAccessible = isWav || isFlac
 
     private val frameSize = channels * (format.format.sampleSizeInBits / 8)
     private val newFormat = AudioFormat(AudioFormat.Encoding.PCM_SIGNED, sampleRate, format.format.sampleSizeInBits,
@@ -100,7 +100,7 @@ class DefaultFileAudioSource(override val file: Path) : FileAudioSource {
         var bytesRead = 0
         // can only read integral number of frames
         len2 -= len2 % frameSize
-        // do a best effort to fill the buffer
+        // do the best effort to fill the buffer
         while (len2 > 0) {
             var thisLen = len2
             if (thisLen > buffer.available) thisLen = buffer.available

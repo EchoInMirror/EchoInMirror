@@ -12,11 +12,13 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.util.fastAll
 import com.eimsound.audioprocessor.data.EnvelopePoint
 import com.eimsound.audioprocessor.data.EnvelopePointList
@@ -31,10 +33,14 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import kotlinx.coroutines.launch
 import kotlin.math.*
 
-fun DrawScope.drawEnvelope(type: EnvelopeType, color: Color, tension: Float, x0: Float, x1: Float, value0: Float, value1: Float) {
+@Suppress("PrivatePropertyName")
+private val MAX_TEXT_SIZE = IntSize(40, 18)
+
+fun DrawScope.drawEnvelope(type: EnvelopeType, color: Color, tension: Float, x0: Float, x1: Float, value0: Float,
+                           value1: Float, style: Stroke = Stroke2PX) {
     if (value0 == value1) {
         val y0True = (1 - value0) * size.height
-        drawLine(color, Offset(x0, y0True), Offset(x1, y0True), 2F)
+        drawLine(color, Offset(x0, y0True), Offset(x1, y0True), style.width)
         return
     }
     when (type) {
@@ -66,7 +72,7 @@ fun DrawScope.drawEnvelope(type: EnvelopeType, color: Color, tension: Float, x0:
                 moveTo(x0, (1 - value0) * height)
                 cubicTo(controlPoint1X, (1 - controlPoint1Y) * height, controlPoint2X,
                     (1 - controlPoint2Y) * height, x1, (1 - value1) * height)
-            }, color, style = Stroke2PX)
+            }, color, style = style)
         }
         EnvelopeType.EXPONENTIAL -> {
             val controlPoint1X: Float
@@ -89,12 +95,12 @@ fun DrawScope.drawEnvelope(type: EnvelopeType, color: Color, tension: Float, x0:
                 moveTo(x0, (1 - value0) * height)
                 cubicTo(controlPoint1X, (1 - controlPoint1Y) * height, controlPoint2X,
                     (1 - controlPoint2Y) * height, x1, (1 - value1) * height)
-            }, color, style = Stroke2PX)
+            }, color, style = style)
         }
         EnvelopeType.SQUARE -> {
             val y0True = (1 - value0) * size.height
-            drawLine(color, Offset(x0, y0True), Offset(x1 - 0.5F, y0True), 2F)
-            drawLine(color, Offset(x1 - 0.5F, y0True), Offset(x1, (1 - value1) * size.height), 2F)
+            drawLine(color, Offset(x0, y0True), Offset(x1 - 0.5F, y0True), style.width)
+            drawLine(color, Offset(x1 - 0.5F, y0True), Offset(x1, (1 - value1) * size.height), style.width)
         }
     }
 }
@@ -175,8 +181,8 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange, pr
 
     @OptIn(ExperimentalTextApi::class)
     @Composable
-    fun Editor(start: Float, color: Color, noteWidth: MutableState<Dp>, editUnit: Int = 24,
-                horizontalScrollState: ScrollState? = null, clipStartTime: Int = 0) {
+    fun Editor(start: Float, color: Color, noteWidth: MutableState<Dp>, drawDots: Boolean = true, editUnit: Int = 24,
+                horizontalScrollState: ScrollState? = null, clipStartTime: Int = 0, style: Stroke = Stroke2PX) {
         val scope = rememberCoroutineScope()
         val measurer = rememberTextMeasurer(50)
         val primaryColor = MaterialTheme.colorScheme.primary
@@ -187,151 +193,153 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange, pr
 
 //        if (hoveredIndex == -1 && action == EditAction.RESIZE) modifier = modifier.pointerHoverIcon(PointerIconDefaults.VerticalResize)
 
-        Canvas(Modifier.fillMaxSize().pointerInput(Unit) {
-            detectTapGestures(onDoubleTap = {
-                if (getSelectedPoint(it, points, startValue, valueRange, noteWidth).second != -1) return@detectTapGestures
-                var newValue = (1 - it.y / size.height) * valueRange.range + valueRange.first
-                if (!isDecimal) newValue = round(newValue)
-                val targetX = startValue + it.x / noteWidth.value.toPx()
-                val newPoint = EnvelopePoint(targetX.fitInUnit(editUnitValue), newValue.coerceIn(valueRange), defaultTension)
-                eventHandler?.onAddPoints(this@EnvelopeEditor, listOf(newPoint))
-            })
-        }.pointerInput(Unit) {
-            forEachGesture {
-                awaitPointerEventScope {
-                    var event: PointerEvent
-                    do {
-                        event = awaitPointerEvent(PointerEventPass.Main)
-                        when (event.type) {
-                            PointerEventType.Move -> {
-                                // find the hovered point
-                                val (_, tmpId) = getSelectedPoint(event.changes[0].position, points, startValue, valueRange, noteWidth)
-                                if (tmpId != hoveredIndex) hoveredIndex = tmpId
-                                continue
-                            }
-                            PointerEventType.Press -> {
-                                val x = event.changes[0].position.x
-                                val y = event.changes[0].position.y
-                                if (event.keyboardModifiers.isCtrlPressed || event.buttons.isForwardPressed) {
-                                    selectedPoints.clear()
-                                    selectionStartX = x
-                                    selectionStartY = y
-                                    offsetX = x
-                                    offsetY = y
-                                    action = EditAction.SELECT
-                                    break
+        Canvas(Modifier.fillMaxSize().run {
+            if (eventHandler == null) this else pointerInput(Unit) {
+                detectTapGestures(onDoubleTap = {
+                    if (getSelectedPoint(it, points, startValue, valueRange, noteWidth).second != -1) return@detectTapGestures
+                    var newValue = (1 - it.y / size.height) * valueRange.range + valueRange.first
+                    if (!isDecimal) newValue = round(newValue)
+                    val targetX = startValue + it.x / noteWidth.value.toPx()
+                    val newPoint = EnvelopePoint(targetX.fitInUnit(editUnitValue), newValue.coerceIn(valueRange), defaultTension)
+                    eventHandler.onAddPoints(this@EnvelopeEditor, listOf(newPoint))
+                })
+            }.pointerInput(Unit) {
+                forEachGesture {
+                    awaitPointerEventScope {
+                        var event: PointerEvent
+                        do {
+                            event = awaitPointerEvent(PointerEventPass.Main)
+                            when (event.type) {
+                                PointerEventType.Move -> {
+                                    // find the hovered point
+                                    val (_, tmpId) = getSelectedPoint(event.changes[0].position, points, startValue, valueRange, noteWidth)
+                                    if (tmpId != hoveredIndex) hoveredIndex = tmpId
+                                    continue
                                 }
-                                // find the selected point
-                                val (pointId, tmpId) = getSelectedPoint(event.changes[0].position, points,
-                                    startValue, valueRange, noteWidth)
-                                if (tmpId == -1) {
-                                    if (pointId >= 0 && pointId < points.size - 1) {
-                                        if (!selectedPoints.contains(points[pointId])) selectedPoints.clear()
-                                        currentAdjustingPoint = pointId
-                                        action = EditAction.RESIZE
+                                PointerEventType.Press -> {
+                                    val x = event.changes[0].position.x
+                                    val y = event.changes[0].position.y
+                                    if (event.keyboardModifiers.isCtrlPressed || event.buttons.isForwardPressed) {
+                                        selectedPoints.clear()
+                                        selectionStartX = x
+                                        selectionStartY = y
+                                        offsetX = x
+                                        offsetY = y
+                                        action = EditAction.SELECT
                                         break
                                     }
-                                } else {
-                                    if (!selectedPoints.contains(points[tmpId])) {
-                                        selectedPoints.clear()
-                                        selectedPoints.add(points[tmpId])
+                                    // find the selected point
+                                    val (pointId, tmpId) = getSelectedPoint(event.changes[0].position, points,
+                                        startValue, valueRange, noteWidth)
+                                    if (tmpId == -1) {
+                                        if (pointId >= 0 && pointId < points.size - 1) {
+                                            if (!selectedPoints.contains(points[pointId])) selectedPoints.clear()
+                                            currentAdjustingPoint = pointId
+                                            action = EditAction.RESIZE
+                                            break
+                                        }
+                                    } else {
+                                        if (!selectedPoints.contains(points[tmpId])) {
+                                            selectedPoints.clear()
+                                            selectedPoints.add(points[tmpId])
+                                        }
+                                        action = EditAction.MOVE
+                                        break
                                     }
-                                    action = EditAction.MOVE
-                                    break
+                                    continue
                                 }
-                                continue
                             }
-                        }
-                    } while (!event.changes.fastAll(PointerInputChange::changedToDownIgnoreConsumed))
-                    val down = event.changes[0]
-                    val downX = down.position.x + (horizontalScrollState?.value?.toFloat() ?: 0F)
-                    val downY = down.position.y
+                        } while (!event.changes.fastAll(PointerInputChange::changedToDownIgnoreConsumed))
+                        val down = event.changes[0]
+                        val downX = down.position.x + (horizontalScrollState?.value?.toFloat() ?: 0F)
+                        val downY = down.position.y
 
-                    var drag: PointerInputChange?
-                    do {
-                        @Suppress("INVISIBLE_MEMBER")
-                        drag = awaitPointerSlopOrCancellation(
-                            down.id, down.type,
-                            triggerOnMainAxisSlop = false
-                        ) { change, _ -> change.consume() }
-                    } while (drag != null && !drag.isConsumed)
-                    if (drag == null) {
-                        action = EditAction.NONE
-                        return@awaitPointerEventScope
-                    }
-                    var selectedPointsLeft = Int.MAX_VALUE
+                        var drag: PointerInputChange?
+                        do {
+                            @Suppress("INVISIBLE_MEMBER")
+                            drag = awaitPointerSlopOrCancellation(
+                                down.id, down.type,
+                                triggerOnMainAxisSlop = false
+                            ) { change, _ -> change.consume() }
+                        } while (drag != null && !drag.isConsumed)
+                        if (drag == null) {
+                            action = EditAction.NONE
+                            return@awaitPointerEventScope
+                        }
+                        var selectedPointsLeft = Int.MAX_VALUE
 //                    var selectedPointsRight = Int.MIN_VALUE
-                    var selectedPointsTop = valueRange.first.toFloat()
-                    var selectedPointsBottom = valueRange.last.toFloat()
-                    if (action == EditAction.MOVE) {
-                        selectedPoints.forEach {
-                            if (it.time < selectedPointsLeft) selectedPointsLeft = it.time
+                        var selectedPointsTop = valueRange.first.toFloat()
+                        var selectedPointsBottom = valueRange.last.toFloat()
+                        if (action == EditAction.MOVE) {
+                            selectedPoints.forEach {
+                                if (it.time < selectedPointsLeft) selectedPointsLeft = it.time
 //                            if (it.time > selectedPointsRight) selectedPointsRight = it.time
-                            if (it.value > selectedPointsTop) selectedPointsTop = it.value
-                            if (it.value < selectedPointsBottom) selectedPointsBottom = it.value
-                        }
-                        tempPoints = points.toMutableList()
-                    }
-
-                    drag(drag.id) {
-                        var y = it.position.y
-                        if (action == EditAction.RESIZE) {
-                            y = -((y - downY) / size.height).coerceIn(-2F, 2F)
-                            if (offsetTension != y) offsetTension = y
-                        } else {
-                            var x = it.position.x
-                            if (action == EditAction.MOVE) {
-                                y = -((y - downY) / size.height).coerceIn(-1F, 1F) * valueRange.range
-                                if (!isDecimal) y = round(y)
-                                x = (((x + (horizontalScrollState?.value?.toFloat() ?: 0F)).coerceAtLeast(0F) - downX) /
-                                        noteWidth.value.toPx()).fitInUnit(editUnitValue).toFloat()
-                                if (selectedPointsLeft + x + clipStartTimeValue < 0) x = -(selectedPointsLeft.toFloat() + clipStartTimeValue)
-                                if (selectedPointsTop + y > valueRange.last) y = valueRange.last - selectedPointsTop
-                                if (selectedPointsBottom + y < valueRange.first) y = valueRange.first - selectedPointsBottom
-                                if (x != offsetX) {
-                                    offsetX = x
-                                    tempPoints?.sortBy { p -> p.time + (if (selectedPoints.contains(p)) x else 0F) }
-                                }
-                            } else if (x != offsetX) offsetX = x
-                            if (y != offsetY) offsetY = y
-                            if (horizontalScrollState != null) {
-                                if (it.position.x < 10) scope.launch { horizontalScrollState.scrollBy(-3F) }
-                                else if (it.position.x > size.width - 10) scope.launch { horizontalScrollState.scrollBy(3F) }
+                                if (it.value > selectedPointsTop) selectedPointsTop = it.value
+                                if (it.value < selectedPointsBottom) selectedPointsBottom = it.value
                             }
+                            tempPoints = points.toMutableList()
                         }
-                        it.consume()
-                    }
 
-                    when (action) {
-                        EditAction.SELECT -> {
-                            val noteWidthPx = noteWidth.value.toPx()
-                            val startX = min(selectionStartX, offsetX) / noteWidthPx
-                            val startY = min(selectionStartY, offsetY)
-                            val endX = max(selectionStartX, offsetX) / noteWidthPx
-                            val endY = max(selectionStartY, offsetY)
-                            selectedPoints.addAll(points.filter {
-                                val y = size.height * (1 - mapValue(it.value, valueRange))
-                                it.time >= start + startX && it.time <= start + endX && y >= startY && y <= endY
-                            })
+                        drag(drag.id) {
+                            var y = it.position.y
+                            if (action == EditAction.RESIZE) {
+                                y = -((y - downY) / size.height).coerceIn(-2F, 2F)
+                                if (offsetTension != y) offsetTension = y
+                            } else {
+                                var x = it.position.x
+                                if (action == EditAction.MOVE) {
+                                    y = -((y - downY) / size.height).coerceIn(-1F, 1F) * valueRange.range
+                                    if (!isDecimal) y = round(y)
+                                    x = (((x + (horizontalScrollState?.value?.toFloat() ?: 0F)).coerceAtLeast(0F) - downX) /
+                                            noteWidth.value.toPx()).fitInUnit(editUnitValue).toFloat()
+                                    if (selectedPointsLeft + x + clipStartTimeValue < 0) x = -(selectedPointsLeft.toFloat() + clipStartTimeValue)
+                                    if (selectedPointsTop + y > valueRange.last) y = valueRange.last - selectedPointsTop
+                                    if (selectedPointsBottom + y < valueRange.first) y = valueRange.first - selectedPointsBottom
+                                    if (x != offsetX) {
+                                        offsetX = x
+                                        tempPoints?.sortBy { p -> p.time + (if (selectedPoints.contains(p)) x else 0F) }
+                                    }
+                                } else if (x != offsetX) offsetX = x
+                                if (y != offsetY) offsetY = y
+                                if (horizontalScrollState != null) {
+                                    if (it.position.x < 10) scope.launch { horizontalScrollState.scrollBy(-3F) }
+                                    else if (it.position.x > size.width - 10) scope.launch { horizontalScrollState.scrollBy(3F) }
+                                }
+                            }
+                            it.consume()
                         }
-                        EditAction.MOVE ->
-                            eventHandler?.onMovePoints(this@EnvelopeEditor, selectedPoints.toList(), offsetX.toInt(), offsetY)
-                        EditAction.RESIZE -> {
-                            val point = points[currentAdjustingPoint]
-                            defaultTension = (point.tension + offsetTension).coerceIn(-1F, 1F)
-                            eventHandler?.onTensionChanged(this@EnvelopeEditor, if (selectedPoints.isEmpty())
-                                listOf(point) else selectedPoints.toList(), offsetTension)
-                        }
-                        else -> {}
-                    }
 
-                    action = EditAction.NONE
-                    selectionStartX = 0F
-                    selectionStartY = 0F
-                    offsetX = 0F
-                    offsetX = 0F
-                    offsetTension = 0F
-                    tempPoints = null
+                        when (action) {
+                            EditAction.SELECT -> {
+                                val noteWidthPx = noteWidth.value.toPx()
+                                val startX = min(selectionStartX, offsetX) / noteWidthPx
+                                val startY = min(selectionStartY, offsetY)
+                                val endX = max(selectionStartX, offsetX) / noteWidthPx
+                                val endY = max(selectionStartY, offsetY)
+                                selectedPoints.addAll(points.filter {
+                                    val y = size.height * (1 - mapValue(it.value, valueRange))
+                                    it.time >= start + startX && it.time <= start + endX && y >= startY && y <= endY
+                                })
+                            }
+                            EditAction.MOVE ->
+                                eventHandler.onMovePoints(this@EnvelopeEditor, selectedPoints.toList(), offsetX.toInt(), offsetY)
+                            EditAction.RESIZE -> {
+                                val point = points[currentAdjustingPoint]
+                                defaultTension = (point.tension + offsetTension).coerceIn(-1F, 1F)
+                                eventHandler.onTensionChanged(this@EnvelopeEditor, if (selectedPoints.isEmpty())
+                                    listOf(point) else selectedPoints.toList(), offsetTension)
+                            }
+                            else -> {}
+                        }
+
+                        action = EditAction.NONE
+                        selectionStartX = 0F
+                        selectionStartY = 0F
+                        offsetX = 0F
+                        offsetX = 0F
+                        offsetTension = 0F
+                        tempPoints = null
+                    }
                 }
             }
         }) {
@@ -376,20 +384,20 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange, pr
                     val curValue = cur.value + (if (isSelected) tmpOffsetY else 0F)
                     val nextPoint = next ?: cur
                     val currentY = size.height * (1 - curValue.coerceIn(valueRange) / range)
-                    if (lastTextX + 34 < startX || (lastTextY - currentY).absoluteValue > 30) {
+                    if (drawDots && (lastTextX + 34 < startX || (lastTextY - currentY).absoluteValue > 30)) {
                         lastTextX = startX
                         lastTextY = currentY
                         drawText(
                             measurer,
                             if (isDecimal) "%.2f".format(curValue) else curValue.toInt().toString(),
                             Offset(startX + 6, if (currentY + 20 > size.height) currentY - 20 else currentY + 2),
-                            textStyle
+                            textStyle, maxSize = MAX_TEXT_SIZE
                         )
                     }
                     drawEnvelope(cur.type, if (isSelected) primaryColor else color,
                         cur.tension, startX, endX, mapValue(curValue, valueRange),
-                        mapValue(nextPoint.value + (if (isNextSelected) tmpOffsetY else 0F), valueRange))
-                    drawCircle(if (isSelected) primaryColor else color, 4F, Offset(startX, currentY))
+                        mapValue(nextPoint.value + (if (isNextSelected) tmpOffsetY else 0F), valueRange), style)
+                    if (drawDots) drawCircle(if (isSelected) primaryColor else color, 4F, Offset(startX, currentY))
                 }
             } else {
                 startIndex = (points.binarySearch { it.time < start } - 1).coerceAtLeast(0)
@@ -413,20 +421,21 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange, pr
                     val endX = if (next == null) size.width else (next.time - start) * noteWidthPx
                     val isSelected = selectedPoints.contains(cur)
                     val currentY = size.height * (1 - cur.value.coerceIn(valueRange) / range)
-                    if (lastTextX + 34 < startX || (lastTextY - currentY).absoluteValue > 30) {
+                    if (drawDots && (lastTextX + 34 < startX || (lastTextY - currentY).absoluteValue > 30)) {
                         lastTextX = startX
                         lastTextY = currentY
                         drawText(
                             measurer,
                             if (isDecimal) "%.2f".format(cur.value) else cur.value.toInt().toString(),
                             Offset(startX + 6, if (currentY + 20 > size.height) currentY - 20 else currentY + 2),
-                            textStyle
+                            textStyle, maxSize = MAX_TEXT_SIZE
                         )
                     }
                     drawEnvelope(cur.type, if (isSelected) primaryColor else color,
                         (cur.tension + (if (isSelected || currentAdjustingPoint == i) tmpOffsetTension else 0F)).coerceIn(-1F, 1F),
-                        startX, endX, mapValue(cur.value, valueRange), mapValue((next ?: cur).value, valueRange))
-                    drawCircle(if (isSelected) primaryColor else color, if (hoveredId == i) 8F else 4F, Offset(startX, currentY))
+                        startX, endX, mapValue(cur.value, valueRange), mapValue((next ?: cur).value, valueRange), style)
+                    if (drawDots) drawCircle(if (isSelected) primaryColor else color,
+                        if (hoveredId == i) 8F else 4F, Offset(startX, currentY))
                 }
             }
 

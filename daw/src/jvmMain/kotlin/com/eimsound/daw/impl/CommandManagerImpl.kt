@@ -70,8 +70,8 @@ class CommandManagerImpl : CommandManager {
                                 4 * 32 * EchoInMirror.currentPosition.ppq
                             )
                         )
-                        val audioClip = EchoInMirror.clipManager.defaultAudioClipFactory.createClip()
-                        subTrack2.clips.add(EchoInMirror.clipManager.createTrackClip(audioClip))
+//                        val audioClip = EchoInMirror.clipManager.defaultAudioClipFactory.createClip()
+//                        subTrack2.clips.add(EchoInMirror.clipManager.createTrackClip(audioClip))
 
 //                        var proQ: NativeAudioPluginDescription? = null
 //                        var spire: NativeAudioPluginDescription? = null

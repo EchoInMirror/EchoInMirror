@@ -53,6 +53,7 @@ private suspend fun AwaitPointerEventScope.handleDragEvent(playlist: Playlist, c
                         selectedClips.clear()
                         selectedClips.add(clip)
                     }
+                    break
                 } else if (event.buttons.isSecondaryPressed) {
                     selectedClips.clear()
                     action = EditAction.NONE

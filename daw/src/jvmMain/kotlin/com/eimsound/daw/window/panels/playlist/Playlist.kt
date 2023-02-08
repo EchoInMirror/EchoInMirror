@@ -10,6 +10,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -98,10 +99,12 @@ class Playlist : Panel, BasicEditor {
         Icon(Icons.Filled.QueueMusic, "Playlist")
     }
 
-    @OptIn(ExperimentalFoundationApi::class)
+    @OptIn(ExperimentalComposeUiApi::class)
     @Composable
     override fun Content() {
-        Row(Modifier.onClick { EchoInMirror.windowManager.activePanel = this@Playlist }) {
+        Row(Modifier.onPointerEvent(PointerEventType.Press, PointerEventPass.Initial) {
+            EchoInMirror.windowManager.activePanel = this@Playlist
+        }) {
             Surface(Modifier.width(200.dp).fillMaxHeight().zIndex(5f), shadowElevation = 2.dp, tonalElevation = 2.dp) {
                 Column {
                     Surface(shadowElevation = 2.dp, tonalElevation = 4.dp) {

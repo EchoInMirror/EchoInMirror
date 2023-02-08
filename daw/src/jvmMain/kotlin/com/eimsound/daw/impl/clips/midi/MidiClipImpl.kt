@@ -1,12 +1,15 @@
 package com.eimsound.daw.impl.clips.midi
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.Dp
 import com.eimsound.audioprocessor.CurrentPosition
 import com.eimsound.audioprocessor.convertPPQToSamples
@@ -16,6 +19,7 @@ import com.eimsound.audioprocessor.data.EnvelopePoint
 import com.eimsound.audioprocessor.data.midi.*
 import com.eimsound.daw.api.*
 import com.eimsound.daw.api.processor.Track
+import com.eimsound.daw.components.EnvelopeEditor
 import com.eimsound.daw.impl.clips.midi.editor.DefaultMidiClipEditor
 import com.eimsound.daw.utils.binarySearch
 import com.fasterxml.jackson.core.type.TypeReference
@@ -105,18 +109,30 @@ class MidiClipFactoryImpl : ClipFactory<MidiClip> {
     @Composable
     override fun playlistContent(clip: TrackClip<MidiClip>, track: Track, contentColor: Color,
                                  noteWidth: MutableState<Dp>, startPPQ: Float, widthPPQ: Float) {
-        clip.clip.notes.read()
-        Canvas(Modifier.fillMaxSize()) {
-            val noteWidthPx = noteWidth.value.toPx()
-            val trackHeightPx = size.height
-            val height = (trackHeightPx / 128).coerceAtLeast(1F)
-            clip.clip.notes.forEach {
-                val y = trackHeightPx - trackHeightPx / 128 * it.note
-                drawLine(
-                    contentColor, Offset(noteWidthPx * (it.time - startPPQ), y),
-                    Offset(noteWidthPx * (it.time + it.duration - startPPQ), y),
-                    height
-                )
+        Box {
+            clip.clip.notes.read()
+            Canvas(Modifier.fillMaxSize()) {
+                val noteWidthPx = noteWidth.value.toPx()
+                val trackHeightPx = size.height
+                val height = (trackHeightPx / 128).coerceAtLeast(1F)
+                val startId = clip.clip.notes.binarySearch { it.time <= startPPQ }
+                val endTime = startPPQ + widthPPQ
+                for (i in startId..clip.clip.notes.lastIndex) {
+                    val note = clip.clip.notes[i]
+                    if (note.time > endTime) break
+                    val y = trackHeightPx - trackHeightPx / 128 * note.note
+                    drawLine(
+                        contentColor, Offset(noteWidthPx * (note.time - startPPQ), y),
+                        Offset(noteWidthPx * (note.time + note.duration - startPPQ), y),
+                        height
+                    )
+                }
+            }
+            clip.clip.events.forEach {
+                it.points.read()
+                remember(it.points) {
+                    EnvelopeEditor(it.points, 0..127)
+                }.Editor(startPPQ, contentColor, noteWidth, false, clipStartTime = clip.start, style = Stroke(0.5F))
             }
         }
     }

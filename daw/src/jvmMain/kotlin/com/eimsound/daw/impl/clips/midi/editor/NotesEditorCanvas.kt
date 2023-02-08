@@ -57,6 +57,7 @@ internal var cursor by mutableStateOf(PointerIconDefaults.Default)
 internal var currentNote = 0
 
 private const val MIN_NOTE_WIDTH_WITH_KEY_NAME = 30
+@Suppress("PrivatePropertyName")
 private val MAX_KEY_NAME_SIZE = IntSize(40, 18)
 
 private data class NoteDrawObject(val note: NoteMessage, val offset: Offset, val size: Size, val color: Color,

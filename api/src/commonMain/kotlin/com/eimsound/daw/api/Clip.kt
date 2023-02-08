@@ -5,6 +5,7 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
+import com.eimsound.audioprocessor.AudioSource
 import com.eimsound.audioprocessor.CurrentPosition
 import com.eimsound.audioprocessor.ResampledAudioSource
 import com.eimsound.audioprocessor.data.AudioThumbnail
@@ -90,6 +91,7 @@ interface MidiClip : Clip {
     val events: MutableList<MidiCCEvent>
 }
 interface AudioClip : Clip {
+    var target: AudioSource
     val audioSource: ResampledAudioSource
     val thumbnail: AudioThumbnail
 }

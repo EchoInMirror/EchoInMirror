@@ -2,8 +2,7 @@ package com.eimsound.daw.impl.clips.audio
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -22,12 +21,18 @@ import kotlin.io.path.name
 import kotlin.math.absoluteValue
 
 class AudioClipImpl(json: JsonNode?, factory: ClipFactory<AudioClip>): AbstractClip<AudioClip>(json, factory), AudioClip {
-    private val target = DefaultFileAudioSource(Paths.get("E:\\CloudMusic\\Halozy - Kiss & Crazy (extended mix).flac"))
-    override val audioSource: ResampledAudioSource = DefaultResampledAudioSource(target,
+    override var target: AudioSource = if (json == null) EmptyAudioSource() else DefaultFileAudioSource(Paths.get(json["file"]!!.asText()))
+        set(value) {
+            if (field == value) return
+            field = value
+            audioSource = DefaultResampledAudioSource(value, EchoInMirror.currentPosition.sampleRate.toDouble() / target.sampleRate)
+            thumbnail = AudioThumbnail(value)
+        }
+    override var audioSource: ResampledAudioSource = DefaultResampledAudioSource(target,
         EchoInMirror.currentPosition.sampleRate.toDouble() / target.sampleRate)
     override val defaultDuration get() = EchoInMirror.currentPosition.convertSamplesToPPQ(audioSource.length)
     override val maxDuration get() = defaultDuration
-    override val thumbnail = AudioThumbnail(target)
+    override var thumbnail by mutableStateOf(AudioThumbnail(target))
     override val name: String?
         get() {
             var source: AudioSource? = target
