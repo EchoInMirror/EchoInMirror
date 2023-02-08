@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import com.eimsound.audioprocessor.oneBarPPQ
 import com.eimsound.audioprocessor.projectDisplayPPQ
 import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.actions.doClipsAmountAction
@@ -30,7 +31,6 @@ import com.eimsound.daw.components.PlayHead
 import com.eimsound.daw.components.TIMELINE_HEIGHT
 import com.eimsound.daw.components.Timeline
 import com.eimsound.daw.components.utils.EditAction
-import com.eimsound.daw.data.getEditUnit
 import com.eimsound.daw.utils.BasicEditor
 import com.eimsound.daw.utils.fitInUnitCeil
 import com.eimsound.daw.utils.mutableStateSetOf
@@ -120,14 +120,19 @@ class Playlist : Panel, BasicEditor {
             Box(Modifier.fillMaxSize()) {
                 Column {
                     val localDensity = LocalDensity.current
-                    Timeline(Modifier.zIndex(3f), noteWidth, horizontalScrollState, EchoInMirror.currentPosition.projectRange) {
+                    Timeline(Modifier.zIndex(3f), noteWidth, horizontalScrollState, EchoInMirror.currentPosition.projectRange,
+                        editUnit = EchoInMirror.editUnit, barPPQ = EchoInMirror.currentPosition.oneBarPPQ,
+                        onTimeChange = EchoInMirror.currentPosition::setCurrentTime
+                    ) {
                         EchoInMirror.currentPosition.projectRange = it
                     }
                     val coroutineScope = rememberCoroutineScope()
                     Box(Modifier.weight(1f).pointerInput(coroutineScope) {
                         handleMouseEvent(this@Playlist, coroutineScope)
                     }.onGloballyPositioned { with(localDensity) { contentWidth = it.size.width.toDp() } }) {
-                        EditorGrid(noteWidth, horizontalScrollState, EchoInMirror.currentPosition.projectRange)
+                        EchoInMirror.currentPosition.apply {
+                            EditorGrid(noteWidth, horizontalScrollState, projectRange, ppq, timeSigDenominator, timeSigNumerator)
+                        }
                         val width = (noteWidth.value * EchoInMirror.currentPosition.projectDisplayPPQ)
                             .coerceAtLeast(contentWidth)
                         remember(width, localDensity) {
@@ -141,7 +146,11 @@ class Playlist : Panel, BasicEditor {
                             }
                         }
                         TrackSelection(this@Playlist, localDensity, horizontalScrollState, verticalScrollState)
-                        PlayHead(noteWidth, horizontalScrollState, contentWidth)
+                        Box {
+                            PlayHead(noteWidth, horizontalScrollState,
+                                (EchoInMirror.currentPosition.ppqPosition * EchoInMirror.currentPosition.ppq).toFloat(),
+                            contentWidth)
+                        }
                         VerticalScrollbar(
                             rememberScrollbarAdapter(verticalScrollState),
                             Modifier.align(Alignment.TopEnd).fillMaxHeight()
@@ -164,7 +173,7 @@ class Playlist : Panel, BasicEditor {
 
     override fun paste() {
         if (copiedClips?.isEmpty() == true) return
-        val startTime = EchoInMirror.currentPosition.timeInPPQ.fitInUnitCeil(getEditUnit())
+        val startTime = EchoInMirror.currentPosition.timeInPPQ.fitInUnitCeil(EchoInMirror.editUnit)
         val clips = copiedClips!!.map { it.copy(time = it.time + startTime) }
         doClipsAmountAction(clips, false)
         selectedClips.clear()

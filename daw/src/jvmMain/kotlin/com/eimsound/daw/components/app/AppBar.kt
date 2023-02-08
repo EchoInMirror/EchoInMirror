@@ -20,8 +20,8 @@ import com.eimsound.audioprocessor.data.midi.KEY_NAMES
 import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.components.FloatingDialog
 import com.eimsound.daw.components.MenuItem
-import com.eimsound.daw.data.defaultScale
-import com.eimsound.daw.data.quantificationUnits
+import com.eimsound.audioprocessor.data.defaultScale
+import com.eimsound.audioprocessor.data.quantificationUnits
 
 @Composable
 fun getAppBarFont() = TextStyle(MaterialTheme.colorScheme.onBackground, 18.sp, fontWeight = FontWeight.Bold,

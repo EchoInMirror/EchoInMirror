@@ -30,8 +30,8 @@ import com.eimsound.daw.api.window.PanelDirection
 import com.eimsound.daw.components.*
 import com.eimsound.daw.components.silder.DefaultTrack
 import com.eimsound.daw.components.silder.Slider
+import com.eimsound.daw.components.utils.clickableWithIcon
 import com.eimsound.daw.components.utils.toOnSurfaceColor
-import com.eimsound.daw.utils.clickableWithIcon
 
 @Composable
 fun MixerProcessorButton(title: String, useMarquee: Boolean = false, fontStyle: FontStyle? = null,

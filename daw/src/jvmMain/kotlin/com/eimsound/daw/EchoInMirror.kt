@@ -7,12 +7,13 @@ import com.eimsound.audioprocessor.AudioPlayer
 import com.eimsound.audioprocessor.AudioPlayerManager
 import com.eimsound.audioprocessor.AudioProcessorManager
 import com.eimsound.audioprocessor.CurrentPosition
+import com.eimsound.audioprocessor.data.defaultQuantification
+import com.eimsound.audioprocessor.data.getEditUnit
 import com.eimsound.daw.api.*
 import com.eimsound.daw.api.processor.Bus
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.api.processor.TrackManager
 import com.eimsound.daw.api.window.WindowManager
-import com.eimsound.daw.data.defaultQuantification
 import com.eimsound.daw.impl.*
 import com.eimsound.daw.impl.clips.ClipManagerImpl
 import com.eimsound.daw.impl.processor.AudioPlayerManagerImpl
@@ -75,4 +76,6 @@ object EchoInMirror {
         if (flag) Configuration.save()
         return ret
     }
+
+    val editUnit get() = quantification.getEditUnit(currentPosition)
 }

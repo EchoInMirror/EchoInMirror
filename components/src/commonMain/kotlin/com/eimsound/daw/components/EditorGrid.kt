@@ -10,22 +10,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.unit.Dp
-import com.eimsound.daw.EchoInMirror
 
 @Composable
 fun EditorGrid(
     noteWidth: MutableState<Dp>,
     horizontalScrollState: ScrollState,
     range: IntRange? = null,
-    modifier: Modifier = Modifier.fillMaxSize()
+    ppq: Int = 96,
+    timeSigDenominator: Int = 4,
+    timeSigNumerator: Int = 4,
+    modifier: Modifier = Modifier.fillMaxSize(),
 ) {
     val beatsOutlineColor = MaterialTheme.colorScheme.surfaceVariant
     val stepsOutlineColor = beatsOutlineColor.copy(0.5F)
     val barsOutlineColor = MaterialTheme.colorScheme.outlineVariant
     val eightBarsOutlineColor = MaterialTheme.colorScheme.outline.copy(0.7F)
-    val timeSigDenominator = EchoInMirror.currentPosition.timeSigDenominator
-    val timeSigNumerator = EchoInMirror.currentPosition.timeSigNumerator
-    val ppq = EchoInMirror.currentPosition.ppq
     val rangeColor = MaterialTheme.colorScheme.primary.copy(0.07F)
     Canvas(modifier) {
         val noteWidthPx = noteWidth.value.toPx()

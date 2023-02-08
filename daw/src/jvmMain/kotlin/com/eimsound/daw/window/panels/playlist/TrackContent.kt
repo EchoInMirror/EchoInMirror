@@ -30,7 +30,6 @@ import com.eimsound.daw.api.TrackClip
 import com.eimsound.daw.api.defaultMidiClipFactory
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.components.utils.*
-import com.eimsound.daw.data.getEditUnit
 import com.eimsound.daw.utils.*
 import kotlin.math.absoluteValue
 
@@ -113,8 +112,8 @@ private suspend fun AwaitPointerEventScope.handleDragEvent(playlist: Playlist, c
                         val currentY = dragStartY + it.position.y - change.position.y
                         val cur = binarySearchTrackByHeight(trackHeights, currentY)
                         deltaY = (cur - index).coerceIn(yAllowRange!!)
-                        deltaX = ((it.position.x - change.position.x) / noteWidth.value.toPx()).fitInUnit(getEditUnit())
-                            .coerceAtLeast(-selectedClipsLeft)
+                        deltaX = ((it.position.x - change.position.x) / noteWidth.value.toPx())
+                            .fitInUnit(EchoInMirror.editUnit).coerceAtLeast(-selectedClipsLeft)
                         it.consume()
                     }
                     if (deltaX != 0 || deltaY != 0) {
@@ -138,7 +137,7 @@ private suspend fun AwaitPointerEventScope.handleDragEvent(playlist: Playlist, c
                 EditAction.RESIZE -> {
                     change.consume()
                     drag(down.id) {
-                        val noteUnit = getEditUnit()
+                        val noteUnit = EchoInMirror.editUnit
                         var x = ((it.position.x - change.position.x) / noteWidth.value.toPx()).fitInUnit(noteUnit)
                         if (resizeDirectionRight) {
                             if (minClipDuration + x < noteUnit) x = noteUnit - minClipDuration

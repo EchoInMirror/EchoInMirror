@@ -19,11 +19,12 @@ import androidx.compose.ui.unit.dp
 import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.api.window.Panel
 import com.eimsound.daw.api.window.PanelDirection
-import com.eimsound.daw.utils.clickableWithIcon
+import com.eimsound.daw.components.utils.clickableWithIcon
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
+@Suppress("PrivatePropertyName")
 private val ICON_SIZE = Modifier.scale(0.8f).padding(4.dp, end = 2.dp)
 
 object UndoList: Panel {

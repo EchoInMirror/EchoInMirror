@@ -15,10 +15,7 @@ import com.eimsound.daw.actions.doNoteAmountAction
 import com.eimsound.daw.actions.doNoteMessageEditAction
 import com.eimsound.daw.components.FloatingDialogProvider
 import com.eimsound.daw.components.KEYBOARD_KEYS
-import com.eimsound.daw.components.utils.EditAction
-import com.eimsound.daw.components.utils.HorizontalResize
-import com.eimsound.daw.components.utils.Move
-import com.eimsound.daw.data.getEditUnit
+import com.eimsound.daw.components.utils.*
 import com.eimsound.daw.utils.*
 import com.eimsound.daw.window.panels.playlist.calcScroll
 import kotlinx.coroutines.CoroutineScope
@@ -111,7 +108,7 @@ internal suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutin
                             }
                             var currentSelectNote = getClickedNotes(event.x, event.y, editor)
                             if (currentSelectNote == null) {
-                                val noteUnit = getEditUnit()
+                                val noteUnit = EchoInMirror.editUnit
                                 currentSelectedNote?.apply { lastSelectedNoteDuration = duration }
                                 currentSelectNote = defaultNoteMessage(currentNote, currentX.fitInUnit(noteUnit),
                                     lastSelectedNoteDuration.coerceAtLeast(noteUnit), DefaultMidiClipEditor.defaultVelocity)
@@ -212,7 +209,7 @@ internal suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutin
                         !deletionList.contains(note)
                     }?.let(deletionList::add)
                     EditAction.MOVE, EditAction.RESIZE -> {
-                        val noteUnit = getEditUnit()
+                        val noteUnit = EchoInMirror.editUnit
                         // calc delta in noteUnit, then check all move notes are in bound
                         var x = (((it.position.x + horizontalScrollState.value).coerceAtLeast(0F) - downX) /
                                 noteWidth.value.toPx()).fitInUnit(noteUnit)

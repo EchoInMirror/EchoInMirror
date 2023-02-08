@@ -8,6 +8,7 @@ import com.eimsound.daw.api.TrackClip
 import com.eimsound.daw.api.processor.Track
 import org.slf4j.LoggerFactory
 
+@Suppress("PrivatePropertyName")
 private val LOGGER = LoggerFactory.getLogger(TrackClipImpl::class.java)
 
 class TrackClipImpl <T: Clip> (override val clip: T, time: Int = 0, duration: Int = 0, start: Int = 0,

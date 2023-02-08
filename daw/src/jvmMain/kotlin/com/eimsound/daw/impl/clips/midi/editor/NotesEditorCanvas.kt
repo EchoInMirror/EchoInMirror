@@ -24,8 +24,14 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.ExperimentalTextApi
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.unit.IntSize
+import com.eimsound.audioprocessor.data.defaultScale
 import com.eimsound.audioprocessor.data.midi.NoteMessage
 import com.eimsound.audioprocessor.data.midi.colorSaturation
+import com.eimsound.audioprocessor.data.midi.getNoteName
 import com.eimsound.audioprocessor.projectDisplayPPQ
 import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.api.asMidiTrackClipOrNull
@@ -35,7 +41,6 @@ import com.eimsound.daw.components.KEYBOARD_KEYS
 import com.eimsound.daw.components.LocalFloatingDialogProvider
 import com.eimsound.daw.components.dragdrop.dropTarget
 import com.eimsound.daw.components.utils.*
-import com.eimsound.daw.data.defaultScale
 import com.eimsound.daw.utils.*
 import kotlin.math.absoluteValue
 
@@ -51,9 +56,14 @@ internal var resizeDirectionRight = false
 internal var cursor by mutableStateOf(PointerIconDefaults.Default)
 internal var currentNote = 0
 
-private data class NoteDrawObject(val note: NoteMessage, val offset: Offset, val size: Size, val color: Color)
+private const val MIN_NOTE_WIDTH_WITH_KEY_NAME = 30
+private val MAX_KEY_NAME_SIZE = IntSize(40, 18)
+
+private data class NoteDrawObject(val note: NoteMessage, val offset: Offset, val size: Size, val color: Color,
+                                  val keyNameOffset: Offset?)
 private data class BackingTrack(val track: Track, val notes: ArrayList<NoteDrawObject>)
 
+@OptIn(ExperimentalTextApi::class)
 @Suppress("DuplicatedCode")
 @Composable
 internal fun NotesEditorCanvas(editor: DefaultMidiClipEditor) {
@@ -72,22 +82,29 @@ internal fun NotesEditorCanvas(editor: DefaultMidiClipEditor) {
                     true
                 }
         ) {
-            val highlightNoteColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.05F)
+            val highlightNoteColor = MaterialTheme.colorScheme.onBackground.copy(0.05F)
             val outlineColor = MaterialTheme.colorScheme.surfaceVariant
             val primaryColor = MaterialTheme.colorScheme.primary
+            val labelMediumStyle = MaterialTheme.typography.labelMedium
             val displayPPQ = EchoInMirror.currentPosition.projectDisplayPPQ
             val localDensity = LocalDensity.current
             remember(displayPPQ, localDensity) {
                 with (localDensity) { horizontalScrollState.openMaxValue = (noteWidth.value.toPx() * displayPPQ).toInt() }
             }
+
+            val measurer = rememberTextMeasurer(127)
+
             val trackClip = editor.clip
             val range = remember(trackClip.time, trackClip.duration) { trackClip.time..(trackClip.time + trackClip.duration) }
-            EditorGrid(noteWidth, horizontalScrollState, range)
+            EchoInMirror.currentPosition.apply {
+                EditorGrid(noteWidth, horizontalScrollState, range, ppq, timeSigDenominator, timeSigNumerator)
+            }
             Spacer(Modifier.fillMaxSize().drawWithCache {
                 val noteWidthPx = noteWidth.value.toPx()
                 val verticalScrollValue = verticalScrollState.value
                 val horizontalScrollValue = horizontalScrollState.value
                 val noteHeightPx = noteHeight.toPx()
+                val shouldDrawNoteName = noteHeightPx >= 13
                 val notes = arrayListOf<NoteDrawObject>()
                 val backingsNotes = arrayListOf<BackingTrack>()
                 action // read mutable state of action
@@ -103,12 +120,14 @@ internal fun NotesEditorCanvas(editor: DefaultMidiClipEditor) {
 
                 val notesInViewList = arrayListOf<NoteMessage>()
                 val trackColor = track.color
+                val keyNameTextStyle = labelMediumStyle.copy(trackColor.toOnSurfaceColor().copy(0.9F))
+                val canvasHeight = size.height
                 for ((index, it) in clip.notes.withIndex()) {
                     val y = (KEYBOARD_KEYS - 1 - it.note) * noteHeightPx - verticalScrollValue
                     val x = (startTime + it.time) * noteWidthPx - horizontalScrollValue
                     if (x > size.width) break
                     notesInViewList.add(it)
-                    if (y < -noteHeightPx || y > size.height || deletionList.contains(it)) continue
+                    if (y < -noteHeightPx || y > canvasHeight || deletionList.contains(it)) continue
                     val width = it.duration * noteWidthPx
                     if (x < 0 && width < -x) continue
                     if (flag) {
@@ -119,7 +138,9 @@ internal fun NotesEditorCanvas(editor: DefaultMidiClipEditor) {
                     notes.add(
                         NoteDrawObject(it, Offset(x, y.coerceAtLeast(0F)), Size(width, if (y < 0)
                             (noteHeightPx + y).coerceAtLeast(0F) else noteHeightPx),
-                            trackColor.saturate(it.colorSaturation)
+                            trackColor.saturate(it.colorSaturation),
+                            if (shouldDrawNoteName && width > MIN_NOTE_WIDTH_WITH_KEY_NAME)
+                                Offset(x + 2, y) else null
                         )
                     )
                 }
@@ -138,13 +159,14 @@ internal fun NotesEditorCanvas(editor: DefaultMidiClipEditor) {
                             val y = (KEYBOARD_KEYS - 1 - it.note) * noteHeightPx - verticalScrollValue
                             val x = (clipStartTime + it.time) * noteWidthPx - horizontalScrollValue
                             if (x > size.width) break
-                            if (y < -noteHeightPx || y > size.height || deletionList.contains(it)) continue
+                            if (y < -noteHeightPx || y > canvasHeight || deletionList.contains(it)) continue
                             val width = it.duration * noteWidthPx
                             if (x < 0 && width < -x) continue
                             curNotes.add(
                                 NoteDrawObject(it, Offset(x, y.coerceAtLeast(0F)), Size(width, if (y < 0)
                                     (noteHeightPx + y).coerceAtLeast(0F) else noteHeightPx),
-                                    color.copy(0.6F + 0.4F * mapValue(it.velocity, 0, 127)))
+                                    color.copy(0.6F + 0.4F * mapValue(it.velocity, 0, 127)), null
+                                )
                             )
                         }
                     }
@@ -153,7 +175,8 @@ internal fun NotesEditorCanvas(editor: DefaultMidiClipEditor) {
 
                 onDrawBehind {
                     val isDarkTheme = EchoInMirror.windowManager.isDarkTheme
-                    for (i in (verticalScrollValue / noteHeightPx).toInt()..((verticalScrollValue + size.height) / noteHeightPx).toInt()) {
+                    for (i in (verticalScrollValue / noteHeightPx).toInt()..
+                            ((verticalScrollValue + canvasHeight) / noteHeightPx).toInt()) {
                         val y = i * noteHeightPx - verticalScrollValue
                         if (y < 0) continue
                         drawLine(outlineColor, Offset(0f, y), Offset(size.width, y), 1F)
@@ -165,23 +188,30 @@ internal fun NotesEditorCanvas(editor: DefaultMidiClipEditor) {
                         val color = cur.track.color.copy(0.16F)
                         cur.notes.forEach { drawRoundRect(color, it.offset, it.size, BorderCornerRadius2PX) }
                     }
-                    notes.forEach { drawRoundRect(it.color, it.offset, it.size, BorderCornerRadius2PX) }
+                    notes.forEach {
+                        drawRoundRect(it.color, it.offset, it.size, BorderCornerRadius2PX)
+                        if (it.keyNameOffset != null)
+                            drawText(measurer, getNoteName(it.note.note), it.keyNameOffset,
+                                keyNameTextStyle, maxSize = MAX_KEY_NAME_SIZE)
+                    }
                     selectedNotes.forEach {
                         var y = (KEYBOARD_KEYS - 1 - it.note) * noteHeightPx - verticalScrollValue
                         val x = (startTime + it.time) * noteWidthPx - horizontalScrollValue
                         val width = it.duration * noteWidthPx
                         val offset: Offset
                         val size: Size
+                        var offsetNote = 0
                         when (action) {
                             EditAction.MOVE -> {
                                 y += deltaY * noteHeightPx
+                                offsetNote = deltaY
                                 offset = Offset(x + deltaX * noteWidthPx, y.coerceAtLeast(0F))
                                 size = Size(width, if (y < 0) (noteHeightPx + y).coerceAtLeast(0F) else noteHeightPx)
                             }
                             EditAction.RESIZE -> {
                                 val height = if (y < 0) (noteHeightPx + y).coerceAtLeast(0F) else noteHeightPx
-                                if (y < 0) y = 0F
-                                offset = if (resizeDirectionRight) Offset(x, y) else Offset(x + deltaX * noteWidthPx, y)
+                                val tmpY = y.coerceAtLeast(0F)
+                                offset = if (resizeDirectionRight) Offset(x, tmpY) else Offset(x + deltaX * noteWidthPx, tmpY)
                                 size = Size(width + (if (resizeDirectionRight) deltaX else -deltaX) * noteWidthPx, height)
                             }
                             else -> {
@@ -192,6 +222,9 @@ internal fun NotesEditorCanvas(editor: DefaultMidiClipEditor) {
                         if (size.height <= 0 || size.width <= 0) return@forEach
                         drawRoundRect(trackColor.saturate(it.colorSaturation), offset, size, BorderCornerRadius2PX)
                         drawRoundRect(primaryColor, offset, size, BorderCornerRadius2PX, Stroke1_5PX)
+                        if (shouldDrawNoteName && size.width > MIN_NOTE_WIDTH_WITH_KEY_NAME)
+                            drawText(measurer, getNoteName(it.note - offsetNote),
+                                Offset(offset.x + 2, y), keyNameTextStyle, maxSize = MAX_KEY_NAME_SIZE)
                     }
                 }
             })

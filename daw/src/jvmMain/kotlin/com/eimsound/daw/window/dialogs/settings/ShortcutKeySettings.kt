@@ -16,8 +16,8 @@ import com.eimsound.daw.api.Command
 import com.eimsound.daw.api.sortedKeys
 import com.eimsound.daw.components.ReadonlyTextField
 import com.eimsound.daw.components.Tab
+import com.eimsound.daw.components.utils.clickableWithIcon
 import com.eimsound.daw.impl.CommandManagerImpl
-import com.eimsound.daw.utils.clickableWithIcon
 import com.eimsound.daw.utils.mutableStateSetOf
 import com.eimsound.daw.utils.toMutableStateSet
 import java.awt.event.KeyEvent
@@ -111,11 +111,13 @@ internal object ShortcutKeySettings : Tab {
                         }.onKeyEvent {
                             if (selectKey != curKey) return@onKeyEvent false
                             if (it.type == KeyEventType.KeyDown) {
-                                if (it.key == Key.Escape) cancel()
-                                else if (it.key == Key.Enter) return@onKeyEvent false
-                                else {
-                                    keyDown.add(it.key)
-                                    keyCompose.add(it.key)
+                                when (it.key) {
+                                    Key.Escape -> cancel()
+                                    Key.Enter -> return@onKeyEvent false
+                                    else -> {
+                                        keyDown.add(it.key)
+                                        keyCompose.add(it.key)
+                                    }
                                 }
                             } else if (it.type == KeyEventType.KeyUp) {
                                 keyDown.remove(it.key)

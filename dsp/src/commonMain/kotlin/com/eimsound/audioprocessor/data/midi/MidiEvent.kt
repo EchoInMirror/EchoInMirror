@@ -65,7 +65,7 @@ value class MidiEvent(val rawData: Int) {
     val channel get() = byte1Int and 0xF
     val note get() = byte2Int
     val noteFrequency get() = 440.0 * 2.0.pow((note - 69) / 12.0)
-    val noteName get() = KEY_NAMES[note % 12] + (note / 12)
+    val noteName get() = getNoteName(note)
     val velocity get() = byte3Int
     val controller get() = byte2Int
     val program get() = byte2Int
@@ -78,6 +78,8 @@ value class MidiEvent(val rawData: Int) {
     fun toNoteOn() = MidiEvent(channel or 0x90, byte2Int, byte3Int)
     fun toNoteOff() = MidiEvent(channel or 0x80, byte2Int, byte3Int)
 }
+
+fun getNoteName(note: Int) = KEY_NAMES[note % 12] + (note / 12)
 
 fun noteOn(channel: Int = 0, note: Int, velocity: Int = 70): MidiEvent = MidiEvent(0x90 or channel, note, velocity)
 fun noteOff(channel: Int = 0, note: Int) = MidiEvent(0x80 or channel, note, 70)

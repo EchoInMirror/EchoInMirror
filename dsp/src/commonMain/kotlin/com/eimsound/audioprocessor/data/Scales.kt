@@ -1,4 +1,4 @@
-package com.eimsound.daw.data
+package com.eimsound.audioprocessor.data
 
 data class Scale(val name: String, val scale: BooleanArray) {
     override fun equals(other: Any?): Boolean {
@@ -18,7 +18,7 @@ data class Scale(val name: String, val scale: BooleanArray) {
     }
 }
 
-val scales = arrayOf(
-    Scale("自然大调", booleanArrayOf(false, true, false, true, false, false, true, false, true, false, true, false))
+val scales = arrayListOf(
+    Scale("Major", booleanArrayOf(false, true, false, true, false, false, true, false, true, false, true, false))
 )
 val defaultScale = scales[0]

@@ -1,6 +1,6 @@
-package com.eimsound.daw.data
+package com.eimsound.audioprocessor.data
 
-import com.eimsound.daw.EchoInMirror
+import com.eimsound.audioprocessor.CurrentPosition
 import kotlin.math.roundToInt
 
 data class Quantification(val name: String, val value: Int = 1, val isSpecial: Boolean = false,
@@ -23,10 +23,12 @@ val quantificationUnits = arrayOf(
 )
 val defaultQuantification = quantificationUnits[4]
 
-fun getEditUnit() = EchoInMirror.quantification.run {
-    if (value == 0) return@run 1
-    var ret = EchoInMirror.currentPosition.ppq.toDouble() / value
-    if (timesSigDenominator) ret *= EchoInMirror.currentPosition.timeSigDenominator
-    if (timesSigNumerator) ret *= EchoInMirror.currentPosition.timeSigNumerator
-    return@run ret.roundToInt().coerceAtLeast(1)
+fun Quantification.getEditUnit(ppq: Int, timeSigDenominator: Int, timeSigNumerator: Int): Int {
+    if (value == 0) return 1
+    var ret = ppq.toDouble() / value
+    if (timesSigDenominator) ret *= timeSigDenominator
+    if (timesSigNumerator) ret *= timeSigNumerator
+    return ret.roundToInt().coerceAtLeast(1)
 }
+fun Quantification.getEditUnit(position: CurrentPosition) = getEditUnit(position.ppq, position.timeSigDenominator,
+    position.timeSigNumerator)

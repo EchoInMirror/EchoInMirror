@@ -12,6 +12,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.eimsound.audioprocessor.data.midi.*
+import com.eimsound.audioprocessor.oneBarPPQ
 import com.eimsound.audioprocessor.projectDisplayPPQ
 import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.actions.doNoteAmountAction
@@ -25,7 +26,6 @@ import com.eimsound.daw.components.TIMELINE_HEIGHT
 import com.eimsound.daw.components.Timeline
 import com.eimsound.daw.components.splitpane.VerticalSplitPane
 import com.eimsound.daw.components.splitpane.rememberSplitPaneState
-import com.eimsound.daw.data.getEditUnit
 import com.eimsound.daw.utils.*
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.module.SimpleModule
@@ -44,7 +44,9 @@ private fun EditorContent(editor: DefaultMidiClipEditor) {
                     val localDensity = LocalDensity.current
                     var contentWidth by remember { mutableStateOf(0.dp) }
                     val range = remember(clip.time, clip.duration) { clip.time..(clip.time + clip.duration) }
-                    Timeline(Modifier.zIndex(3F), noteWidth, horizontalScrollState, range, 68.dp) {
+                    Timeline(Modifier.zIndex(3F), noteWidth, horizontalScrollState, range, 68.dp, EchoInMirror.editUnit,
+                        EchoInMirror.currentPosition.oneBarPPQ, EchoInMirror.currentPosition::setCurrentTime
+                    ) {
                         clip.time = it.first
                         clip.duration = it.range
                         editor.track.clips.update()
@@ -57,12 +59,16 @@ private fun EditorContent(editor: DefaultMidiClipEditor) {
                                 Keyboard(
                                     { it, p -> EchoInMirror.selectedTrack?.playMidiEvent(noteOn(0, it, (127 * p).toInt())) },
                                     { it, _ -> EchoInMirror.selectedTrack?.playMidiEvent(noteOff(0, it)) },
-                                    Modifier, noteHeight
+                                    Modifier, noteHeight, swapColor = EchoInMirror.windowManager.isDarkTheme
                                 )
                             }
                             NotesEditorCanvas(editor)
                         }
-                        PlayHead(noteWidth, horizontalScrollState, contentWidth, 68.dp)
+                        Box {
+                            PlayHead(noteWidth, horizontalScrollState,
+                                (EchoInMirror.currentPosition.ppqPosition * EchoInMirror.currentPosition.ppq).toFloat(),
+                                contentWidth, 68.dp)
+                        }
                         VerticalScrollbar(
                             rememberScrollbarAdapter(verticalScrollState),
                             Modifier.align(Alignment.CenterEnd).fillMaxHeight()
@@ -152,7 +158,7 @@ class DefaultMidiClipEditor(override val clip: TrackClip<MidiClip>, override val
         if (isEventPanelActive) selectedEvent?.paste()
         else {
             if (copiedNotes?.isEmpty() == true) return
-            val startTime = EchoInMirror.currentPosition.timeInPPQ.fitInUnitCeil(getEditUnit())
+            val startTime = EchoInMirror.currentPosition.timeInPPQ.fitInUnitCeil(EchoInMirror.editUnit)
             val notes = copiedNotes!!.map { it.copy(time = it.time + startTime) }
             clip.doNoteAmountAction(notes, false)
             selectedNotes.clear()

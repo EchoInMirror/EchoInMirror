@@ -12,6 +12,7 @@ import androidx.compose.ui.window.ApplicationScope
 import androidx.compose.ui.window.Window
 import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.components.*
+import com.eimsound.daw.components.utils.clickableWithIcon
 import com.eimsound.daw.recentProjects
 import com.eimsound.daw.utils.*
 import java.awt.Dimension

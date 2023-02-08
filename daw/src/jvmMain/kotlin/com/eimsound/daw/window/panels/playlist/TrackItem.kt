@@ -30,8 +30,8 @@ import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.components.*
 import com.eimsound.daw.components.icons.Crown
 import com.eimsound.daw.components.icons.DebugStepOver
+import com.eimsound.daw.components.utils.clickableWithIcon
 import com.eimsound.daw.utils.binarySearch
-import com.eimsound.daw.utils.clickableWithIcon
 import com.eimsound.daw.window.dialogs.openColorPicker
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking

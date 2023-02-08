@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.dp
 import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.components.Gap
 import com.eimsound.daw.components.Tab
+import com.eimsound.daw.components.utils.clickableWithIcon
 import com.eimsound.daw.impl.processor.nativeAudioPluginManager
 import com.eimsound.daw.utils.*
 import com.eimsound.dsp.native.NativeAudioPluginFactoryImpl

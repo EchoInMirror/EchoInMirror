@@ -24,6 +24,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.eimsound.audioprocessor.data.midi.NoteMessage
+import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.actions.GlobalEnvelopeEditorEventHandler
 import com.eimsound.daw.actions.doNoteVelocityAction
 import com.eimsound.daw.api.MidiCCEvent
@@ -32,10 +33,10 @@ import com.eimsound.daw.components.EditorGrid
 import com.eimsound.daw.components.EnvelopeEditor
 import com.eimsound.daw.components.KEYBOARD_DEFAULT_WIDTH
 import com.eimsound.daw.components.utils.EditAction
-import com.eimsound.daw.data.getEditUnit
+import com.eimsound.daw.components.utils.clickableWithIcon
 import com.eimsound.daw.utils.BasicEditor
 import com.eimsound.daw.utils.SerializableEditor
-import com.eimsound.daw.utils.clickableWithIcon
+import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
 
 interface EventType : BasicEditor {
@@ -82,8 +83,7 @@ class VelocityEvent(private val editor: MidiClipEditor) : EventType {
                     val startTime = clip.time
                     for (i in startNoteIndex until clip.clip.notes.size) {
                         val note = clip.clip.notes[i]
-                        val curX = (startTime + note.time) * noteWidthPx
-                        if (curX <= x && x <= curX + 4) {
+                        if (((startTime + note.time) * noteWidthPx - x).absoluteValue <= 2) {
                             if (selectedNotes.isNotEmpty() && !selectedNotes.contains(note)) continue
                             selectedNote = note
                             break
@@ -118,7 +118,7 @@ class CCEvent(private val editor: MidiClipEditor, event: MidiCCEvent) : EventTyp
             envEditor.Editor(
                 clip.start - clip.time + with (LocalDensity.current) { horizontalScrollState.value / noteWidth.value.toPx() },
                 clip.track?.color ?: MaterialTheme.colorScheme.primary,
-                noteWidth, getEditUnit(), horizontalScrollState, clip.time
+                noteWidth, EchoInMirror.editUnit, horizontalScrollState, clip.time
             )
         }
     }
@@ -189,7 +189,9 @@ internal fun EventEditor(editor: DefaultMidiClipEditor) {
                 }
                 Box(Modifier.weight(1f).fillMaxHeight().background(MaterialTheme.colorScheme.background)) {
                     val range = remember(clip.time, clip.duration) { clip.time..(clip.time + clip.duration) }
-                    EditorGrid(noteWidth, horizontalScrollState, range)
+                    EchoInMirror.currentPosition.apply {
+                        EditorGrid(noteWidth, horizontalScrollState, range, ppq, timeSigDenominator, timeSigNumerator)
+                    }
                     selectedEvent?.Editor()
                 }
             }
