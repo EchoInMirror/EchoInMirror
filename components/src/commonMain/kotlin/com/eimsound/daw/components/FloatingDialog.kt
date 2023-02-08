@@ -27,16 +27,16 @@ import androidx.compose.ui.unit.toSize
 import com.eimsound.daw.components.utils.Zero
 
 private data class FloatingDialog(val onClose: ((Any) -> Unit)?, val position: Offset?,
-                                  val hasOverlay: Boolean, val content: @Composable () -> Unit) {
+                                  val hasOverlay: Boolean, val overflow: Boolean, val content: @Composable () -> Unit) {
     var isClosed by mutableStateOf(false)
 }
 
 class FloatingDialogProvider {
     private val floatingDialogs = mutableStateMapOf<Any, FloatingDialog>()
     fun openFloatingDialog(onClose: ((Any) -> Unit)? = null, position: Offset? = null, key: Any? = null,
-                           hasOverlay: Boolean = false, content: @Composable () -> Unit): Any {
+                           hasOverlay: Boolean = false, overflow: Boolean = false, content: @Composable () -> Unit): Any {
         val k = key ?: Any()
-        floatingDialogs[k] = FloatingDialog(onClose, position, hasOverlay, content)
+        floatingDialogs[k] = FloatingDialog(onClose, position, hasOverlay, overflow, content)
         return k
     }
     fun closeFloatingDialog(key: Any) {
@@ -63,17 +63,29 @@ class FloatingDialogProvider {
                 else Layout({
                     Box(Modifier.graphicsLayer(alpha = alpha, shadowElevation = if (alpha == 1F) 0F else 5F)) { dialog.content() }
                 }) { measurables, constraints ->
-                    var height = constraints.maxHeight - dialog.position.y.toInt() - 25
-                    var width = constraints.maxWidth - dialog.position.x.toInt() - 12
-                    val isTooSmall = height < 40
-                    val isTooRight = width < 100
-                    if (isTooSmall) height = constraints.maxHeight - 50
-                    if (isTooRight) width = constraints.maxWidth - 100
-                    val c = Constraints(0, width, 0, height)
-                    val placeable = measurables.firstOrNull()?.measure(c)
-                    layout(c.maxWidth, c.maxHeight) {
-                        placeable?.place(dialog.position.x.toInt() - (if (isTooRight) placeable.width else 0),
-                            dialog.position.y.toInt() - (if (isTooSmall) placeable.height + 25 else 0), 5F)
+                    if (dialog.overflow) {
+                        val width = constraints.maxWidth - 12
+                        val height = constraints.maxHeight - 25
+                        val placeable = measurables.firstOrNull()?.measure(Constraints(0, width, 0, height))
+                        val pw = placeable?.width ?: 0
+                        val ph = placeable?.height ?: 0
+                        layout(pw, ph) {
+                            placeable?.place(if (dialog.position.x + pw > width) width - pw else dialog.position.x.toInt(),
+                                if (dialog.position.y + ph > height) height - ph else dialog.position.y.toInt(), 5F)
+                        }
+                    } else {
+                        var height = constraints.maxHeight - dialog.position.y.toInt() - 25
+                        var width = constraints.maxWidth - dialog.position.x.toInt() - 12
+                        val isTooSmall = height < 40
+                        val isTooRight = width < 100
+                        if (isTooSmall) height = constraints.maxHeight - 50
+                        if (isTooRight) width = constraints.maxWidth - 100
+                        val c = Constraints(0, width, 0, height)
+                        val placeable = measurables.firstOrNull()?.measure(c)
+                        layout(c.maxWidth, c.maxHeight) {
+                            placeable?.place(dialog.position.x.toInt() - (if (isTooRight) placeable.width else 0),
+                                dialog.position.y.toInt() - (if (isTooSmall) placeable.height + 25 else 0), 5F)
+                        }
                     }
                 }
                 remember { isOpened = true }

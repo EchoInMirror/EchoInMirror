@@ -7,9 +7,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.eimsound.audioprocessor.data.midi.*
@@ -100,6 +100,7 @@ class DefaultMidiClipEditor(override val clip: TrackClip<MidiClip>, override val
     internal var currentSelectedNote by mutableStateOf<NoteMessage?>(null)
     internal var notesInView by mutableStateOf(arrayListOf<NoteMessage>())
     internal var isEventPanelActive = false
+    internal var offsetOfRoot = Offset.Zero
 
     companion object {
         var copiedNotes: List<NoteMessage>? = null
@@ -138,11 +139,6 @@ class DefaultMidiClipEditor(override val clip: TrackClip<MidiClip>, override val
         else if (selectedNotes.isEmpty()) "" else jacksonObjectMapper().writeValueAsString(
             SerializableNoteMessage(EchoInMirror.currentPosition.ppq, copyAsObject().toSet())
         )
-    }
-
-    fun copyToClipboardAsString() {
-        if (selectedNotes.isEmpty()) return
-        CLIPBOARD_MANAGER?.setText(AnnotatedString(copyAsString()))
     }
 
     private fun copyAsObject(): List<NoteMessage> {
@@ -191,10 +187,6 @@ class DefaultMidiClipEditor(override val clip: TrackClip<MidiClip>, override val
         } catch (ignored: Throwable) { ignored.printStackTrace() }
     }
 
-    fun pasteFromClipboard() {
-        pasteFromString(CLIPBOARD_MANAGER?.getText()?.text ?: return)
-    }
-
     override fun selectAll() {
         if (isEventPanelActive) selectedEvent?.selectAll()
         else {
@@ -202,4 +194,7 @@ class DefaultMidiClipEditor(override val clip: TrackClip<MidiClip>, override val
             selectedNotes.addAll(clip.clip.notes)
         }
     }
+
+    override fun hasSelected() = !selectedNotes.isEmpty()
+    override fun canPaste() = copiedNotes?.isNotEmpty() == true
 }

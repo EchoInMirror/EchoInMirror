@@ -9,6 +9,8 @@ interface BasicEditor {
     }
     fun paste() { }
     fun selectAll() { }
+    fun hasSelected(): Boolean = true
+    fun canPaste(): Boolean = true
 }
 
 interface SerializableEditor : BasicEditor {

@@ -22,16 +22,18 @@ import kotlin.io.path.exists
 @OptIn(ExperimentalComposeUiApi::class)
 class CommandManagerImpl : CommandManager {
     override val commands = mutableMapOf<String, Command>()
-    val commandMap = mutableMapOf<String, Command>()
-    var customCommand = mutableMapOf<String, String>()
+    val commandsMap = mutableMapOf<String, Command>()
+    var customCommands = mutableMapOf<String, String>()
     private val customShortcutKeyPath = ROOT_PATH.resolve("shortcutKey.json")
     private val commandHandlers = mutableMapOf<Command, MutableSet<() -> Unit>>()
 
     init {
         registerCommand(DeleteCommand)
         registerCommand(CopyCommand)
+        registerCommand(CopyToClipboard)
         registerCommand(CutCommand)
         registerCommand(PasteCommand)
+        registerCommand(PasteFromClipboard)
         registerCommand(SelectAllCommand)
         registerCommand(SaveCommand)
 
@@ -93,17 +95,17 @@ class CommandManagerImpl : CommandManager {
         })
 
         if (customShortcutKeyPath.exists()) {
-            customCommand = ObjectMapper().readValue(customShortcutKeyPath.toFile())
+            customCommands = ObjectMapper().readValue(customShortcutKeyPath.toFile())
         }
     }
 
     fun saveCustomShortcutKeys() {
-        ObjectMapper().writerWithDefaultPrettyPrinter().writeValue(customShortcutKeyPath.toFile(), customCommand)
+        ObjectMapper().writerWithDefaultPrettyPrinter().writeValue(customShortcutKeyPath.toFile(), customCommands)
     }
 
     override fun registerCommand(command: Command) {
         commands[command.keyBindings.getKeys()] = command
-        commandMap[command.name] = command
+        commandsMap[command.name] = command
         commandHandlers[command] = hashSetOf()
     }
 
@@ -113,7 +115,7 @@ class CommandManagerImpl : CommandManager {
     }
 
     override fun executeCommand(command: String) {
-        val cmd = commandMap[customCommand[command]] ?: commands[command] ?: return
+        val cmd = commandsMap[customCommands[command]] ?: commands[command] ?: return
         try {
             cmd.execute()
             commandHandlers[cmd]!!.forEach { it() }
@@ -121,4 +123,10 @@ class CommandManagerImpl : CommandManager {
             e.printStackTrace()
         }
     }
+
+    override fun getKeysOfCommand(command: Command) =
+        customCommands.firstNotNullOfOrNull { (key, value) ->
+            if (value == command.name) key.split(" ").map { Key(it.toInt()) }.toTypedArray()
+            else null
+        } ?: command.keyBindings
 }

@@ -2,9 +2,11 @@ package com.eimsound.daw.components
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -25,24 +27,27 @@ fun MenuItem(
     padding: PaddingValues = PaddingValues(horizontal = 12.dp),
     content: @Composable RowScope.() -> Unit
 ) {
-    Row(
-        modifier = modifier
-            .combinedClickable(
-                enabled,
-                onDoubleClick = onDoubleClick,
-                onClick = onClick
-            )
-            .run { if (selected) background(MaterialTheme.colorScheme.secondary.copy(0.2F)) else this }
-            .sizeIn(
-                minWidth = 100.dp,
-                maxWidth = 280.dp,
-                minHeight = minHeight
-            )
-            .pointerHoverIcon(if (enabled) PointerIconDefaults.Hand else PointerIconDefaults.Default)
-            .padding(padding),
-        verticalAlignment = Alignment.CenterVertically,
-        content = content
-    )
+    val color = LocalContentColor.current
+    CompositionLocalProvider(LocalContentColor.provides(if (enabled) color else color.copy(0.38F))) {
+        Row(
+            modifier = modifier
+                .combinedClickable(
+                    enabled,
+                    onDoubleClick = onDoubleClick,
+                    onClick = onClick
+                )
+                .run { if (selected) background(MaterialTheme.colorScheme.secondary.copy(0.2F)) else this }
+                .sizeIn(
+                    minWidth = 100.dp,
+                    maxWidth = 280.dp,
+                    minHeight = minHeight
+                )
+                .pointerHoverIcon(if (enabled) PointerIconDefaults.Hand else PointerIconDefaults.Default)
+                .padding(padding),
+            verticalAlignment = Alignment.CenterVertically,
+            content = content
+        )
+    }
 }
 
 @Composable

@@ -15,6 +15,7 @@ import com.eimsound.daw.actions.doNoteAmountAction
 import com.eimsound.daw.actions.doNoteMessageEditAction
 import com.eimsound.daw.components.FloatingDialogProvider
 import com.eimsound.daw.components.KEYBOARD_KEYS
+import com.eimsound.daw.components.openEditorMenu
 import com.eimsound.daw.components.utils.*
 import com.eimsound.daw.utils.*
 import com.eimsound.daw.window.panels.playlist.calcScroll
@@ -162,9 +163,8 @@ internal suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutin
                             action = EditAction.DELETE
                             break
                         } else if (event.buttons.isSecondaryPressed) {
-                            selectedNotes.clear()
                             action = EditAction.NONE
-                            openEditorMenu(floatingDialogProvider, event.changes[0].position, editor)
+                            floatingDialogProvider.openEditorMenu(event.changes[0].position + offsetOfRoot, editor)
                             continue
                         }
                     }

@@ -19,6 +19,7 @@ kotlin {
         named("commonMain") {
             dependencies {
                 compileOnly(project(":dsp"))
+                compileOnly(project(":api"))
                 compileOnly(compose.runtime)
                 compileOnly(compose.ui)
                 compileOnly(compose.foundation)

@@ -44,8 +44,8 @@ internal object ShortcutKeySettings : Tab {
             commandManager.commands.forEach { (key, command) ->
                 commands[command] = key
             }
-            commandManager.customCommand.forEach { (key, commandName) ->
-                commands[commandManager.commandMap[commandName]!!] = key
+            commandManager.customCommands.forEach { (key, commandName) ->
+                commands[commandManager.commandsMap[commandName]!!] = key
             }
 
             commands.forEach { (command, key) ->
@@ -71,22 +71,22 @@ internal object ShortcutKeySettings : Tab {
                         val keyStr = keyCompose.sortedKeys().joinToString(separator = " ") {
                             it.keyCode.toString()
                         }
-                        if (keyStr.isEmpty() || keyStr in commandManager.commands || keyStr in commandManager.customCommand) {
+                        if (keyStr.isEmpty() || keyStr in commandManager.commands || keyStr in commandManager.customCommands) {
                             cancel()
                             return
                         }
-                        if (curKey !in commandManager.commands && curKey !in commandManager.customCommand) {
+                        if (curKey !in commandManager.commands && curKey !in commandManager.customCommands) {
                             cancel()
                             return
                         }
                         val commandTar: String
-                        if (curKey in commandManager.customCommand) {
-                            commandTar = commandManager.customCommand[curKey]!!
-                            commandManager.customCommand -= curKey
+                        if (curKey in commandManager.customCommands) {
+                            commandTar = commandManager.customCommands[curKey]!!
+                            commandManager.customCommands -= curKey
                         } else {
                             commandTar = commandManager.commands[curKey]!!.name
                         }
-                        commandManager.customCommand[keyStr] = commandTar
+                        commandManager.customCommands[keyStr] = commandTar
                         curKey = keyStr
                         commandManager.saveCustomShortcutKeys()
                     }
