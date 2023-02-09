@@ -4,6 +4,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.eimsound.daw.utils.Reloadable
+import java.util.*
 
 interface AudioPlayer : AutoCloseable {
     val factory: AudioPlayerFactory
@@ -57,9 +59,15 @@ interface AudioPlayerFactory {
     fun create(name: String, currentPosition: CurrentPosition, processor: AudioProcessor): AudioPlayer
 }
 
-interface AudioPlayerManager {
+/**
+ * @see com.eimsound.audioprocessor.impl.AudioPlayerManagerImpl
+ */
+interface AudioPlayerManager : Reloadable {
+    companion object {
+        val instance by lazy { ServiceLoader.load(AudioPlayerManager::class.java).first()!! }
+    }
     val factories: Map<String, AudioPlayerFactory>
-    fun registerFactory(factory: AudioPlayerFactory)
+
     fun create(factory: String, name: String, currentPosition: CurrentPosition, processor: AudioProcessor): AudioPlayer
     fun createDefaultPlayer(currentPosition: CurrentPosition, processor: AudioProcessor): AudioPlayer
 }

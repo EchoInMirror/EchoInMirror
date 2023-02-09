@@ -14,6 +14,9 @@ enum class ChannelType {
     STEREO, LEFT, RIGHT, MONO, SIDE
 }
 
+/**
+ * @see com.eimsound.daw.impl.processor.TrackImpl
+ */
 interface Track : AudioProcessor, Pan, Volume, Mute, Solo, Disabled, MidiEventHandler, Colorable, Renderable {
     override var name: String
     val subTracks: MutableList<Track>

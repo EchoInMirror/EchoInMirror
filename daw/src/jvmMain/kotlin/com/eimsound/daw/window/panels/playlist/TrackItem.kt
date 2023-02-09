@@ -27,6 +27,7 @@ import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.actions.doAddOrRemoveTrackAction
 import com.eimsound.daw.actions.doReorderAction
 import com.eimsound.daw.api.processor.Track
+import com.eimsound.daw.api.processor.TrackManager
 import com.eimsound.daw.components.*
 import com.eimsound.daw.components.icons.Crown
 import com.eimsound.daw.components.icons.DebugStepOver
@@ -209,7 +210,7 @@ internal fun TrackItems(playlist: Playlist) {
             }
             TextButton({
                 runBlocking {
-                    EchoInMirror.trackManager.createTrack().doAddOrRemoveTrackAction(EchoInMirror.bus!!.subTracks)
+                    TrackManager.instance.createTrack().doAddOrRemoveTrackAction(EchoInMirror.bus!!.subTracks)
                 }
             }, Modifier.fillMaxWidth()) {
                 Text("创建轨道")

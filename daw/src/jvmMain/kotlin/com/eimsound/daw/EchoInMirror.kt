@@ -3,10 +3,7 @@ package com.eimsound.daw
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.eimsound.audioprocessor.AudioPlayer
-import com.eimsound.audioprocessor.AudioPlayerManager
-import com.eimsound.audioprocessor.AudioProcessorManager
-import com.eimsound.audioprocessor.CurrentPosition
+import com.eimsound.audioprocessor.*
 import com.eimsound.audioprocessor.data.defaultQuantification
 import com.eimsound.audioprocessor.data.getEditUnit
 import com.eimsound.daw.api.*
@@ -15,10 +12,6 @@ import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.api.processor.TrackManager
 import com.eimsound.daw.api.window.WindowManager
 import com.eimsound.daw.impl.*
-import com.eimsound.daw.impl.clips.ClipManagerImpl
-import com.eimsound.daw.impl.processor.AudioPlayerManagerImpl
-import com.eimsound.daw.impl.processor.AudioProcessorManagerImpl
-import com.eimsound.daw.impl.processor.TrackManagerImpl
 import com.eimsound.daw.plugin.EIMPluginManager
 import com.eimsound.daw.utils.UndoManager
 import com.eimsound.daw.utils.impl.DefaultUndoManager
@@ -35,10 +28,6 @@ object EchoInMirror {
     @Suppress("unused")
     val pluginManager: PluginManager = EIMPluginManager()
     val windowManager: WindowManager = WindowManagerImpl()
-    val clipManager: ClipManager = ClipManagerImpl()
-    val audioPlayerManager: AudioPlayerManager = AudioPlayerManagerImpl()
-    val audioProcessorManager: AudioProcessorManager = AudioProcessorManagerImpl()
-    val trackManager: TrackManager = TrackManagerImpl()
     val undoManager: UndoManager = DefaultUndoManager()
     var quantification by mutableStateOf(defaultQuantification)
 
@@ -57,13 +46,13 @@ object EchoInMirror {
         var ret: AudioPlayer? = null
         if (Configuration.audioDeviceFactoryName.isNotEmpty()) {
             try {
-                ret = audioPlayerManager.create(Configuration.audioDeviceFactoryName,
+                ret = AudioPlayerManager.instance.create(Configuration.audioDeviceFactoryName,
                     Configuration.audioDeviceName, currentPosition, bus!!)
             } catch (e: Exception) {
                 e.printStackTrace()
             }
         }
-        if (ret == null) ret = audioPlayerManager.createDefaultPlayer(currentPosition, bus!!)
+        if (ret == null) ret = AudioPlayerManager.instance.createDefaultPlayer(currentPosition, bus!!)
         var flag = false
         if (Configuration.audioDeviceFactoryName != ret.factory.name) {
             Configuration.audioDeviceFactoryName = ret.factory.name
@@ -75,6 +64,15 @@ object EchoInMirror {
         }
         if (flag) Configuration.save()
         return ret
+    }
+
+    @Suppress("unused")
+    fun reloadServices() {
+        AudioPlayerManager.instance.reload()
+        AudioProcessorManager.instance.reload()
+        AudioSourceManager.instance.reload()
+        ClipManager.instance.reload()
+        TrackManager.instance.reload()
     }
 
     val editUnit get() = quantification.getEditUnit(currentPosition)

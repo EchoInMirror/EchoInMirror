@@ -102,6 +102,9 @@ class DefaultMidiClipEditor(override val clip: TrackClip<MidiClip>, override val
     internal var isEventPanelActive = false
     internal var offsetOfRoot = Offset.Zero
 
+    override val hasSelected get() = !selectedNotes.isEmpty()
+    override val canPaste get() = copiedNotes?.isNotEmpty() == true
+
     companion object {
         var copiedNotes: List<NoteMessage>? = null
         var playOnEdit by mutableStateOf(true)
@@ -194,7 +197,4 @@ class DefaultMidiClipEditor(override val clip: TrackClip<MidiClip>, override val
             selectedNotes.addAll(clip.clip.notes)
         }
     }
-
-    override fun hasSelected() = !selectedNotes.isEmpty()
-    override fun canPaste() = copiedNotes?.isNotEmpty() == true
 }

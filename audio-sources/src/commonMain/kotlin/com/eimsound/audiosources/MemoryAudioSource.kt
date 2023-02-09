@@ -1,9 +1,10 @@
 package com.eimsound.audiosources
 
 import com.eimsound.audioprocessor.AudioSource
+import com.eimsound.audioprocessor.AudioSourceFactory
+import com.fasterxml.jackson.databind.JsonNode
 
-class MemoryAudioSource(override val source: AudioSource): AudioSource {
-    override val name = "Memory"
+class MemoryAudioSource(override val factory: AudioSourceFactory<MemoryAudioSource>, override val source: AudioSource): AudioSource {
     override val length get() = source.length
     override val channels get() = source.channels
     override val sampleRate get() = source.sampleRate
@@ -25,4 +26,9 @@ class MemoryAudioSource(override val source: AudioSource): AudioSource {
         }
         return consumed
     }
+}
+
+class MemoryAudioSourceFactory: AudioSourceFactory<MemoryAudioSource> {
+    override val name = "Memory"
+    override fun createAudioSource(source: AudioSource?, json: JsonNode?) = MemoryAudioSource(this, source!!)
 }

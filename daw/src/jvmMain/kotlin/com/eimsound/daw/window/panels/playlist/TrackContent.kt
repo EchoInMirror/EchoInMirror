@@ -26,6 +26,7 @@ import com.eimsound.audioprocessor.oneBarPPQ
 import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.actions.doClipsAmountAction
 import com.eimsound.daw.actions.doClipsEditActionAction
+import com.eimsound.daw.api.ClipManager
 import com.eimsound.daw.api.TrackClip
 import com.eimsound.daw.api.defaultMidiClipFactory
 import com.eimsound.daw.api.processor.Track
@@ -173,8 +174,8 @@ internal fun TrackContent(playlist: Playlist, track: Track, index: Int, density:
             Box(Modifier.fillMaxSize().pointerInput(track) {
                 detectTapGestures(onDoubleTap = {
                     val len = EchoInMirror.currentPosition.oneBarPPQ
-                    val clip = EchoInMirror.clipManager.createTrackClip(
-                        EchoInMirror.clipManager.defaultMidiClipFactory.createClip(),
+                    val clip = ClipManager.instance.createTrackClip(
+                        ClipManager.instance.defaultMidiClipFactory.createClip(),
                         (it.x / noteWidth.value.toPx()).fitInUnit(len),
                         len,
                         0,

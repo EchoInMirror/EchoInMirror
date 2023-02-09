@@ -1,6 +1,7 @@
 package com.eimsound.daw.impl.processor
 
 import androidx.compose.runtime.mutableStateMapOf
+import com.eimsound.audioprocessor.AudioProcessorDescription
 import com.eimsound.daw.api.ProjectInformation
 import com.eimsound.daw.api.processor.*
 import com.eimsound.daw.utils.NoSuchFactoryException
@@ -8,18 +9,26 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import java.io.File
 import java.nio.file.Files
+import java.util.*
 import kotlin.io.path.absolutePathString
+
+class DefaultTrackFactory : TrackFactory<Track> {
+    override val canCreateBus = true
+    override val name = "DefaultTrackFactory"
+    override val descriptions = setOf(DefaultTrackDescription)
+
+    override suspend fun createAudioProcessor(description: AudioProcessorDescription) = TrackImpl(description, this)
+
+    override suspend fun createAudioProcessor(path: String, json: JsonNode) =
+        TrackImpl(DefaultTrackDescription, this).apply { load(path, json) }
+
+    override suspend fun createBus(project: ProjectInformation) = BusImpl(project, DefaultTrackDescription, this)
+}
 
 class TrackManagerImpl : TrackManager {
     override val factories = mutableStateMapOf<String, TrackFactory<*>>()
 
-    init {
-        registerFactory(DefaultTrackFactory())
-    }
-
-    override fun registerFactory(factory: TrackFactory<*>) {
-        factories[factory.name] = factory
-    }
+    init { reload() }
 
     override suspend fun createTrack(factory: String?) =
         (factories[factory] ?: factories.values.firstOrNull())?.createAudioProcessor(DefaultTrackDescription)
@@ -46,5 +55,10 @@ class TrackManagerImpl : TrackManager {
         val factory = factories[factoryName] ?: throw NoSuchFactoryException(factoryName ?: "Null")
         val bus = factory.createBus(project)
         return bus to { bus.load(project.root.absolutePathString(), json) }
+    }
+
+    override fun reload() {
+        factories.clear()
+        factories.putAll(ServiceLoader.load(TrackFactory::class.java).associateBy { it.name })
     }
 }

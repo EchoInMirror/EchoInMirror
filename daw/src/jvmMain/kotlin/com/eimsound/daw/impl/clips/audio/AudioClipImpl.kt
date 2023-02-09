@@ -10,26 +10,25 @@ import androidx.compose.ui.unit.Dp
 import com.eimsound.audioprocessor.*
 import com.eimsound.audioprocessor.data.AudioThumbnail
 import com.eimsound.audioprocessor.data.midi.MidiNoteRecorder
-import com.eimsound.audiosources.DefaultFileAudioSource
-import com.eimsound.audiosources.DefaultResampledAudioSource
 import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.api.*
 import com.eimsound.daw.api.processor.Track
 import com.fasterxml.jackson.databind.JsonNode
-import java.nio.file.Paths
 import kotlin.io.path.name
 import kotlin.math.absoluteValue
 
-class AudioClipImpl(json: JsonNode?, factory: ClipFactory<AudioClip>): AbstractClip<AudioClip>(json, factory), AudioClip {
-    override var target: AudioSource = if (json == null) EmptyAudioSource() else DefaultFileAudioSource(Paths.get(json["file"]!!.asText()))
+class AudioClipImpl(json: JsonNode?, factory: ClipFactory<AudioClipImpl>): AbstractClip<AudioClipImpl>(json, factory), AudioClip {
+    override var target: AudioSource = AudioSourceManager.instance.createAudioSource(json?.get("target") ?: throw IllegalStateException("No target"))
         set(value) {
             if (field == value) return
             field = value
-            audioSource = DefaultResampledAudioSource(value, EchoInMirror.currentPosition.sampleRate.toDouble() / target.sampleRate)
+            audioSource = AudioSourceManager.instance.createResampledSource(value)
+            audioSource.factor = EchoInMirror.currentPosition.sampleRate.toDouble() / target.sampleRate
             thumbnail = AudioThumbnail(value)
         }
-    override var audioSource: ResampledAudioSource = DefaultResampledAudioSource(target,
-        EchoInMirror.currentPosition.sampleRate.toDouble() / target.sampleRate)
+    override var audioSource = AudioSourceManager.instance.createResampledSource(target).apply {
+        factor = EchoInMirror.currentPosition.sampleRate.toDouble() / target.sampleRate
+    }
     override val defaultDuration get() = EchoInMirror.currentPosition.convertSamplesToPPQ(audioSource.length)
     override val maxDuration get() = defaultDuration
     override var thumbnail by mutableStateOf(AudioThumbnail(target))
@@ -46,13 +45,13 @@ class AudioClipImpl(json: JsonNode?, factory: ClipFactory<AudioClip>): AbstractC
 
 private const val STEP_IN_PX = 0.5F
 
-class AudioClipFactoryImpl: ClipFactory<AudioClip> {
+class AudioClipFactoryImpl: ClipFactory<AudioClipImpl> {
     override val name = "AudioClip"
     override fun createClip() = AudioClipImpl(null, this)
     override fun createClip(path: String, json: JsonNode) = AudioClipImpl(json, this)
-    override fun getEditor(clip: TrackClip<AudioClip>, track: Track): ClipEditor? = null
+    override fun getEditor(clip: TrackClip<AudioClipImpl>, track: Track): ClipEditor? = null
 
-    override fun processBlock(clip: TrackClip<AudioClip>, buffers: Array<FloatArray>, position: CurrentPosition,
+    override fun processBlock(clip: TrackClip<AudioClipImpl>, buffers: Array<FloatArray>, position: CurrentPosition,
                               midiBuffer: ArrayList<Int>, noteRecorder: MidiNoteRecorder, pendingNoteOns: LongArray) {
         clip.clip.audioSource.factor = position.sampleRate.toDouble() / clip.clip.audioSource.source!!.sampleRate
         clip.clip.audioSource.getSamples(
@@ -62,7 +61,7 @@ class AudioClipFactoryImpl: ClipFactory<AudioClip> {
     }
 
     @Composable
-    override fun playlistContent(clip: TrackClip<AudioClip>, track: Track, contentColor: Color,
+    override fun playlistContent(clip: TrackClip<AudioClipImpl>, track: Track, contentColor: Color,
                                  noteWidth: MutableState<Dp>, startPPQ: Float, widthPPQ: Float) {
         val curPos = EchoInMirror.currentPosition
 
@@ -107,8 +106,7 @@ class AudioClipFactoryImpl: ClipFactory<AudioClip> {
         }
     }
 
-    override fun save(clip: AudioClip, path: String) {
-    }
+    override fun save(clip: AudioClipImpl, path: String) = clip
 
     override fun toString(): String {
         return "MidiClipFactoryImpl(name='$name')"

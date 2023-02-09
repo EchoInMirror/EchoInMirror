@@ -1,0 +1,3 @@
+com.eimsound.audiosources.DefaultFileAudioSourceFactory
+com.eimsound.audiosources.DefaultResampledAudioSourceFactory
+com.eimsound.audiosources.MemoryAudioSourceFactory

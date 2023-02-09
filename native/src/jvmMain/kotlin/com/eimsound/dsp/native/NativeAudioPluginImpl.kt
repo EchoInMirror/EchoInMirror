@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.FileVisitResult
 import java.nio.file.Files
-import java.nio.file.Path
+import java.nio.file.Paths
 import kotlin.io.path.*
 
 class NativeAudioPluginImpl(
@@ -59,8 +59,10 @@ class NativeAudioPluginImpl(
     isGetterVisibility = JsonAutoDetect.Visibility.NONE,
     creatorVisibility = JsonAutoDetect.Visibility.NONE
 )
-class NativeAudioPluginFactoryImpl(private val configFile: Path, private val nativeHostPath: Path): NativeAudioPluginFactory {
+class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
     private val logger = LoggerFactory.getLogger(NativeAudioPluginFactoryImpl::class.java)
+    private val configFile get() = Paths.get(System.getProperty("eim.dsp.nativeaudioplugins.list"))
+    private val nativeHostPath get() = Paths.get(System.getProperty("eim.dsp.nativeaudioplugins.host"))
     override val name = "NativeAudioPluginFactory"
     override val pluginIsFile = SystemUtils.IS_OS_WINDOWS || SystemUtils.IS_OS_LINUX
 

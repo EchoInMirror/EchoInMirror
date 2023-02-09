@@ -10,6 +10,7 @@ import com.eimsound.audioprocessor.dsp.calcPanLeftChannel
 import com.eimsound.audioprocessor.dsp.calcPanRightChannel
 import com.eimsound.daw.Configuration
 import com.eimsound.daw.EchoInMirror
+import com.eimsound.daw.api.ClipManager
 import com.eimsound.daw.api.DefaultTrackClipList
 import com.eimsound.daw.api.ProjectInformation
 import com.eimsound.daw.api.processor.*
@@ -281,7 +282,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
 
                 val clipsDir = dir.resolve("clips").absolutePathString()
                 clips.addAll(json.get("clips").map {
-                    async { EchoInMirror.clipManager.createTrackClip(clipsDir, it) }
+                    async { ClipManager.instance.createTrackClip(clipsDir, it) }
                 }.awaitAll())
 
                 val tracksDir = dir.resolve("tracks")
@@ -289,15 +290,15 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
                     async {
                         val trackID = it.asText()
                         val trackPath = tracksDir.resolve(trackID)
-                        EchoInMirror.trackManager.createTrack(trackPath.absolutePathString(), trackID)
+                        TrackManager.instance.createTrack(trackPath.absolutePathString(), trackID)
                     }
                 }.awaitAll())
                 val processorsDir = dir.resolve("processors").absolutePathString()
                 preProcessorsChain.addAll(json.get("preProcessorsChain").map {
-                    async { EchoInMirror.audioProcessorManager.createAudioProcessor(processorsDir, it.asText()) }
+                    async { AudioProcessorManager.instance.createAudioProcessor(processorsDir, it.asText()) }
                 }.awaitAll())
                 postProcessorsChain.addAll(json.get("postProcessorsChain").map {
-                    async { EchoInMirror.audioProcessorManager.createAudioProcessor(processorsDir, it.asText()) }
+                    async { AudioProcessorManager.instance.createAudioProcessor(processorsDir, it.asText()) }
                 }.awaitAll())
             } catch (_: FileNotFoundException) { }
         }

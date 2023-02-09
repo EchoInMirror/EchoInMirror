@@ -10,11 +10,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-import com.eimsound.daw.EchoInMirror
+import com.eimsound.audioprocessor.AudioProcessorManager
+import com.eimsound.audioprocessor.impl.nativeAudioPluginManager
 import com.eimsound.daw.components.Gap
 import com.eimsound.daw.components.Tab
 import com.eimsound.daw.components.utils.clickableWithIcon
-import com.eimsound.daw.impl.processor.nativeAudioPluginManager
 import com.eimsound.daw.utils.*
 import com.eimsound.dsp.native.NativeAudioPluginFactoryImpl
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -46,13 +46,13 @@ internal object NativeAudioPluginSettings: Tab {
         TextButton({
             if (scanningJob == null) {
                 scanningJob = GlobalScope.launch {
-                    EchoInMirror.audioProcessorManager.nativeAudioPluginManager.scan()
+                    AudioProcessorManager.instance.nativeAudioPluginManager.scan()
                     scanningJob = null
                 }
             } else {
                 scanningJob!!.cancel()
                 scanningJob = null
-                val list = (EchoInMirror.audioProcessorManager.nativeAudioPluginManager as NativeAudioPluginFactoryImpl).scanningPlugins
+                val list = (AudioProcessorManager.instance.nativeAudioPluginManager as NativeAudioPluginFactoryImpl).scanningPlugins
                 list.forEach { it.value.destroy() }
                 list.clear()
             }
@@ -69,7 +69,7 @@ internal object NativeAudioPluginSettings: Tab {
                 LocalAbsoluteTonalElevation provides 0.dp
             ) {
                 val window = CurrentWindow.current
-                val apm = EchoInMirror.audioProcessorManager.nativeAudioPluginManager as NativeAudioPluginFactoryImpl
+                val apm = AudioProcessorManager.instance.nativeAudioPluginManager as NativeAudioPluginFactoryImpl
                 Column(Modifier.width(300.dp)) {
                     Row {
                         Text(

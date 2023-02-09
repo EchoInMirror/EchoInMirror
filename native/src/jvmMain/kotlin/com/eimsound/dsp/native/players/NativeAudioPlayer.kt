@@ -169,10 +169,8 @@ class NativeAudioPlayer(
     }
 }
 
-class NativeAudioPlayerFactory(
-    private val execFile: String,
-    private vararg val commands: String,
-) : AudioPlayerFactory {
+class NativeAudioPlayerFactory : AudioPlayerFactory {
+    private val execFile get() = System.getProperty("eim.dsp.nativeaudioplayer.file")
     override val name = "Native"
     override suspend fun getPlayers() = withContext(Dispatchers.IO) {
         ProcessBuilder(execFile, "-O", "-A").start().inputStream
@@ -183,13 +181,13 @@ class NativeAudioPlayerFactory(
             NativeAudioPlayer(this,
                 it.groupValues[1],
                 name.substring(it.range.last + 1),
-                currentPosition, processor, execFile, *commands
+                currentPosition, processor, execFile
             )
         }
     } catch (e: Throwable) {
         e.printStackTrace()
         null
     } ?: NativeAudioPlayer(this, "", "",
-        currentPosition, processor, execFile, *commands
+        currentPosition, processor, execFile
     )
 }

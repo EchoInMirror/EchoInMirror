@@ -4,6 +4,7 @@ package com.eimsound.daw.impl
 //import cn.apisium.eim.impl.processor.nativeAudioPluginManager
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.input.key.*
+import com.eimsound.audioprocessor.AudioProcessorManager
 import com.eimsound.audioprocessor.data.midi.getMidiEvents
 import com.eimsound.audioprocessor.data.midi.getNoteMessages
 import com.eimsound.audioprocessor.oneBarPPQ
@@ -11,6 +12,7 @@ import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.IS_DEBUG
 import com.eimsound.daw.ROOT_PATH
 import com.eimsound.daw.api.*
+import com.eimsound.daw.api.processor.TrackManager
 import com.eimsound.daw.commands.*
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
@@ -44,8 +46,7 @@ class CommandManagerImpl : CommandManager {
 
         registerCommand(object : AbstractCommand("EIM:Temp", "Temp", arrayOf(Key.CtrlLeft, Key.R)) {
             override fun execute() {
-                val apm = EchoInMirror.audioProcessorManager
-                val tm = EchoInMirror.trackManager
+                val tm = TrackManager.instance
                 runBlocking {
                     val track = tm.createTrack()
                     val subTrack1 = tm.createTrack()
@@ -53,20 +54,20 @@ class CommandManagerImpl : CommandManager {
                     track.name = "Track 1"
                     subTrack1.name = "SubTrack 1"
                     subTrack2.name = "SubTrack 2"
-                    val factory = apm.factories["EIMAudioProcessorFactory"]!!
+                    val factory = AudioProcessorManager.instance.factories["EIMAudioProcessorFactory"]!!
                     val desc = factory.descriptions.find { it.name == "KarplusStrongSynthesizer" }!!
                     subTrack1.preProcessorsChain.add(factory.createAudioProcessor(desc))
                     val time = EchoInMirror.currentPosition.oneBarPPQ
-                    val clip2 = EchoInMirror.clipManager.defaultMidiClipFactory.createClip()
-                    subTrack1.clips.add(EchoInMirror.clipManager.createTrackClip(clip2, time, time))
+                    val clip2 = ClipManager.instance.defaultMidiClipFactory.createClip()
+                    subTrack1.clips.add(ClipManager.instance.createTrackClip(clip2, time, time))
                     if (IS_DEBUG) {
                         val midi = withContext(Dispatchers.IO) {
                             MidiSystem.getSequence(File("E:\\Midis\\UTMR&C VOL 1-14 [MIDI FILES] for other DAWs FINAL by Hunter UT\\VOL 13\\13.Darren Porter - To Feel Again LD.mid"))
                         }
-                        val clip = EchoInMirror.clipManager.defaultMidiClipFactory.createClip()
+                        val clip = ClipManager.instance.defaultMidiClipFactory.createClip()
                         clip.notes.addAll(getNoteMessages(midi.getMidiEvents(1, EchoInMirror.currentPosition.ppq)))
                         track.clips.add(
-                            EchoInMirror.clipManager.createTrackClip(
+                            ClipManager.instance.createTrackClip(
                                 clip,
                                 0,
                                 4 * 32 * EchoInMirror.currentPosition.ppq

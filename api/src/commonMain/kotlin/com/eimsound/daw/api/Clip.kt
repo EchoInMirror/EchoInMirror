@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.databind.ser.std.StdSerializer
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import java.io.File
+import java.util.*
 
 interface ClipEditor : BasicEditor {
     @Composable
@@ -33,14 +34,16 @@ interface MidiClipEditor: ClipEditor, SerializableEditor {
     val track: Track
 }
 
+@JsonSerialize(using = ClipFactoryNameSerializer::class)
 interface ClipFactory<T: Clip> {
     val name: String
     fun createClip(): T
     fun createClip(path: String, json: JsonNode): T
     fun processBlock(clip: TrackClip<T>, buffers: Array<FloatArray>, position: CurrentPosition,
                      midiBuffer: ArrayList<Int>, noteRecorder: MidiNoteRecorder, pendingNoteOns: LongArray)
-    fun save(clip: T, path: String) {
+    fun save(clip: T, path: String): Any? {
         jacksonObjectMapper().writerWithDefaultPrettyPrinter().writeValue(File("$path.json"), clip)
+        return null
     }
     fun getEditor(clip: TrackClip<T>, track: Track): ClipEditor?
     @Composable
@@ -49,9 +52,16 @@ interface ClipFactory<T: Clip> {
     )
 }
 
-interface ClipManager {
+/**
+ * @see com.eimsound.daw.impl.clips.ClipManagerImpl
+ */
+interface ClipManager : Reloadable {
+    companion object {
+        val instance by lazy { ServiceLoader.load(ClipManager::class.java).first()!! }
+    }
+
     val factories: Map<String, ClipFactory<*>>
-    fun registerClipFactory(factory: ClipFactory<*>)
+
     @Throws(NoSuchFactoryException::class)
     suspend fun createClip(factory: String): Clip
     @Throws(NoSuchFactoryException::class)
@@ -71,7 +81,6 @@ val ClipManager.defaultAudioClipFactory get() = factories["AudioClip"] as ClipFa
 interface Clip {
     val id: String
     val name: String?
-    @get:JsonSerialize(using = ClipFactoryNameSerializer::class)
     val factory: ClipFactory<*>
     @get:JsonIgnore
     val defaultDuration: Int
@@ -92,7 +101,9 @@ interface MidiClip : Clip {
 }
 interface AudioClip : Clip {
     var target: AudioSource
+    @get:JsonIgnore
     val audioSource: ResampledAudioSource
+    @get:JsonIgnore
     val thumbnail: AudioThumbnail
 }
 

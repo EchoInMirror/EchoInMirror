@@ -18,7 +18,7 @@ fun CommandMenuItem(command: Command, enabled: Boolean = true, iconModifier: Mod
 
 @Composable
 fun EditorMenuItems(editor: BasicEditor, close: () -> Unit) {
-    val hasSelected = editor.hasSelected()
+    val hasSelected = editor.hasSelected
     CommandMenuItem(SelectAllCommand) {
         close()
         editor.selectAll()
@@ -31,7 +31,7 @@ fun EditorMenuItems(editor: BasicEditor, close: () -> Unit) {
         close()
         editor.cut()
     }
-    CommandMenuItem(PasteCommand, editor.canPaste()) {
+    CommandMenuItem(PasteCommand, editor.canPaste) {
         close()
         editor.paste()
     }

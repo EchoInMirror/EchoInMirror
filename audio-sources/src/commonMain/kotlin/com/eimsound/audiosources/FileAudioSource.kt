@@ -2,6 +2,8 @@ package com.eimsound.audiosources
 
 import com.eimsound.audioprocessor.AudioSource
 import com.eimsound.audioprocessor.FileAudioSource
+import com.eimsound.audioprocessor.FileAudioSourceFactory
+import com.fasterxml.jackson.databind.JsonNode
 import org.jflac.FLACDecoder
 import org.jflac.io.RandomFileInputStream
 import org.jflac.sound.spi.FlacFileFormatType
@@ -10,6 +12,7 @@ import org.jflac.util.RingBuffer
 import org.tritonus.sampled.file.WaveAudioFileReader
 import org.tritonus.share.sampled.FloatSampleTools
 import java.io.BufferedInputStream
+import java.io.File
 import java.io.FileInputStream
 import java.io.InputStream
 import java.nio.file.Path
@@ -20,12 +23,11 @@ import kotlin.math.absoluteValue
 
 private const val MB500 = 500 * 1024 * 1024
 
-class DefaultFileAudioSource(override val file: Path) : FileAudioSource {
+class DefaultFileAudioSource(override val factory: FileAudioSourceFactory<*>, override val file: Path) : FileAudioSource {
     private val format = AudioSystem.getAudioFileFormat(file.toFile())
     private val isWav = format.type == AudioFileFormat.Type.WAVE
     private val isFlac = format.type == FlacFileFormatType.FLAC
 
-    override val name = "File"
     override val source: AudioSource? = null
     override val sampleRate = format.format.sampleRate
     override val channels = format.format.channels
@@ -52,8 +54,12 @@ class DefaultFileAudioSource(override val file: Path) : FileAudioSource {
             buffer.resize(frameSize * 2)
             flacDecoder = FLACDecoder(stream).apply { readMetadata() }
         } else {
-            if (length * frameSize > MB500) throw IllegalArgumentException("File is large than 500mb!")
-            stream = AudioSystem.getAudioInputStream(BufferedInputStream(FileInputStream(file.toFile())))
+            if (length * frameSize > MB500) throw UnsupportedOperationException("File is large than 500mb!")
+            try {
+                stream = AudioSystem.getAudioInputStream(BufferedInputStream(FileInputStream(file.toFile())))
+            } catch (e: Exception) {
+                throw UnsupportedOperationException(e)
+            }
         }
     }
 
@@ -156,5 +162,14 @@ class DefaultFileAudioSource(override val file: Path) : FileAudioSource {
                 readSamples, newFormat, false
             )
         }
+    }
+}
+
+class DefaultFileAudioSourceFactory : FileAudioSourceFactory<DefaultFileAudioSource> {
+    override val name = "File"
+    override fun createAudioSource(file: File) = DefaultFileAudioSource(this, file.toPath())
+    override fun createAudioSource(source: AudioSource?, json: JsonNode?): DefaultFileAudioSource {
+        val file = json?.get("file")?.asText() ?: throw IllegalArgumentException("File not found!")
+        return createAudioSource(File(file))
     }
 }

@@ -3,12 +3,14 @@ package com.eimsound.audiosources
 import be.tarsos.dsp.resample.Resampler
 import com.eimsound.audioprocessor.AudioSource
 import com.eimsound.audioprocessor.ResampledAudioSource
+import com.eimsound.audioprocessor.ResampledSourceFactory
+import com.fasterxml.jackson.databind.JsonNode
 import kotlin.math.roundToInt
 import kotlin.math.roundToLong
 
-class DefaultResampledAudioSource(override val source: AudioSource, override var factor: Double = 1.0):
+class DefaultResampledAudioSource(override val factory: ResampledSourceFactory<ResampledAudioSource>,
+                                  override val source: AudioSource, override var factor: Double = 1.0):
     ResampledAudioSource {
-    override val name = "Resampled"
     override val channels get() = source.channels
     override val sampleRate get() = (source.sampleRate * factor).toFloat()
     override val length get() = (source.length * factor).toLong()
@@ -34,4 +36,11 @@ class DefaultResampledAudioSource(override val source: AudioSource, override var
         }
         return consumed
     }
+}
+
+class DefaultResampledAudioSourceFactory: ResampledSourceFactory<ResampledAudioSource> {
+    override val name = "Resampled"
+    override fun createAudioSource(source: AudioSource) = DefaultResampledAudioSource(this, source)
+    override fun createAudioSource(source: AudioSource?, json: JsonNode?) =
+        DefaultResampledAudioSource(this, source!!)
 }

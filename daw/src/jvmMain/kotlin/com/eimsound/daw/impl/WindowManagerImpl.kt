@@ -5,6 +5,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.awt.ComposeWindow
 import com.eimsound.daw.*
 import com.eimsound.daw.api.DefaultProjectInformation
+import com.eimsound.daw.api.processor.TrackManager
 import com.eimsound.daw.api.window.Panel
 import com.eimsound.daw.api.window.WindowManager
 import com.eimsound.daw.window.dialogs.ExportDialog
@@ -74,7 +75,7 @@ class WindowManagerImpl: WindowManager {
         isMainWindowOpened = true
 
         GlobalScope.launch {
-            val (bus, loadBus) = EchoInMirror.trackManager.createBus(DefaultProjectInformation(path))
+            val (bus, loadBus) = TrackManager.instance.createBus(DefaultProjectInformation(path))
             EchoInMirror.bus = bus
             bus.prepareToPlay(EchoInMirror.currentPosition.sampleRate, EchoInMirror.currentPosition.bufferSize)
 

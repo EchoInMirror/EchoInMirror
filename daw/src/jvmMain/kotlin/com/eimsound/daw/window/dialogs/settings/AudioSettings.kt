@@ -7,6 +7,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.eimsound.audioprocessor.AudioPlayerManager
 import com.eimsound.daw.Configuration
 import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.components.*
@@ -44,7 +45,7 @@ internal object AudioSettings : Tab {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("音频工厂:", Modifier.weight(1f))
                 Menu({ close ->
-                    EchoInMirror.audioPlayerManager.factories.forEach { (name, _) ->
+                    AudioPlayerManager.instance.factories.forEach { (name, _) ->
                         MenuItem(
                             Configuration.audioDeviceFactoryName == name,
                             {
@@ -74,7 +75,7 @@ internal object AudioSettings : Tab {
                 Menu({ close ->
                     var playerNames by remember { mutableStateOf(emptyList<String>()) }
                     LaunchedEffect(Configuration.audioDeviceName) {
-                        playerNames = EchoInMirror.audioPlayerManager.factories[Configuration.audioDeviceFactoryName]!!.getPlayers()
+                        playerNames = AudioPlayerManager.instance.factories[Configuration.audioDeviceFactoryName]!!.getPlayers()
                     }
                     playerNames.forEach { playerName ->
                         MenuItem(

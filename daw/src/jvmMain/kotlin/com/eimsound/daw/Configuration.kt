@@ -11,6 +11,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.jar.Manifest
+import kotlin.io.path.absolutePathString
 import kotlin.io.path.exists
 
 val WORKING_PATH: Path = Path.of(
@@ -18,7 +19,6 @@ val WORKING_PATH: Path = Path.of(
     else System.getProperty("user.home") + "/Library/Application Support"
 )
 val ROOT_PATH: Path = WORKING_PATH.resolve("EchoInMirror")
-val NATIVE_AUDIO_PLUGIN_CONFIG: Path = ROOT_PATH.resolve("nativeAudioPlugin.json")
 private val RECENT_PROJECT_PATH = ROOT_PATH.resolve("recentProjects.json")
 private val CONFIG_PATH = ROOT_PATH.resolve("config.json")
 
@@ -50,6 +50,10 @@ object Configuration {
         if (CONFIG_PATH.exists()) load()
         nativeHostPath = Paths.get("D:\\Cpp\\EIMPluginScanner\\build\\EIMHost_artefacts\\MinSizeRel\\EIMHost.exe")
         if (!Files.exists(nativeHostPath)) nativeHostPath = Paths.get("EIMHost.exe")
+
+        System.setProperty("eim.dsp.nativeaudioplugins.list", ROOT_PATH.resolve("nativeAudioPlugins.json").absolutePathString())
+        System.setProperty("eim.dsp.nativeaudioplugins.host", nativeHostPath.absolutePathString())
+        System.setProperty("eim.dsp.nativeaudioplayer.file", nativeHostPath.absolutePathString())
     }
 
     fun save() {

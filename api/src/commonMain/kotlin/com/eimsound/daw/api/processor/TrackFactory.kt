@@ -4,7 +4,9 @@ import com.eimsound.audioprocessor.AudioProcessorFactory
 import com.eimsound.audioprocessor.DefaultAudioProcessorDescription
 import com.eimsound.daw.api.ProjectInformation
 import com.eimsound.daw.utils.NoSuchFactoryException
+import com.eimsound.daw.utils.Reloadable
 import com.fasterxml.jackson.databind.JsonNode
+import java.util.*
 
 object DefaultTrackDescription : DefaultAudioProcessorDescription("Track")
 interface TrackFactory<T: Track> : AudioProcessorFactory<T> {
@@ -12,9 +14,14 @@ interface TrackFactory<T: Track> : AudioProcessorFactory<T> {
     suspend fun createBus(project: ProjectInformation): Bus = throw UnsupportedOperationException()
 }
 
-interface TrackManager {
+/**
+ * @see com.eimsound.daw.impl.processor.TrackManagerImpl
+ */
+interface TrackManager : Reloadable {
+    companion object {
+        val instance by lazy { ServiceLoader.load(TrackManager::class.java).first()!! }
+    }
     val factories: Map<String, TrackFactory<*>>
-    fun registerFactory(factory: TrackFactory<*>)
 
     @Throws(NoSuchFactoryException::class)
     suspend fun createTrack(factory: String? = null): Track

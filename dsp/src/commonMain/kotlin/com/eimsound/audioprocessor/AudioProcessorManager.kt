@@ -1,14 +1,21 @@
 package com.eimsound.audioprocessor
 
 import com.eimsound.daw.utils.NoSuchFactoryException
+import com.eimsound.daw.utils.Reloadable
 import com.fasterxml.jackson.databind.JsonNode
+import java.util.*
 
 class NoSuchAudioProcessorException(name: String, factory: String): Exception("No such audio processor: $name of $factory")
 
-interface AudioProcessorManager {
-    val factories: Map<String, AudioProcessorFactory<*>>
+/**
+ * @see com.eimsound.audioprocessor.impl.AudioProcessorManagerImpl
+ */
+interface AudioProcessorManager : Reloadable {
+    companion object {
+        val instance by lazy { ServiceLoader.load(AudioProcessorManager::class.java).first()!! }
+    }
 
-    fun registerFactory(factory: AudioProcessorFactory<*>)
+    val factories: Map<String, AudioProcessorFactory<*>>
 
     @Throws(NoSuchFactoryException::class)
     suspend fun createAudioProcessor(factory: String, description: AudioProcessorDescription): AudioProcessor
