@@ -41,9 +41,8 @@ interface ClipFactory<T: Clip> {
     fun createClip(path: String, json: JsonNode): T
     fun processBlock(clip: TrackClip<T>, buffers: Array<FloatArray>, position: CurrentPosition,
                      midiBuffer: ArrayList<Int>, noteRecorder: MidiNoteRecorder, pendingNoteOns: LongArray)
-    fun save(clip: T, path: String): Any? {
+    fun save(clip: T, path: String) {
         jacksonObjectMapper().writerWithDefaultPrettyPrinter().writeValue(File("$path.json"), clip)
-        return null
     }
     fun getEditor(clip: TrackClip<T>, track: Track): ClipEditor?
     @Composable
@@ -95,6 +94,7 @@ interface MidiCCEvent {
     val points: EnvelopePointList
 }
 
+@JsonSerialize(using = ClipIdSerializer::class)
 interface MidiClip : Clip {
     val notes: NoteMessageList
     val events: MutableList<MidiCCEvent>
@@ -123,7 +123,6 @@ interface TrackClip<T: Clip> {
     var time: Int
     var duration: Int
     var start: Int
-    @get:JsonSerialize(using = ClipIdSerializer::class)
     val clip: T
     @get:JsonIgnore
     var currentIndex: Int

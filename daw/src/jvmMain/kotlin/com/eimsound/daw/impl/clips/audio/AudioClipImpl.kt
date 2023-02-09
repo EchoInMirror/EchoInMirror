@@ -106,7 +106,7 @@ class AudioClipFactoryImpl: ClipFactory<AudioClipImpl> {
         }
     }
 
-    override fun save(clip: AudioClipImpl, path: String) = clip
+    override fun save(clip: AudioClipImpl, path: String) { }
 
     override fun toString(): String {
         return "MidiClipFactoryImpl(name='$name')"

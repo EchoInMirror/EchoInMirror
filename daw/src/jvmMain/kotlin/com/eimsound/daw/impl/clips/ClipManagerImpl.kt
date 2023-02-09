@@ -32,6 +32,8 @@ class ClipManagerImpl : ClipManager {
 
     override fun <T : Clip> createTrackClip(clip: T, time: Int, duration: Int, start: Int, track: Track?) =
         TrackClipImpl(clip, time, duration, start, track)
-    override suspend fun createTrackClip(path: String, json: JsonNode) =
-        TrackClipImpl(createClip(path, json["clip"]!!.asText()), json["time"]!!.asInt(), json["duration"]!!.asInt())
+    override suspend fun createTrackClip(path: String, json: JsonNode) = json["clip"]!!.let {
+        TrackClipImpl(if (it.isObject) createClip(path, it) else createClip(path, it.asText()),
+            json["time"]!!.asInt(), json["duration"]!!.asInt())
+    }
 }
