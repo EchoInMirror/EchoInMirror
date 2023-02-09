@@ -42,7 +42,7 @@ value class MidiEvent(val rawData: Int) {
         if (message.length > 2) message.message[2].toUByte().toInt() and 0xFF else 0)
     val byte1 get() = byte1Int.toByte()
     val byte2 get() = byte2Int.toByte()
-    val byte3 get() = rawData.toByte()
+    val byte3 get() = byte3Int.toByte()
     val byte4 get() = byte4Int.toByte()
     val byte1Int get() = rawData and 0xFF
     val byte2Int get() = rawData ushr 8 and 0xFF
