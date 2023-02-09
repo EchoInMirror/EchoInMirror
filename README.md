@@ -11,7 +11,7 @@ git clone https://github.com/EchoInMirror/EchoInMirror.git
 
 cd EchoInMirror
 
-gradlew build
+gradlew :daw:shadowJar
 ```
 
 ## Author

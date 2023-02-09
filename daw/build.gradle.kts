@@ -89,7 +89,7 @@ tasks.withType<Jar> {
     manifest {
         attributes(
             "Name" to "EchoInMirror",
-            "Main-Class" to "cn.apisium.eim.MainKt",
+            "Main-Class" to "com.eimsound.daw.MainKt",
             "Implementation-Version" to project.version,
             "Release-Time" to DateFormat.getDateTimeInstance().format(Date())
         )

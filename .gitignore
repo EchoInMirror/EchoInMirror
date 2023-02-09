@@ -5,6 +5,7 @@ test_project
 ffmpeg
 
 .gradle
+wix311
 build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
