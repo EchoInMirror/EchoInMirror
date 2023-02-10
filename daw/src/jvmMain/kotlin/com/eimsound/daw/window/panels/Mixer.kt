@@ -21,6 +21,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.util.fastForEachIndexed
 import androidx.compose.ui.zIndex
 import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.api.processor.Bus
@@ -123,13 +125,13 @@ private fun MixerTrack(track: Track, index: String, containerColor: Color = Mate
 
                 Column {
                     Divider(Modifier.padding(horizontal = 8.dp))
-                    track.preProcessorsChain.forEach {
+                    track.preProcessorsChain.fastForEach {
                         MixerProcessorButton(it.name, true, onClick = it::onClick)
                         Divider(Modifier.padding(horizontal = 8.dp))
                     }
                     MixerProcessorButton("...", fontWeight = FontWeight.Bold) { }
                     Divider(Modifier.padding(horizontal = 6.dp), 2.dp, MaterialTheme.colorScheme.primary)
-                    track.postProcessorsChain.forEach {
+                    track.postProcessorsChain.fastForEach {
                         MixerProcessorButton(it.name, true, onClick = it::onClick)
                         Divider(Modifier.padding(horizontal = 8.dp))
                     }
@@ -138,7 +140,7 @@ private fun MixerTrack(track: Track, index: String, containerColor: Color = Mate
             }
             if (renderChildren && track.subTracks.isNotEmpty()) {
                 Row(Modifier.padding(horizontal = 7.dp)) {
-                    track.subTracks.forEachIndexed { i, it ->
+                    track.subTracks.fastForEachIndexed { i, it ->
                         key(it) {
                             MixerTrack(it, "$index.${i + 1}", containerColor, depth + 1)
                         }
@@ -171,7 +173,7 @@ object Mixer: Panel {
 
     @Composable
     override fun Icon() {
-        Icon(Icons.Default.Tune, "Mixer")
+        Icon(Icons.Default.Tune, name)
     }
 
     @Composable
@@ -182,7 +184,7 @@ object Mixer: Panel {
                 val trackColor = if (EchoInMirror.windowManager.isDarkTheme)
                     MaterialTheme.colorScheme.surfaceColorAtElevation(20.dp) else MaterialTheme.colorScheme.surface
                 MixerTrack(bus, "0", trackColor, renderChildren = false)
-                bus.subTracks.forEachIndexed { i, it ->
+                bus.subTracks.fastForEachIndexed { i, it ->
                     key(it) {
                         MixerTrack(it, (i + 1).toString(), trackColor)
                     }

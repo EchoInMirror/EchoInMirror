@@ -20,7 +20,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.platform.debugInspectorInfo
 import java.awt.dnd.DropTargetDragEvent
 import java.awt.dnd.DropTargetDropEvent
 
@@ -45,37 +44,19 @@ fun Modifier.dropTarget(
     onDragEnded: () -> Unit = {},
     onDropped: (uris: DropTargetDropEvent, position: Offset) -> Boolean,
 ): Modifier = composed(
-    inspectorInfo = debugInspectorInfo {
-        name = "dropTarget"
-        properties["onDragStarted"] = onDragStarted
-    },
     factory = {
         val node = remember {
             DropTargetContainer { uris, offset ->
-                when (onDragStarted(uris, offset)) {
-                    false -> DragAction.Reject
-                    true -> DragAction.Accept(
-                        object : DropTarget {
-                            override fun onDragStarted(uris: DropTargetDragEvent, position: Offset): Boolean = onDragStarted(
-                                uris,
-                                position
-                            )
-
-                            override fun onDragEntered() = onDragEntered()
-
-                            override fun onDragMoved(position: Offset) = onDragMoved(position)
-
-                            override fun onDragExited() = onDragExited()
-
-                            override fun onDropped(uris: DropTargetDropEvent, position: Offset): Boolean = onDropped(
-                                uris,
-                                position
-                            )
-
-                            override fun onDragEnded() = onDragEnded()
-                        }
-                    )
-                }
+                if (onDragStarted(uris, offset)) DragAction.Accept(
+                    object : DropTarget {
+                        override fun onDragStarted(uris: DropTargetDragEvent, position: Offset) = onDragStarted(uris, position)
+                        override fun onDragEntered() = onDragEntered()
+                        override fun onDragMoved(position: Offset) = onDragMoved(position)
+                        override fun onDragExited() = onDragExited()
+                        override fun onDropped(uris: DropTargetDropEvent, position: Offset) = onDropped(uris, position)
+                        override fun onDragEnded() = onDragEnded()
+                    }
+                ) else DragAction.Reject
             }
         }
         this.then(node)

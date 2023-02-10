@@ -2,20 +2,15 @@
 
 package com.eimsound.daw.components.app
 
-import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.rememberScrollbarAdapter
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastForEach
 import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.api.window.Panel
 import com.eimsound.daw.api.window.PanelDirection
@@ -104,7 +99,7 @@ internal fun SideBar() {
                 selected = false,
                 onClick = { EchoInMirror.windowManager.dialogs[QuickLoadDialog] = true }
             )
-            (EchoInMirror.windowManager as WindowManagerImpl).panels.filter { it.direction != PanelDirection.Horizontal }.forEach {
+            (EchoInMirror.windowManager as WindowManagerImpl).panels.filter { it.direction != PanelDirection.Horizontal }.fastForEach {
                 key(it) {
                     NavigationRailItem(
                         icon = { it.Icon() },
@@ -124,7 +119,7 @@ internal fun SideBar() {
                 }
             }
             Box(Modifier.weight(2F)) {}
-            EchoInMirror.windowManager.panels.filter { it.direction == PanelDirection.Horizontal }.forEach {
+            EchoInMirror.windowManager.panels.filter { it.direction == PanelDirection.Horizontal }.fastForEach {
                 key(it) {
                     NavigationRailItem(
                         icon = { it.Icon() },
@@ -153,14 +148,7 @@ val contentWindowColor @Composable get() = MaterialTheme.colorScheme.onSurfaceVa
 internal fun SideBarContent() {
     Surface(tonalElevation = 2.dp, shadowElevation = 2.dp) {
         Box(Modifier.fillMaxSize().border(start = Border(0.6.dp, contentWindowColor))) {
-            val stateVertical = rememberScrollState(0)
-            Box(Modifier.fillMaxSize().verticalScroll(stateVertical)) {
-                sideBarSelectedItem?.Content()
-            }
-            VerticalScrollbar(
-                rememberScrollbarAdapter(stateVertical),
-                Modifier.align(Alignment.CenterEnd).fillMaxHeight()
-            )
+            sideBarSelectedItem?.Content()
         }
     }
 }

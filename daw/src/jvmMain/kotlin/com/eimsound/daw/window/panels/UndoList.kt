@@ -16,9 +16,11 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastForEachIndexed
 import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.api.window.Panel
 import com.eimsound.daw.api.window.PanelDirection
+import com.eimsound.daw.components.Scrollable
 import com.eimsound.daw.components.utils.clickableWithIcon
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
@@ -33,40 +35,42 @@ object UndoList: Panel {
 
     @Composable
     override fun Icon() {
-        Icon(Icons.Default.SettingsBackupRestore, "undo")
+        Icon(Icons.Default.SettingsBackupRestore, name)
     }
 
     @OptIn(DelicateCoroutinesApi::class)
     @Composable
     override fun Content() {
-        Column(Modifier.padding(vertical = 4.dp)) {
-            Row(
-                Modifier.fillMaxWidth().clickableWithIcon {
-                    GlobalScope.launch { EchoInMirror.undoManager.reset() }
-                }) {
-                Icon(Icons.Outlined.RestartAlt, "redo", ICON_SIZE)
-                Text("初始状态", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
-            }
-            val cursor = EchoInMirror.undoManager.cursor
-            EchoInMirror.undoManager.actions.forEachIndexed { index, it ->
-                var color = MaterialTheme.colorScheme.onSurface
-                val fontStyle = if (index < cursor) FontStyle.Normal else FontStyle.Italic
-                if (index >= cursor) color = color.copy(0.38F)
+        Scrollable(horizontal = false) {
+            Column(Modifier.padding(vertical = 4.dp)) {
                 Row(
-                    Modifier.padding(horizontal = 4.dp).fillMaxWidth().clickableWithIcon {
-                        val flag = index < cursor
-                        GlobalScope.launch {
-                            if (flag) EchoInMirror.undoManager.undo(cursor - index - 1)
-                            else EchoInMirror.undoManager.redo(index - cursor + 1)
-                        }
+                    Modifier.fillMaxWidth().clickableWithIcon {
+                        GlobalScope.launch { EchoInMirror.undoManager.reset() }
                     }) {
-                    Icon(it.icon, "redo", ICON_SIZE, color)
-                    Text(
-                        EchoInMirror.undoManager.actions[index].name,
-                        color = color,
-                        style = MaterialTheme.typography.labelLarge,
-                        fontStyle = fontStyle
-                    )
+                    Icon(Icons.Outlined.RestartAlt, "redo", ICON_SIZE)
+                    Text("初始状态", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                }
+                val cursor = EchoInMirror.undoManager.cursor
+                EchoInMirror.undoManager.actions.fastForEachIndexed { index, it ->
+                    var color = MaterialTheme.colorScheme.onSurface
+                    val fontStyle = if (index < cursor) FontStyle.Normal else FontStyle.Italic
+                    if (index >= cursor) color = color.copy(0.38F)
+                    Row(
+                        Modifier.padding(horizontal = 4.dp).fillMaxWidth().clickableWithIcon {
+                            val flag = index < cursor
+                            GlobalScope.launch {
+                                if (flag) EchoInMirror.undoManager.undo(cursor - index - 1)
+                                else EchoInMirror.undoManager.redo(index - cursor + 1)
+                            }
+                        }) {
+                        Icon(it.icon, "redo", ICON_SIZE, color)
+                        Text(
+                            EchoInMirror.undoManager.actions[index].name,
+                            color = color,
+                            style = MaterialTheme.typography.labelLarge,
+                            fontStyle = fontStyle
+                        )
+                    }
                 }
             }
         }

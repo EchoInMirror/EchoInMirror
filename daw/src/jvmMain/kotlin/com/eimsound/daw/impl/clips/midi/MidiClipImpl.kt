@@ -11,6 +11,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.util.fastForEach
 import com.eimsound.audioprocessor.CurrentPosition
 import com.eimsound.audioprocessor.convertPPQToSamples
 import com.eimsound.audioprocessor.convertSamplesToPPQ
@@ -68,8 +69,8 @@ class MidiClipFactoryImpl : ClipFactory<MidiClip> {
             val startPPQ = position.timeInPPQ - startTime
             clip.currentIndex = notes.binarySearch { it.time <= startPPQ }
         }
-        clip.clip.events.forEach {
-            if (it.id !in 0..127) return@forEach
+        clip.clip.events.fastForEach {
+            if (it.id !in 0..127) return@fastForEach
             for (i in 0 until position.bufferSize step position.ppq) {
                 val ppq = position.convertSamplesToPPQ(position.timeInSamples + i) - startTime
                 val value = it.points.getValue(ppq).toInt()

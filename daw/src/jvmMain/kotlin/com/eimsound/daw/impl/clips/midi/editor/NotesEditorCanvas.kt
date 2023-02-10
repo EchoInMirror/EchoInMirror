@@ -28,6 +28,7 @@ import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.util.fastForEach
 import com.eimsound.audioprocessor.data.defaultScale
 import com.eimsound.audioprocessor.data.midi.NoteMessage
 import com.eimsound.audioprocessor.data.midi.colorSaturation
@@ -153,8 +154,8 @@ internal fun NotesEditorCanvas(editor: DefaultMidiClipEditor) {
                     track.clips.read()
                     val color = track.color
                     val curNotes = arrayListOf<NoteDrawObject>()
-                    track.clips.forEach { clip0 ->
-                        @Suppress("LABEL_NAME_CLASH") val curClip = clip0.asMidiTrackClipOrNull() ?: return@forEach
+                    track.clips.fastForEach { clip0 ->
+                        val curClip = clip0.asMidiTrackClipOrNull() ?: return@forEach
                         val clipStartTime = curClip.time
                         for (it in curClip.clip.notes) {
                             val y = (KEYBOARD_KEYS - 1 - it.note) * noteHeightPx - verticalScrollValue
@@ -185,11 +186,11 @@ internal fun NotesEditorCanvas(editor: DefaultMidiClipEditor) {
                             drawRect(highlightNoteColor, Offset(0f, y), Size(size.width, noteHeightPx))
                     }
 
-                    backingsNotes.forEach { cur ->
+                    backingsNotes.fastForEach { cur ->
                         val color = cur.track.color.copy(0.16F)
-                        cur.notes.forEach { drawRoundRect(color, it.offset, it.size, BorderCornerRadius2PX) }
+                        cur.notes.fastForEach { drawRoundRect(color, it.offset, it.size, BorderCornerRadius2PX) }
                     }
-                    notes.forEach {
+                    notes.fastForEach {
                         drawRoundRect(it.color, it.offset, it.size, BorderCornerRadius2PX)
                         if (it.keyNameOffset != null)
                             drawText(measurer, getNoteName(it.note.note), it.keyNameOffset,

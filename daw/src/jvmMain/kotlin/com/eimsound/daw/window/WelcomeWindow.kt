@@ -8,6 +8,7 @@ import androidx.compose.material.icons.outlined.AddCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.window.ApplicationScope
 import androidx.compose.ui.window.Window
 import com.eimsound.daw.EchoInMirror
@@ -69,10 +70,10 @@ private class Projects: Tab {
 
             val projects = remember { mutableStateListOf<ProjectInfo>() }
             LaunchedEffect(recentProjects) {
-                recentProjects.forEach {
+                recentProjects.fastForEach {
                     val path = Paths.get(it)
                     val projectInfoFile = path.resolve("eim.json")
-                    if (!projectInfoFile.isRegularFile()) return@forEach
+                    if (!projectInfoFile.isRegularFile()) return@fastForEach
                     try {
                         val info = Files.readAttributes(projectInfoFile, BasicFileAttributes::class.java)
                         projects.add(ProjectInfo(path, TIME_FORMATTER.format(info.creationTime().toInstant()),
@@ -84,7 +85,7 @@ private class Projects: Tab {
                 }
             }
 
-            projects.forEach {
+            projects.fastForEach {
                 ListItem({ Text(it.path.name) },
                     Modifier.clickableWithIcon { EchoInMirror.windowManager.openProject(it.path) },
                     supportingText = { Text(it.createdTime) },

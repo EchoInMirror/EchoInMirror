@@ -20,6 +20,7 @@ import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.components.LocalFloatingDialogProvider
 import com.eimsound.daw.components.LocalSnackbarHost
 import com.eimsound.daw.components.app.*
+import com.eimsound.daw.components.dragdrop.LocalGlobalDragAndDrop
 import com.eimsound.daw.components.dragdrop.PlatformDropTargetModifier
 import com.eimsound.daw.components.splitpane.HorizontalSplitPane
 import com.eimsound.daw.components.splitpane.VerticalSplitPane
@@ -90,6 +91,7 @@ fun ApplicationScope.MainWindow() {
             }
 
             LocalFloatingDialogProvider.current.FloatingDialogs()
+            LocalGlobalDragAndDrop.current.DraggingComponent()
         }
 
         EchoInMirror.windowManager.Dialogs()

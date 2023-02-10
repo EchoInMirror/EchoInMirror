@@ -10,6 +10,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastForEach
 
 interface Tab {
     @Composable
@@ -30,7 +31,7 @@ fun Tabs(tabs: List<Tab>, content: (@Composable (Tab?) -> Unit)? = null) {
             var selected by remember { mutableStateOf(tabs.getOrNull(0)?.let { it::class.java.name } ?: "") }
             val selectedTab = tabs.find { it::class.java.name == selected }
             Column(Modifier.width(240.dp).padding(12.dp)) {
-                tabs.forEach {
+                tabs.fastForEach {
                     key(it::class.java.name) {
                         NavigationDrawerItem(
                             modifier = Modifier.height(46.dp),

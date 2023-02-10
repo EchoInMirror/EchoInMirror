@@ -28,7 +28,7 @@ object Editor: Panel, BasicEditor {
 
     @Composable
     override fun Icon() {
-        Icon(Icons.Default.Piano, "Editor")
+        Icon(Icons.Default.Piano, name)
     }
 
     @OptIn(ExperimentalComposeUiApi::class)

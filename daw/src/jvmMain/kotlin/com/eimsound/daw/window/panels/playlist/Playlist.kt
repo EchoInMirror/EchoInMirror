@@ -18,6 +18,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.zIndex
 import com.eimsound.audioprocessor.oneBarPPQ
 import com.eimsound.audioprocessor.projectDisplayPPQ
@@ -31,6 +32,7 @@ import com.eimsound.daw.components.EditorGrid
 import com.eimsound.daw.components.PlayHead
 import com.eimsound.daw.components.TIMELINE_HEIGHT
 import com.eimsound.daw.components.Timeline
+import com.eimsound.daw.components.dragdrop.FileDropTarget
 import com.eimsound.daw.components.utils.EditAction
 import com.eimsound.daw.utils.BasicEditor
 import com.eimsound.daw.utils.fitInUnitCeil
@@ -144,9 +146,13 @@ class Playlist : Panel, BasicEditor {
                         Column(Modifier.verticalScroll(verticalScrollState).fillMaxSize()) {
                             Divider()
                             var i = 0
-                            EchoInMirror.bus!!.subTracks.forEach {
+                            EchoInMirror.bus!!.subTracks.fastForEach {
                                 key(it.id) { i += TrackContent(this@Playlist, it, i, localDensity) }
                             }
+                        }
+                        FileDropTarget({ data, _ -> println(data) }) { _, pos ->
+                            println(pos)
+                            Spacer(Modifier.fillMaxSize())
                         }
                         TrackSelection(this@Playlist, localDensity, horizontalScrollState, verticalScrollState)
                         Box {

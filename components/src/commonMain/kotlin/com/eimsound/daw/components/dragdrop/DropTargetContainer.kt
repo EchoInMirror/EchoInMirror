@@ -23,8 +23,6 @@ import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.OnGloballyPositionedModifier
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.modifier.*
-import androidx.compose.ui.platform.InspectorValueInfo
-import androidx.compose.ui.platform.debugInspectorInfo
 import androidx.compose.ui.util.fastFirstOrNull
 import androidx.compose.ui.util.fastForEach
 import java.awt.dnd.DropTargetDragEvent
@@ -62,11 +60,8 @@ internal class DropTargetContainer(
     RememberObserver,
     DropTargetParent,
     DropTargetChild,
-    DropTargetModifier,
-    InspectorValueInfo(debugInspectorInfo {
-        name = "dropTarget"
-        properties["onDragStarted"] = onDragStarted
-    }) {
+    DropTargetModifier
+{
 
     private var parent: DropTargetParent? = null
         set(value) {
@@ -139,7 +134,7 @@ internal class DropTargetContainer(
         var handledByChild = false
 
         children.fastForEach { child ->
-            handledByChild = handledByChild or child.onDragStarted(
+            handledByChild = handledByChild || child.onDragStarted(
                 uris = uris,
                 position = position
             )

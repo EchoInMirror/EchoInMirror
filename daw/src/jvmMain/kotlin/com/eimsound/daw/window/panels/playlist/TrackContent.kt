@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAll
+import androidx.compose.ui.util.fastForEach
 import com.eimsound.audioprocessor.oneBarPPQ
 import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.actions.doClipsAmountAction
@@ -185,7 +186,7 @@ internal fun TrackContent(playlist: Playlist, track: Track, index: Int, density:
                 })
             })
             track.clips.read()
-            track.clips.forEach {
+            track.clips.fastForEach {
                 key(it) {
                     Box {
                         with (density) {
@@ -274,7 +275,7 @@ internal fun TrackContent(playlist: Playlist, track: Track, index: Int, density:
     }
     Divider()
     var i = index + 1
-    track.subTracks.forEach { i += TrackContent(playlist, it, i, density) }
+    track.subTracks.fastForEach { i += TrackContent(playlist, it, i, density) }
     return i - index
 }
 

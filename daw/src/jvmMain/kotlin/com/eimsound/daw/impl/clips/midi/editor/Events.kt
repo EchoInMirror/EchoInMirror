@@ -6,6 +6,7 @@ import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAll
+import androidx.compose.ui.util.fastForEach
 import com.eimsound.audioprocessor.data.midi.NoteMessage
 import com.eimsound.audioprocessor.data.midi.defaultNoteMessage
 import com.eimsound.audioprocessor.data.midi.toNoteOffEvent
@@ -51,7 +52,7 @@ private fun playNote(note: NoteMessage, editor: DefaultMidiClipEditor) {
 
 private fun stopAllNotes(editor: DefaultMidiClipEditor) {
     if (editor.playingNotes.isNotEmpty()) {
-        if (!EchoInMirror.currentPosition.isPlaying) editor.playingNotes.forEach { editor.track.playMidiEvent(it) }
+        if (!EchoInMirror.currentPosition.isPlaying) editor.playingNotes.fastForEach { editor.track.playMidiEvent(it) }
         editor.playingNotes.clear()
     }
 }

@@ -22,6 +22,7 @@ import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.zIndex
 import com.eimsound.audioprocessor.data.midi.NoteMessage
 import com.eimsound.daw.EchoInMirror
@@ -67,7 +68,7 @@ class VelocityEvent(private val editor: MidiClipEditor) : EventType {
                 val scrollX = horizontalScrollState.value
                 val startTime = clip.time
                 val trackColor = track.color
-                notesInView.forEach {
+                notesInView.fastForEach {
                     val isSelected = selectedNotes.contains(it)
                     val x = (startTime + it.time) * noteWidthPx - scrollX + (if (isSelected) offsetX else 0f)
                     val y = (size.height * (1 - it.velocity / 127F) + (if (isSelected || selectedNote == it) offsetOfDelta else 0f))
@@ -150,7 +151,7 @@ internal fun EventEditor(editor: DefaultMidiClipEditor) {
                         .clickableWithIcon {
                             selectedEvent = VelocityEvent(editor)
                         }.padding(4.dp, 2.dp), style = MaterialTheme.typography.labelLarge)
-                    clip.clip.events.forEach {
+                    clip.clip.events.fastForEach {
                         Text("CC:${it.id}", (
                                 if (selectedEvent?.name == "CC:${it.id}") Modifier.background(MaterialTheme.colorScheme.primary.copy(0.2F))
                                 else Modifier).clickableWithIcon {

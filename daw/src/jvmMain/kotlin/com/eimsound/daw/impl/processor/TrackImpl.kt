@@ -2,6 +2,7 @@ package com.eimsound.daw.impl.processor
 
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.util.fastForEach
 import com.eimsound.audioprocessor.*
 import com.eimsound.audioprocessor.data.midi.MidiEvent
 import com.eimsound.audioprocessor.data.midi.MidiNoteRecorder
@@ -142,14 +143,14 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
                 clip.clip.factory.processBlock(clip, buffers, position, midiBuffer, noteRecorder, pendingNoteOns)
             }
         }
-        preProcessorsChain.forEach { it.processBlock(buffers, position, midiBuffer) }
+        preProcessorsChain.fastForEach { it.processBlock(buffers, position, midiBuffer) }
         if (subTracks.isNotEmpty()) {
             tempBuffer[0].fill(0F)
             tempBuffer[1].fill(0F)
             runBlocking {
                 val bus = EchoInMirror.bus
-                subTracks.forEach {
-                    if (it.isMute || it.isDisabled || it.isRendering) return@forEach
+                subTracks.fastForEach {
+                    if (it.isMute || it.isDisabled || it.isRendering) return@fastForEach
                     launch {
                         val buffer = if (it is TrackImpl) it.tempBuffer2.apply {
                             this[0].fill(0F)
@@ -167,7 +168,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
             tempBuffer[1].copyInto(buffers[1])
         }
 
-        postProcessorsChain.forEach { it.processBlock(buffers, position, midiBuffer) }
+        postProcessorsChain.fastForEach { it.processBlock(buffers, position, midiBuffer) }
 
         var leftPeak = 0F
         var rightPeak = 0F
@@ -195,18 +196,18 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
     override fun prepareToPlay(sampleRate: Int, bufferSize: Int) {
         tempBuffer = arrayOf(FloatArray(bufferSize), FloatArray(bufferSize))
         tempBuffer2 = arrayOf(FloatArray(bufferSize), FloatArray(bufferSize))
-        preProcessorsChain.forEach { it.prepareToPlay(sampleRate, bufferSize) }
-        subTracks.forEach { it.prepareToPlay(sampleRate, bufferSize) }
-        postProcessorsChain.forEach { it.prepareToPlay(sampleRate, bufferSize) }
+        preProcessorsChain.fastForEach { it.prepareToPlay(sampleRate, bufferSize) }
+        subTracks.fastForEach { it.prepareToPlay(sampleRate, bufferSize) }
+        postProcessorsChain.fastForEach { it.prepareToPlay(sampleRate, bufferSize) }
     }
 
     override fun close() {
         if (EchoInMirror.selectedTrack == this) EchoInMirror.selectedTrack = null
-        preProcessorsChain.forEach { it.close() }
+        preProcessorsChain.fastForEach { it.close() }
         preProcessorsChain.clear()
-        subTracks.forEach { it.close() }
+        subTracks.fastForEach { it.close() }
         subTracks.clear()
-        postProcessorsChain.forEach { it.close() }
+        postProcessorsChain.fastForEach { it.close() }
         postProcessorsChain.clear()
         super.close()
     }
@@ -221,15 +222,15 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         lastClipIndex = -1
         pendingNoteOns.clone()
         noteRecorder.reset()
-        clips.forEach { it.reset() }
-        preProcessorsChain.forEach(AudioProcessor::onSuddenChange)
-        subTracks.forEach(Track::onSuddenChange)
-        postProcessorsChain.forEach(AudioProcessor::onSuddenChange)
+        clips.fastForEach { it.reset() }
+        preProcessorsChain.fastForEach(AudioProcessor::onSuddenChange)
+        subTracks.fastForEach(Track::onSuddenChange)
+        postProcessorsChain.fastForEach(AudioProcessor::onSuddenChange)
     }
 
     override fun stateChange() {
         levelMeter.reset()
-        subTracks.forEach(Track::stateChange)
+        subTracks.fastForEach(Track::stateChange)
     }
 
     override fun onRenderStart() {
@@ -250,7 +251,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
             if (clips.isNotEmpty()) {
                 val clipsDir = dir.resolve("clips")
                 if (!Files.exists(clipsDir)) Files.createDirectory(clipsDir)
-                clips.forEach {
+                clips.fastForEach {
                     launch {
                         @Suppress("TYPE_MISMATCH")
                         it.clip.factory.save(it.clip, clipsDir.resolve(it.clip.id).absolutePathString())
@@ -261,14 +262,14 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
             if (subTracks.isNotEmpty()) {
                 val tracksDir = dir.resolve("tracks")
                 if (!Files.exists(tracksDir)) Files.createDirectory(tracksDir)
-                subTracks.forEach { launch { it.save(tracksDir.resolve(it.id).absolutePathString()) } }
+                subTracks.fastForEach { launch { it.save(tracksDir.resolve(it.id).absolutePathString()) } }
             }
 
             if (preProcessorsChain.isNotEmpty() || postProcessorsChain.isNotEmpty()) {
                 val processorsDir = dir.resolve("processors")
                 if (!Files.exists(processorsDir)) Files.createDirectory(processorsDir)
-                preProcessorsChain.forEach { launch { it.save(processorsDir.resolve(it.id).absolutePathString()) } }
-                postProcessorsChain.forEach { launch { it.save(processorsDir.resolve(it.id).absolutePathString()) } }
+                preProcessorsChain.fastForEach { launch { it.save(processorsDir.resolve(it.id).absolutePathString()) } }
+                postProcessorsChain.fastForEach { launch { it.save(processorsDir.resolve(it.id).absolutePathString()) } }
             }
         }
     }

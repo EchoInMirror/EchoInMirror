@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.nativeKeyCode
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastForEachIndexed
 import com.eimsound.daw.api.Command
 import com.eimsound.daw.components.icons.KeyboardShift
 import java.awt.event.KeyEvent
@@ -40,7 +41,7 @@ fun KeysHint(keys: Array<Key>, iconModifier: Modifier = DEFAULT_ICON_MODIFIER) {
     if (hasCtrl) Icon(Icons.Filled.KeyboardCommandKey, "Control", iconModifier)
     if (hasShift) Icon(KeyboardShift, "Shift", iconModifier)
     if (hasAlt) Icon(Icons.Filled.KeyboardOptionKey, "Alt", iconModifier)
-    list.forEachIndexed { index, key -> Text((if (index == 0) "" else "+") + KeyEvent.getKeyText(key.nativeKeyCode)) }
+    list.fastForEachIndexed { index, key -> Text((if (index == 0) "" else "+") + KeyEvent.getKeyText(key.nativeKeyCode)) }
 }
 
 @Composable

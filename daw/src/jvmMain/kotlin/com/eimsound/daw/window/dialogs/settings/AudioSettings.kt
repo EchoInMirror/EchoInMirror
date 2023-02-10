@@ -7,6 +7,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.util.fastForEach
 import com.eimsound.audioprocessor.AudioPlayerManager
 import com.eimsound.daw.Configuration
 import com.eimsound.daw.EchoInMirror
@@ -77,7 +78,7 @@ internal object AudioSettings : Tab {
                     LaunchedEffect(Configuration.audioDeviceName) {
                         playerNames = AudioPlayerManager.instance.factories[Configuration.audioDeviceFactoryName]!!.getPlayers()
                     }
-                    playerNames.forEach { playerName ->
+                    playerNames.fastForEach { playerName ->
                         MenuItem(
                             Configuration.audioDeviceName == playerName,
                             {

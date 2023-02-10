@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastForEach
 import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.api.Command
 import com.eimsound.daw.api.sortedKeys
@@ -61,7 +62,7 @@ internal object ShortcutKeySettings : Tab {
                     fun cancel() {
                         keyCompose.clear()
                         selectKey = ""
-                        preKeyCompose.forEach {
+                        preKeyCompose.fastForEach {
                             keyCompose.add(it)
                         }
                     }
