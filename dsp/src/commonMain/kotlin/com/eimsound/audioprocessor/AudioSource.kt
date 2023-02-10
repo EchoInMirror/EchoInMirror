@@ -51,6 +51,7 @@ interface AudioSourceFactory <T: AudioSource> {
 }
 
 interface FileAudioSourceFactory <T: FileAudioSource> : AudioSourceFactory<T> {
+    val supportedFormats: List<String>
     fun createAudioSource(file: File): T
 }
 
@@ -66,6 +67,7 @@ interface AudioSourceManager : Reloadable {
         val instance by lazy { ServiceLoader.load(AudioSourceManager::class.java).first()!! }
     }
     val factories: Map<String, AudioSourceFactory<*>>
+    val supportedFormats: Set<String>
     fun createAudioSource(factory: String, source: AudioSource? = null): AudioSource
     fun createAudioSource(json: JsonNode): AudioSource
     fun createAudioSource(file: File, factory: String? = null): FileAudioSource

@@ -129,9 +129,7 @@ class CCEvent(private val editor: MidiClipEditor, event: MidiCCEvent) : EventTyp
     override fun paste() { envEditor.paste() }
     override fun cut() { envEditor.cut() }
     override fun copyAsString() = envEditor.copyAsString()
-
     override fun pasteFromString(value: String) { envEditor.pasteFromString(value) }
-
     override fun delete() { envEditor.delete() }
     override fun selectAll() { envEditor.selectAll() }
 }

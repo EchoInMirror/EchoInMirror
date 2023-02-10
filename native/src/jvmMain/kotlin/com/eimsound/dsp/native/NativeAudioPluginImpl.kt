@@ -39,7 +39,8 @@ class NativeAudioPluginImpl(
                     "name" to name,
                     "id" to id,
                     "identifier" to description.identifier
-                ))
+                )
+            )
         }
         if (!isLaunched) return
         mutex.withLock {

@@ -2,13 +2,14 @@ package com.eimsound.audioprocessor.data
 
 import com.eimsound.audioprocessor.AudioSource
 import com.eimsound.audioprocessor.AudioSourceManager
-import org.iq80.leveldb.Options
-import org.iq80.leveldb.impl.Iq80DBFactory
+import org.mapdb.DBMaker
+import org.mapdb.HTreeMap
 import java.io.File
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.Paths
 import kotlin.io.path.absolutePathString
 import kotlin.math.ceil
 import kotlin.math.roundToInt
@@ -22,6 +23,7 @@ class AudioThumbnail private constructor(
     val samplesPerThumbSample: Int = DEFAULT_SAMPLES_PRE_THUMB_SAMPLE,
     size: Int?,
 ) {
+    internal var modifiedTime = 0L
     val size = size ?: ceil(lengthInSamples / samplesPerThumbSample.coerceAtLeast(DEFAULT_SAMPLES_PRE_THUMB_SAMPLE).toDouble()).toInt()
     private val minTree = Array(channels) { ByteArray(this.size * 4 + 1) }
     private val maxTree = Array(channels) { ByteArray(this.size * 4 + 1) }
@@ -55,7 +57,10 @@ class AudioThumbnail private constructor(
         buildTree()
     }
 
-    constructor(data: ByteBuffer): this(data.get().toInt(), data.long, data.float, data.int, data.int) {
+    constructor(data: ByteBuffer): this(data.run {
+        position(8)
+        get().toInt()
+    }, data.long, data.float, data.int, data.int) {
         repeat(channels) {
             data.get(minTree[it], 1, size)
             data.get(maxTree[it], 1, size)
@@ -118,7 +123,8 @@ class AudioThumbnail private constructor(
     }
 
     fun toByteArray(): ByteArray {
-        val data = ByteBuffer.allocate(21 + channels * size)
+        val data = ByteBuffer.allocate(29 + channels * size * 2)
+        data.putLong(modifiedTime) // 8
         data.put(channels.toByte()) // 1
         data.putLong(lengthInSamples) // 8
         data.putFloat(sampleRate) // 4
@@ -132,26 +138,30 @@ class AudioThumbnail private constructor(
     }
 }
 
-class AudioThumbnailCache(file: File): AutoCloseable {
-    private val db = Iq80DBFactory.factory.open(file, Options().createIfMissing(true))
+class AudioThumbnailCache(file: File, private val samplesPerThumbSample: Int = DEFAULT_SAMPLES_PRE_THUMB_SAMPLE): AutoCloseable {
+    @Suppress("UNCHECKED_CAST")
+    private val db = DBMaker.fileDB(file).fileMmapEnableIfSupported().closeOnJvmShutdown().make()
+        .hashMap("audioThumbnails").expireMaxSize(200).createOrOpen() as HTreeMap<String, ByteArray>
 
-    operator fun get(key: String) = db.get(key.toByteArray())?.let { AudioThumbnail(ByteBuffer.wrap(it)) }
-    operator fun set(key: String, value: AudioThumbnail) = db.put(key.toByteArray(), value.toByteArray())
-    operator fun contains(key: String) = db[key.toByteArray()] != null
-    fun remove(key: String) = db.delete(key.toByteArray())
+    operator fun get(key: String) = db[key]?.let { AudioThumbnail(ByteBuffer.wrap(it)) }
+    operator fun set(key: String, time: Long = Files.getLastModifiedTime(Paths.get(key)).toMillis(), value: AudioThumbnail) {
+        value.modifiedTime = time
+        db[key] = value.toByteArray()
+    }
+    operator fun contains(key: String) = db[key] != null
+    fun remove(key: String) = db.remove(key)
     operator fun get(file: Path): AudioThumbnail? {
         try {
             val real = file.toRealPath()
             val key = real.absolutePathString()
-            val timeKey = "$key|time".toByteArray()
             val time = Files.getLastModifiedTime(real).toMillis()
-            if (db.get(timeKey)?.let { ByteBuffer.wrap(it).long } == time) {
-                val value = get(key)
-                if (value != null) return value
+            val byteArray = db[key]
+            if (byteArray != null) {
+                val buf = ByteBuffer.wrap(byteArray)
+                if (buf.long == time) return AudioThumbnail(buf)
             }
-            val value = AudioThumbnail(AudioSourceManager.instance.createAudioSource(real.toFile()))
-            set(key, value)
-            db.put(timeKey, ByteBuffer.allocate(8).putLong(time).array())
+            val value = AudioThumbnail(AudioSourceManager.instance.createAudioSource(real.toFile()), samplesPerThumbSample)
+            set(key, time, value)
             return value
         } catch (e: IOException) {
             e.printStackTrace()

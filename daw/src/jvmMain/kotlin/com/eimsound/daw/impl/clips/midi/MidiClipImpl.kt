@@ -129,7 +129,7 @@ class MidiClipFactoryImpl : ClipFactory<MidiClip> {
                     )
                 }
             }
-            clip.clip.events.forEach {
+            clip.clip.events.fastForEach {
                 it.points.read()
                 remember(it.points) {
                     EnvelopeEditor(it.points, 0..127)

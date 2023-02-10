@@ -9,7 +9,7 @@ import kotlin.math.pow
 
 val KEY_NAMES = arrayOf("C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B")
 
-fun Track.getMidiEvents(scale: Double): ArrayList<Int>{
+fun Track.getMidiEvents(scale: Double = 1.0): ArrayList<Int>{
     val list = ArrayList<Int>()
     for (i in 0 until size()) get(i).apply {
         list.add(message.toInt())
@@ -18,8 +18,8 @@ fun Track.getMidiEvents(scale: Double): ArrayList<Int>{
     return list
 }
 
-fun Sequence.getMidiEvents(track: Int, destPPQ: Int) =
-    tracks[track].getMidiEvents(destPPQ.toDouble() / resolution)
+fun Sequence.getMidiEvents(track: Int, destPPQ: Int? = null) =
+    tracks[track].getMidiEvents(if (destPPQ == null) 1.0 else destPPQ.toDouble() / resolution)
 
 fun Int.toMidiEvent() = MidiEvent(this)
 

@@ -1,3 +1,5 @@
+@file:Suppress("PrivatePropertyName")
+
 package com.eimsound.daw
 
 import androidx.compose.runtime.getValue
@@ -19,6 +21,8 @@ val WORKING_PATH: Path = Path.of(
     else System.getProperty("user.home") + "/Library/Application Support"
 )
 val ROOT_PATH: Path = WORKING_PATH.resolve("EchoInMirror")
+@Suppress("MemberVisibilityCanBePrivate")
+val AUDIO_THUMBNAIL_CACHE_PATH: Path = ROOT_PATH.resolve("audioThumbnailCache.db")
 private val RECENT_PROJECT_PATH = ROOT_PATH.resolve("recentProjects.json")
 private val CONFIG_PATH = ROOT_PATH.resolve("config.json")
 
@@ -32,6 +36,7 @@ var RELEASE_TIME: Long = System.currentTimeMillis()
     private set
 
 object Configuration {
+    @Suppress("MemberVisibilityCanBePrivate")
     var nativeHostPath: Path
     var stopAudioOutputOnBlur = false
     var audioDeviceFactoryName by mutableStateOf("")

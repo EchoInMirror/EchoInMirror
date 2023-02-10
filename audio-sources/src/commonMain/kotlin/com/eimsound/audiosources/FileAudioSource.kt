@@ -166,6 +166,7 @@ class DefaultFileAudioSource(override val factory: FileAudioSourceFactory<*>, ov
 }
 
 class DefaultFileAudioSourceFactory : FileAudioSourceFactory<DefaultFileAudioSource> {
+    override val supportedFormats = listOf("wav", "flac", "mp3", "ogg", "aiff", "aif", "aifc", "au", "snd")
     override val name = "File"
     override fun createAudioSource(file: File) = DefaultFileAudioSource(this, file.toPath())
     override fun createAudioSource(source: AudioSource?, json: JsonNode?): DefaultFileAudioSource {

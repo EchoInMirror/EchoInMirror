@@ -4,6 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.eimsound.audioprocessor.*
+import com.eimsound.audioprocessor.data.AudioThumbnailCache
 import com.eimsound.audioprocessor.data.defaultQuantification
 import com.eimsound.audioprocessor.data.getEditUnit
 import com.eimsound.daw.api.*
@@ -29,6 +30,7 @@ object EchoInMirror {
     val pluginManager: PluginManager = EIMPluginManager()
     val windowManager: WindowManager = WindowManagerImpl()
     val undoManager: UndoManager = DefaultUndoManager()
+    val audioThumbnailCache = AudioThumbnailCache(AUDIO_THUMBNAIL_CACHE_PATH.toFile())
     var quantification by mutableStateOf(defaultQuantification)
 
     private var selectedTrack_ by mutableStateOf<Track?>(null)

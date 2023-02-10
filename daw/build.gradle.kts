@@ -52,6 +52,9 @@ kotlin {
                 api("org.pf4j:pf4j:3.8.0")
                 api("org.slf4j:slf4j-simple:${extra["eim.dependencies.slf4j"]}")
                 api("org.ocpsoft.prettytime:prettytime:5.0.6.Final")
+                api("org.mapdb:mapdb:3.0.9") {
+                    exclude(group = "com.google.guava")
+                }
                 implementation("org.jetbrains.compose.ui:ui-util:${ComposeBuildConfig.composeVersion}")
             }
         }

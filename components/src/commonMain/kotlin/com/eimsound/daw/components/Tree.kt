@@ -28,9 +28,10 @@ fun <T : Any> Tree(
     tree: Tree<T>,
     style: BonsaiStyle<T> = BonsaiStyle(),
     mapper: (@Composable (Node<T>, @Composable () -> Unit) -> Unit)? = null,
-    onClick: OnNodeClick<T> = { },
+    modifier: Modifier = Modifier,
     onLongClick: OnNodeClick<T> = { },
-    onDoubleClick: OnNodeClick<T> = { }
+    onDoubleClick: OnNodeClick<T> = { },
+    onClick: OnNodeClick<T> = { }
 ) {
     val onSurfaceColor = MaterialTheme.colorScheme.onSurface
     val labelLarge = MaterialTheme.typography.labelLarge
@@ -46,7 +47,7 @@ fun <T : Any> Tree(
     remember(tree, style0) {
         BonsaiScope(tree, tree, style0, onClick, onLongClick, onDoubleClick)
     }.apply {
-        Box {
+        Box(modifier) {
             val horizontalScrollState = rememberScrollState()
             val state = rememberLazyListState()
             LazyColumn(Modifier.fillMaxWidth().horizontalScroll(horizontalScrollState), state) {

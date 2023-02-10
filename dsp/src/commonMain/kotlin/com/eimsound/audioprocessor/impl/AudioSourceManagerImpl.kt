@@ -9,6 +9,9 @@ import java.util.*
 
 class AudioSourceManagerImpl : AudioSourceManager {
     override val factories = mutableStateMapOf<String, AudioSourceFactory<*>>()
+    override val supportedFormats get() = factories.values.mapNotNull { it as? FileAudioSourceFactory<*> }
+        .flatMap { it.supportedFormats }.toSet()
+
     init { reload() }
 
     override fun createAudioSource(factory: String, source: AudioSource?): AudioSource {
