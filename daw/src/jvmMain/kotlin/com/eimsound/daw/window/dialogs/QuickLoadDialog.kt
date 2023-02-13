@@ -4,10 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
@@ -31,16 +28,16 @@ val BOTTOM_TEXTFIELD_HEIGHT = 40.dp
 val QuickLoadDialog = @Composable {
     val descriptions = EchoInMirror.audioProcessorManager.factories.values.flatMap { it.descriptions }.sortedBy { it.name }.distinct() // 所有插件
 
-    var selectedFactory by mutableStateOf<String?>(null)
-    var selectedCategory by mutableStateOf<String?>(null)
-    var selectedInstrument by mutableStateOf<Boolean?>(null)
+    var selectedFactory = remember {  mutableStateOf<String?>(null) }
+    var selectedCategory = remember { mutableStateOf<String?>(null) }
+    var selectedInstrument = remember { mutableStateOf<Boolean?>(null) }
     var selectedDescription by mutableStateOf<AudioProcessorDescription?>(null)
 
     // 根据已选的厂商、类别、乐器过滤插件，显示在最后一列
     val descList = descriptions.filter {
-        (selectedFactory == null || it.manufacturerName == selectedFactory) &&
-        (selectedCategory == null || it.category == selectedCategory) &&
-        (selectedInstrument == null || it.isInstrument == selectedInstrument)
+        (selectedFactory.value == null || it.manufacturerName == selectedFactory.value) &&
+        (selectedCategory.value == null || it.category == selectedCategory.value) &&
+        (selectedInstrument.value == null || it.isInstrument == selectedInstrument.value)
     }
 
     Dialog(::closeQuickLoadWindow, title = "快速加载") {
@@ -57,27 +54,24 @@ val QuickLoadDialog = @Composable {
             content = {
                 Row(Modifier.fillMaxSize().padding(top= TOP_TEXTFIELD_HEIGHT, bottom = BOTTOM_TEXTFIELD_HEIGHT), horizontalArrangement = Arrangement.SpaceEvenly) {
                     DescLister(
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f).padding(start = 10.dp, top = 10.dp, bottom = 10.dp),
                         descList = descriptions.mapNotNull { it.category }.distinct(),
-                        onClick = { selectedCategory = it },
-                        selectedDesc = selectedCategory,
+                        onClick = { selectedCategory.value = it },
+                        selectedDesc = selectedCategory.value,
                         defaultText = "所有类别"
                     )
                     DescLister(
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f).padding(start = 10.dp, top = 10.dp, bottom = 10.dp),
                         descList = descriptions.mapNotNull { it.manufacturerName }.distinct(),
-                        onClick = { selectedFactory = it },
-                        selectedDesc = selectedFactory,
+                        onClick = { selectedFactory.value = it },
+                        selectedDesc = selectedFactory.value,
                         defaultText = "所有厂商"
                     )
 
                     Surface(Modifier.weight(1f)) {
                         Scrollable(true, false) {
                             Column {
-                                descriptions.filter {
-                                    (selectedFactory == null || it.manufacturerName == selectedFactory) &&
-                                            (selectedCategory == null || it.category == selectedCategory) &&
-                                            (selectedInstrument == null || it.isInstrument == selectedInstrument) }.forEach {description ->
+                                descList.forEach {description ->
                                     val isSelected = selectedDescription?.name == description.name
                                     MenuItem( isSelected,
                                         modifier = Modifier.fillMaxSize(),
@@ -113,7 +107,7 @@ val QuickLoadDialog = @Composable {
 fun DescLister(
     modifier: Modifier = Modifier,
     descList: List<String>,
-    onClick: (clickString: String?) -> Unit,
+    onClick: (it: String?) -> Unit,
     selectedDesc: String?,
     defaultText: String
 ) {
@@ -130,8 +124,7 @@ fun DescLister(
                     Icon(Icons.Filled.Star, contentDescription = null, tint = Color.Yellow, modifier = Modifier.size(10.dp))
                 }
                 descList.forEach {description ->
-                    val isSelected = selectedDesc == description
-                    MenuItem( isSelected,
+                    MenuItem( selectedDesc == description,
                         modifier = Modifier.fillMaxSize(),
                         onClick = {
                                 onClick(description)
