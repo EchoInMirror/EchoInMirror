@@ -16,9 +16,9 @@ import com.eimsound.daw.api.DefaultTrackClipList
 import com.eimsound.daw.api.ProjectInformation
 import com.eimsound.daw.api.processor.*
 import com.eimsound.daw.components.utils.randomColor
-
 import com.eimsound.daw.utils.LevelMeterImpl
 import com.eimsound.daw.utils.binarySearch
+import com.eimsound.daw.window.panels.fileBrowserPreviewer
 import com.fasterxml.jackson.annotation.JsonAutoDetect
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
@@ -57,6 +57,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
 
     override val levelMeter = LevelMeterImpl()
 
+    override val internalProcessorsChain = ArrayList<AudioProcessor>()
     @get:JsonProperty(access = JsonProperty.Access.READ_ONLY)
     @JsonSerialize(using = AudioProcessorCollectionIDSerializer::class)
     override val preProcessorsChain: MutableList<AudioProcessor> = mutableStateListOf()
@@ -156,11 +157,10 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
                             this[0].fill(0F)
                             this[1].fill(0F)
                         } else arrayOf(FloatArray(buffers[0].size), FloatArray(buffers[1].size))
+                        buffers[0].copyInto(buffer[0])
+                        buffers[1].copyInto(buffer[1])
                         it.processBlock(buffer, position, ArrayList(midiBuffer))
-                        if (bus != null) for (i in 0 until position.bufferSize) {
-                            tempBuffer[0][i] += buffer[0][i]
-                            tempBuffer[1][i] += buffer[1][i]
-                        }
+                        if (bus != null) tempBuffer.mixWith(buffer)
                     }
                 }
             }
@@ -168,6 +168,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
             tempBuffer[1].copyInto(buffers[1])
         }
 
+        if (position.isRealtime) internalProcessorsChain.fastForEach { it.processBlock(buffers, position, midiBuffer) }
         postProcessorsChain.fastForEach { it.processBlock(buffers, position, midiBuffer) }
 
         var leftPeak = 0F
@@ -199,6 +200,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         preProcessorsChain.fastForEach { it.prepareToPlay(sampleRate, bufferSize) }
         subTracks.fastForEach { it.prepareToPlay(sampleRate, bufferSize) }
         postProcessorsChain.fastForEach { it.prepareToPlay(sampleRate, bufferSize) }
+        internalProcessorsChain.fastForEach { it.prepareToPlay(sampleRate, bufferSize) }
     }
 
     override fun close() {
@@ -209,7 +211,10 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         subTracks.clear()
         postProcessorsChain.fastForEach { it.close() }
         postProcessorsChain.clear()
-        super.close()
+        internalProcessorsChain.fastForEach { it.close() }
+        internalProcessorsChain.clear()
+        clips.fastForEach { (it.clip as? AutoCloseable)?.close() }
+        clips.clear()
     }
 
     override fun playMidiEvent(midiEvent: MidiEvent, time: Int) {
@@ -220,12 +225,13 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
     override fun onSuddenChange() {
         stopAllNotes()
         lastClipIndex = -1
-        pendingNoteOns.clone()
+        pendingNoteOns.fill(0L)
         noteRecorder.reset()
         clips.fastForEach { it.reset() }
         preProcessorsChain.fastForEach(AudioProcessor::onSuddenChange)
         subTracks.fastForEach(Track::onSuddenChange)
         postProcessorsChain.fastForEach(AudioProcessor::onSuddenChange)
+        internalProcessorsChain.fastForEach(AudioProcessor::onSuddenChange)
     }
 
     override fun stateChange() {
@@ -317,11 +323,16 @@ class BusImpl(
 ) : TrackImpl(description, factory), Bus {
     override var name = "Bus"
     override var lastSaveTime by mutableStateOf(System.currentTimeMillis())
+
     @get:JsonProperty
     override var channelType by mutableStateOf(ChannelType.STEREO)
     override var color
         get() = Color.Transparent
         set(_) { }
+
+    init {
+        internalProcessorsChain.add(fileBrowserPreviewer)
+    }
 
     override suspend fun save() {
         val time = System.currentTimeMillis()

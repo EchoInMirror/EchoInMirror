@@ -22,6 +22,7 @@ interface Track : AudioProcessor, Pan, Volume, Mute, Solo, Disabled, MidiEventHa
     val subTracks: MutableList<Track>
     val preProcessorsChain: MutableList<AudioProcessor>
     val postProcessorsChain: MutableList<AudioProcessor>
+    val internalProcessorsChain: MutableList<AudioProcessor>
     val levelMeter: LevelMeter
     val clips: TrackClipList
     var height: Int
@@ -32,6 +33,9 @@ interface Track : AudioProcessor, Pan, Volume, Mute, Solo, Disabled, MidiEventHa
     )
 }
 
+/**
+ * @see com.eimsound.daw.impl.processor.BusImpl
+ */
 interface Bus : Track {
     val project: ProjectInformation
     var channelType: ChannelType

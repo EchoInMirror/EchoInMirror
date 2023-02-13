@@ -1,10 +1,10 @@
 package com.eimsound.audiosources
 
-import com.eimsound.audioprocessor.AudioSource
-import com.eimsound.audioprocessor.AudioSourceFactory
+import com.eimsound.audioprocessor.*
 import com.fasterxml.jackson.databind.JsonNode
 
-class MemoryAudioSource(override val factory: AudioSourceFactory<MemoryAudioSource>, override val source: AudioSource): AudioSource {
+class DefaultMemoryAudioSource(override val factory: AudioSourceFactory<MemoryAudioSource>, override val source: AudioSource):
+    MemoryAudioSource {
     override val length get() = source.length
     override val channels get() = source.channels
     override val sampleRate get() = source.sampleRate
@@ -12,12 +12,12 @@ class MemoryAudioSource(override val factory: AudioSourceFactory<MemoryAudioSour
 
     init {
         source.getSamples(0, sampleBuffer)
-        if (source is AutoCloseable) source.close()
+        source.close()
     }
 
     override fun getSamples(start: Long, buffers: Array<FloatArray>): Int {
         val len = length
-        if (start > len) return 0
+        if (start > len || start < 0) return 0
         var consumed = 0
         for (i in 0 until channels.coerceAtMost(buffers.size)) {
             val buf = sampleBuffer[i]
@@ -26,9 +26,16 @@ class MemoryAudioSource(override val factory: AudioSourceFactory<MemoryAudioSour
         }
         return consumed
     }
+
+    override fun close() { sampleBuffer = emptyArray() }
+
+    override fun toString(): String {
+        return "DefaultMemoryAudioSource(source=$source, length=$length, channels=$channels, sampleRate=$sampleRate)"
+    }
 }
 
-class MemoryAudioSourceFactory: AudioSourceFactory<MemoryAudioSource> {
+class DefaultMemoryAudioSourceFactory: MemoryAudioSourceFactory<MemoryAudioSource> {
     override val name = "Memory"
-    override fun createAudioSource(source: AudioSource?, json: JsonNode?) = MemoryAudioSource(this, source!!)
+
+    override fun createAudioSource(source: AudioSource?, json: JsonNode?) = DefaultMemoryAudioSource(this, source!!)
 }

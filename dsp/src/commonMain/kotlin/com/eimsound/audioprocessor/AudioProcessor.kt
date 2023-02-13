@@ -11,7 +11,7 @@ import com.fasterxml.jackson.databind.ser.std.StdSerializer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.util.WeakHashMap
+import java.util.*
 
 interface AudioProcessorDescription {
     val name: String
@@ -23,8 +23,11 @@ interface AudioProcessorDescription {
 }
 
 interface AudioProcessorListener
+interface SuddenChangeListener {
+    fun onSuddenChange()
+}
 
-interface AudioProcessor: AutoCloseable {
+interface AudioProcessor: AutoCloseable, SuddenChangeListener {
     @get:JsonProperty
     var name: String
     val description: AudioProcessorDescription
@@ -36,7 +39,6 @@ interface AudioProcessor: AutoCloseable {
     val id: String
     suspend fun processBlock(buffers: Array<FloatArray>, position: CurrentPosition, midiBuffer: ArrayList<Int>) { }
     fun prepareToPlay(sampleRate: Int, bufferSize: Int) { }
-    fun onSuddenChange() { }
     fun onClick() { }
     fun addListener(listener: AudioProcessorListener)
     fun removeListener(listener: AudioProcessorListener)
@@ -78,6 +80,7 @@ abstract class AbstractAudioProcessor(
     override fun removeListener(listener: AudioProcessorListener) { _listeners.remove(listener) }
 
     override fun close() { }
+    override fun onSuddenChange() { }
 }
 
 @JsonInclude(JsonInclude.Include.NON_NULL)

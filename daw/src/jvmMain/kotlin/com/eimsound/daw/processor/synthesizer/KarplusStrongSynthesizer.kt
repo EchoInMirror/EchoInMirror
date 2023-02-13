@@ -1,7 +1,6 @@
 package com.eimsound.daw.processor.synthesizer
 
 import com.eimsound.audioprocessor.AbstractAudioProcessor
-import com.eimsound.audioprocessor.AudioProcessor
 import com.eimsound.audioprocessor.AudioProcessorFactory
 import com.eimsound.audioprocessor.CurrentPosition
 import com.eimsound.audioprocessor.data.midi.MidiEvent
@@ -9,10 +8,8 @@ import com.eimsound.daw.impl.processor.EIMAudioProcessorDescription
 
 val KarplusStrongSynthesizerDescription = EIMAudioProcessorDescription("KarplusStrongSynthesizer", isInstrument = true)
 
-class KarplusStrongSynthesizer(
-    description: EIMAudioProcessorDescription,
-    factory: AudioProcessorFactory<AudioProcessor>,
-): AbstractAudioProcessor(description, factory) {
+class KarplusStrongSynthesizer(factory: AudioProcessorFactory<*>):
+    AbstractAudioProcessor(KarplusStrongSynthesizerDescription, factory) {
     private val cacheBuffers = FloatArray(1024000)
     private var cacheSize = 0
     private val alpha = 0.995

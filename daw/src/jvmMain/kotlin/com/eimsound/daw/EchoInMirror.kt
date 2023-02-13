@@ -20,7 +20,7 @@ import org.pf4j.PluginManager
 
 object EchoInMirror {
     @Suppress("MemberVisibilityCanBePrivate")
-    val currentPosition: CurrentPosition = CurrentPositionImpl()
+    val currentPosition: CurrentPosition = CurrentPositionImpl(isMainPosition = true)
     var bus: Bus? by mutableStateOf(null)
     var player: AudioPlayer? by mutableStateOf(null)
 //    var player: AudioPlayer = JvmAudioPlayer(currentPosition, bus)

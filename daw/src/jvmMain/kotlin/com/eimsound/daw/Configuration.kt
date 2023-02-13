@@ -26,10 +26,6 @@ val AUDIO_THUMBNAIL_CACHE_PATH: Path = ROOT_PATH.resolve("audioThumbnailCache.db
 private val RECENT_PROJECT_PATH = ROOT_PATH.resolve("recentProjects.json")
 private val CONFIG_PATH = ROOT_PATH.resolve("config.json")
 
-internal fun createDirectories() {
-    if (!Files.exists(ROOT_PATH)) Files.createDirectory(ROOT_PATH)
-}
-
 var VERSION = "0.0.0"
     private set
 var RELEASE_TIME: Long = System.currentTimeMillis()
@@ -44,6 +40,7 @@ object Configuration {
     var autoCutOver0db by mutableStateOf(true)
 
     init {
+        if (!Files.exists(ROOT_PATH)) Files.createDirectory(ROOT_PATH)
         val resources = this::class.java.classLoader.getResources("META-INF/MANIFEST.MF")
         while (resources.hasMoreElements()) {
             try {

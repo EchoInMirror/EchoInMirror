@@ -17,7 +17,7 @@ import javax.swing.UIManager
 
 fun main() {
     UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
-    createDirectories()
+    Configuration
     Runtime.getRuntime().addShutdownHook(Thread(EchoInMirror.windowManager::closeMainWindow))
 
     if (!File("test_project").exists()) File("test_project").mkdir()

@@ -32,6 +32,7 @@ jobs:
         shell: bash
 
       - name: Build with Gradle
+        shell: bash
         run: |
           mkdir package
           ./gradlew :daw:shadowJar
@@ -40,21 +41,24 @@ jobs:
           curl https://github.com/EchoInMirror/EIMHost/releases/download/1.0.6/EIMHost.exe -o package/EIMHost.exe -L
 
       - name: Download ffmpeg
+        shell: bash
         run: |
           curl https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip -O -L
           unzip ffmpeg-master-latest-win64-gpl.zip
           mkdir package/ffmpeg
           mv ffmpeg-master-latest-win64-gpl/bin/ffmpeg.exe package/ffmpeg/ffmpeg.exe
-        shell: bash
 
-      - name: Decompress
+      - name: Download Jetbrains Runtime
+        shell: bash
         run: |
           curl https://cache-redirector.jetbrains.com/intellij-jbr/jbr-17.0.6-windows-x64-b802.4.tar.gz -O -L
           mkdir package/jbr;tar zxvf jbr_jcef-17.0.6-windows-x64-b802.4.tar.gz --strip-components 1 -C package/jbr
 
       - name: Package
-        run: mv package EchoInMirror && Compress-Archive -Path EchoInMirror -DestinationPath EchoInMirror.zip
-        shell: pwsh
+        run: |
+          cp LICENSE package/LICENSE
+          mv package EchoInMirror
+          Compress-Archive -Path EchoInMirror -DestinationPath EchoInMirror.zip
 
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2

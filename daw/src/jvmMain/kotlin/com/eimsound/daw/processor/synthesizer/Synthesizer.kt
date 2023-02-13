@@ -2,13 +2,13 @@ package com.eimsound.daw.processor.synthesizer
 
 import com.eimsound.audioprocessor.AbstractAudioProcessor
 import com.eimsound.audioprocessor.AudioProcessor
+import com.eimsound.audioprocessor.AudioProcessorDescription
 import com.eimsound.audioprocessor.AudioProcessorFactory
 import com.eimsound.audioprocessor.data.midi.MidiEvent
 import com.eimsound.audioprocessor.data.midi.MidiNoteRecorder
-import com.eimsound.daw.impl.processor.EIMAudioProcessorDescription
 
 abstract class Synthesizer(
-    description: EIMAudioProcessorDescription,
+    description: AudioProcessorDescription,
     factory: AudioProcessorFactory<AudioProcessor>,
 ) : AbstractAudioProcessor(description, factory) {
     override val inputChannelsCount = 0
@@ -29,4 +29,6 @@ abstract class Synthesizer(
     protected inline fun forEachNotes(block: (MidiEvent) -> Unit) {
         noteRecorder.forEachNotes { block(MidiEvent(notesData[it])) }
     }
+
+    override fun onSuddenChange() { noteRecorder.reset() }
 }

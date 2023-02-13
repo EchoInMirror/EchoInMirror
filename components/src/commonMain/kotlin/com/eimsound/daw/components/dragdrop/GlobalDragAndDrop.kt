@@ -116,5 +116,5 @@ fun FileDropTarget(onDrop: (File, Offset) -> Unit, modifier: Modifier = Modifier
             file = null
             true
         }
-    }) { data, p -> if (file == null) content(data as? File, p) else content(file, pos) }
+    }) { data, p -> content(data as? File, p) }
 }

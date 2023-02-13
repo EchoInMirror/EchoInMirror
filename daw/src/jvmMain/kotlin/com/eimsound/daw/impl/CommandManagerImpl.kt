@@ -5,8 +5,6 @@ package com.eimsound.daw.impl
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.input.key.*
 import com.eimsound.audioprocessor.AudioProcessorManager
-import com.eimsound.audioprocessor.data.midi.getMidiEvents
-import com.eimsound.audioprocessor.data.midi.getNoteMessages
 import com.eimsound.audioprocessor.oneBarPPQ
 import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.IS_DEBUG
@@ -18,7 +16,6 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import kotlinx.coroutines.*
 import java.io.File
-import javax.sound.midi.MidiSystem
 import kotlin.io.path.exists
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -58,21 +55,23 @@ class CommandManagerImpl : CommandManager {
                     val desc = factory.descriptions.find { it.name == "KarplusStrongSynthesizer" }!!
                     subTrack1.preProcessorsChain.add(factory.createAudioProcessor(desc))
                     val time = EchoInMirror.currentPosition.oneBarPPQ
+                    val clip1 = ClipManager.instance.defaultAudioClipFactory.createClip(File("C:\\Python311\\op.wav"))
+                    subTrack2.clips.add(ClipManager.instance.createTrackClip(clip1))
                     val clip2 = ClipManager.instance.defaultMidiClipFactory.createClip()
                     subTrack1.clips.add(ClipManager.instance.createTrackClip(clip2, time, time))
                     if (IS_DEBUG) {
-                        val midi = withContext(Dispatchers.IO) {
-                            MidiSystem.getSequence(File("E:\\Midis\\UTMR&C VOL 1-14 [MIDI FILES] for other DAWs FINAL by Hunter UT\\VOL 13\\13.Darren Porter - To Feel Again LD.mid"))
-                        }
-                        val clip = ClipManager.instance.defaultMidiClipFactory.createClip()
-                        clip.notes.addAll(getNoteMessages(midi.getMidiEvents(1, EchoInMirror.currentPosition.ppq)))
-                        track.clips.add(
-                            ClipManager.instance.createTrackClip(
-                                clip,
-                                0,
-                                4 * 32 * EchoInMirror.currentPosition.ppq
-                            )
-                        )
+//                        val midi = withContext(Dispatchers.IO) {
+//                            MidiSystem.getSequence(File("E:\\Midis\\UTMR&C VOL 1-14 [MIDI FILES] for other DAWs FINAL by Hunter UT\\VOL 13\\13.Darren Porter - To Feel Again LD.mid"))
+//                        }
+//                        val clip = ClipManager.instance.defaultMidiClipFactory.createClip()
+//                        clip.notes.addAll(getNoteMessages(midi.getMidiEvents(1, EchoInMirror.currentPosition.ppq)))
+//                        track.clips.add(
+//                            ClipManager.instance.createTrackClip(
+//                                clip,
+//                                0,
+//                                4 * 32 * EchoInMirror.currentPosition.ppq
+//                            )
+//                        )
 //                        val audioClip = EchoInMirror.clipManager.defaultAudioClipFactory.createClip()
 //                        subTrack2.clips.add(EchoInMirror.clipManager.createTrackClip(audioClip))
 

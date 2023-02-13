@@ -71,7 +71,7 @@ class DefaultFileAudioSource(override val factory: FileAudioSourceFactory<*>, ov
                 flacDecoder.seek(start.coerceIn(0, length))
                 buffer.empty()
             }
-            readFromByteArray(buffers, this::readFlac)
+            readFromByteArray(buffers, ::readFlac)
             consumed = buffers[0].size
             lastPos = start
         } else {
@@ -88,7 +88,7 @@ class DefaultFileAudioSource(override val factory: FileAudioSourceFactory<*>, ov
             for (i in 0 until channels) {
                 if (i >= buffers.size) break
                 consumed = buffers[i].size.coerceAtMost((len - start).toInt())
-                readFromByteArray(buffers) { offset, l -> stream.read(tempBuffer!!, offset, l) }
+                readFromByteArray(buffers, ::readFromTempBuffer)
             }
             lastPos = start
         }
@@ -99,6 +99,8 @@ class DefaultFileAudioSource(override val factory: FileAudioSourceFactory<*>, ov
         stream?.close()
         stream = null
     }
+
+    private fun readFromTempBuffer(offset: Int, len: Int) = stream!!.read(tempBuffer!!, offset, len)
 
     private fun readFlac(offset: Int, len: Int): Int {
         var offset2 = offset
@@ -131,7 +133,7 @@ class DefaultFileAudioSource(override val factory: FileAudioSourceFactory<*>, ov
         return if (bytesRead < 1) -1 else bytesRead
     }
 
-    private inline fun readFromByteArray(buffers: Array<FloatArray>, block: (Int, Int) -> Int) {
+    private fun readFromByteArray(buffers: Array<FloatArray>, block: (Int, Int) -> Int) {
         // read into temporary byte buffer
         val sampleCount = buffers[0].size
         var byteBufferSize = sampleCount * frameSize
@@ -162,6 +164,10 @@ class DefaultFileAudioSource(override val factory: FileAudioSourceFactory<*>, ov
                 readSamples, newFormat, false
             )
         }
+    }
+
+    override fun toString(): String {
+        return "DefaultFileAudioSource(file=$file, source=$source, sampleRate=$sampleRate, channels=$channels, length=$length, isRandomAccessible=$isRandomAccessible)"
     }
 }
 

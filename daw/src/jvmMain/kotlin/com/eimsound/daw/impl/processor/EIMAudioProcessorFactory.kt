@@ -4,22 +4,25 @@ import com.eimsound.audioprocessor.*
 import com.eimsound.daw.VERSION
 import com.eimsound.daw.processor.synthesizer.KarplusStrongSynthesizer
 import com.eimsound.daw.processor.synthesizer.KarplusStrongSynthesizerDescription
+import com.eimsound.daw.processor.synthesizer.SineWaveSynthesizer
+import com.eimsound.daw.processor.synthesizer.SineWaveSynthesizerDescription
 import com.fasterxml.jackson.databind.JsonNode
 
 class EIMAudioProcessorDescription(name: String, category: String? = null, isInstrument: Boolean? = null):
     DefaultAudioProcessorDescription(name, category, "Echo In Mirror", VERSION, isInstrument)
 
+const val EIMAudioProcessorFactoryName = "EIMAudioProcessorFactory"
+val AudioProcessorManager.eimAudioProcessorFactory get() = factories[EIMAudioProcessorFactoryName] as EIMAudioProcessorFactory
+
 class EIMAudioProcessorFactory : AudioProcessorFactory<AudioProcessor> {
-    override val name = "EIMAudioProcessorFactory"
+    override val name = EIMAudioProcessorFactoryName
     override val descriptions = setOf(KarplusStrongSynthesizerDescription)
     private val audioProcessors = descriptions.associateBy { it.name }
 
-    override suspend fun createAudioProcessor(description: AudioProcessorDescription): AudioProcessor {
-        if (description !is EIMAudioProcessorDescription) throw NoSuchAudioProcessorException(description.name, name)
-        when(description) {
-            KarplusStrongSynthesizerDescription -> return KarplusStrongSynthesizer(description, this)
-            else -> throw NoSuchAudioProcessorException(description.name, name)
-        }
+    override suspend fun createAudioProcessor(description: AudioProcessorDescription) = when(description) {
+        KarplusStrongSynthesizerDescription -> KarplusStrongSynthesizer(this)
+        SineWaveSynthesizerDescription -> SineWaveSynthesizer(this)
+        else -> throw NoSuchAudioProcessorException(description.name, name)
     }
 
     override suspend fun createAudioProcessor(path: String, json: JsonNode): AudioProcessor {

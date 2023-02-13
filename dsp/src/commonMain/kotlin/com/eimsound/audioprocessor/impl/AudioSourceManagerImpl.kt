@@ -7,6 +7,8 @@ import com.fasterxml.jackson.databind.JsonNode
 import java.io.File
 import java.util.*
 
+const val IN_MEMORY_FILE_SIZE = 64 * 1024 * 1024 // 64 MB
+
 class AudioSourceManagerImpl : AudioSourceManager {
     override val factories = mutableStateMapOf<String, AudioSourceFactory<*>>()
     override val supportedFormats get() = factories.values.mapNotNull { it as? FileAudioSourceFactory<*> }
@@ -35,33 +37,40 @@ class AudioSourceManagerImpl : AudioSourceManager {
         return source ?: throw IllegalStateException("No source")
     }
 
-    override fun createAudioSource(file: File, factory: String?): FileAudioSource {
-        if (factory != null) {
-            val f = factories[factory] ?: throw NoSuchFactoryException(factory)
-            if (f !is FileAudioSourceFactory<*>) throw UnsupportedOperationException("Factory $factory does not support files")
-            return f.createAudioSource(file)
+    override fun createAudioSource(file: File, factory: String?): FileAudioSource = if (factory != null) {
+        val f = factories[factory] ?: throw NoSuchFactoryException(factory)
+        if (f !is FileAudioSourceFactory<*>) throw UnsupportedOperationException("Factory $factory does not support files")
+        f.createAudioSource(file)
+    } else factories.firstNotNullOfOrNull { (_, value) ->
+        if (value !is FileAudioSourceFactory<*>) return@firstNotNullOfOrNull null
+        try {
+            value.createAudioSource(file)
+        } catch (ignored: UnsupportedOperationException) {
+            null
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
         }
-        return factories.firstNotNullOfOrNull { (_, value) ->
-            if (value !is FileAudioSourceFactory<*>) return@firstNotNullOfOrNull null
-            try {
-                value.createAudioSource(file)
-            } catch (ignored: UnsupportedOperationException) {
-                null
-            } catch (e: Exception) {
-                e.printStackTrace()
-                null
-            }
-        } ?: throw UnsupportedOperationException("No factory supports file $file")
+    } ?: throw UnsupportedOperationException("No factory supports file $file")
+
+    override fun createAutoWrappedAudioSource(file: File): AudioSource = createAudioSource(file).run {
+        if (length <= IN_MEMORY_FILE_SIZE) createMemorySource(this) else this
     }
 
-    override fun createResampledSource(source: AudioSource, factory: String?): ResampledAudioSource {
+    override fun createResampledSource(source: AudioSource, factory: String?) =
+        createAudioSource<ResampledAudioSource, ResampledAudioSourceFactory<ResampledAudioSource>>(source, factory)
+
+    override fun createMemorySource(source: AudioSource, factory: String?) =
+        createAudioSource<MemoryAudioSource, MemoryAudioSourceFactory<MemoryAudioSource>>(source, factory)
+
+    private inline fun <reified A: AudioSource, reified T: AudioSourceFactory<A>> createAudioSource(source: AudioSource, factory: String?): A {
         if (factory != null) {
             val f = factories[factory] ?: throw NoSuchFactoryException(factory)
-            if (f !is ResampledSourceFactory<*>) throw UnsupportedOperationException("Factory $factory does not support resampling")
+            if (f !is T) throw UnsupportedOperationException("Factory $factory does not inherited from ${T::class.simpleName}")
             return f.createAudioSource(source)
         }
         return factories.firstNotNullOfOrNull { (_, value) ->
-            if (value !is ResampledSourceFactory<*>) return@firstNotNullOfOrNull null
+            if (value !is T) return@firstNotNullOfOrNull null
             try {
                 value.createAudioSource(source)
             } catch (ignored: UnsupportedOperationException) {
@@ -70,7 +79,7 @@ class AudioSourceManagerImpl : AudioSourceManager {
                 e.printStackTrace()
                 null
             }
-        } ?: throw UnsupportedOperationException("No factory supports resampling")
+        } ?: throw UnsupportedOperationException("No factory inherited from ${T::class.simpleName}")
     }
 
     override fun reload() {

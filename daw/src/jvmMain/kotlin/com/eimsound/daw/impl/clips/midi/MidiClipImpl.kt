@@ -52,7 +52,7 @@ class MidiClipImpl(json: JsonNode?, factory: ClipFactory<MidiClip>) : AbstractCl
     }
 }
 
-class MidiClipFactoryImpl : ClipFactory<MidiClip> {
+class MidiClipFactoryImpl : MidiClipFactory {
     override val name = "MIDIClip"
     override fun createClip() = MidiClipImpl(null, this)
     override fun createClip(path: String, json: JsonNode) = MidiClipImpl(json, this)
@@ -61,7 +61,8 @@ class MidiClipFactoryImpl : ClipFactory<MidiClip> {
     override fun processBlock(clip: TrackClip<MidiClip>, buffers: Array<FloatArray>, position: CurrentPosition,
                               midiBuffer: ArrayList<Int>, noteRecorder: MidiNoteRecorder, pendingNoteOns: LongArray) {
         val c = clip.clip as MidiClipImpl
-        val blockEndSample = position.timeInSamples + position.bufferSize
+        val timeInSamples = position.timeInSamples
+        val blockEndSample = timeInSamples + position.bufferSize
         val startTime = clip.time
         val notes = c.notes
         if (clip.currentIndex == -1) {
@@ -72,7 +73,7 @@ class MidiClipFactoryImpl : ClipFactory<MidiClip> {
         clip.clip.events.fastForEach {
             if (it.id !in 0..127) return@fastForEach
             for (i in 0 until position.bufferSize step position.ppq) {
-                val ppq = position.convertSamplesToPPQ(position.timeInSamples + i) - startTime
+                val ppq = position.convertSamplesToPPQ(timeInSamples + i) - startTime
                 val value = it.points.getValue(ppq).toInt()
                 val byteValue = value.toByte()
                 if (byteValue == c.ccPrevValues[it.id]) continue
@@ -86,8 +87,8 @@ class MidiClipFactoryImpl : ClipFactory<MidiClip> {
             val startTimeInSamples = position.convertPPQToSamples(startTime + note.time)
             if (startTimeInSamples > blockEndSample) break
             clip.currentIndex = i + 1
-            if (startTimeInSamples < position.timeInSamples || note.disabled) continue
-            val noteOnTime = (startTimeInSamples - position.timeInSamples).toInt().coerceAtLeast(0)
+            if (startTimeInSamples < timeInSamples || note.disabled) continue
+            val noteOnTime = (startTimeInSamples - timeInSamples).toInt().coerceAtLeast(0)
             if (noteRecorder.isMarked(note.note)) {
                 noteRecorder.unmarkNote(note.note)
                 midiBuffer.add(note.toNoteOffRawData())
@@ -96,13 +97,13 @@ class MidiClipFactoryImpl : ClipFactory<MidiClip> {
             midiBuffer.add(note.toNoteOnRawData())
             midiBuffer.add(noteOnTime)
             val endTimeInSamples = position.convertPPQToSamples(startTime + note.time + note.duration)
-            val endTime = endTimeInSamples - position.timeInSamples
+            val endTime = endTimeInSamples - timeInSamples
             if (endTimeInSamples > blockEndSample) {
                 pendingNoteOns[note.note] = endTime
                 noteRecorder.markNote(note.note)
             } else {
                 midiBuffer.add(note.toNoteOffRawData())
-                midiBuffer.add((endTimeInSamples - position.timeInSamples).toInt().coerceAtLeast(0))
+                midiBuffer.add((endTimeInSamples - timeInSamples).toInt().coerceAtLeast(0))
             }
         }
     }

@@ -9,17 +9,26 @@ import kotlin.math.pow
 
 val KEY_NAMES = arrayOf("C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B")
 
-fun Track.getMidiEvents(scale: Double = 1.0): ArrayList<Int>{
-    val list = ArrayList<Int>()
+data class MidiEventWithTime(val event: MidiEvent, val time: Int)
+
+fun Track.getMidiEvents(scale: Double = 1.0, sorted: Boolean = true): List<MidiEventWithTime> {
+    val list = ArrayList<MidiEventWithTime>()
     for (i in 0 until size()) get(i).apply {
-        list.add(message.toInt())
-        list.add((tick * scale).toInt())
+        list.add(MidiEventWithTime(MidiEvent(message), (tick * scale).toInt()))
     }
+    if (sorted) list.sortBy { it.time }
     return list
 }
 
-fun Sequence.getMidiEvents(track: Int, destPPQ: Int? = null) =
-    tracks[track].getMidiEvents(if (destPPQ == null) 1.0 else destPPQ.toDouble() / resolution)
+fun Sequence.toMidiEvents(track: Int? = null, destPPQ: Int? = null): List<MidiEventWithTime> {
+    val scale = if (destPPQ == null) 1.0 else destPPQ.toDouble() / resolution
+    return if (track == null) {
+        val list = ArrayList<MidiEventWithTime>()
+        tracks.forEach { list.addAll(it.getMidiEvents(scale, false)) }
+        list.sortBy { it.time }
+        list
+    } else tracks[track].getMidiEvents(scale)
+}
 
 fun Int.toMidiEvent() = MidiEvent(this)
 
@@ -68,6 +77,7 @@ value class MidiEvent(val rawData: Int) {
     val noteName get() = getNoteName(note)
     val velocity get() = byte3Int
     val controller get() = byte2Int
+    val value get() = byte3Int
     val program get() = byte2Int
     val pitch get() = byte2Int or (byte3Int shl 7)
     val metaType get() = byte2Int

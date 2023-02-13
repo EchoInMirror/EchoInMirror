@@ -1,6 +1,7 @@
 package com.eimsound.audioprocessor.data.midi
 
 import androidx.compose.runtime.mutableStateOf
+import com.eimsound.audioprocessor.data.EnvelopePoint
 import com.eimsound.daw.utils.IManualState
 import com.eimsound.daw.utils.mapValue
 import com.fasterxml.jackson.annotation.JsonInclude
@@ -48,24 +49,30 @@ open class NoteMessageImpl(note: Int, override var time: Int, duration: Int = 0,
     }
 }
 
-fun getNoteMessages(list: ArrayList<Int>): List<NoteMessage> {
+data class ParsedMidiMessages(val notes: List<NoteMessage>, val events: Map<Int, List<EnvelopePoint>>)
+
+fun Collection<MidiEventWithTime>.parse(): ParsedMidiMessages {
     val noteMessages = ArrayList<NoteMessage>()
+    val events = HashMap<Int, ArrayList<EnvelopePoint>>()
     val allNoteOns = arrayOfNulls<NoteMessage>(128)
-    for (i in 0 until list.size step 2) {
-        val note = list[i].toMidiEvent()
-        val time = list[i + 1]
-        if (!note.isNote || note.note > 127) continue
-        val prevNoteOn = allNoteOns[note.note]
-        if (prevNoteOn != null) {
-            if (note.isNoteOff) prevNoteOn.duration = time - prevNoteOn.time
-            noteMessages.add(prevNoteOn)
-            allNoteOns[note.note] = null
+    forEach { (event, time) ->
+        if (event.isController) {
+            val list = events.getOrPut(event.controller) { ArrayList() }
+            list.add(EnvelopePoint(time, event.value / 127F))
+            return@forEach
         }
-        if (note.isNoteOn) allNoteOns[note.note] = defaultNoteMessage(note.note, time, velocity = note.velocity)
+        if (!event.isNote || event.note > 127) return@forEach
+        val prevNoteOn = allNoteOns[event.note]
+        if (prevNoteOn != null) {
+            if (event.isNoteOff) prevNoteOn.duration = time - prevNoteOn.time
+            noteMessages.add(prevNoteOn)
+            allNoteOns[event.note] = null
+        }
+        if (event.isNoteOn) allNoteOns[event.note] = defaultNoteMessage(event.note, time, velocity = event.velocity)
     }
     allNoteOns.forEach { if (it != null) noteMessages.add(it) }
     noteMessages.sortBy { it.time }
-    return noteMessages
+    return ParsedMidiMessages(noteMessages, events)
 }
 
 @Suppress("unused")

@@ -11,23 +11,27 @@ import com.eimsound.daw.api.*
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.components.Waveform
 import com.fasterxml.jackson.databind.JsonNode
+import java.io.File
 import kotlin.io.path.name
 
-class AudioClipImpl(json: JsonNode?, factory: ClipFactory<AudioClipImpl>): AbstractClip<AudioClipImpl>(json, factory), AudioClip {
-    override var target: AudioSource = AudioSourceManager.instance.createAudioSource(json?.get("target") ?: throw IllegalStateException("No target"))
+class AudioClipImpl(json: JsonNode?, factory: ClipFactory<AudioClip>, target: AudioSource? = null):
+    AbstractClip<AudioClip>(json, factory), AudioClip {
+    override var target: AudioSource = target ?:
+    AudioSourceManager.instance.createAudioSource(json?.get("target") ?: throw IllegalStateException("No target"))
         set(value) {
             if (field == value) return
+            close()
             field = value
             audioSource = AudioSourceManager.instance.createResampledSource(value)
             audioSource.factor = EchoInMirror.currentPosition.sampleRate.toDouble() / target.sampleRate
-            thumbnail = AudioThumbnail(value)
+            thumbnail = AudioThumbnail(audioSource)
         }
-    override var audioSource = AudioSourceManager.instance.createResampledSource(target).apply {
-        factor = EchoInMirror.currentPosition.sampleRate.toDouble() / target.sampleRate
+    override var audioSource = AudioSourceManager.instance.createResampledSource(this.target).apply {
+        factor = EchoInMirror.currentPosition.sampleRate.toDouble() / this@AudioClipImpl.target.sampleRate
     }
     override val defaultDuration get() = EchoInMirror.currentPosition.convertSamplesToPPQ(audioSource.length)
     override val maxDuration get() = defaultDuration
-    override var thumbnail by mutableStateOf(AudioThumbnail(target))
+    override var thumbnail by mutableStateOf(AudioThumbnail(this.audioSource))
     override val name: String?
         get() {
             var source: AudioSource? = target
@@ -37,15 +41,20 @@ class AudioClipImpl(json: JsonNode?, factory: ClipFactory<AudioClipImpl>): Abstr
             }
             return null
         }
+
+    override fun close() { target.close() }
 }
 
-class AudioClipFactoryImpl: ClipFactory<AudioClipImpl> {
+class AudioClipFactoryImpl: AudioClipFactory {
     override val name = "AudioClip"
+    override fun createClip(path: File) = AudioClipImpl(null, this,
+        AudioSourceManager.instance.createAutoWrappedAudioSource(path))
+
     override fun createClip() = AudioClipImpl(null, this)
     override fun createClip(path: String, json: JsonNode) = AudioClipImpl(json, this)
-    override fun getEditor(clip: TrackClip<AudioClipImpl>, track: Track): ClipEditor? = null
+    override fun getEditor(clip: TrackClip<AudioClip>, track: Track): ClipEditor? = null
 
-    override fun processBlock(clip: TrackClip<AudioClipImpl>, buffers: Array<FloatArray>, position: CurrentPosition,
+    override fun processBlock(clip: TrackClip<AudioClip>, buffers: Array<FloatArray>, position: CurrentPosition,
                               midiBuffer: ArrayList<Int>, noteRecorder: MidiNoteRecorder, pendingNoteOns: LongArray) {
         clip.clip.audioSource.factor = position.sampleRate.toDouble() / clip.clip.audioSource.source!!.sampleRate
         clip.clip.audioSource.getSamples(
@@ -55,7 +64,7 @@ class AudioClipFactoryImpl: ClipFactory<AudioClipImpl> {
     }
 
     @Composable
-    override fun playlistContent(clip: TrackClip<AudioClipImpl>, track: Track, contentColor: Color,
+    override fun playlistContent(clip: TrackClip<AudioClip>, track: Track, contentColor: Color,
                                  noteWidth: MutableState<Dp>, startPPQ: Float, widthPPQ: Float) {
         val curPos = EchoInMirror.currentPosition
 
@@ -65,7 +74,7 @@ class AudioClipFactoryImpl: ClipFactory<AudioClipImpl> {
         Waveform(clip.clip.thumbnail, startSeconds, endSeconds, contentColor, isDrawMinAndMax)
     }
 
-    override fun save(clip: AudioClipImpl, path: String) { }
+    override fun save(clip: AudioClip, path: String) { }
 
     override fun toString(): String {
         return "MidiClipFactoryImpl(name='$name')"

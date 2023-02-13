@@ -41,8 +41,10 @@ interface FileAudioSource : AudioSource, AutoCloseable {
 
 interface ResampledAudioSource : AudioSource {
     var factor: Double
-    override val factory: ResampledSourceFactory<*>
+    override val factory: ResampledAudioSourceFactory<*>
 }
+
+interface MemoryAudioSource : AudioSource, AutoCloseable
 
 @JsonSerialize(using = AudioSourceFactoryNameSerializer::class)
 interface AudioSourceFactory <T: AudioSource> {
@@ -55,9 +57,9 @@ interface FileAudioSourceFactory <T: FileAudioSource> : AudioSourceFactory<T> {
     fun createAudioSource(file: File): T
 }
 
-interface ResampledSourceFactory <T: ResampledAudioSource> : AudioSourceFactory<T> {
-    fun createAudioSource(source: AudioSource): T
-}
+interface ResampledAudioSourceFactory <T: ResampledAudioSource> : AudioSourceFactory<T>
+
+interface MemoryAudioSourceFactory <T: MemoryAudioSource> : AudioSourceFactory<T>
 
 /**
  * @see com.eimsound.audioprocessor.impl.AudioSourceManagerImpl
@@ -71,6 +73,8 @@ interface AudioSourceManager : Reloadable {
     fun createAudioSource(factory: String, source: AudioSource? = null): AudioSource
     fun createAudioSource(json: JsonNode): AudioSource
     fun createAudioSource(file: File, factory: String? = null): FileAudioSource
+    fun createAutoWrappedAudioSource(file: File): AudioSource
+    fun createMemorySource(source: AudioSource, factory: String? = null): MemoryAudioSource
     fun createResampledSource(source: AudioSource, factory: String? = null): ResampledAudioSource
 }
 
@@ -78,5 +82,13 @@ class AudioSourceFactoryNameSerializer @JvmOverloads constructor(t: Class<AudioS
     StdSerializer<AudioSourceFactory<*>>(t) {
     override fun serialize(value: AudioSourceFactory<*>, jgen: JsonGenerator, provider: SerializerProvider?) {
         jgen.writeString(value.name)
+    }
+}
+
+fun AudioSource.close() {
+    var source: AudioSource? = source
+    while (source != null) {
+        if (source is AutoCloseable) source.close()
+        source = source.source
     }
 }

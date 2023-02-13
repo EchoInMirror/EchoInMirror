@@ -4,14 +4,18 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.eimsound.audioprocessor.CurrentPosition
+import com.eimsound.audioprocessor.SuddenChangeListener
 import com.eimsound.daw.EchoInMirror
 
-class CurrentPositionImpl: CurrentPosition {
+class CurrentPositionImpl(
+    private val suddenChangeListener: SuddenChangeListener? = null,
+    private val isMainPosition: Boolean = false
+): CurrentPosition {
     override var bpm by mutableStateOf(140.0)
     override var timeInSamples = 0L
     override var timeInSeconds by mutableStateOf(0.0)
     override var ppq by mutableStateOf(96)
-    override var timeInPPQ = 0
+    override var timeInPPQ by mutableStateOf(0)
     override var ppqPosition by mutableStateOf(0.0)
     override var bufferSize by mutableStateOf(1024)
     override var sampleRate by mutableStateOf(48000)
@@ -31,7 +35,7 @@ class CurrentPositionImpl: CurrentPosition {
         set(value) {
             val flag = _isPlaying != value
             _isPlaying = value
-            if (flag) EchoInMirror.bus?.onSuddenChange()
+            if (flag) (if (isMainPosition) EchoInMirror.bus else suddenChangeListener)?.onSuddenChange()
         }
 
     override fun update(timeInSamples: Long) {
@@ -49,7 +53,7 @@ class CurrentPositionImpl: CurrentPosition {
         timeInSamples = (timeInSeconds * sampleRate).toLong()
         timeInPPQ = (this.ppqPosition * ppq * timeSigNumerator).toInt()
         if (timeInPPQ !in projectRange) setCurrentTime(projectRange.first)
-        EchoInMirror.bus?.onSuddenChange()
+        (if (isMainPosition) EchoInMirror.bus else suddenChangeListener)?.onSuddenChange()
     }
 
     override fun setCurrentTime(timeInPPQ: Int) {
@@ -58,7 +62,7 @@ class CurrentPositionImpl: CurrentPosition {
         ppqPosition = this.timeInPPQ.toDouble() / ppq
         timeInSeconds = ppqPosition / bpm * 60.0
         timeInSamples = (timeInSeconds * sampleRate).toLong()
-        EchoInMirror.bus?.onSuddenChange()
+        (if (isMainPosition) EchoInMirror.bus else suddenChangeListener)?.onSuddenChange()
     }
 
     override fun setSampleRateAndBufferSize(sampleRate: Int, bufferSize: Int) {

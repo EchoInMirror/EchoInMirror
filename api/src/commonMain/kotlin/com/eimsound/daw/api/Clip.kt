@@ -52,6 +52,18 @@ interface ClipFactory<T: Clip> {
 }
 
 /**
+ * @see com.eimsound.daw.impl.clips.midi.MidiClipFactoryImpl
+ */
+interface MidiClipFactory: ClipFactory<MidiClip>
+
+/**
+ * @see com.eimsound.daw.impl.clips.audio.AudioClipFactoryImpl
+ */
+interface AudioClipFactory: ClipFactory<AudioClip> {
+    fun createClip(path: File): AudioClip
+}
+
+/**
  * @see com.eimsound.daw.impl.clips.ClipManagerImpl
  */
 interface ClipManager : Reloadable {
@@ -72,10 +84,8 @@ interface ClipManager : Reloadable {
     suspend fun createTrackClip(path: String, json: JsonNode): TrackClip<Clip>
 }
 
-@Suppress("UNCHECKED_CAST")
-val ClipManager.defaultMidiClipFactory get() = factories["MIDIClip"] as ClipFactory<MidiClip>
-@Suppress("UNCHECKED_CAST")
-val ClipManager.defaultAudioClipFactory get() = factories["AudioClip"] as ClipFactory<AudioClip>
+val ClipManager.defaultMidiClipFactory get() = factories["MIDIClip"] as MidiClipFactory
+val ClipManager.defaultAudioClipFactory get() = factories["AudioClip"] as AudioClipFactory
 
 interface Clip {
     val id: String
@@ -99,7 +109,7 @@ interface MidiClip : Clip {
     val notes: NoteMessageList
     val events: MutableList<MidiCCEvent>
 }
-interface AudioClip : Clip {
+interface AudioClip : Clip, AutoCloseable {
     var target: AudioSource
     @get:JsonIgnore
     val audioSource: ResampledAudioSource
