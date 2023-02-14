@@ -2,10 +2,7 @@
 
 package com.eimsound.daw.utils
 
-import java.io.BufferedInputStream
-import java.io.BufferedOutputStream
-import java.io.InputStream
-import java.io.OutputStream
+import java.io.*
 import javax.sound.sampled.AudioInputStream
 
 class ByteBufInputStream(private val isBigEndian: Boolean, stream: InputStream): BufferedInputStream(stream) {
@@ -80,3 +77,30 @@ class ByteBufOutputStream(private val isBigEndian: Boolean, stream: OutputStream
 
 val AudioInputStream.samplesCount get() = if (format.frameSize == -1 || frameLength == -1L) -1L
     else frameLength / (format.sampleSizeInBits / 8 * format.channels)
+
+class RandomFileInputStream(file: File): InputStream() {
+    private var markPos = 0L
+    private val randomFile = RandomAccessFile(file, "r")
+    val length get() = randomFile.length()
+    @Throws(IOException::class)
+    override fun read() = randomFile.read()
+    @Synchronized
+    override fun reset() { randomFile.seek(markPos) }
+    @Throws(IOException::class)
+    override fun close() { randomFile.close() }
+    override fun markSupported() = true
+    @Synchronized
+    override fun mark(limit: Int) { markPos = randomFile.filePointer }
+    @Throws(IOException::class)
+    override fun skip(bytes: Long): Long {
+        val pos = randomFile.filePointer
+        randomFile.seek(pos + bytes)
+        return randomFile.filePointer - pos
+    }
+    @Throws(IOException::class)
+    override fun read(buffer: ByteArray) = randomFile.read(buffer)
+    @Throws(IOException::class)
+    override fun read(buffer: ByteArray, pos: Int, bytes: Int) = randomFile.read(buffer, pos, bytes)
+    @Throws(IOException::class)
+    fun seek(pos: Long) { randomFile.seek(pos) }
+}

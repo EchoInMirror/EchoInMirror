@@ -8,7 +8,7 @@ class DefaultMemoryAudioSource(override val factory: AudioSourceFactory<MemoryAu
     override val length get() = source.length
     override val channels get() = source.channels
     override val sampleRate get() = source.sampleRate
-    private var sampleBuffer: Array<FloatArray> = Array(channels) { FloatArray(length.toInt()) }
+    private var sampleBuffer = Array(channels) { FloatArray(length.toInt()) }
 
     init {
         source.getSamples(0, sampleBuffer)

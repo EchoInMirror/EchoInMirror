@@ -25,9 +25,9 @@ import cafe.adriel.bonsai.core.node.Node
 import cafe.adriel.bonsai.filesystem.FileSystemTree
 import com.eimsound.audioprocessor.AudioProcessorManager
 import com.eimsound.audioprocessor.AudioSourceManager
+import com.eimsound.audioprocessor.data.AudioThumbnail
 import com.eimsound.audioprocessor.data.midi.parse
 import com.eimsound.audioprocessor.data.midi.toMidiEvents
-import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.api.window.Panel
 import com.eimsound.daw.api.window.PanelDirection
 import com.eimsound.daw.components.FileSystemStyle
@@ -78,26 +78,28 @@ object FileSystemBrowser: Panel {
                     }
                 } else if (AudioSourceManager.instance.supportedFormats.contains(ext)) {
                     GlobalScope.launch {
-                        EchoInMirror.audioThumbnailCache[it.content.toNioPath()]?.let { a -> component = { Waveform(a) } }
-                        fileBrowserPreviewer.setPreviewTarget(
-                            AudioSourceManager.instance.createAutoWrappedAudioSource(it.content.toFile())
-                        )
+//                        val w = AudioSourceManager.instance.createAudioSource(it.content.toFile())
+                        val q = AudioSourceManager.instance.createAutoWrappedAudioSource(it.content.toFile())
+//                        println(w)
+//                        println(q)
+                        component = { Waveform(AudioThumbnail(q)) }
+                        fileBrowserPreviewer.setPreviewTarget(q)
                     }
                 }
             }
             Surface(Modifier.fillMaxWidth().height(40.dp), tonalElevation = 3.dp) {
                 val c = component
-                if (c != null) {
+                if (c != null) Box {
                     val width = remember { intArrayOf(0) }
                     val draggableState = remember {
                         DraggableState { fileBrowserPreviewer.playPosition += it / width[0].toDouble() }
                     }
                     val interactionSource = remember { MutableInteractionSource() }
+                    Box(Modifier.padding(horizontal = 4.dp), content = c)
                     Box(Modifier.fillMaxSize().onGloballyPositioned { width[0] = it.size.width }
                         .draggable(draggableState, Orientation.Horizontal, interactionSource = interactionSource)
                         .pointerHoverIcon(PointerIconDefaults.HorizontalResize)
                     ) {
-                        Box(Modifier.padding(horizontal = 4.dp), content = c)
                         val isHovered by interactionSource.collectIsHoveredAsState()
                         val left = LocalDensity.current.run {
                             (fileBrowserPreviewer.playPosition * width[0]).toFloat().toDp() - (if (isHovered) 2 else 1).dp

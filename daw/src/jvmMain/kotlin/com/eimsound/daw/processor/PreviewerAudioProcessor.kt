@@ -21,6 +21,7 @@ class PreviewerAudioProcessor(factory: AudioProcessorFactory<*>) : AbstractAudio
     private val sineWaveSynthesizer =
         SineWaveSynthesizer(AudioProcessorManager.instance.eimAudioProcessorFactory, true, 0.5F)
     private var audioPreviewTarget: ResampledAudioSource? = null
+    private var tempBuffers = Array(2) { FloatArray(1024) }
 
     val position: CurrentPosition = CurrentPositionImpl(this).apply { isPlaying = true }
     var playPosition
@@ -77,7 +78,8 @@ class PreviewerAudioProcessor(factory: AudioProcessorFactory<*>) : AbstractAudio
             this.position.update(blockEndSample)
         } else if (audio != null) {
             audio.factor = this.position.sampleRate.toDouble() / audio.source!!.sampleRate
-            audio.getSamples(this.position.timeInSamples, buffers)
+            audio.getSamples(this.position.timeInSamples, tempBuffers)
+            buffers.mixWith(tempBuffers)
             this.position.update(this.position.timeInSamples + position.bufferSize)
         }
     }
@@ -90,9 +92,15 @@ class PreviewerAudioProcessor(factory: AudioProcessorFactory<*>) : AbstractAudio
     }
 
     override fun prepareToPlay(sampleRate: Int, bufferSize: Int) {
+        if (tempBuffers[0].size < bufferSize) tempBuffers = Array(2) { FloatArray(bufferSize) }
         position.setSampleRateAndBufferSize(sampleRate, bufferSize)
         position.setCurrentTime(0)
         sineWaveSynthesizer.prepareToPlay(sampleRate, bufferSize)
+        val audio = audioPreviewTarget
+        if (audio != null) {
+            audio.factor = this.position.sampleRate.toDouble() / audio.source!!.sampleRate
+            position.projectRange = 0..position.convertSamplesToPPQ((audio.length * audio.factor).toLong())
+        }
     }
 
     fun setPreviewTarget(target: List<NoteMessage>) {
@@ -106,9 +114,10 @@ class PreviewerAudioProcessor(factory: AudioProcessorFactory<*>) : AbstractAudio
         position.setCurrentTime(0)
         midiPreviewTarget = null
         audioPreviewTarget?.close()
+        val factor = position.sampleRate.toDouble() / target.sampleRate
         audioPreviewTarget = AudioSourceManager.instance.createResampledSource(target).apply {
-            factor = position.sampleRate.toDouble() / target.sampleRate
+            this.factor = factor
         }
-        position.projectRange = 0..position.convertSamplesToPPQ((target.length * position.sampleRate / target.sampleRate).toLong())
+        position.projectRange = 0..position.convertSamplesToPPQ((target.length * factor).toLong())
     }
 }

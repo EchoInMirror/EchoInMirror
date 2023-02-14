@@ -26,7 +26,7 @@ fun Waveform(
         val halfChannelHeight = channelHeight / 2
         val drawHalfChannelHeight = halfChannelHeight - 1
         if (isDrawMinAndMax) {
-            thumbnail.query(size.width.toDouble(), startSeconds, endSeconds, 0.5F) { x, ch, min, max ->
+            thumbnail.query(size.width.toDouble(), startSeconds, endSeconds, STEP_IN_PX) { x, ch, min, max ->
                 val y = 2 + channelHeight * ch + halfChannelHeight
                 if (min == 0F && max == 0F) {
                     drawLine(color, Offset(x, y), Offset(x + STEP_IN_PX, y), STEP_IN_PX)

@@ -3,9 +3,9 @@ package com.eimsound.audiosources
 import com.eimsound.audioprocessor.AudioSource
 import com.eimsound.audioprocessor.FileAudioSource
 import com.eimsound.audioprocessor.FileAudioSourceFactory
+import com.eimsound.daw.utils.RandomFileInputStream
 import com.fasterxml.jackson.databind.JsonNode
 import org.jflac.FLACDecoder
-import org.jflac.io.RandomFileInputStream
 import org.jflac.sound.spi.FlacFileFormatType
 import org.jflac.util.ByteData
 import org.jflac.util.RingBuffer

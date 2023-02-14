@@ -17,50 +17,60 @@ import kotlin.math.roundToInt
 private const val DEFAULT_SAMPLES_PRE_THUMB_SAMPLE = 32
 
 class AudioThumbnail private constructor(
+    modifiedTime: Long = 0L,
     val channels: Int,
-    @Suppress("MemberVisibilityCanBePrivate") val lengthInSamples: Long,
+    val lengthInSamples: Long,
     val sampleRate: Float,
     val samplesPerThumbSample: Int = DEFAULT_SAMPLES_PRE_THUMB_SAMPLE,
     size: Int?,
 ) {
-    internal var modifiedTime = 0L
+    var modifiedTime = modifiedTime
+        internal set
     val size = size ?: ceil(lengthInSamples / samplesPerThumbSample.coerceAtLeast(DEFAULT_SAMPLES_PRE_THUMB_SAMPLE).toDouble()).toInt()
     private val minTree = Array(channels) { ByteArray(this.size * 4 + 1) }
     private val maxTree = Array(channels) { ByteArray(this.size * 4 + 1) }
+    private val tempArray = FloatArray(channels * 2)
+    init {
+        println("${this.size} ${this.lengthInSamples} ${sampleRate} $samplesPerThumbSample")
+    }
     constructor(channels: Int,
                 lengthInSamples: Long,
                 sampleRate: Float,
                 samplesPerThumbSample: Int = DEFAULT_SAMPLES_PRE_THUMB_SAMPLE
-    ): this(channels, lengthInSamples, sampleRate, samplesPerThumbSample, null)
+    ): this(0L, channels, lengthInSamples, sampleRate, samplesPerThumbSample, null)
 
     constructor(source: AudioSource, samplesPerThumbSample: Int = DEFAULT_SAMPLES_PRE_THUMB_SAMPLE):
             this(source.channels, source.length, source.sampleRate, samplesPerThumbSample) {
-        val buffers = Array(channels) { FloatArray(this.samplesPerThumbSample) }
+        val times = 1024 / this.samplesPerThumbSample
+        val buffers = Array(channels) { FloatArray(times * this.samplesPerThumbSample) }
         var pos = 0L
         var i = 1
         while (pos <= source.length) {
-            if (source.getSamples(pos, buffers) == 0) break
-            repeat(channels) { ch ->
-                var min: Byte = 127
-                var max: Byte = -128
-                buffers[ch].forEach {
-                    val v = (it * 127F).roundToInt().coerceIn(-128, 127).toByte()
-                    if (it < min) min = v
-                    if (it > max) max = v
+            if (source.getSamples(pos, buffers) < 1) break
+            repeat(times) { k ->
+                val curIndex = k * this.samplesPerThumbSample
+                repeat(channels) { ch ->
+                    var min: Byte = 127
+                    var max: Byte = -128
+                    val channel = buffers[ch]
+                    repeat(this.samplesPerThumbSample) { j ->
+                        val amp = channel[j + curIndex]
+                        val v = (amp * 127F).roundToInt().coerceIn(-128, 127).toByte()
+                        if (amp < min) min = v
+                        if (amp > max) max = v
+                    }
+                    minTree[ch][i] = min
+                    maxTree[ch][i] = max
                 }
-                minTree[ch][i] = min
-                maxTree[ch][i] = max
+                i++
+                pos += this.samplesPerThumbSample
+                if (pos > source.length) return
             }
-            i++
-            pos += this.samplesPerThumbSample
         }
         buildTree()
     }
 
-    constructor(data: ByteBuffer): this(data.run {
-        position(8)
-        get().toInt()
-    }, data.long, data.float, data.int, data.int) {
+    constructor(data: ByteBuffer): this(data.long, data.get().toInt(), data.long, data.float, data.int, data.int) {
         repeat(channels) {
             data.get(minTree[it], 1, size)
             data.get(maxTree[it], 1, size)
@@ -69,7 +79,6 @@ class AudioThumbnail private constructor(
     }
 
     fun query(x: Int, y: Int): FloatArray {
-        val data = FloatArray(channels * 2)
         repeat(channels) {
             @Suppress("NAME_SHADOWING") var y = y
             var min: Byte = 127
@@ -84,10 +93,10 @@ class AudioThumbnail private constructor(
                     y -= y.takeLowestOneBit()
                 }
             }
-            data[it * 2] = min / 127F
-            data[it * 2 + 1] = max / 127F
+            tempArray[it * 2] = min / 127F
+            tempArray[it * 2 + 1] = max / 127F
         }
-        return data
+        return tempArray
     }
 
     private fun buildTree() {
@@ -105,9 +114,10 @@ class AudioThumbnail private constructor(
     }
 
     inline fun query(widthInPx: Double, startTimeSeconds: Double = 0.0,
-                     endTimeSeconds: Double = samplesPerThumbSample / sampleRate.toDouble(),
+                     endTimeSeconds: Double = lengthInSamples / sampleRate.toDouble(),
                      stepInPx: Float = 1F,
-                     callback: (x: Float, channel: Int, min: Float, max: Float) -> Unit) {
+                     callback: (x: Float, channel: Int, min: Float, max: Float) -> Unit
+    ) {
         var x = startTimeSeconds * sampleRate / samplesPerThumbSample + 1
         val end = (endTimeSeconds * sampleRate / samplesPerThumbSample + 1).coerceAtMost(size.toDouble())
         val step = (end - x) / widthInPx * stepInPx
@@ -124,15 +134,14 @@ class AudioThumbnail private constructor(
 
     fun toByteArray(): ByteArray {
         val data = ByteBuffer.allocate(29 + channels * size * 2)
-        data.putLong(modifiedTime) // 8
-        data.put(channels.toByte()) // 1
-        data.putLong(lengthInSamples) // 8
-        data.putFloat(sampleRate) // 4
-        data.putInt(samplesPerThumbSample) // 4
-        data.putInt(size) // 4
+            .putLong(modifiedTime) // 8
+            .put(channels.toByte()) // 1
+            .putLong(lengthInSamples) // 8
+            .putFloat(sampleRate) // 4
+            .putInt(samplesPerThumbSample) // 4
+            .putInt(size) // 4
         repeat(channels) {
-            data.put(minTree[it], 1, size)
-            data.put(maxTree[it], 1, size)
+            data.put(minTree[it], 1, size).put(maxTree[it], 1, size)
         }
         return data.array()
     }
@@ -158,7 +167,7 @@ class AudioThumbnailCache(file: File, private val samplesPerThumbSample: Int = D
             val byteArray = db[key]
             if (byteArray != null) {
                 val buf = ByteBuffer.wrap(byteArray)
-                if (buf.long == time) return AudioThumbnail(buf)
+                if (buf.long == time) return AudioThumbnail(buf.position(0))
             }
             val value = AudioThumbnail(AudioSourceManager.instance.createAudioSource(real.toFile()), samplesPerThumbSample)
             set(key, time, value)
