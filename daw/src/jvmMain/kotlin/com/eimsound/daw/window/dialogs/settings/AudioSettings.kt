@@ -47,21 +47,18 @@ internal object AudioSettings : Tab {
                 Text("音频工厂:", Modifier.weight(1f))
                 Menu({ close ->
                     AudioPlayerManager.instance.factories.forEach { (name, _) ->
-                        MenuItem(
-                            Configuration.audioDeviceFactoryName == name,
-                            {
-                                if (Configuration.audioDeviceFactoryName == name) return@MenuItem
-                                EchoInMirror.player?.close()
-                                Configuration.audioDeviceName = ""
-                                Configuration.audioDeviceFactoryName = name
-                                Configuration.save()
-                                close()
+                        MenuItem({
+                            if (Configuration.audioDeviceFactoryName == name) return@MenuItem
+                            EchoInMirror.player?.close()
+                            Configuration.audioDeviceName = ""
+                            Configuration.audioDeviceFactoryName = name
+                            Configuration.save()
+                            close()
 
-                                GlobalScope.launch {
-                                    EchoInMirror.player = EchoInMirror.createAudioPlayer()
-                                }
-                            }, modifier = Modifier.fillMaxWidth()
-                        ) {
+                            GlobalScope.launch {
+                                EchoInMirror.player = EchoInMirror.createAudioPlayer()
+                            }
+                        }, Configuration.audioDeviceFactoryName == name, modifier = Modifier.fillMaxWidth()) {
                             Text(name)
                         }
                     }
@@ -79,23 +76,19 @@ internal object AudioSettings : Tab {
                         playerNames = AudioPlayerManager.instance.factories[Configuration.audioDeviceFactoryName]!!.getPlayers()
                     }
                     playerNames.fastForEach { playerName ->
-                        MenuItem(
-                            Configuration.audioDeviceName == playerName,
-                            {
-                                if (Configuration.audioDeviceName == playerName) return@MenuItem
-                                EchoInMirror.player?.close()
-                                Configuration.audioDeviceName = playerName
-                                Configuration.save()
-                                close()
+                        MenuItem({
+                            if (Configuration.audioDeviceName == playerName) return@MenuItem
+                            EchoInMirror.player?.close()
+                            Configuration.audioDeviceName = playerName
+                            Configuration.save()
+                            close()
 
-                                GlobalScope.launch {
-                                    EchoInMirror.player = EchoInMirror.createAudioPlayer()
-                                }
-                            }, modifier = Modifier.fillMaxWidth()
-                        ) {
+                            GlobalScope.launch {
+                                EchoInMirror.player = EchoInMirror.createAudioPlayer()
+                            }
+                        }, Configuration.audioDeviceName == playerName, modifier = Modifier.fillMaxWidth()) {
                             Text(playerName)
                         }
-
                     }
                 }, boxModifier = Modifier.weight(1f)) {
                     Text(Configuration.audioDeviceName, Modifier.fillMaxWidth())
@@ -106,22 +99,19 @@ internal object AudioSettings : Tab {
                 Text("缓冲区大小:", Modifier.weight(1f))
                 Menu({ close ->
                     EchoInMirror.player?.availableBufferSizes?.forEach {
-                        MenuItem(
-                            EchoInMirror.currentPosition.bufferSize == it,
-                            {
-                                EchoInMirror.player?.close()
-                                EchoInMirror.currentPosition.setSampleRateAndBufferSize(
-                                    EchoInMirror.currentPosition.sampleRate,
-                                    it
-                                )
-                                Configuration.save()
-                                close()
+                        MenuItem({
+                            EchoInMirror.player?.close()
+                            EchoInMirror.currentPosition.setSampleRateAndBufferSize(
+                                EchoInMirror.currentPosition.sampleRate,
+                                it
+                            )
+                            Configuration.save()
+                            close()
 
-                                GlobalScope.launch {
-                                    EchoInMirror.player = EchoInMirror.createAudioPlayer()
-                                }
-                            }, modifier = Modifier.fillMaxWidth()
-                        ) {
+                            GlobalScope.launch {
+                                EchoInMirror.player = EchoInMirror.createAudioPlayer()
+                            }
+                        }, EchoInMirror.currentPosition.bufferSize == it, modifier = Modifier.fillMaxWidth()) {
                             Text("$it 个采样")
                         }
                     }
@@ -136,23 +126,20 @@ internal object AudioSettings : Tab {
                 Text("采样率:", Modifier.weight(1f))
                 Menu({ close ->
                     EchoInMirror.player?.availableSampleRates?.forEach {
-                        MenuItem(
-                            sampleRate == it,
-                            {
-                                sampleRate = it
-                                EchoInMirror.player?.close()
-                                EchoInMirror.currentPosition.setSampleRateAndBufferSize(
-                                    it,
-                                    EchoInMirror.currentPosition.bufferSize
-                                )
-                                Configuration.save()
-                                close()
+                        MenuItem({
+                            sampleRate = it
+                            EchoInMirror.player?.close()
+                            EchoInMirror.currentPosition.setSampleRateAndBufferSize(
+                                it,
+                                EchoInMirror.currentPosition.bufferSize
+                            )
+                            Configuration.save()
+                            close()
 
-                                GlobalScope.launch {
-                                    EchoInMirror.player = EchoInMirror.createAudioPlayer()
-                                }
-                            }, modifier = Modifier.fillMaxWidth()
-                        ) {
+                            GlobalScope.launch {
+                                EchoInMirror.player = EchoInMirror.createAudioPlayer()
+                            }
+                        }, sampleRate == it, modifier = Modifier.fillMaxWidth()) {
                             Text(it.toString())
                         }
                     }

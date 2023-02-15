@@ -18,8 +18,8 @@ import androidx.compose.ui.unit.dp
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun MenuItem(
-    selected: Boolean = false,
     onClick: () -> Unit,
+    selected: Boolean = false,
     onDoubleClick: (() -> Unit)? = null,
     enabled: Boolean = true,
     modifier: Modifier = Modifier,
@@ -51,11 +51,10 @@ fun MenuItem(
 }
 
 @Composable
-fun Menu(
+fun DropdownMenu(
     menuItems: @Composable (closeDialog: () -> Unit) -> Unit,
-    modifier: Modifier = Modifier,
     boxModifier: Modifier = Modifier,
-    content: @Composable () -> Unit,
+    content: @Composable BoxScope.() -> Unit,
 ) {
     FloatingDialog({ size, close ->
         Surface(
@@ -69,7 +68,17 @@ fun Menu(
                 }
             }
         }
-    }, modifier = boxModifier) {
+    }, modifier = boxModifier, content = content)
+}
+
+@Composable
+fun Menu(
+    menuItems: @Composable (closeDialog: () -> Unit) -> Unit,
+    modifier: Modifier = Modifier,
+    boxModifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+) {
+    DropdownMenu(menuItems, boxModifier) {
         ReadonlyTextField(content = content, modifier = modifier)
     }
 }

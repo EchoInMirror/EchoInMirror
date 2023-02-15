@@ -59,10 +59,10 @@ private fun BusChannelType() {
             tonalElevation = 5.dp, shadowElevation = 5.dp) {
             Column {
                 ChannelType.values().forEach { type ->
-                    MenuItem(type == EchoInMirror.bus!!.channelType, {
+                    MenuItem({
                         close()
                         EchoInMirror.bus!!.channelType = type
-                    }) {
+                    }, type == EchoInMirror.bus!!.channelType) {
                         Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                             Icon(getChannelTypeIcon(type), type.name)
                             Box(Modifier.padding(horizontal = 4.dp))

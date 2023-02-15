@@ -42,10 +42,12 @@ private fun dfsTrackIndex(track: Track, target: Track, index: String): String? {
 @Composable
 private fun TrackItem(track: Track, backingTracks: IManualStateValue<WeakHashMap<Track, Unit>>, index: String, depth: Int = 0) {
     val isSelected = EchoInMirror.selectedClip?.clip == track
-    MenuItem(isSelected || backingTracks.readValue().contains(track), {
+    MenuItem({
         if (backingTracks.value.remove(track) == null) backingTracks.value[track] = Unit
         backingTracks.update()
-    }, minHeight = 28.dp, padding = PaddingValues(), modifier = Modifier.height(IntrinsicSize.Min)) {
+    }, isSelected || backingTracks.readValue().contains(track),
+        minHeight = 28.dp, padding = PaddingValues(), modifier = Modifier.height(IntrinsicSize.Min)
+    ) {
         Spacer(Modifier.width(6.dp * depth))
         Spacer(Modifier.width(6.dp).fillMaxHeight().background(track.color))
         Text(index + " " + track.name, Modifier.fillMaxWidth().padding(start = 6.dp, end = 12.dp), maxLines = 1,

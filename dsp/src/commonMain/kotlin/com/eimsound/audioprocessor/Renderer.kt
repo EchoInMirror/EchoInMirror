@@ -55,6 +55,7 @@ class RenderPosition(override var ppq: Int, override val sampleRate: Int, range:
     override var isLooping = false
     override var isRecording = false
     override val isRealtime = false
+    override var isProjectLooping = false
     override var timeInPPQ = range.first
     override var timeInSamples = convertPPQToSamples(timeInPPQ)
 

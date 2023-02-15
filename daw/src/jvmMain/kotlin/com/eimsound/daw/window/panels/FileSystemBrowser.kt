@@ -10,11 +10,10 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckBox
+import androidx.compose.material.icons.filled.CheckBoxOutlineBlank
 import androidx.compose.material.icons.filled.FolderOpen
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -35,10 +34,7 @@ import com.eimsound.audioprocessor.data.midi.toMidiEvents
 import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.api.window.Panel
 import com.eimsound.daw.api.window.PanelDirection
-import com.eimsound.daw.components.FileSystemStyle
-import com.eimsound.daw.components.MidiView
-import com.eimsound.daw.components.Tree
-import com.eimsound.daw.components.Waveform
+import com.eimsound.daw.components.*
 import com.eimsound.daw.components.dragdrop.FileDraggable
 import com.eimsound.daw.components.utils.HorizontalResize
 import com.eimsound.daw.impl.processor.eimAudioProcessorFactory
@@ -105,23 +101,50 @@ object FileSystemBrowser: Panel {
             }
             val width = remember { intArrayOf(1) }
             Surface(Modifier.fillMaxWidth().height(40.dp).onGloballyPositioned { width[0] = it.size.width }, tonalElevation = 3.dp) {
-                val c = component
-                if (c == null) Box(Modifier.fillMaxSize(), Alignment.Center) {
-                    Text("请选择文件...", style = MaterialTheme.typography.labelMedium)
-                } else Box {
-                    val draggableState = remember {
-                        DraggableState { fileBrowserPreviewer.playPosition += it / width[0].toDouble() }
+                DropdownMenu({ close ->
+                    MenuItem({
+                        close()
+                        fileBrowserPreviewer.position.isPlaying = !fileBrowserPreviewer.position.isPlaying
+                    }) {
+                        Text("自动播放")
+                        Filled()
+                        Icon(if (fileBrowserPreviewer.position.isPlaying) Icons.Filled.CheckBox
+                        else Icons.Filled.CheckBoxOutlineBlank, "自动播放", DEFAULT_ICON_MODIFIER)
                     }
-                    val interactionSource = remember { MutableInteractionSource() }
-                    Box(Modifier.padding(horizontal = 4.dp), content = c)
-                    Box(Modifier.fillMaxSize()
-                        .draggable(draggableState, Orientation.Horizontal, interactionSource = interactionSource)
-                        .pointerInput(Unit) {
-                            detectTapGestures { fileBrowserPreviewer.playPosition = it.x / width[0].toDouble() }
+                    MenuItem({
+                        close()
+                        fileBrowserPreviewer.position.isProjectLooping = !fileBrowserPreviewer.position.isProjectLooping
+                    }) {
+                        Text("循环播放")
+                        Filled()
+                        Icon(if (fileBrowserPreviewer.position.isProjectLooping) Icons.Filled.CheckBox
+                        else Icons.Filled.CheckBoxOutlineBlank, "自动播放", DEFAULT_ICON_MODIFIER)
+                    }
+                    Row {
+                        Text("音量")
+                        Slider(fileBrowserPreviewer.volume, { fileBrowserPreviewer.volume = it })
+                    }
+                }) {
+                    val c = component
+                    if (c == null) Box(Modifier.fillMaxSize(), Alignment.Center) {
+                        Text("请选择文件...", style = MaterialTheme.typography.labelMedium)
+                    } else Box {
+                        val draggableState = remember {
+                            DraggableState { fileBrowserPreviewer.playPosition += it / width[0].toDouble() }
                         }
-                        .pointerHoverIcon(PointerIconDefaults.HorizontalResize)
-                    ) {
-                        PlayHead(interactionSource, width)
+                        val interactionSource = remember { MutableInteractionSource() }
+                        Box(Modifier.padding(horizontal = 4.dp), content = c)
+                        Box(Modifier.fillMaxSize()
+                            .draggable(draggableState, Orientation.Horizontal, interactionSource = interactionSource)
+                            .pointerInput(Unit) {
+                                detectTapGestures({
+                                    fileBrowserPreviewer.position.isProjectLooping = !fileBrowserPreviewer.position.isProjectLooping
+                                }) { fileBrowserPreviewer.playPosition = it.x / width[0].toDouble() }
+                            }
+                            .pointerHoverIcon(PointerIconDefaults.HorizontalResize)
+                        ) {
+                            PlayHead(interactionSource, width)
+                        }
                     }
                 }
             }

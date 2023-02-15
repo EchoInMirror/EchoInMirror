@@ -104,10 +104,10 @@ val ExportDialog = @Composable {
                                     Text("导出格式: ")
                                     Menu({ close ->
                                         RenderFormat.values().forEach {
-                                            MenuItem(renderFormat == it, {
+                                            MenuItem({
                                                 close()
                                                 renderFormat = it
-                                            }, modifier = Modifier.fillMaxWidth()) { Text(it.extend) }
+                                            }, renderFormat == it, modifier = Modifier.fillMaxWidth()) { Text(it.extend) }
                                         }
                                     }) {
                                         Text(
@@ -123,10 +123,10 @@ val ExportDialog = @Composable {
                                     Menu({ close ->
                                         Column {
                                             ChannelType.values().forEach {
-                                                MenuItem(soundSelect == it, {
+                                                MenuItem({
                                                     close()
                                                     soundSelect = it
-                                                }, modifier = Modifier.fillMaxWidth()) {
+                                                }, soundSelect == it, modifier = Modifier.fillMaxWidth()) {
                                                     Text(it.name)
                                                 }
                                             }
@@ -164,10 +164,10 @@ val ExportDialog = @Composable {
                                     Menu({ close ->
                                         Column {
                                             arrayOf(128, 192, 256, 320).map {
-                                                MenuItem(bitRate == it, {
+                                                MenuItem({
                                                     close()
                                                     bitRate = it
-                                                }, modifier = Modifier.fillMaxWidth()) {
+                                                }, bitRate == it, modifier = Modifier.fillMaxWidth()) {
                                                     Text(it.toString())
                                                 }
                                             }

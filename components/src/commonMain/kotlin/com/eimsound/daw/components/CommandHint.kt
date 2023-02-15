@@ -47,7 +47,7 @@ fun KeysHint(keys: Array<Key>, iconModifier: Modifier = DEFAULT_ICON_MODIFIER) {
 @Composable
 fun CommandMenuItem(command: Command, keys: Array<Key> = command.keyBindings, enabled: Boolean = true,
                     iconModifier: Modifier = DEFAULT_ICON_MODIFIER, onClick: () -> Unit) {
-    MenuItem(false, onClick, enabled = enabled, modifier = Modifier.fillMaxWidth()) {
+    MenuItem(onClick, enabled = enabled, modifier = Modifier.fillMaxWidth()) {
         command.icon?.let { Icon(it, it.name, iconModifier) }
         Text(command.displayName, DEFAULT_COMMAND_NAME_MODIFIER)
         Filled(Modifier.widthIn(12.dp))

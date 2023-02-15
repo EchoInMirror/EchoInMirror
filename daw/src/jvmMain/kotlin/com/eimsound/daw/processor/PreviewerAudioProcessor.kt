@@ -23,6 +23,7 @@ class PreviewerAudioProcessor(factory: AudioProcessorFactory<*>) : AbstractAudio
     private var audioPreviewTarget: ResampledAudioSource? = null
     private var tempBuffers = Array(2) { FloatArray(1024) }
 
+    var volume by sineWaveSynthesizer::volume
     val position: CurrentPosition = CurrentPositionImpl(this).apply { isPlaying = true }
     var playPosition
         get() = position.timeInPPQ.toDouble() / position.projectRange.last

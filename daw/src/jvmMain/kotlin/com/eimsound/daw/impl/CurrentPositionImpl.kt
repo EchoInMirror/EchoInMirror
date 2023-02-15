@@ -28,6 +28,7 @@ class CurrentPositionImpl(
     override var isLooping by mutableStateOf(false)
     override var isRecording by mutableStateOf(false)
     override val isRealtime = true
+    override var isProjectLooping by mutableStateOf(true)
 
     private var _isPlaying by mutableStateOf(false)
     override var isPlaying
@@ -43,7 +44,7 @@ class CurrentPositionImpl(
         timeInSeconds = this.timeInSamples.toDouble() / sampleRate
         ppqPosition = timeInSeconds / 60.0 * bpm
         timeInPPQ = (ppqPosition * ppq).toInt()
-        if (timeInPPQ !in projectRange) setCurrentTime(projectRange.first)
+        checkTimeInPPQ()
     }
 
     override fun setPPQPosition(ppqPosition: Double) {
@@ -52,7 +53,7 @@ class CurrentPositionImpl(
         timeInSeconds = this.ppqPosition / bpm * 60.0
         timeInSamples = (timeInSeconds * sampleRate).toLong()
         timeInPPQ = (this.ppqPosition * ppq * timeSigNumerator).toInt()
-        if (timeInPPQ !in projectRange) setCurrentTime(projectRange.first)
+        checkTimeInPPQ()
         (if (isMainPosition) EchoInMirror.bus else suddenChangeListener)?.onSuddenChange()
     }
 
@@ -68,5 +69,14 @@ class CurrentPositionImpl(
     override fun setSampleRateAndBufferSize(sampleRate: Int, bufferSize: Int) {
         this.sampleRate = sampleRate
         this.bufferSize = bufferSize
+    }
+
+    private fun checkTimeInPPQ() {
+        if (timeInPPQ !in projectRange) if (isProjectLooping) {
+            setCurrentTime(projectRange.first)
+        } else {
+            isPlaying = false
+            setCurrentTime(projectRange.last)
+        }
     }
 }

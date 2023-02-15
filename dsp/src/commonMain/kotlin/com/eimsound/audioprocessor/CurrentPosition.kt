@@ -1,5 +1,9 @@
 package com.eimsound.audioprocessor
 
+/**
+ * @see com.eimsound.daw.impl.CurrentPositionImpl
+ * @see com.eimsound.audioprocessor.RenderPosition
+ */
 interface CurrentPosition {
     var bpm: Double
     val timeInSamples: Long
@@ -9,6 +13,7 @@ interface CurrentPosition {
     val ppqPosition: Double
     var isPlaying: Boolean
     var isLooping: Boolean
+    var isProjectLooping: Boolean
     var isRecording: Boolean
     val isRealtime: Boolean
     val bufferSize: Int

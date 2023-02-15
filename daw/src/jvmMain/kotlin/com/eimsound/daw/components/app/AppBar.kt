@@ -16,12 +16,12 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.eimsound.audioprocessor.data.defaultScale
 import com.eimsound.audioprocessor.data.midi.KEY_NAMES
+import com.eimsound.audioprocessor.data.quantificationUnits
 import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.components.FloatingDialog
 import com.eimsound.daw.components.MenuItem
-import com.eimsound.audioprocessor.data.defaultScale
-import com.eimsound.audioprocessor.data.quantificationUnits
 
 @Composable
 fun getAppBarFont() = TextStyle(MaterialTheme.colorScheme.onBackground, 18.sp, fontWeight = FontWeight.Bold,
@@ -127,10 +127,10 @@ private fun Quantification() {
             Column {
                 quantificationUnits.forEach {
                     if (it.hasDividerAbove) Divider()
-                    MenuItem(EchoInMirror.quantification == it, {
+                    MenuItem({
                         close()
                         EchoInMirror.quantification = it
-                    }) {
+                    }, EchoInMirror.quantification == it) {
                         Text(it.name, fontWeight = if (it.isSpecial) FontWeight.Bold else FontWeight.Normal)
                     }
                 }
@@ -147,9 +147,7 @@ fun RootNote() {
         Surface(Modifier.width(IntrinsicSize.Min), MaterialTheme.shapes.extraSmall,
             shadowElevation = 6.dp, tonalElevation = 1.dp) {
             Column {
-                KEY_NAMES.forEach {
-                    MenuItem(false, { close() }) { Text(it) }
-                }
+                KEY_NAMES.forEach { MenuItem(close) { Text(it) } }
             }
         }
     }) {
@@ -175,10 +173,10 @@ private fun TimeSignature() {
                     shadowElevation = 6.dp, tonalElevation = 1.dp) {
                     Column {
                         arrayOf(2, 4, 8, 16).forEach {
-                            MenuItem(EchoInMirror.currentPosition.timeSigDenominator == it, {
+                            MenuItem({
                                 close()
                                 EchoInMirror.currentPosition.timeSigDenominator = it
-                            }) {
+                            }, EchoInMirror.currentPosition.timeSigDenominator == it) {
                                 Text(it.toString())
                             }
                         }

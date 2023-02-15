@@ -1,5 +1,8 @@
 package com.eimsound.daw.processor.synthesizer
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import com.eimsound.audioprocessor.AudioProcessor
 import com.eimsound.audioprocessor.AudioProcessorFactory
 import com.eimsound.audioprocessor.CurrentPosition
@@ -13,9 +16,13 @@ val SineWaveSynthesizerDescription = EIMAudioProcessorDescription("SineWaveSynth
 class SineWaveSynthesizer(
     factory: AudioProcessorFactory<AudioProcessor>,
     private val isMix: Boolean = false,
-    override var volume: Float = 1F
+    volume: Float = 1F
 ): Synthesizer(SineWaveSynthesizerDescription, factory), Volume {
     private val angels = DoubleArray(127)
+    private var _volume by mutableStateOf(volume.coerceAtLeast(0F))
+    override var volume: Float
+        get() = _volume
+        set(value) { _volume = value.coerceAtLeast(0F) }
 
     override suspend fun processBlock(buffers: Array<FloatArray>, position: CurrentPosition, midiBuffer: ArrayList<Int>) {
         var midiIndex = 0
