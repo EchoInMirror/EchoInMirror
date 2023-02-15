@@ -1,5 +1,7 @@
 package com.eimsound.daw.window.panels
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.PointerMatcher
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.DraggableState
 import androidx.compose.foundation.gestures.Orientation
@@ -10,20 +12,22 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckBox
-import androidx.compose.material.icons.filled.CheckBoxOutlineBlank
 import androidx.compose.material.icons.filled.FolderOpen
+import androidx.compose.material.icons.outlined.CheckBox
+import androidx.compose.material.icons.outlined.CheckBoxOutlineBlank
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerIconDefaults
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import cafe.adriel.bonsai.core.node.Node
 import cafe.adriel.bonsai.filesystem.FileSystemTree
@@ -44,6 +48,7 @@ import okio.FileSystem
 import okio.Path
 import java.io.File
 import javax.sound.midi.MidiSystem
+import kotlin.io.path.name
 
 val FileMapper = @Composable { node: Node<Path>, content: @Composable () -> Unit ->
     if (FileSystem.SYSTEM.metadata(node.content).isDirectory) content()
@@ -66,9 +71,11 @@ object FileSystemBrowser: Panel {
     override fun Content() {
         Column {
             var component by remember { mutableStateOf<(@Composable BoxScope.() -> Unit)?>(null) }
+            var nodeName by remember { mutableStateOf<String?>(null) }
             Tree(FileSystemTree(File("C:\\"), true), FileSystemStyle, FileMapper, Modifier.weight(1F)) {
                 if (FileSystem.SYSTEM.metadata(it.content).isDirectory) return@Tree
                 component = null
+                nodeName = null
                 val ext = it.content.toFile().extension.lowercase()
                 GlobalScope.launch {
                     var hasContent = false
@@ -78,6 +85,7 @@ object FileSystemBrowser: Panel {
                                 MidiSystem.getSequence(it.content.toFile()).toMidiEvents().parse()
                             }
                             component = { MidiView(list.notes) }
+                            nodeName = it.content.name
                             fileBrowserPreviewer.setPreviewTarget(list.notes)
                             hasContent = true
                         } else if (AudioSourceManager.instance.supportedFormats.contains(ext)) {
@@ -85,6 +93,7 @@ object FileSystemBrowser: Panel {
                             val audioSource = AudioSourceManager.instance.createAudioSource(file)
                             EchoInMirror.audioThumbnailCache[file, audioSource]?.let {
                                 component = { Waveform(it) }
+                                nodeName = file.name
                                 hasContent = true
                             }
                             fileBrowserPreviewer.setPreviewTarget(audioSource)
@@ -95,36 +104,43 @@ object FileSystemBrowser: Panel {
                     }
                     if (!hasContent) {
                         component = null
+                        nodeName = null
                         fileBrowserPreviewer.clear()
                     }
                 }
             }
             val width = remember { intArrayOf(1) }
             Surface(Modifier.fillMaxWidth().height(40.dp).onGloballyPositioned { width[0] = it.size.width }, tonalElevation = 3.dp) {
+                @OptIn(ExperimentalFoundationApi::class)
                 DropdownMenu({ close ->
                     MenuItem({
-                        close()
                         fileBrowserPreviewer.position.isPlaying = !fileBrowserPreviewer.position.isPlaying
+                        close()
                     }) {
                         Text("自动播放")
                         Filled()
-                        Icon(if (fileBrowserPreviewer.position.isPlaying) Icons.Filled.CheckBox
-                        else Icons.Filled.CheckBoxOutlineBlank, "自动播放", DEFAULT_ICON_MODIFIER)
+                        Icon(if (fileBrowserPreviewer.position.isPlaying) Icons.Outlined.CheckBox
+                        else Icons.Outlined.CheckBoxOutlineBlank, "自动播放")
                     }
                     MenuItem({
-                        close()
                         fileBrowserPreviewer.position.isProjectLooping = !fileBrowserPreviewer.position.isProjectLooping
+                        close()
                     }) {
                         Text("循环播放")
                         Filled()
-                        Icon(if (fileBrowserPreviewer.position.isProjectLooping) Icons.Filled.CheckBox
-                        else Icons.Filled.CheckBoxOutlineBlank, "自动播放", DEFAULT_ICON_MODIFIER)
+                        Icon(if (fileBrowserPreviewer.position.isProjectLooping) Icons.Outlined.CheckBox
+                        else Icons.Outlined.CheckBoxOutlineBlank, "自动播放")
                     }
-                    Row {
+                    MenuItem {
                         Text("音量")
-                        Slider(fileBrowserPreviewer.volume, { fileBrowserPreviewer.volume = it })
+                        Filled()
+                        Slider(fileBrowserPreviewer.volume, { fileBrowserPreviewer.volume = it }, Modifier.width(140.dp))
                     }
-                }) {
+                    Divider()
+                    MenuItem(close) {
+                        Text(nodeName ?: "请选择文件...", overflow = TextOverflow.Ellipsis, maxLines = 1)
+                    }
+                }, enabled = false, matcher = PointerMatcher.mouse(PointerButton.Secondary)) {
                     val c = component
                     if (c == null) Box(Modifier.fillMaxSize(), Alignment.Center) {
                         Text("请选择文件...", style = MaterialTheme.typography.labelMedium)

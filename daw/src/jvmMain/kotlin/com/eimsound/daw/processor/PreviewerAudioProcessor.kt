@@ -80,7 +80,7 @@ class PreviewerAudioProcessor(factory: AudioProcessorFactory<*>) : AbstractAudio
         } else if (audio != null) {
             audio.factor = position.sampleRate.toDouble() / audio.source!!.sampleRate
             audio.getSamples(this.position.timeInSamples, tempBuffers)
-            buffers.mixWith(tempBuffers)
+            buffers.mixWith(tempBuffers, volume)
             this.position.update(this.position.timeInSamples + position.bufferSize)
         }
     }

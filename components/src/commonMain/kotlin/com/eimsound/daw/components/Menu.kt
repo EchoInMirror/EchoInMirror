@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.dp
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun MenuItem(
-    onClick: () -> Unit,
+    onClick: (() -> Unit)? = null,
     selected: Boolean = false,
     onDoubleClick: (() -> Unit)? = null,
     enabled: Boolean = true,
@@ -30,19 +30,19 @@ fun MenuItem(
     val color = LocalContentColor.current
     CompositionLocalProvider(LocalContentColor.provides(if (enabled) color else color.copy(0.38F))) {
         Row(
-            modifier = modifier
+            modifier = (if (onClick == null) modifier else modifier
                 .combinedClickable(
                     enabled,
                     onDoubleClick = onDoubleClick,
                     onClick = onClick
-                )
+                ))
                 .run { if (selected) background(MaterialTheme.colorScheme.secondary.copy(0.2F)) else this }
                 .sizeIn(
                     minWidth = 100.dp,
                     maxWidth = 280.dp,
                     minHeight = minHeight
                 )
-                .pointerHoverIcon(if (enabled) PointerIconDefaults.Hand else PointerIconDefaults.Default)
+                .pointerHoverIcon(if (enabled && onClick != null) PointerIconDefaults.Hand else PointerIconDefaults.Default)
                 .padding(padding),
             verticalAlignment = Alignment.CenterVertically,
             content = content
@@ -50,10 +50,13 @@ fun MenuItem(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun DropdownMenu(
     menuItems: @Composable (closeDialog: () -> Unit) -> Unit,
     boxModifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    matcher: PointerMatcher = PointerMatcher.Primary,
     content: @Composable BoxScope.() -> Unit,
 ) {
     FloatingDialog({ size, close ->
@@ -68,7 +71,7 @@ fun DropdownMenu(
                 }
             }
         }
-    }, modifier = boxModifier, content = content)
+    }, modifier = boxModifier, enabled = enabled, matcher = matcher, content = content)
 }
 
 @Composable
@@ -78,6 +81,7 @@ fun Menu(
     boxModifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
+    @OptIn(ExperimentalFoundationApi::class)
     DropdownMenu(menuItems, boxModifier) {
         ReadonlyTextField(content = content, modifier = modifier)
     }

@@ -2,8 +2,11 @@ package com.eimsound.daw.components
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.PointerMatcher
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.onClick
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -96,11 +99,21 @@ class FloatingDialogProvider {
 
 val LocalFloatingDialogProvider = staticCompositionLocalOf { FloatingDialogProvider() }
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun FloatingDialog(dialogContent: @Composable (size: Size, closeDialog: () -> Unit) -> Unit,
                    modifier: Modifier = Modifier, enabled: Boolean = true,
                    hasOverlay: Boolean = false, isCentral: Boolean = false,
+                   content: @Composable BoxScope.() -> Unit) {
+    @OptIn(ExperimentalFoundationApi::class)
+    FloatingDialog(dialogContent, modifier, enabled, hasOverlay, isCentral, PointerMatcher.Primary, content)
+}
+
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
+@Composable
+fun FloatingDialog(dialogContent: @Composable (size: Size, closeDialog: () -> Unit) -> Unit,
+                   modifier: Modifier = Modifier, enabled: Boolean = true,
+                   hasOverlay: Boolean = false, isCentral: Boolean = false,
+                   matcher: PointerMatcher = PointerMatcher.Primary,
                    content: @Composable BoxScope.() -> Unit) {
     val id = remember { Any() }
     val localFloatingDialogProvider = LocalFloatingDialogProvider.current
@@ -111,7 +124,7 @@ fun FloatingDialog(dialogContent: @Composable (size: Size, closeDialog: () -> Un
         offset[0] = it.positionInRoot()
         size[0] = it.size.toSize()
     }).let { if (enabled) it.pointerHoverIcon(PointerIconDefaults.Hand) else it }
-        .onPointerEvent(PointerEventType.Press) {
+        .onClick(matcher = matcher) {
             localFloatingDialogProvider.openFloatingDialog({ closeDialog() },
                 if (isCentral) null else offset[0] + Offset(0f, size[0].height),
                 id, hasOverlay

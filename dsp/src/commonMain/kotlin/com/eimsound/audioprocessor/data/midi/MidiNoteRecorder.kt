@@ -24,13 +24,13 @@ class MidiNoteRecorder : Iterable<Int> {
 
     fun isMarked(note: Int) = if (note >= 64) __notes2 and (1uL shl (note - 64)) != 0uL else __notes1 and (1uL shl note) != 0uL
 
-    @Suppress("DuplicatedCode")
     inline fun forEachNotes(block: (Int) -> Unit) {
         var i = -1
         var note = __notes1
         while (note != 0uL) {
             val zeros = note.countTrailingZeroBits() + 1
             i += zeros
+            if (i >= 128) break
             note = note shr zeros
             block(i)
         }
@@ -39,6 +39,7 @@ class MidiNoteRecorder : Iterable<Int> {
         while (note != 0uL) {
             val zeros = note.countTrailingZeroBits() + 1
             i += zeros
+            if (i >= 128) break
             note = note shr zeros
             block(i)
         }
