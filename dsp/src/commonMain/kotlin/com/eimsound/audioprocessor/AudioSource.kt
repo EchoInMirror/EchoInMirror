@@ -9,7 +9,6 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.SerializerProvider
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.databind.ser.std.StdSerializer
-import java.io.File
 import java.nio.file.Path
 import java.util.*
 
@@ -32,6 +31,9 @@ interface AudioSource {
     fun getSamples(start: Long, buffers: Array<FloatArray>): Int
 }
 
+/**
+ * @see com.eimsound.audiosources.DefaultFileAudioSource
+ */
 interface FileAudioSource : AudioSource, AutoCloseable {
     @get:JsonProperty
     val file: Path
@@ -39,11 +41,17 @@ interface FileAudioSource : AudioSource, AutoCloseable {
     override val factory: FileAudioSourceFactory<*>
 }
 
+/**
+ * @see com.eimsound.audiosources.DefaultResampledAudioSource
+ */
 interface ResampledAudioSource : AudioSource {
     var factor: Double
     override val factory: ResampledAudioSourceFactory<*>
 }
 
+/**
+ * @see com.eimsound.audiosources.DefaultMemoryAudioSource
+ */
 interface MemoryAudioSource : AudioSource, AutoCloseable
 
 @JsonSerialize(using = AudioSourceFactoryNameSerializer::class)
@@ -52,13 +60,22 @@ interface AudioSourceFactory <T: AudioSource> {
     fun createAudioSource(source: AudioSource? = null, json: JsonNode? = null): T
 }
 
+/**
+ * @see com.eimsound.audiosources.DefaultFileAudioSourceFactory
+ */
 interface FileAudioSourceFactory <T: FileAudioSource> : AudioSourceFactory<T> {
     val supportedFormats: List<String>
-    fun createAudioSource(file: File): T
+    fun createAudioSource(file: Path): T
 }
 
+/**
+ * @see com.eimsound.audiosources.DefaultResampledAudioSourceFactory
+ */
 interface ResampledAudioSourceFactory <T: ResampledAudioSource> : AudioSourceFactory<T>
 
+/**
+ * @see com.eimsound.audiosources.DefaultMemoryAudioSourceFactory
+ */
 interface MemoryAudioSourceFactory <T: MemoryAudioSource> : AudioSourceFactory<T>
 
 /**
@@ -72,8 +89,8 @@ interface AudioSourceManager : Reloadable {
     val supportedFormats: Set<String>
     fun createAudioSource(factory: String, source: AudioSource? = null): AudioSource
     fun createAudioSource(json: JsonNode): AudioSource
-    fun createAudioSource(file: File, factory: String? = null): FileAudioSource
-    fun createAutoWrappedAudioSource(file: File): AudioSource
+    fun createAudioSource(file: Path, factory: String? = null): FileAudioSource
+    fun createAutoWrappedAudioSource(file: Path): AudioSource
     fun createMemorySource(source: AudioSource, factory: String? = null): MemoryAudioSource
     fun createResampledSource(source: AudioSource, factory: String? = null): ResampledAudioSource
 }

@@ -12,10 +12,10 @@ import org.jflac.util.RingBuffer
 import org.tritonus.sampled.file.WaveAudioFileReader
 import org.tritonus.share.sampled.FloatSampleTools
 import java.io.BufferedInputStream
-import java.io.File
 import java.io.FileInputStream
 import java.io.InputStream
 import java.nio.file.Path
+import java.nio.file.Paths
 import javax.sound.sampled.AudioFileFormat
 import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioSystem
@@ -65,14 +65,13 @@ class DefaultFileAudioSource(override val factory: FileAudioSourceFactory<*>, ov
 
     override fun getSamples(start: Long, buffers: Array<FloatArray>): Int {
         val stream = stream ?: return 0
-        var consumed = 0
+        val consumed: Int
         if (isFlac) {
             if ((lastPos + buffers[0].size - start).absoluteValue > 4) {
                 flacDecoder.seek(start.coerceIn(0, length))
                 buffer.empty()
             }
-            readFromByteArray(buffers, ::readFlac)
-            consumed = buffers[0].size
+            consumed = readFromByteArray(buffers)
             lastPos = start
         } else {
             val len = length
@@ -85,11 +84,7 @@ class DefaultFileAudioSource(override val factory: FileAudioSourceFactory<*>, ov
                     stream.skip(start * frameSize)
                 }
             }
-            for (i in 0 until channels) {
-                if (i >= buffers.size) break
-                consumed = buffers[i].size.coerceAtMost((len - start).toInt())
-                readFromByteArray(buffers, ::readFromTempBuffer)
-            }
+            consumed = readFromByteArray(buffers)
             lastPos = start
         }
         return consumed
@@ -99,8 +94,6 @@ class DefaultFileAudioSource(override val factory: FileAudioSourceFactory<*>, ov
         stream?.close()
         stream = null
     }
-
-    private fun readFromTempBuffer(offset: Int, len: Int) = stream!!.read(tempBuffer!!, offset, len)
 
     private fun readFlac(offset: Int, len: Int): Int {
         var offset2 = offset
@@ -133,7 +126,7 @@ class DefaultFileAudioSource(override val factory: FileAudioSourceFactory<*>, ov
         return if (bytesRead < 1) -1 else bytesRead
     }
 
-    private fun readFromByteArray(buffers: Array<FloatArray>, block: (Int, Int) -> Int) {
+    private fun readFromByteArray(buffers: Array<FloatArray>): Int {
         // read into temporary byte buffer
         val sampleCount = buffers[0].size
         var byteBufferSize = sampleCount * frameSize
@@ -145,7 +138,8 @@ class DefaultFileAudioSource(override val factory: FileAudioSourceFactory<*>, ov
         var readSamples = 0
         var byteOffset = 0
         while (readSamples < sampleCount) {
-            val readBytes = block(byteOffset, byteBufferSize)
+            val readBytes = if (isFlac) readFlac(byteOffset, byteBufferSize)
+            else stream!!.read(lTempBuffer, byteOffset, byteBufferSize)
             if (readBytes < 0) {
                 break
             } else if (readBytes == 0) {
@@ -164,6 +158,7 @@ class DefaultFileAudioSource(override val factory: FileAudioSourceFactory<*>, ov
                 readSamples, newFormat, false
             )
         }
+        return readSamples
     }
 
     override fun toString(): String {
@@ -174,9 +169,9 @@ class DefaultFileAudioSource(override val factory: FileAudioSourceFactory<*>, ov
 class DefaultFileAudioSourceFactory : FileAudioSourceFactory<DefaultFileAudioSource> {
     override val supportedFormats = listOf("wav", "flac", "mp3", "ogg", "aiff", "aif", "aifc", "au", "snd")
     override val name = "File"
-    override fun createAudioSource(file: File) = DefaultFileAudioSource(this, file.toPath())
+    override fun createAudioSource(file: Path) = DefaultFileAudioSource(this, file)
     override fun createAudioSource(source: AudioSource?, json: JsonNode?): DefaultFileAudioSource {
         val file = json?.get("file")?.asText() ?: throw IllegalArgumentException("File not found!")
-        return createAudioSource(File(file))
+        return createAudioSource(Paths.get(file))
     }
 }

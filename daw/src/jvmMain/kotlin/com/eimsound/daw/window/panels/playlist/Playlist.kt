@@ -97,6 +97,13 @@ class Playlist : Panel, BasicEditor {
     }
 
     @Composable
+    private fun PlaylistPlayHead() {
+        PlayHead(noteWidth, horizontalScrollState,
+            (EchoInMirror.currentPosition.ppqPosition * EchoInMirror.currentPosition.ppq).toFloat(),
+            contentWidth)
+    }
+
+    @Composable
     override fun Icon() {
         Icon(Icons.Filled.QueueMusic, "Playlist")
     }
@@ -155,11 +162,7 @@ class Playlist : Panel, BasicEditor {
                             Spacer(Modifier.fillMaxSize())
                         }
                         TrackSelection(this@Playlist, localDensity, horizontalScrollState, verticalScrollState)
-                        Box {
-                            PlayHead(noteWidth, horizontalScrollState,
-                                (EchoInMirror.currentPosition.ppqPosition * EchoInMirror.currentPosition.ppq).toFloat(),
-                            contentWidth)
-                        }
+                        PlaylistPlayHead()
                         VerticalScrollbar(
                             rememberScrollbarAdapter(verticalScrollState),
                             Modifier.align(Alignment.TopEnd).fillMaxHeight()

@@ -12,7 +12,7 @@ val SineWaveSynthesizerDescription = EIMAudioProcessorDescription("SineWaveSynth
 
 class SineWaveSynthesizer(
     factory: AudioProcessorFactory<AudioProcessor>,
-    val isMix: Boolean = false,
+    private val isMix: Boolean = false,
     override var volume: Float = 1F
 ): Synthesizer(SineWaveSynthesizerDescription, factory), Volume {
     private val angels = DoubleArray(127)

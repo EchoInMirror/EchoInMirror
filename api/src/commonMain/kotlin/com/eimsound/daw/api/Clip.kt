@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.databind.ser.std.StdSerializer
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import java.io.File
+import java.nio.file.Path
 import java.util.*
 
 interface ClipEditor : BasicEditor {
@@ -60,7 +61,7 @@ interface MidiClipFactory: ClipFactory<MidiClip>
  * @see com.eimsound.daw.impl.clips.audio.AudioClipFactoryImpl
  */
 interface AudioClipFactory: ClipFactory<AudioClip> {
-    fun createClip(path: File): AudioClip
+    fun createClip(path: Path): AudioClip
 }
 
 /**

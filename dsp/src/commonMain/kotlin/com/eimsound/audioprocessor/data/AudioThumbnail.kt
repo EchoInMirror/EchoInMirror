@@ -30,9 +30,7 @@ class AudioThumbnail private constructor(
     private val minTree = Array(channels) { ByteArray(this.size * 4 + 1) }
     private val maxTree = Array(channels) { ByteArray(this.size * 4 + 1) }
     private val tempArray = FloatArray(channels * 2)
-    init {
-        println("${this.size} ${this.lengthInSamples} ${sampleRate} $samplesPerThumbSample")
-    }
+
     constructor(channels: Int,
                 lengthInSamples: Long,
                 sampleRate: Float,
@@ -159,7 +157,8 @@ class AudioThumbnailCache(file: File, private val samplesPerThumbSample: Int = D
     }
     operator fun contains(key: String) = db[key] != null
     fun remove(key: String) = db.remove(key)
-    operator fun get(file: Path): AudioThumbnail? {
+    operator fun get(file: File, audioSource: AudioSource? = null): AudioThumbnail? = get(file.toPath(), audioSource)
+    operator fun get(file: Path, audioSource: AudioSource? = null): AudioThumbnail? {
         try {
             val real = file.toRealPath()
             val key = real.absolutePathString()
@@ -169,7 +168,7 @@ class AudioThumbnailCache(file: File, private val samplesPerThumbSample: Int = D
                 val buf = ByteBuffer.wrap(byteArray)
                 if (buf.long == time) return AudioThumbnail(buf.position(0))
             }
-            val value = AudioThumbnail(AudioSourceManager.instance.createAudioSource(real.toFile()), samplesPerThumbSample)
+            val value = AudioThumbnail(audioSource ?: AudioSourceManager.instance.createAudioSource(real), samplesPerThumbSample)
             set(key, time, value)
             return value
         } catch (e: IOException) {

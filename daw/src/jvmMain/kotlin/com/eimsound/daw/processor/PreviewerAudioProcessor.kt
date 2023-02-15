@@ -77,7 +77,7 @@ class PreviewerAudioProcessor(factory: AudioProcessorFactory<*>) : AbstractAudio
             sineWaveSynthesizer.processBlock(buffers, this.position, midiBuffer2)
             this.position.update(blockEndSample)
         } else if (audio != null) {
-            audio.factor = this.position.sampleRate.toDouble() / audio.source!!.sampleRate
+            audio.factor = position.sampleRate.toDouble() / audio.source!!.sampleRate
             audio.getSamples(this.position.timeInSamples, tempBuffers)
             buffers.mixWith(tempBuffers)
             this.position.update(this.position.timeInSamples + position.bufferSize)
@@ -92,13 +92,13 @@ class PreviewerAudioProcessor(factory: AudioProcessorFactory<*>) : AbstractAudio
     }
 
     override fun prepareToPlay(sampleRate: Int, bufferSize: Int) {
-        if (tempBuffers[0].size < bufferSize) tempBuffers = Array(2) { FloatArray(bufferSize) }
+        tempBuffers = Array(2) { FloatArray(bufferSize) }
         position.setSampleRateAndBufferSize(sampleRate, bufferSize)
         position.setCurrentTime(0)
         sineWaveSynthesizer.prepareToPlay(sampleRate, bufferSize)
         val audio = audioPreviewTarget
         if (audio != null) {
-            audio.factor = this.position.sampleRate.toDouble() / audio.source!!.sampleRate
+            audio.factor = sampleRate.toDouble() / audio.source!!.sampleRate
             position.projectRange = 0..position.convertSamplesToPPQ((audio.length * audio.factor).toLong())
         }
     }
@@ -119,5 +119,11 @@ class PreviewerAudioProcessor(factory: AudioProcessorFactory<*>) : AbstractAudio
             this.factor = factor
         }
         position.projectRange = 0..position.convertSamplesToPPQ((target.length * factor).toLong())
+    }
+    fun clear() {
+        midiPreviewTarget = null
+        audioPreviewTarget?.close()
+        audioPreviewTarget = null
+        position.projectRange = 0..0
     }
 }

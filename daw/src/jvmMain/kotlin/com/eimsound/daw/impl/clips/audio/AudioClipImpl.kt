@@ -11,7 +11,7 @@ import com.eimsound.daw.api.*
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.components.Waveform
 import com.fasterxml.jackson.databind.JsonNode
-import java.io.File
+import java.nio.file.Path
 import kotlin.io.path.name
 
 class AudioClipImpl(json: JsonNode?, factory: ClipFactory<AudioClip>, target: AudioSource? = null):
@@ -47,8 +47,8 @@ class AudioClipImpl(json: JsonNode?, factory: ClipFactory<AudioClip>, target: Au
 
 class AudioClipFactoryImpl: AudioClipFactory {
     override val name = "AudioClip"
-    override fun createClip(path: File) = AudioClipImpl(null, this,
-        AudioSourceManager.instance.createAutoWrappedAudioSource(path))
+    override fun createClip(path: Path) = AudioClipImpl(null, this,
+        AudioSourceManager.instance.createAudioSource(path))
 
     override fun createClip() = AudioClipImpl(null, this)
     override fun createClip(path: String, json: JsonNode) = AudioClipImpl(json, this)

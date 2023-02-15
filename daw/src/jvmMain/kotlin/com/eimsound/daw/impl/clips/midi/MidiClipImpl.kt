@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.util.fastForEach
 import com.eimsound.audioprocessor.CurrentPosition
@@ -113,7 +114,7 @@ class MidiClipFactoryImpl : MidiClipFactory {
                                  noteWidth: MutableState<Dp>, startPPQ: Float, widthPPQ: Float) {
         Box {
             clip.clip.notes.read()
-            Canvas(Modifier.fillMaxSize()) {
+            Canvas(Modifier.fillMaxSize().graphicsLayer { }) {
                 val noteWidthPx = noteWidth.value.toPx()
                 val trackHeightPx = size.height
                 val height = (trackHeightPx / 128).coerceAtLeast(1F)

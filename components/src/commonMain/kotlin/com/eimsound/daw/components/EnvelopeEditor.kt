@@ -13,6 +13,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.drawText
@@ -193,7 +194,7 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange, pr
 
 //        if (hoveredIndex == -1 && action == EditAction.RESIZE) modifier = modifier.pointerHoverIcon(PointerIconDefaults.VerticalResize)
 
-        Canvas(Modifier.fillMaxSize().run {
+        Canvas(Modifier.fillMaxSize().graphicsLayer { }.run {
             if (eventHandler == null) this else pointerInput(Unit) {
                 detectTapGestures(onDoubleTap = {
                     if (getSelectedPoint(it, points, startValue, valueRange, noteWidth).second != -1) return@detectTapGestures

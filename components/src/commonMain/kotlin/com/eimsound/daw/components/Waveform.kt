@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import com.eimsound.audioprocessor.data.AudioThumbnail
 import kotlin.math.absoluteValue
 
@@ -21,7 +22,7 @@ fun Waveform(
     isDrawMinAndMax: Boolean = true,
     modifier: Modifier = Modifier
 ) {
-    Canvas(modifier.fillMaxSize()) {
+    Canvas(modifier.fillMaxSize().graphicsLayer { }) {
         val channelHeight = (size.height / thumbnail.channels) - 2
         val halfChannelHeight = channelHeight / 2
         val drawHalfChannelHeight = halfChannelHeight - 1

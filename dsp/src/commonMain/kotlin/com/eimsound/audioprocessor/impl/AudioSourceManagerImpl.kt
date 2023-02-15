@@ -4,7 +4,7 @@ import androidx.compose.runtime.mutableStateMapOf
 import com.eimsound.audioprocessor.*
 import com.eimsound.daw.utils.NoSuchFactoryException
 import com.fasterxml.jackson.databind.JsonNode
-import java.io.File
+import java.nio.file.Path
 import java.util.*
 
 const val IN_MEMORY_FILE_SIZE = 64 * 1024 * 1024 // 64 MB
@@ -37,7 +37,7 @@ class AudioSourceManagerImpl : AudioSourceManager {
         return source ?: throw IllegalStateException("No source")
     }
 
-    override fun createAudioSource(file: File, factory: String?): FileAudioSource = if (factory != null) {
+    override fun createAudioSource(file: Path, factory: String?): FileAudioSource = if (factory != null) {
         val f = factories[factory] ?: throw NoSuchFactoryException(factory)
         if (f !is FileAudioSourceFactory<*>) throw UnsupportedOperationException("Factory $factory does not support files")
         f.createAudioSource(file)
@@ -53,7 +53,7 @@ class AudioSourceManagerImpl : AudioSourceManager {
         }
     } ?: throw UnsupportedOperationException("No factory supports file $file")
 
-    override fun createAutoWrappedAudioSource(file: File): AudioSource = createAudioSource(file).run {
+    override fun createAutoWrappedAudioSource(file: Path): AudioSource = createAudioSource(file).run {
         if (length <= IN_MEMORY_FILE_SIZE) createMemorySource(this) else this
     }
 
