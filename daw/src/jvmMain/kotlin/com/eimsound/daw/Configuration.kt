@@ -13,6 +13,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.jar.Manifest
+import kotlin.io.path.absolute
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.exists
 import kotlin.io.path.name
@@ -53,7 +54,7 @@ object Configuration {
         if (CONFIG_PATH.exists()) load()
         nativeHostPath = Paths.get("D:\\Cpp\\EIMPluginScanner\\build\\EIMHost_artefacts\\MinSizeReel\\EIMHost.exe")
         if (!Files.exists(nativeHostPath)) nativeHostPath = Paths.get("EIMHost-x64.exe")
-        val x86Host = nativeHostPath.parent.resolve(nativeHostPath.name.replace("x64", "x86"))
+        val x86Host = nativeHostPath.absolute().parent.resolve(nativeHostPath.name.replace("x64", "x86"))
 
         System.setProperty("eim.dsp.nativeaudioplugins.list", ROOT_PATH.resolve("nativeAudioPlugins.json").absolutePathString())
         System.setProperty("eim.dsp.nativeaudioplugins.host", nativeHostPath.absolutePathString())
