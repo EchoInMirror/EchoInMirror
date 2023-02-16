@@ -187,7 +187,7 @@ fun DescLister(
     favOnClick: (it: String?) -> Unit = {},
     contentColor: Color = MaterialTheme.colorScheme.surface
 ) {
-    Card(modifier = modifier, colors = CardDefaults.cardColors(contentColor)) {
+    Card(colors = CardDefaults.elevatedCardColors(contentColor), elevation = CardDefaults.cardElevation((-4).dp), modifier = modifier) {
         Scrollable(vertical = true, horizontal = false) {
             Column {
                 if (defaultText != null){
