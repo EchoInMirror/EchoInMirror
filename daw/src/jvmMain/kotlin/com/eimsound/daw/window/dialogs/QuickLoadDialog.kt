@@ -1,7 +1,10 @@
 package com.eimsound.daw.window.dialogs
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -11,6 +14,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.eimsound.audioprocessor.AudioProcessorDescription
 import com.eimsound.daw.EchoInMirror
@@ -23,25 +27,46 @@ private fun closeQuickLoadWindow() {
     EchoInMirror.windowManager.dialogs[QuickLoadDialog] = false
 }
 
+private fun selectDescription(desc: AudioProcessorDescription?) {
+    if (desc == null) return
+    closeQuickLoadWindow()
+
+//    EchoInMirror.audioProcessorManager.load(desc) | （不存在的API（
+}
+
 val TOP_TEXTFIELD_HEIGHT = 40.dp
 val BOTTOM_TEXTFIELD_HEIGHT = 40.dp
 val SUB_PADDING = 5.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 val QuickLoadDialog = @Composable {
-    val descriptions = EchoInMirror.audioProcessorManager.factories.values.flatMap { it.descriptions }.sortedBy { it.name }.distinctBy { it.name } // 所有插件
+    val searchText = remember { mutableStateOf("") }
+
+    // 所有插件
+    val descriptions = EchoInMirror.audioProcessorManager.factories.values.flatMap { it.descriptions }.sortedBy { it.name }.distinctBy { it.name }
 
     val selectedFactory = remember {  mutableStateOf<String?>(null) }
     val selectedCategory = remember { mutableStateOf<String?>(null) }
     val selectedInstrument = remember { mutableStateOf<Boolean?>(null) }
     var selectedDescription by mutableStateOf<AudioProcessorDescription?>(null)
 
-    // 根据已选的厂商、类别、乐器过滤插件，显示在最后一列
+    // 根据已选的厂商、类别、乐器过滤插件
     val descList = descriptions.filter {
         (selectedFactory.value == null || it.manufacturerName == selectedFactory.value) &&
         (selectedCategory.value == null || it.category?.contains(selectedCategory.value!!) == true) && // 或者用正则 it.category?.contains(Regex("(^|\\|)"+selectedCategory.value!!+"(\\||$)")) == true 可以解决子字符串包含的问题，一般遇不到
-        (selectedInstrument.value == null || it.isInstrument == selectedInstrument.value)
+        (selectedInstrument.value == null || it.isInstrument == selectedInstrument.value) &&
+        (searchText.value == "" || it.name.contains(searchText.value, true))
     }
+    // 根据已选的厂商、乐器过滤类别
+    val categoryList = descriptions.filter {
+        (selectedFactory.value == null || it.manufacturerName == selectedFactory.value) &&
+        (selectedInstrument.value == null || it.isInstrument == selectedInstrument.value)
+    }.mapNotNull { it.category }.flatMap { it.split("|") }.distinct().sorted()
+    // 根据已选的乐器、类别过滤厂商
+    val factoryList = descriptions.filter {
+        (selectedCategory.value == null || it.category?.contains(selectedCategory.value!!) == true) &&
+        (selectedInstrument.value == null || it.isInstrument == selectedInstrument.value)
+    }.mapNotNull { it.manufacturerName }.distinct().sorted()
 
     Dialog(::closeQuickLoadWindow, title = "快速加载") {
         window.minimumSize = Dimension(860, 700)
@@ -51,30 +76,48 @@ val QuickLoadDialog = @Composable {
             Modifier.fillMaxSize(),
             topBar = {
                 Surface(Modifier.fillMaxWidth().height(TOP_TEXTFIELD_HEIGHT)) {
-
+                    TextField(
+                        value = searchText.value,
+                        onValueChange =  { searchText.value = it},
+                        label = { Text(searchText.value) },
+                        modifier = Modifier.fillMaxSize().padding(SUB_PADDING),
+                        leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+//                        trailingIcon = { Icon(Icons.Filled.Star, contentDescription = null) }
+                    )
                 }
             },
             content = {
                 Row(Modifier.fillMaxSize().padding(top= TOP_TEXTFIELD_HEIGHT + SUB_PADDING, bottom = BOTTOM_TEXTFIELD_HEIGHT + SUB_PADDING, start = SUB_PADDING, end = SUB_PADDING), horizontalArrangement = Arrangement.SpaceEvenly) {
                     Column(Modifier.weight(1f).fillMaxHeight()) {
-                        DescLister(
-                            modifier = Modifier.weight(1f).padding(SUB_PADDING),
-                            descList = listOf("乐器", "效果器"),
-                            onClick = { selectedInstrument.value = if (it == null) null else it == "乐器" },
-                            selectedDesc = if (selectedInstrument.value == true) "乐器" else if (selectedInstrument.value == false) "效果器" else null,
-                            defaultText = "所有类型"
-                        )
+                        Column(Modifier.weight(1f).fillMaxHeight()) {
+                            DescLister(
+                                modifier = Modifier.weight(7f).padding(SUB_PADDING),
+                                descList = listOf("已收藏", "内置插件"),
+                                onClick = {  },
+                                selectedDesc = selectedDescription?.name,
+                                defaultText = "所有插件"
+                            )
+                            DescLister(
+                                modifier = Modifier.weight(3f).padding(SUB_PADDING),
+                                descList = listOf("乐器", "效果器"),
+                                onClick = { selectedInstrument.value = if (it == null) null else it == "乐器" },
+                                selectedDesc = if (selectedInstrument.value == true) "乐器" else if (selectedInstrument.value == false) "效果器" else null,
+                                defaultText = "所有类型"
+                            )
+                        }
                     }
                     DescLister(
                         modifier = Modifier.weight(1f).padding(SUB_PADDING),
-                        descList = descriptions.mapNotNull { it.category?.split("|") }.flatten().distinct().sorted(), // 把类别按|展开
+//                        descList = descriptions.mapNotNull { it.category?.split("|") }.flatten().distinct().sorted(), // 把类别按|展开
+                        descList = categoryList,
                         onClick = { selectedCategory.value = it },
                         selectedDesc = selectedCategory.value,
                         defaultText = "所有类别"
                     )
                     DescLister(
                         modifier = Modifier.weight(1f).padding(SUB_PADDING),
-                        descList = descriptions.mapNotNull { it.manufacturerName }.distinct(),
+//                        descList = descriptions.mapNotNull { it.manufacturerName }.distinct(),
+                        descList = factoryList,
                         onClick = { selectedFactory.value = it },
                         selectedDesc = selectedFactory.value,
                         defaultText = "所有厂商"
@@ -84,9 +127,7 @@ val QuickLoadDialog = @Composable {
                         descList = descList.map { it.name }.distinct().sorted(),
                         onClick = { desc ->
                             if (selectedDescription?.name == desc) {
-                                selectedDescription = null // 这行后续可以删除
-                                // 已选中时再点击触发插件添加请求
-                                // EchoInMirror.Track.addAudioProcessor(selectedDescription!!) （不存在的API（
+                                selectDescription(selectedDescription)
                             } else {
                                 selectedDescription = descList.find { it.name == desc }
                             }},
@@ -101,15 +142,15 @@ val QuickLoadDialog = @Composable {
             },
             bottomBar = {
                 Row(Modifier.fillMaxWidth().height(BOTTOM_TEXTFIELD_HEIGHT).padding(10.dp, 0.dp, 10.dp, 10.dp)) {
-                    Text(if (selectedDescription != null) selectedDescription?.name + ": 插件介绍，json键名\"descriptiveName\"" else "", modifier = Modifier.weight(8f))
-                    Button(modifier = Modifier.weight(1f), onClick = {
-                        closeQuickLoadWindow()
-                    }) {
+                    Text(if (selectedDescription != null) selectedDescription?.name + ": 插件介绍，json键名\"descriptiveName\"" else "", modifier = Modifier.weight(7f))
+                    Button(modifier = Modifier.weight(1f).padding(0.dp, 0.dp, 10.dp, 0.dp), enabled = selectedDescription != null, onClick = {
+                        selectDescription(selectedDescription)
+                    }, shape = RoundedCornerShape(3.dp), contentPadding = PaddingValues(0.dp)) {
                         Text("确定")
                     }
                     Button(modifier = Modifier.weight(1f), onClick = {
                         closeQuickLoadWindow()
-                    }) {
+                    }, shape = RoundedCornerShape(3.dp), contentPadding = PaddingValues(0.dp)) {
                         Text("取消")
                     }
                 }
@@ -128,7 +169,7 @@ fun DescLister(
     favIcon: Boolean = false,
     favOnClick: (it: String?) -> Unit = {}
 ) {
-    Surface(modifier = modifier) {
+    Surface(modifier = modifier.border(1.dp, Color.Gray, shape = RoundedCornerShape(3.dp))) {
         Scrollable(vertical = true, horizontal = false) {
             Column {
                 if (defaultText != null){
@@ -153,6 +194,8 @@ fun DescLister(
                             Icon(Icons.Filled.Star, contentDescription = null, tint = Color.Yellow, modifier = Modifier.size(10.dp).weight(1f).align(Alignment.CenterVertically).clickableWithIcon {
                                 favOnClick(description)
                             })
+                        } else {
+                            Text("99+", modifier = Modifier.weight(1.5f), textAlign = TextAlign.End, color = Color.Gray, fontSize = 10.sp)
                         }
                     }
                 }
