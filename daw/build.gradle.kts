@@ -72,13 +72,10 @@ compose.desktop {
     }
 }
 
-task<Copy>("downloadEIMHost") {
-    val file = File("EIMHost.exe")
-    if (file.exists()) {
-        println("File exists, skipping download.")
-        return@task
-    }
-    val connection = URL("https://github.com/EchoInMirror/EIMHost/releases/latest/download/EIMHost.exe")
+fun downloadEIMHost(ext: String) {
+    val file = File("EIMHost-$ext")
+    if (file.exists()) return
+    val connection = URL("https://github.com/EchoInMirror/EIMHost/releases/latest/download/EIMHost-$ext")
         .openConnection() as HttpURLConnection
     connection.connect()
     val input = connection.inputStream
@@ -86,6 +83,13 @@ task<Copy>("downloadEIMHost") {
     input.copyTo(output)
     input.close()
     output.close()
+}
+
+project(":daw") {
+    task<Copy>("downloadEIMHost") {
+        downloadEIMHost("x64.exe")
+        downloadEIMHost("x86.exe")
+    }
 }
 
 tasks.withType<Jar> {

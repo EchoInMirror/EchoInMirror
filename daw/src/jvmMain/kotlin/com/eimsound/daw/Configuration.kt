@@ -15,6 +15,7 @@ import java.nio.file.Paths
 import java.util.jar.Manifest
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.exists
+import kotlin.io.path.name
 
 val WORKING_PATH: Path = Path.of(
     if (SystemUtils.IS_OS_WINDOWS) System.getenv("AppData")
@@ -50,11 +51,13 @@ object Configuration {
             } catch (ignored: Throwable) { }
         }
         if (CONFIG_PATH.exists()) load()
-        nativeHostPath = Paths.get("D:\\Cpp\\EIMPluginScanner\\build\\EIMHost_artefacts\\MinSizeRel\\EIMHost.exe")
-        if (!Files.exists(nativeHostPath)) nativeHostPath = Paths.get("EIMHost.exe")
+        nativeHostPath = Paths.get("D:\\Cpp\\EIMPluginScanner\\build\\EIMHost_artefacts\\MinSizeReel\\EIMHost.exe")
+        if (!Files.exists(nativeHostPath)) nativeHostPath = Paths.get("EIMHost-x64.exe")
+        val x86Host = nativeHostPath.parent.resolve(nativeHostPath.name.replace("x64", "x86"))
 
         System.setProperty("eim.dsp.nativeaudioplugins.list", ROOT_PATH.resolve("nativeAudioPlugins.json").absolutePathString())
         System.setProperty("eim.dsp.nativeaudioplugins.host", nativeHostPath.absolutePathString())
+        System.setProperty("eim.dsp.nativeaudioplugins.host.x86", (if (Files.exists(x86Host)) x86Host else nativeHostPath).absolutePathString())
         System.setProperty("eim.dsp.nativeaudioplayer.file", nativeHostPath.absolutePathString())
     }
 

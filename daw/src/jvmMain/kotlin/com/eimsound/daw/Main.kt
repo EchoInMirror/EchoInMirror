@@ -20,6 +20,8 @@ fun main() {
     Configuration
     Runtime.getRuntime().addShutdownHook(Thread(EchoInMirror.windowManager::closeMainWindow))
 
+//    println(isX86PEFile(File("")))
+
     if (!File("test_project").exists()) File("test_project").mkdir()
     EchoInMirror.windowManager.openProject(Paths.get("test_project"))
     application {
