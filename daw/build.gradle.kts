@@ -22,10 +22,10 @@ repositories {
 }
 
 kotlin {
-    jvmToolchain(17)
+    jvmToolchain(19)
     jvm {
         compilations.all {
-            kotlinOptions.jvmTarget = "17"
+            kotlinOptions.jvmTarget = "19"
         }
         withJava()
     }

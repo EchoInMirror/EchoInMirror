@@ -2,7 +2,7 @@
 
 ## Requirement
 
-- Java 17
+- Java 19
 
 ## Build
 

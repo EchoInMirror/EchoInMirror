@@ -21,6 +21,7 @@ import com.eimsound.daw.components.ClickableText
 import com.eimsound.daw.components.Gap
 import com.eimsound.daw.components.Tab
 import com.eimsound.daw.utils.openInBrowser
+import org.apache.commons.lang3.SystemUtils
 import java.net.URI
 import java.text.DateFormat
 
@@ -56,6 +57,9 @@ internal object AboutPanel: Tab {
                 Gap(16)
                 Text("贡献者", style = bodyMedium)
                 Text("Shirasawa N0I0C0K SuiltaPico Shika", style = bodySmall)
+                Gap(20)
+                Text("系统版本: ${SystemUtils.OS_NAME} (${SystemUtils.OS_VERSION}, ${SystemUtils.OS_ARCH})", style = bodySmall)
+                Text("Java 版本: ${SystemUtils.JAVA_VM_NAME} (${SystemUtils.JAVA_VM_VERSION}, ${SystemUtils.JAVA_VENDOR})", style = bodySmall)
             }
         }
     }
