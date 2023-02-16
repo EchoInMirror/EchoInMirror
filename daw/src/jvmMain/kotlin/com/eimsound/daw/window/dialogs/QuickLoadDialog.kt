@@ -1,8 +1,6 @@
 package com.eimsound.daw.window.dialogs
 
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
@@ -31,11 +29,11 @@ private fun selectDescription(desc: AudioProcessorDescription?) {
     if (desc == null) return
     closeQuickLoadWindow()
 
-//    EchoInMirror.audioProcessorManager.load(desc) | （不存在的API（
+//    EchoInMirror.audioProcessorManager.load(desc) | (不存在的API(
 }
 
-val TOP_TEXTFIELD_HEIGHT = 40.dp
-val BOTTOM_TEXTFIELD_HEIGHT = 40.dp
+val TOP_TEXTFIELD_HEIGHT = 60.dp
+val BOTTOM_TEXTFIELD_HEIGHT = 60.dp
 val SUB_PADDING = 5.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -79,10 +77,8 @@ val QuickLoadDialog = @Composable {
                     TextField(
                         value = searchText.value,
                         onValueChange =  { searchText.value = it},
-                        label = { Text(searchText.value) },
                         modifier = Modifier.fillMaxSize().padding(SUB_PADDING),
                         leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-//                        trailingIcon = { Icon(Icons.Filled.Star, contentDescription = null) }
                     )
                 }
             },
@@ -108,7 +104,6 @@ val QuickLoadDialog = @Composable {
                     }
                     DescLister(
                         modifier = Modifier.weight(1f).padding(SUB_PADDING),
-//                        descList = descriptions.mapNotNull { it.category?.split("|") }.flatten().distinct().sorted(), // 把类别按|展开
                         descList = categoryList,
                         onClick = { selectedCategory.value = it },
                         selectedDesc = selectedCategory.value,
@@ -116,7 +111,6 @@ val QuickLoadDialog = @Composable {
                     )
                     DescLister(
                         modifier = Modifier.weight(1f).padding(SUB_PADDING),
-//                        descList = descriptions.mapNotNull { it.manufacturerName }.distinct(),
                         descList = factoryList,
                         onClick = { selectedFactory.value = it },
                         selectedDesc = selectedFactory.value,
@@ -142,15 +136,15 @@ val QuickLoadDialog = @Composable {
             },
             bottomBar = {
                 Row(Modifier.fillMaxWidth().height(BOTTOM_TEXTFIELD_HEIGHT).padding(10.dp, 0.dp, 10.dp, 10.dp)) {
-                    Text(if (selectedDescription != null) selectedDescription?.name + ": 插件介绍，json键名\"descriptiveName\"" else "", modifier = Modifier.weight(7f))
-                    Button(modifier = Modifier.weight(1f).padding(0.dp, 0.dp, 10.dp, 0.dp), enabled = selectedDescription != null, onClick = {
+                    Text(if (selectedDescription != null) selectedDescription?.name + ": 插件介绍，json键名\"descriptiveName\"" else "", modifier = Modifier.weight(8f))
+                    Button(modifier = Modifier.weight(1f).padding(end = 5.dp), enabled = selectedDescription != null, onClick = {
                         selectDescription(selectedDescription)
-                    }, shape = RoundedCornerShape(3.dp), contentPadding = PaddingValues(0.dp)) {
+                    }, contentPadding = PaddingValues(0.dp)) {
                         Text("确定")
                     }
-                    Button(modifier = Modifier.weight(1f), onClick = {
+                    Button(modifier = Modifier.weight(1f).padding(start = 5.dp), onClick = {
                         closeQuickLoadWindow()
-                    }, shape = RoundedCornerShape(3.dp), contentPadding = PaddingValues(0.dp)) {
+                    }, contentPadding = PaddingValues(0.dp)) {
                         Text("取消")
                     }
                 }
@@ -169,12 +163,12 @@ fun DescLister(
     favIcon: Boolean = false,
     favOnClick: (it: String?) -> Unit = {}
 ) {
-    Surface(modifier = modifier.border(1.dp, Color.Gray, shape = RoundedCornerShape(3.dp))) {
+    Card(modifier = modifier, colors = CardDefaults.elevatedCardColors()) {
         Scrollable(vertical = true, horizontal = false) {
             Column {
                 if (defaultText != null){
                     MenuItem(selectedDesc == null,
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier.fillMaxSize(), // .background(MaterialTheme.colorScheme.surface)
                         onClick = {
                             onClick(null)
                         }
@@ -186,7 +180,7 @@ fun DescLister(
                     MenuItem( selectedDesc == description,
                         modifier = Modifier.fillMaxSize(),
                         onClick = {
-                                onClick(description)
+                            onClick(description)
                         }
                     ){
                         Text(description, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Start, maxLines = 1, modifier = Modifier.weight(9f).align(Alignment.CenterVertically))
