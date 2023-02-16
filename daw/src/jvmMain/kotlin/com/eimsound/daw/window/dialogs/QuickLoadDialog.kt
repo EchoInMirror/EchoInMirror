@@ -70,86 +70,109 @@ val QuickLoadDialog = @Composable {
         window.minimumSize = Dimension(860, 700)
         window.isModal = false
 
-        Scaffold (
-            Modifier.fillMaxSize(),
-            topBar = {
-                Surface(Modifier.fillMaxWidth().height(TOP_TEXTFIELD_HEIGHT)) {
-                    TextField(
-                        value = searchText.value,
-                        onValueChange =  { searchText.value = it},
-                        modifier = Modifier.fillMaxSize().padding(SUB_PADDING),
-                        leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-                    )
-                }
-            },
-            content = {
-                Row(Modifier.fillMaxSize().padding(top= TOP_TEXTFIELD_HEIGHT + SUB_PADDING, bottom = BOTTOM_TEXTFIELD_HEIGHT + SUB_PADDING, start = SUB_PADDING, end = SUB_PADDING), horizontalArrangement = Arrangement.SpaceEvenly) {
-                    Column(Modifier.weight(1f).fillMaxHeight()) {
-                        Column(Modifier.weight(1f).fillMaxHeight()) {
+        CompositionLocalProvider(
+            LocalContentColor provides MaterialTheme.colorScheme.surface,
+            LocalAbsoluteTonalElevation provides 0.dp
+        ) {
+            Surface(tonalElevation = 4.dp, color = MaterialTheme.colorScheme.surface) {
+                Scaffold(
+                    modifier = Modifier.fillMaxSize(),
+                    topBar = {
+                        Surface(Modifier.fillMaxWidth().height(TOP_TEXTFIELD_HEIGHT).padding(10.dp, 10.dp, 10.dp, 0.dp)) {
+                            TextField(
+                                value = searchText.value,
+                                onValueChange = { searchText.value = it },
+                                modifier = Modifier.fillMaxSize(),
+                                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                            )
+                        }
+                    },
+                    content = {
+                        Row(
+                            Modifier.fillMaxSize().padding(
+                                top = TOP_TEXTFIELD_HEIGHT + SUB_PADDING,
+                                bottom = BOTTOM_TEXTFIELD_HEIGHT + SUB_PADDING,
+                                start = SUB_PADDING,
+                                end = SUB_PADDING
+                            ), horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            Column(Modifier.weight(1f).fillMaxHeight()) {
+                                Column(Modifier.weight(1f).fillMaxHeight()) {
+                                    DescLister(
+                                        modifier = Modifier.weight(7f).padding(SUB_PADDING),
+                                        descList = listOf("已收藏", "内置插件"),
+                                        onClick = { },
+                                        selectedDesc = selectedDescription?.name,
+                                        defaultText = "所有插件"
+                                    )
+                                    DescLister(
+                                        modifier = Modifier.weight(3f).padding(SUB_PADDING),
+                                        descList = listOf("乐器", "效果器"),
+                                        onClick = { selectedInstrument.value = if (it == null) null else it == "乐器" },
+                                        selectedDesc = if (selectedInstrument.value == true) "乐器" else if (selectedInstrument.value == false) "效果器" else null,
+                                        defaultText = "所有类型"
+                                    )
+                                }
+                            }
                             DescLister(
-                                modifier = Modifier.weight(7f).padding(SUB_PADDING),
-                                descList = listOf("已收藏", "内置插件"),
-                                onClick = {  },
+                                modifier = Modifier.weight(1f).padding(SUB_PADDING),
+                                descList = categoryList,
+                                onClick = { selectedCategory.value = it },
+                                selectedDesc = selectedCategory.value,
+                                defaultText = "所有类别"
+                            )
+                            DescLister(
+                                modifier = Modifier.weight(1f).padding(SUB_PADDING),
+                                descList = factoryList,
+                                onClick = { selectedFactory.value = it },
+                                selectedDesc = selectedFactory.value,
+                                defaultText = "所有厂商"
+                            )
+                            DescLister(
+                                modifier = Modifier.weight(1f).padding(SUB_PADDING),
+                                descList = descList.map { it.name }.distinct().sorted(),
+                                onClick = { desc ->
+                                    if (selectedDescription?.name == desc) {
+                                        selectDescription(selectedDescription)
+                                    } else {
+                                        selectedDescription = descList.find { it.name == desc }
+                                    }
+                                },
                                 selectedDesc = selectedDescription?.name,
-                                defaultText = "所有插件"
-                            )
-                            DescLister(
-                                modifier = Modifier.weight(3f).padding(SUB_PADDING),
-                                descList = listOf("乐器", "效果器"),
-                                onClick = { selectedInstrument.value = if (it == null) null else it == "乐器" },
-                                selectedDesc = if (selectedInstrument.value == true) "乐器" else if (selectedInstrument.value == false) "效果器" else null,
-                                defaultText = "所有类型"
-                            )
-                        }
-                    }
-                    DescLister(
-                        modifier = Modifier.weight(1f).padding(SUB_PADDING),
-                        descList = categoryList,
-                        onClick = { selectedCategory.value = it },
-                        selectedDesc = selectedCategory.value,
-                        defaultText = "所有类别"
-                    )
-                    DescLister(
-                        modifier = Modifier.weight(1f).padding(SUB_PADDING),
-                        descList = factoryList,
-                        onClick = { selectedFactory.value = it },
-                        selectedDesc = selectedFactory.value,
-                        defaultText = "所有厂商"
-                    )
-                    DescLister(
-                        modifier = Modifier.weight(1f).padding(SUB_PADDING),
-                        descList = descList.map { it.name }.distinct().sorted(),
-                        onClick = { desc ->
-                            if (selectedDescription?.name == desc) {
-                                selectDescription(selectedDescription)
-                            } else {
-                                selectedDescription = descList.find { it.name == desc }
-                            }},
-                        selectedDesc = selectedDescription?.name,
-                        defaultText = null,
-                        favIcon = true,
-                        favOnClick = { desc ->
+                                defaultText = null,
+                                favIcon = true,
+                                favOnClick = { desc ->
 
+                                }
+                            )
                         }
-                    )
-                }
-            },
-            bottomBar = {
-                Row(Modifier.fillMaxWidth().height(BOTTOM_TEXTFIELD_HEIGHT).padding(10.dp, 0.dp, 10.dp, 10.dp)) {
-                    Text(if (selectedDescription != null) selectedDescription?.name + ": 插件介绍，json键名\"descriptiveName\"" else "", modifier = Modifier.weight(8f))
-                    Button(modifier = Modifier.weight(1f).padding(end = 5.dp), enabled = selectedDescription != null, onClick = {
-                        selectDescription(selectedDescription)
-                    }, contentPadding = PaddingValues(0.dp)) {
-                        Text("确定")
+                    },
+                    bottomBar = {
+                        Row(Modifier.fillMaxWidth().height(BOTTOM_TEXTFIELD_HEIGHT).padding(10.dp, 0.dp, 10.dp, 10.dp)) {
+                            Text(
+                                if (selectedDescription != null) selectedDescription?.name + ": 插件介绍，json键名\"descriptiveName\"" else "",
+                                modifier = Modifier.weight(8f).align(Alignment.CenterVertically)
+                            )
+                            Button(
+                                modifier = Modifier.weight(1f).padding(end = 5.dp),
+                                enabled = selectedDescription != null,
+                                onClick = {
+                                    selectDescription(selectedDescription)
+                                },
+                                contentPadding = PaddingValues(0.dp)
+                            ) {
+                                Text("确定")
+                            }
+                            Button(modifier = Modifier.weight(1f).padding(start = 5.dp), onClick = {
+                                closeQuickLoadWindow()
+                            }, contentPadding = PaddingValues(0.dp)) {
+                                Text("取消")
+                            }
+                        }
                     }
-                    Button(modifier = Modifier.weight(1f).padding(start = 5.dp), onClick = {
-                        closeQuickLoadWindow()
-                    }, contentPadding = PaddingValues(0.dp)) {
-                        Text("取消")
-                    }
-                }
+                )
             }
-        )
+        }
     }
 }
 
@@ -161,19 +184,22 @@ fun DescLister(
     selectedDesc: String?,
     defaultText: String?,
     favIcon: Boolean = false,
-    favOnClick: (it: String?) -> Unit = {}
+    favOnClick: (it: String?) -> Unit = {},
+    contentColor: Color = MaterialTheme.colorScheme.surface
 ) {
-    Card(modifier = modifier, colors = CardDefaults.elevatedCardColors()) {
+    Card(modifier = modifier, colors = CardDefaults.cardColors(contentColor)) {
         Scrollable(vertical = true, horizontal = false) {
             Column {
                 if (defaultText != null){
                     MenuItem(selectedDesc == null,
-                        modifier = Modifier.fillMaxSize(), // .background(MaterialTheme.colorScheme.surface)
+                        modifier = Modifier.fillMaxSize(),
                         onClick = {
                             onClick(null)
-                        }
+                        },
+                        minHeight = 30.dp
                     ){
-                        Text(defaultText, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Start, maxLines = 1)
+                        Text(defaultText, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Start, maxLines = 1, modifier = Modifier.weight(9f).align(Alignment.CenterVertically), style = MaterialTheme.typography.labelSmall)
+                        Text("99+", modifier = Modifier.weight(1.5f), textAlign = TextAlign.End, color = Color.Gray, fontSize = 10.sp)
                     }
                 }
                 descList.forEach {description ->
@@ -181,11 +207,12 @@ fun DescLister(
                         modifier = Modifier.fillMaxSize(),
                         onClick = {
                             onClick(description)
-                        }
+                        },
+                        minHeight = 30.dp
                     ){
-                        Text(description, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Start, maxLines = 1, modifier = Modifier.weight(9f).align(Alignment.CenterVertically))
+                        Text(description, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Start, maxLines = 1, modifier = Modifier.weight(9f).align(Alignment.CenterVertically), style = MaterialTheme.typography.labelSmall)
                         if (favIcon) {
-                            Icon(Icons.Filled.Star, contentDescription = null, tint = Color.Yellow, modifier = Modifier.size(10.dp).weight(1f).align(Alignment.CenterVertically).clickableWithIcon {
+                            Icon(Icons.Filled.Star, contentDescription = null, tint = Color.Yellow, modifier = Modifier.size(15.dp).weight(1f).align(Alignment.CenterVertically).clickableWithIcon {
                                 favOnClick(description)
                             })
                         } else {
