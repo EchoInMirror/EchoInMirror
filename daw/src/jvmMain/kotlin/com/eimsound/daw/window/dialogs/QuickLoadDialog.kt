@@ -29,7 +29,7 @@ val SUB_PADDING = 5.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 val QuickLoadDialog = @Composable {
-    val descriptions = EchoInMirror.audioProcessorManager.factories.values.flatMap { it.descriptions }.sortedBy { it.name }.distinct() // 所有插件
+    val descriptions = EchoInMirror.audioProcessorManager.factories.values.flatMap { it.descriptions }.sortedBy { it.name }.distinctBy { it.name } // 所有插件
 
     val selectedFactory = remember {  mutableStateOf<String?>(null) }
     val selectedCategory = remember { mutableStateOf<String?>(null) }
@@ -79,37 +79,39 @@ val QuickLoadDialog = @Composable {
                         selectedDesc = selectedFactory.value,
                         defaultText = "所有厂商"
                     )
-                    Surface(Modifier.weight(1f).padding(SUB_PADDING)) {
-                        Scrollable(true, false) {
-                            Column {
-                                descList.forEach {description ->
-                                    val isSelected = selectedDescription?.name == description.name
-                                    MenuItem( isSelected,
-                                        modifier = Modifier.fillMaxSize(),
-                                        onClick = {
-                                            if (isSelected) {
-                                                selectedDescription = null // 这行后续可以删除
-                                                // 已选中时再点击触发插件添加请求
-                                                // EchoInMirror.Track.addAudioProcessor(description) （不存在的API（
-                                            } else {
-                                                selectedDescription = description
-                                            }
-                                        }
-                                    ){
-                                            Text(description.name, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Start, maxLines = 1, modifier = Modifier.weight(9f).align(Alignment.CenterVertically))
-                                            Icon(Icons.Filled.Star, contentDescription = null, tint = Color.Yellow, modifier = Modifier.size(10.dp).weight(1f).align(Alignment.CenterVertically).clickableWithIcon {
+                    DescLister(
+                        modifier = Modifier.weight(1f).padding(SUB_PADDING),
+                        descList = descList.map { it.name }.distinct().sorted(),
+                        onClick = { desc ->
+                            if (selectedDescription?.name == desc) {
+                                selectedDescription = null // 这行后续可以删除
+                                // 已选中时再点击触发插件添加请求
+                                // EchoInMirror.Track.addAudioProcessor(selectedDescription!!) （不存在的API（
+                            } else {
+                                selectedDescription = descList.find { it.name == desc }
+                            }},
+                        selectedDesc = selectedDescription?.name,
+                        defaultText = null,
+                        favIcon = true,
+                        favOnClick = { desc ->
 
-                                            })
-                                    }
-                                }
-                            }
                         }
-                    }
+                    )
                 }
             },
             bottomBar = {
-                Surface(Modifier.fillMaxWidth().height(BOTTOM_TEXTFIELD_HEIGHT)) {
-
+                Row(Modifier.fillMaxWidth().height(BOTTOM_TEXTFIELD_HEIGHT).padding(10.dp, 0.dp, 10.dp, 10.dp)) {
+                    Text(if (selectedDescription != null) selectedDescription?.name + ": 插件介绍，json键名\"descriptiveName\"" else "", modifier = Modifier.weight(8f))
+                    Button(modifier = Modifier.weight(1f), onClick = {
+                        closeQuickLoadWindow()
+                    }) {
+                        Text("确定")
+                    }
+                    Button(modifier = Modifier.weight(1f), onClick = {
+                        closeQuickLoadWindow()
+                    }) {
+                        Text("取消")
+                    }
                 }
             }
         )
@@ -122,18 +124,22 @@ fun DescLister(
     descList: List<String>,
     onClick: (it: String?) -> Unit,
     selectedDesc: String?,
-    defaultText: String
+    defaultText: String?,
+    favIcon: Boolean = false,
+    favOnClick: (it: String?) -> Unit = {}
 ) {
     Surface(modifier = modifier) {
         Scrollable(vertical = true, horizontal = false) {
             Column {
-                MenuItem(selectedDesc == null,
-                    modifier = Modifier.fillMaxSize(),
-                    onClick = {
-                        onClick(null)
+                if (defaultText != null){
+                    MenuItem(selectedDesc == null,
+                        modifier = Modifier.fillMaxSize(),
+                        onClick = {
+                            onClick(null)
+                        }
+                    ){
+                        Text(defaultText, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Start, maxLines = 1)
                     }
-                ){
-                    Text(defaultText, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Start, maxLines = 1)
                 }
                 descList.forEach {description ->
                     MenuItem( selectedDesc == description,
@@ -142,7 +148,12 @@ fun DescLister(
                                 onClick(description)
                         }
                     ){
-                        Text(description, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Start, maxLines = 1)
+                        Text(description, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Start, maxLines = 1, modifier = Modifier.weight(9f).align(Alignment.CenterVertically))
+                        if (favIcon) {
+                            Icon(Icons.Filled.Star, contentDescription = null, tint = Color.Yellow, modifier = Modifier.size(10.dp).weight(1f).align(Alignment.CenterVertically).clickableWithIcon {
+                                favOnClick(description)
+                            })
+                        }
                     }
                 }
             }
