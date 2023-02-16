@@ -78,15 +78,16 @@ fun GlobalDraggable(
 }
 
 @Composable
-fun GlobalDropTarget(onDrop: ((Any, Offset) -> Unit)?, modifier: Modifier = Modifier, content: @Composable (Any?, Offset) -> Unit) {
+fun GlobalDropTarget(onDrop: ((Any, Offset) -> Unit)?, modifier: Modifier = Modifier, content: @Composable (Offset?) -> Unit) {
     var currentPos by remember { mutableStateOf(Rect.Zero) }
     Box(modifier.onGloballyPositioned { currentPos = it.boundsInRoot() }) {
         val globalDragAndDrop = LocalGlobalDragAndDrop.current
-        val isInBounds = globalDragAndDrop.dataTransfer != null && currentPos.contains(globalDragAndDrop.currentPosition)
+        val data = globalDragAndDrop.dataTransfer
+        val isInBounds = data != null && currentPos.contains(globalDragAndDrop.currentPosition)
         if (isInBounds) {
             globalDragAndDrop.dropCallback = onDrop
-            content(globalDragAndDrop.dataTransfer, globalDragAndDrop.currentPosition - currentPos.topLeft)
-        } else content(null, Offset.Zero)
+            content(globalDragAndDrop.currentPosition - currentPos.topLeft)
+        } else content(null)
     }
 }
 
@@ -96,25 +97,33 @@ fun FileDraggable(file: File, modifier: Modifier = Modifier, draggingComponent: 
 }
 
 @Composable
-fun FileDropTarget(onDrop: (File, Offset) -> Unit, modifier: Modifier = Modifier, content: @Composable (File?, Offset) -> Unit) {
-    var file by remember { mutableStateOf<File?>(null) }
+fun FileDropTarget(onDrop: (File, Offset) -> Unit, modifier: Modifier = Modifier, content: @Composable (Offset?) -> Unit) {
     var pos by remember { mutableStateOf(Offset.Zero) }
+    var isCurrent by remember { mutableStateOf(false) }
+    val globalDragAndDrop = LocalGlobalDragAndDrop.current
     GlobalDropTarget({ data, p -> if (data is File) onDrop(data, p) }, modifier.dropTarget(
         onDragStarted = { data, p ->
             if (data.transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
-                file = (data.transferable.getTransferData(DataFlavor.javaFileListFlavor) as? List<*>)?.firstOrNull() as File?
+                globalDragAndDrop.dataTransfer = (data.transferable.getTransferData(DataFlavor.javaFileListFlavor) as?
+                        List<*>)?.firstOrNull() as File?
                 pos = p
+                isCurrent = true
                 true
             } else false
         },
-        onDragMoved = { if (file != null) pos = it },
-        onDragEnded = { file = null }
+        onDragMoved = { if (isCurrent && globalDragAndDrop.dataTransfer != null) pos = it },
+        onDragEnded = {
+            if (isCurrent) {
+                isCurrent = false
+                globalDragAndDrop.dataTransfer = null
+            }
+        }
     ) { _, p ->
-        if (file == null) false
+        if (isCurrent || globalDragAndDrop.dataTransfer == null) false
         else {
-            onDrop(file!!, p)
-            file = null
+            onDrop(globalDragAndDrop.dataTransfer as File, p)
+            globalDragAndDrop.dataTransfer = null
             true
         }
-    }) { data, p -> content(data as? File, p) }
+    }) { content(if (isCurrent) pos else it) }
 }

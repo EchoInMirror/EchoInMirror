@@ -28,16 +28,14 @@ import com.eimsound.daw.api.TrackClip
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.api.window.Panel
 import com.eimsound.daw.api.window.PanelDirection
-import com.eimsound.daw.components.EditorGrid
-import com.eimsound.daw.components.PlayHead
-import com.eimsound.daw.components.TIMELINE_HEIGHT
-import com.eimsound.daw.components.Timeline
+import com.eimsound.daw.components.*
 import com.eimsound.daw.components.dragdrop.FileDropTarget
 import com.eimsound.daw.components.utils.EditAction
 import com.eimsound.daw.utils.BasicEditor
 import com.eimsound.daw.utils.fitInUnitCeil
 import com.eimsound.daw.utils.mutableStateSetOf
 import com.eimsound.daw.utils.openMaxValue
+import com.eimsound.daw.window.dialogs.openMidiImportDialog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -157,8 +155,14 @@ class Playlist : Panel, BasicEditor {
                                 key(it.id) { i += TrackContent(this@Playlist, it, i, localDensity) }
                             }
                         }
-                        FileDropTarget({ data, _ -> println(data) }) { _, pos ->
-                            println(pos)
+                        val floatingDialogProvider = LocalFloatingDialogProvider.current
+                        FileDropTarget({ data, _ ->
+                            if (data.extension.lowercase() == "mid") floatingDialogProvider.openMidiImportDialog(data) {
+                                // TODO: 导入midi
+                            }
+                        }) {
+//                            println(it)
+//                            println(LocalGlobalDragAndDrop.current.dataTransfer)
                             Spacer(Modifier.fillMaxSize())
                         }
                         TrackSelection(this@Playlist, localDensity, horizontalScrollState, verticalScrollState)

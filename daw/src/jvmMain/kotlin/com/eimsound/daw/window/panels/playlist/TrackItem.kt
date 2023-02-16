@@ -150,7 +150,7 @@ private fun TrackItem(playlist: Playlist, track: Track, parentTrack: Track, inde
         ) {
             val localFloatingDialogProvider = LocalFloatingDialogProvider.current
             Spacer(Modifier.fillMaxHeight().width(8.dp).background(track.color).clickableWithIcon {
-                openColorPicker(localFloatingDialogProvider, track.color) { track.color = it }
+                localFloatingDialogProvider.openColorPicker(track.color) { track.color = it }
             })
             Row(Modifier.weight(1F).padding(8.dp, 4.dp)) {
                 Text(index.toString(),

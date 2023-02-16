@@ -151,9 +151,13 @@ fun Dialog(onOk: (() -> Unit)? = null, onCancel: (() -> Unit)? = null, hasPaddin
 }
 
 @Composable
-fun MenuDialog(content: @Composable ColumnScope.() -> Unit) {
-    Surface(Modifier.width(IntrinsicSize.Min),
-        shape = MaterialTheme.shapes.extraSmall, tonalElevation = 5.dp, shadowElevation = 5.dp) {
+fun MenuTitle(text: String, modifier: Modifier = Modifier) {
+    Text(text, modifier.padding(16.dp, 8.dp, 16.dp, 8.dp), style = MaterialTheme.typography.titleMedium)
+}
+
+@Composable
+fun MenuDialog(modifier: Modifier = Modifier.width(IntrinsicSize.Min), content: @Composable ColumnScope.() -> Unit) {
+    Surface(modifier, shape = MaterialTheme.shapes.extraSmall, tonalElevation = 5.dp, shadowElevation = 5.dp) {
         Column(content = content)
     }
 }
