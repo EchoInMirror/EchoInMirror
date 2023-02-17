@@ -52,7 +52,7 @@ fun FloatingDialogProvider.openEditorMenu(position: Offset, editor: BasicEditor)
     val close = { closeFloatingDialog(key) }
 
     openFloatingDialog({ close() }, position, key, overflow = true) {
-        MenuDialog {
+        Dialog {
             EditorMenuItems(editor, close)
         }
     }

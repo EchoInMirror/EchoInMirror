@@ -9,7 +9,6 @@ import com.eimsound.daw.api.processor.TrackManager
 import com.eimsound.daw.api.window.Panel
 import com.eimsound.daw.api.window.WindowManager
 import com.eimsound.daw.window.dialogs.ExportDialog
-import com.eimsound.daw.window.dialogs.QuickLoadDialog
 import com.eimsound.daw.window.dialogs.settings.SettingsWindow
 import com.eimsound.daw.window.panels.Editor
 import com.eimsound.daw.window.panels.FileSystemBrowser
@@ -33,7 +32,6 @@ class WindowManagerImpl: WindowManager {
 
     init {
         dialogs[SettingsWindow] = false
-        dialogs[QuickLoadDialog] = false
         dialogs[ExportDialog] = false
     }
 

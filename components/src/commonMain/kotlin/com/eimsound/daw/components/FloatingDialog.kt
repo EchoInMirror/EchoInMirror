@@ -5,6 +5,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.PointerMatcher
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.onClick
 import androidx.compose.material3.*
@@ -13,20 +14,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.PointerIconDefaults
-import androidx.compose.ui.input.pointer.onPointerEvent
-import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
-import androidx.compose.ui.unit.Constraints
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.toSize
+import androidx.compose.ui.unit.*
+import androidx.compose.ui.window.WindowState
 import com.eimsound.daw.components.utils.Zero
 
 private data class FloatingDialog(val onClose: ((Any) -> Unit)?, val position: Offset?,
@@ -134,18 +132,18 @@ fun FloatingDialog(dialogContent: @Composable (size: Size, closeDialog: () -> Un
 }
 
 @Composable
-fun Dialog(onOk: (() -> Unit)? = null, onCancel: (() -> Unit)? = null, hasPadding: Boolean = true, minWidth: Dp = 250.dp,
+fun Dialog(onOk: (() -> Unit)? = null,
+           onCancel: (() -> Unit)? = null, draggable: Boolean = false,
+           hasPadding: Boolean = true, minWidth: Dp = 250.dp,
            modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
-    Surface(modifier.widthIn(min = minWidth).width(IntrinsicSize.Max),
-        shape = MaterialTheme.shapes.extraSmall, tonalElevation = 5.dp, shadowElevation = 5.dp) {
-        val flag = onOk != null || onCancel != null
-        Column(if (hasPadding) Modifier.padding(16.dp, 16.dp, 16.dp, if (flag) Dp.Zero else 16.dp) else Modifier) {
-            content()
-            if (flag) Row {
-                Filled()
-                if (onCancel != null) TextButton(onCancel) { Text("取消") }
-                if (onOk != null) TextButton(onOk) { Text("确认") }
-            }
+    val flag = onOk != null || onCancel != null
+    Dialog(draggable, modifier.widthIn(min = minWidth).width(IntrinsicSize.Max),
+        if (hasPadding) Modifier.padding(16.dp, 16.dp, 16.dp, if (flag) Dp.Zero else 16.dp) else Modifier) {
+        content()
+        if (flag) Row {
+            Filled()
+            if (onCancel != null) TextButton(onCancel) { Text("取消") }
+            if (onOk != null) TextButton(onOk) { Text("确认") }
         }
     }
 }
@@ -155,9 +153,27 @@ fun MenuTitle(text: String, modifier: Modifier = Modifier) {
     Text(text, modifier.padding(16.dp, 8.dp, 16.dp, 8.dp), style = MaterialTheme.typography.titleMedium)
 }
 
+val LocalWindowState = staticCompositionLocalOf { WindowState() }
+
 @Composable
-fun MenuDialog(modifier: Modifier = Modifier.width(IntrinsicSize.Min), content: @Composable ColumnScope.() -> Unit) {
-    Surface(modifier, shape = MaterialTheme.shapes.extraSmall, tonalElevation = 5.dp, shadowElevation = 5.dp) {
-        Column(content = content)
+fun Dialog(draggable: Boolean = false, modifier: Modifier = Modifier.width(IntrinsicSize.Min),
+           columnModifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+    var offset by remember { mutableStateOf(Offset.Zero) }
+    var bounds by remember { mutableStateOf(Rect.Zero) }
+    val windowState = LocalWindowState.current
+    Surface(if (draggable) modifier.onGloballyPositioned { bounds = it.boundsInRoot() }
+        .graphicsLayer(translationX = offset.x, translationY = offset.y)
+        .pointerInput(Unit) {
+            detectDragGestures { change, dragAmount ->
+                change.consume()
+                val newOffset = offset + dragAmount
+                val newBounds = bounds.translate(newOffset)
+                if (newBounds.left >= 0 && newBounds.right <= windowState.size.width.toPx() &&
+                    newBounds.top >= 0 && newBounds.bottom <= windowState.size.height.toPx()) offset = newOffset
+            }
+        } else modifier,
+        MaterialTheme.shapes.extraSmall, tonalElevation = 5.dp, shadowElevation = 5.dp
+    ) {
+        Column(columnModifier, content = content)
     }
 }

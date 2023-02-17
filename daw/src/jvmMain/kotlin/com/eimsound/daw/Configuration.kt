@@ -5,6 +5,7 @@ package com.eimsound.daw
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.eimsound.daw.utils.mutableStateSetOf
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
@@ -40,6 +41,7 @@ object Configuration {
     var audioDeviceFactoryName by mutableStateOf("")
     var audioDeviceName by mutableStateOf("")
     var autoCutOver0db by mutableStateOf(true)
+    val favoriteAudioProcessors = mutableStateSetOf<String>()
 
     init {
         if (!Files.exists(ROOT_PATH)) Files.createDirectory(ROOT_PATH)

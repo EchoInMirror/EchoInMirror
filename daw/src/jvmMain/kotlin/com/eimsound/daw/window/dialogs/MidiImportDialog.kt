@@ -10,7 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.eimsound.audioprocessor.data.midi.ParsedMidiMessages
 import com.eimsound.daw.components.FloatingDialogProvider
-import com.eimsound.daw.components.MenuDialog
+import com.eimsound.daw.components.Dialog
 import com.eimsound.daw.components.MenuTitle
 import java.io.File
 
@@ -19,7 +19,7 @@ fun FloatingDialogProvider.openMidiImportDialog(file: File, onClose: (List<Parse
     openFloatingDialog({
         closeFloatingDialog(key)
     }, key = key, hasOverlay = true) {
-        MenuDialog {
+        Dialog {
             MenuTitle("导入 MIDI 文件")
             // TODO: 添加相关的UI, 选择不同的track(可多选), 同时调用 MidiViewer 进行预览
             Row(Modifier.fillMaxWidth().padding(end = 10.dp), horizontalArrangement = Arrangement.End) {

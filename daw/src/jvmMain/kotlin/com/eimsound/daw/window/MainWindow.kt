@@ -19,6 +19,7 @@ import androidx.compose.ui.window.WindowExceptionHandler
 import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.components.LocalFloatingDialogProvider
 import com.eimsound.daw.components.LocalSnackbarHost
+import com.eimsound.daw.components.LocalWindowState
 import com.eimsound.daw.components.app.*
 import com.eimsound.daw.components.dragdrop.LocalGlobalDragAndDrop
 import com.eimsound.daw.components.dragdrop.PlatformDropTargetModifier
@@ -37,7 +38,7 @@ fun ApplicationScope.MainWindow() {
     Window({
         EchoInMirror.windowManager.closeMainWindow(true)
         exitApplication()
-    }, icon = Logo, title = "Echo In Mirror", onKeyEvent = {
+    }, LocalWindowState.current, icon = Logo, title = "Echo In Mirror", onKeyEvent = {
         if (it.type != KeyEventType.KeyUp) return@Window false
         var keys = it.key.keyCode.toString()
         if (it.isCtrlPressed) keys = "${Key.CtrlLeft.keyCode} $keys"
