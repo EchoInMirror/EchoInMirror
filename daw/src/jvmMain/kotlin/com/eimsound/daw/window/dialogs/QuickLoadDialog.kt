@@ -12,7 +12,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.eimsound.audioprocessor.AudioProcessorDescription
 import com.eimsound.daw.EchoInMirror
@@ -43,6 +42,9 @@ val QuickLoadDialog = @Composable {
     // 所有插件
     val descriptions = EchoInMirror.audioProcessorManager.factories.values.flatMap { it.descriptions }.sortedBy { it.name }.distinctBy { it.name }
 
+    // 插件收藏表
+    val favorites = descriptions.groupBy { it.name }.mapValues { mutableStateOf(false) }.toMutableMap()
+
     val selectedFactory = remember {  mutableStateOf<String?>(null) }
     val selectedCategory = remember { mutableStateOf<String?>(null) }
     val selectedInstrument = remember { mutableStateOf<Boolean?>(null) }
@@ -65,6 +67,25 @@ val QuickLoadDialog = @Composable {
         (selectedCategory.value == null || it.category?.contains(selectedCategory.value!!) == true) &&
         (selectedInstrument.value == null || it.isInstrument == selectedInstrument.value)
     }.mapNotNull { it.manufacturerName }.distinct().sorted()
+
+    // 计算每个类别的插件数量
+    val categoryCount: Map<String, Int> = categoryList.groupBy { it }.mapValues { category ->
+        descriptions.count {
+            (selectedFactory.value == null || it.manufacturerName == selectedFactory.value) &&
+            (selectedInstrument.value == null || it.isInstrument == selectedInstrument.value) &&
+            (it.category?.contains(category.key) == true) }}
+    // 计算每个厂商的插件数量
+    val factoryCount: Map<String, Int> = factoryList.groupBy { it }.mapValues { factory ->
+        descriptions.count {
+            (selectedCategory.value == null || it.category?.contains(selectedCategory.value!!) == true) &&
+            (selectedInstrument.value == null || it.isInstrument == selectedInstrument.value) &&
+            (it.manufacturerName == factory.key) }}
+    // 计算乐器和效果器的插件数量
+    val instrumentCount: Map<String, Int> = listOf("乐器", "效果器").groupBy { it }.mapValues { instrument ->
+        descriptions.count {
+            (selectedCategory.value == null || it.category?.contains(selectedCategory.value!!) == true) &&
+            (selectedFactory.value == null || it.manufacturerName == selectedFactory.value) &&
+            (it.isInstrument == (instrument.key == "乐器")) }}
 
     Dialog(::closeQuickLoadWindow, title = "快速加载") {
         window.minimumSize = Dimension(860, 700)
@@ -103,14 +124,16 @@ val QuickLoadDialog = @Composable {
                                         descList = listOf("已收藏", "内置插件"),
                                         onClick = { },
                                         selectedDesc = selectedDescription?.name,
-                                        defaultText = "所有插件"
+                                        defaultText = "所有插件",
+                                        favIcon = true
                                     )
                                     DescLister(
                                         modifier = Modifier.weight(3f).padding(SUB_PADDING),
                                         descList = listOf("乐器", "效果器"),
                                         onClick = { selectedInstrument.value = if (it == null) null else it == "乐器" },
                                         selectedDesc = if (selectedInstrument.value == true) "乐器" else if (selectedInstrument.value == false) "效果器" else null,
-                                        defaultText = "所有类型"
+                                        defaultText = "所有类型",
+                                        countMap = instrumentCount
                                     )
                                 }
                             }
@@ -119,14 +142,16 @@ val QuickLoadDialog = @Composable {
                                 descList = categoryList,
                                 onClick = { selectedCategory.value = it },
                                 selectedDesc = selectedCategory.value,
-                                defaultText = "所有类别"
+                                defaultText = "所有类别",
+                                countMap = categoryCount
                             )
                             DescLister(
                                 modifier = Modifier.weight(1f).padding(SUB_PADDING),
                                 descList = factoryList,
                                 onClick = { selectedFactory.value = it },
                                 selectedDesc = selectedFactory.value,
-                                defaultText = "所有厂商"
+                                defaultText = "所有厂商",
+                                countMap = factoryCount
                             )
                             DescLister(
                                 modifier = Modifier.weight(1f).padding(SUB_PADDING),
@@ -142,15 +167,16 @@ val QuickLoadDialog = @Composable {
                                 defaultText = null,
                                 favIcon = true,
                                 favOnClick = { desc ->
-
-                                }
+                                    favorites[desc!!] = !favorites[desc!!]?.value!!
+                                },
+                                favMap = favorites
                             )
                         }
                     },
                     bottomBar = {
                         Row(Modifier.fillMaxWidth().height(BOTTOM_TEXTFIELD_HEIGHT).padding(10.dp, 0.dp, 10.dp, 10.dp)) {
                             Text(
-                                if (selectedDescription != null) selectedDescription?.name + ": 插件介绍，json键名\"descriptiveName\"" else "",
+                                if (selectedDescription != null) selectedDescription?.name + ": 插件介绍 json键名\"descriptiveName\"" else "",
                                 modifier = Modifier.weight(8f).align(Alignment.CenterVertically)
                             )
                             Button(
@@ -185,9 +211,10 @@ fun DescLister(
     defaultText: String?,
     favIcon: Boolean = false,
     favOnClick: (it: String?) -> Unit = {},
-    contentColor: Color = MaterialTheme.colorScheme.surface
+    favMap: Map<String, MutableState<Boolean>> = mapOf(),
+    countMap: Map<String, Int> = mapOf()
 ) {
-    Card(colors = CardDefaults.elevatedCardColors(contentColor), elevation = CardDefaults.cardElevation((-4).dp), modifier = modifier) {
+    Card(colors = CardDefaults.elevatedCardColors(MaterialTheme.colorScheme.surface), elevation = CardDefaults.cardElevation((-4).dp), modifier = modifier) {
         Scrollable(vertical = true, horizontal = false) {
             Column {
                 if (defaultText != null){
@@ -199,7 +226,10 @@ fun DescLister(
                         minHeight = 30.dp
                     ){
                         Text(defaultText, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Start, maxLines = 1, modifier = Modifier.weight(9f).align(Alignment.CenterVertically), style = MaterialTheme.typography.labelSmall)
-                        Text("99+", modifier = Modifier.weight(1.5f), textAlign = TextAlign.End, color = Color.Gray, fontSize = 10.sp)
+                        if (countMap.isNotEmpty()){
+                            val count = countMap.values.sum()
+                            Text(if (count < 1000) count.toString() else "99+", modifier = Modifier.weight(1.5f), textAlign = TextAlign.End, color = Color.Gray, style = MaterialTheme.typography.labelSmall)
+                        }
                     }
                 }
                 descList.forEach {description ->
@@ -212,11 +242,11 @@ fun DescLister(
                     ){
                         Text(description, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Start, maxLines = 1, modifier = Modifier.weight(9f).align(Alignment.CenterVertically), style = MaterialTheme.typography.labelSmall)
                         if (favIcon) {
-                            Icon(Icons.Filled.Star, contentDescription = null, tint = Color.Yellow, modifier = Modifier.size(15.dp).weight(1f).align(Alignment.CenterVertically).clickableWithIcon {
+                            Icon(Icons.Filled.Star, contentDescription = null, tint = if (favMap[description]?.value  == true) Color.Yellow else Color.Gray, modifier = Modifier.size(15.dp).weight(1f).align(Alignment.CenterVertically).clickableWithIcon {
                                 favOnClick(description)
                             })
                         } else {
-                            Text("99+", modifier = Modifier.weight(1.5f), textAlign = TextAlign.End, color = Color.Gray, fontSize = 10.sp)
+                            Text(if (countMap[description]!! < 1000) countMap[description].toString() else "99+", modifier = Modifier.weight(1.5f), textAlign = TextAlign.End, color = Color.Gray, style = MaterialTheme.typography.labelSmall)
                         }
                     }
                 }
