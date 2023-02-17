@@ -20,6 +20,7 @@ interface AudioProcessorDescription {
     val version: String?
     val isInstrument: Boolean?
     val identifier: String?
+    val descriptiveName: String?
 }
 
 interface AudioProcessorListener
@@ -91,6 +92,7 @@ open class DefaultAudioProcessorDescription(
     override val version: String? = null,
     override val isInstrument: Boolean? = null,
     override val identifier: String? = null,
+    override val descriptiveName: String? = null,
 ): AudioProcessorDescription
 
 class AudioProcessorIDSerializer @JvmOverloads constructor(t: Class<AudioProcessor>? = null) : StdSerializer<AudioProcessor>(t) {

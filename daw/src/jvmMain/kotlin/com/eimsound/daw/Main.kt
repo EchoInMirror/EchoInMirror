@@ -11,7 +11,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.application
 import com.eimsound.daw.window.MainWindow
 import com.eimsound.daw.window.ProjectWindow
-import com.eimsound.dsp.native.isX86PEFile
 import java.io.File
 import java.nio.file.Paths
 import javax.swing.UIManager
@@ -20,8 +19,6 @@ fun main() {
     UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
     Configuration
     Runtime.getRuntime().addShutdownHook(Thread(EchoInMirror.windowManager::closeMainWindow))
-
-    println(isX86PEFile(File("EIMHost-x64.exe")))
 
     if (!File("test_project").exists()) File("test_project").mkdir()
     EchoInMirror.windowManager.openProject(Paths.get("test_project"))

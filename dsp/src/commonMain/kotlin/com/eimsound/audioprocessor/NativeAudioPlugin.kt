@@ -1,6 +1,7 @@
 package com.eimsound.audioprocessor
 
 import com.fasterxml.jackson.annotation.JsonFormat
+import com.fasterxml.jackson.annotation.JsonInclude
 import java.util.*
 
 data class NativeAudioPluginDescription(
@@ -11,16 +12,20 @@ data class NativeAudioPluginDescription(
     override val version: String,
     override val identifier: String,
     val fileOrIdentifier: String,
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     override val isInstrument: Boolean,
     @JsonFormat(shape = JsonFormat.Shape.NUMBER)
     val lastFileModTime: Date,
     @JsonFormat(shape = JsonFormat.Shape.NUMBER)
     val lastInfoUpdateTime: Date,
     val hasSharedContainer: Boolean,
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     val hasARAExtension: Boolean,
     val deprecatedUid: Int,
     val uniqueId: Int,
-    val descriptiveName: String? = null,
+    override val descriptiveName: String?,
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    var isX86: Boolean = false
 ): AudioProcessorDescription
 
 class FailedToLoadAudioPluginException(message: String) : RuntimeException(message)

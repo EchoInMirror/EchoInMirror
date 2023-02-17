@@ -29,7 +29,6 @@ kotlin {
         }
         withJava()
     }
-    @Suppress("OPT_IN_IS_NOT_ENABLED")
     sourceSets {
         named("jvmMain") {
             dependencies {
@@ -88,7 +87,7 @@ fun downloadEIMHost(ext: String) {
 project(":daw") {
     task<Copy>("downloadEIMHost") {
         downloadEIMHost("x64.exe")
-        downloadEIMHost("x86.exe")
+//        downloadEIMHost("x86.exe")
     }
 }
 

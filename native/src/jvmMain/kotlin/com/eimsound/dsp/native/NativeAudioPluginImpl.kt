@@ -63,7 +63,6 @@ class NativeAudioPluginImpl(
 class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
     private val logger = LoggerFactory.getLogger(NativeAudioPluginFactoryImpl::class.java)
     private val configFile get() = Paths.get(System.getProperty("eim.dsp.nativeaudioplugins.list"))
-    private val nativeHostPath get() = Paths.get(System.getProperty("eim.dsp.nativeaudioplugins.host"))
     override val name = "NativeAudioPluginFactory"
     override val pluginIsFile = SystemUtils.IS_OS_WINDOWS || SystemUtils.IS_OS_LINUX
 
@@ -150,7 +149,7 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
                 async {
                     scanSemaphore.withPermit {
                         logger.info("Scanning native audio plugin: {}", it)
-                        val pb = ProcessBuilder(nativeHostPath.absolutePathString(), " -S ", jacksonObjectMapper().writeValueAsString(it))
+                        val pb = ProcessBuilder(getNativeHostPath(it), " -S ", jacksonObjectMapper().writeValueAsString(it))
                         pb.redirectError()
                         val process = pb.start()
                         scanningPlugins[it] = process
@@ -180,7 +179,7 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
         if (description !is NativeAudioPluginDescription)
             throw NoSuchAudioProcessorException(description.identifier ?: "Unknown", name)
         return NativeAudioPluginImpl(description, this).apply {
-            launch(nativeHostPath.absolutePathString())
+            launch(getNativeHostPath(description))
         }
     }
 
@@ -188,7 +187,7 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
         val description = descriptions.find { it.identifier == json["identifier"].asText() }
             ?: throw NoSuchAudioProcessorException(path, name)
         return NativeAudioPluginImpl(description, this).apply {
-            jacksonObjectMapper().run { launch(nativeHostPath.absolutePathString(), "-P",
+            jacksonObjectMapper().run { launch(getNativeHostPath(description), "-P",
                 writeValueAsString("$path/${json["id"]!!.asText()}.bin"), "-L",
                 writeValueAsString(writeValueAsString(description))) }
         }
@@ -197,4 +196,10 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
     override fun save() {
         jacksonObjectMapper().writeValue(configFile.toFile(), this)
     }
+
+    private fun getNativeHostPath(isX86: Boolean) = Paths.get(System.getProperty("eim.dsp.nativeaudioplugins.host" +
+            (if (isX86) ".x86" else ""))).absolutePathString()
+    private fun getNativeHostPath(description: NativeAudioPluginDescription) =
+        getNativeHostPath(SystemUtils.IS_OS_WINDOWS && description.isX86)
+    private fun getNativeHostPath(path: String) = getNativeHostPath(SystemUtils.IS_OS_WINDOWS && File(path).isX86PEFile())
 }
