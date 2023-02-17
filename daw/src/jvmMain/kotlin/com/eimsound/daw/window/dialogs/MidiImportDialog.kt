@@ -22,6 +22,9 @@ fun FloatingDialogProvider.openMidiImportDialog(file: File, onClose: (List<Parse
         MenuDialog {
             MenuTitle("导入 MIDI 文件")
             // TODO: 添加相关的UI, 选择不同的track(可多选), 同时调用 MidiViewer 进行预览
+            Row() {
+
+            }
             Row(Modifier.fillMaxWidth().padding(end = 10.dp), horizontalArrangement = Arrangement.End) {
                 TextButton({
                     closeFloatingDialog(key)
