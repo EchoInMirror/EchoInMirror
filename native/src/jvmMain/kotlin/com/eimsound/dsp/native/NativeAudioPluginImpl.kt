@@ -64,6 +64,7 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
     private val logger = LoggerFactory.getLogger(NativeAudioPluginFactoryImpl::class.java)
     private val configFile get() = Paths.get(System.getProperty("eim.dsp.nativeaudioplugins.list"))
     override val name = "NativeAudioPluginFactory"
+    override val displayName = "原生"
     override val pluginIsFile = SystemUtils.IS_OS_WINDOWS || SystemUtils.IS_OS_LINUX
 
     @JsonProperty

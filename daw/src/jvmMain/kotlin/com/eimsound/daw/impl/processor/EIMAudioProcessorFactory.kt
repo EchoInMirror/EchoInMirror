@@ -16,6 +16,7 @@ val AudioProcessorManager.eimAudioProcessorFactory get() = factories[EIMAudioPro
 
 class EIMAudioProcessorFactory : AudioProcessorFactory<AudioProcessor> {
     override val name = EIMAudioProcessorFactoryName
+    override val displayName = "内置"
     override val descriptions = setOf(KarplusStrongSynthesizerDescription)
     private val audioProcessors = descriptions.associateBy { it.name }
 

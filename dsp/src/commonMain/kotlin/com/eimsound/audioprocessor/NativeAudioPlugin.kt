@@ -26,7 +26,10 @@ data class NativeAudioPluginDescription(
     override val descriptiveName: String?,
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     var isX86: Boolean = false
-): AudioProcessorDescription
+): AudioProcessorDescription {
+    override val isDeprecated = isX86 || pluginFormatName == "VST"
+    override val displayName = name + (if (pluginFormatName == "VST") " (VST2)" else "") + (if (isX86) " (32位)" else "")
+}
 
 class FailedToLoadAudioPluginException(message: String) : RuntimeException(message)
 

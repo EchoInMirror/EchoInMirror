@@ -1,6 +1,7 @@
 package com.eimsound.audioprocessor
 
 import com.eimsound.daw.utils.randomId
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.core.JsonGenerator
@@ -21,6 +22,10 @@ interface AudioProcessorDescription {
     val isInstrument: Boolean?
     val identifier: String?
     val descriptiveName: String?
+    @get:JsonIgnore
+    val isDeprecated: Boolean?
+    @get:JsonIgnore
+    val displayName: String
 }
 
 interface AudioProcessorListener
@@ -93,7 +98,10 @@ open class DefaultAudioProcessorDescription(
     override val isInstrument: Boolean? = null,
     override val identifier: String? = null,
     override val descriptiveName: String? = null,
-): AudioProcessorDescription
+    override val isDeprecated: Boolean? = false,
+): AudioProcessorDescription {
+    override val displayName get() = name
+}
 
 class AudioProcessorIDSerializer @JvmOverloads constructor(t: Class<AudioProcessor>? = null) : StdSerializer<AudioProcessor>(t) {
     override fun serialize(value: AudioProcessor, jgen: JsonGenerator, provider: SerializerProvider?) {
