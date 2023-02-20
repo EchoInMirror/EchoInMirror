@@ -16,7 +16,7 @@ import com.eimsound.daw.components.Gap
 import com.eimsound.daw.components.Tab
 import com.eimsound.daw.components.utils.clickableWithIcon
 import com.eimsound.daw.utils.*
-import com.eimsound.dsp.native.NativeAudioPluginFactoryImpl
+import com.eimsound.dsp.native.processors.NativeAudioPluginFactoryImpl
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job

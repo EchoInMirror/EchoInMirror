@@ -1,4 +1,4 @@
-package com.eimsound.dsp.native
+package com.eimsound.dsp.native.processors
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.eimsound.audioprocessor.*
 import com.eimsound.daw.utils.mutableStateSetOf
+import com.eimsound.dsp.native.isX86PEFile
 import com.fasterxml.jackson.annotation.JsonAutoDetect
 import com.fasterxml.jackson.annotation.JsonMerge
 import com.fasterxml.jackson.annotation.JsonProperty

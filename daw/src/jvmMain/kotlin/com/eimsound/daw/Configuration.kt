@@ -52,7 +52,7 @@ object Configuration {
             } catch (ignored: Throwable) { }
         }
         if (CONFIG_PATH.exists()) load()
-        nativeHostPath = Paths.get("D:\\Cpp\\EIMPluginScanner\\build\\EIMHost_artefacts\\MinSizeReel\\EIMHost.exe")
+        nativeHostPath = Paths.get("D:\\Cpp\\EIMPluginScanner\\build\\EIMHost_artefacts\\MinSizeRel\\EIMHost.exe")
         if (!Files.exists(nativeHostPath)) nativeHostPath = Paths.get("EIMHost-x64.exe")
         val x86Host = nativeHostPath.absolute().parent.resolve(nativeHostPath.name.replace("x64", "x86"))
 

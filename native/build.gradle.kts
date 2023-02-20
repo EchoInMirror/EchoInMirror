@@ -5,11 +5,16 @@ plugins {
     id("org.jetbrains.compose")
 }
 
+repositories {
+    mavenCentral()
+    maven("https://jitpack.io")
+}
+
 kotlin {
-    jvmToolchain(17)
+    jvmToolchain(19)
     jvm {
         compilations.all {
-            kotlinOptions.jvmTarget = "17"
+            kotlinOptions.jvmTarget = "19"
         }
     }
     sourceSets {
@@ -27,6 +32,7 @@ kotlin {
                 implementation("com.fasterxml.jackson.module:jackson-module-kotlin:${extra["eim.dependencies.jackson"]}")
                 implementation("org.apache.commons:commons-lang3:${extra["eim.dependencies.commons.lang"]}")
                 implementation("org.slf4j:slf4j-simple:${extra["eim.dependencies.slf4j"]}")
+                implementation("com.github.ShirasawaSama:JavaSharedMemory:0.0.2")
 
                 @Suppress("OPT_IN_IS_NOT_ENABLED")
                 @OptIn(ExperimentalComposeLibrary::class)
@@ -35,3 +41,7 @@ kotlin {
         }
     }
 }
+
+//tasks.withType<JavaCompile> {
+//    options.compilerArgs = options.compilerArgs + listOf("--enable-preview")
+//}
