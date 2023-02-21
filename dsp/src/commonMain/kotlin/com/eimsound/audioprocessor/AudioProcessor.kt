@@ -1,5 +1,6 @@
 package com.eimsound.audioprocessor
 
+import com.eimsound.daw.utils.IDisplayName
 import com.eimsound.daw.utils.randomId
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
@@ -14,18 +15,29 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.*
 
-interface AudioProcessorDescription {
+/**
+ * @see com.eimsound.daw.impl.processor.EIMAudioProcessorDescription
+ * @see com.eimsound.audioprocessor.NativeAudioPluginDescription
+ */
+interface AudioProcessorDescription : Comparable<AudioProcessorDescription>, IDisplayName {
     val name: String
     val category: String?
     val manufacturerName: String?
     val version: String?
-    val isInstrument: Boolean?
-    val identifier: String?
+    val isInstrument: Boolean
+    val identifier: String
     val descriptiveName: String?
     @get:JsonIgnore
     val isDeprecated: Boolean?
     @get:JsonIgnore
-    val displayName: String
+    override val displayName: String
+    override fun compareTo(other: AudioProcessorDescription) =
+        if (other.isDeprecated != isDeprecated) {
+            if (isDeprecated == true) 1 else -1
+        } else {
+            val n = name.compareTo(other.name)
+            if (n == 0) version?.compareTo(other.version ?: "") ?: 0 else n
+        }
 }
 
 interface AudioProcessorListener
@@ -92,11 +104,11 @@ abstract class AbstractAudioProcessor(
 @JsonInclude(JsonInclude.Include.NON_NULL)
 open class DefaultAudioProcessorDescription(
     override val name: String,
+    override val identifier: String,
     override val category: String? = null,
     override val manufacturerName: String? = null,
     override val version: String? = null,
-    override val isInstrument: Boolean? = null,
-    override val identifier: String? = null,
+    override val isInstrument: Boolean = false,
     override val descriptiveName: String? = null,
     override val isDeprecated: Boolean? = false,
 ): AudioProcessorDescription {

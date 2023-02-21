@@ -62,7 +62,7 @@ class NativeAudioPluginImpl(
 )
 class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
     private val logger = LoggerFactory.getLogger(NativeAudioPluginFactoryImpl::class.java)
-    private val configFile get() = Paths.get(System.getProperty("eim.dsp.nativeaudioplugins.list"))
+    private val configFile get() = Paths.get(System.getProperty("eim.dsp.nativeaudioplugins.list", "nativeAudioPlugins.json"))
     override val name = "NativeAudioPluginFactory"
     override val displayName = "原生"
     override val pluginIsFile = SystemUtils.IS_OS_WINDOWS || SystemUtils.IS_OS_LINUX
@@ -178,7 +178,7 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
 
     override suspend fun createAudioProcessor(description: AudioProcessorDescription): NativeAudioPlugin {
         if (description !is NativeAudioPluginDescription)
-            throw NoSuchAudioProcessorException(description.identifier ?: "Unknown", name)
+            throw NoSuchAudioProcessorException(description.identifier, name)
         return NativeAudioPluginImpl(description, this).apply {
             launch(getNativeHostPath(description))
         }

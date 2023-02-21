@@ -1,5 +1,6 @@
 package com.eimsound.audioprocessor
 
+import com.eimsound.daw.utils.IDisplayName
 import com.eimsound.daw.utils.NoSuchFactoryException
 import com.eimsound.daw.utils.Reloadable
 import com.fasterxml.jackson.core.JsonGenerator
@@ -30,10 +31,9 @@ interface AudioProcessorManager : Reloadable {
 }
 
 @JsonSerialize(using = AudioProcessorFactoryNameSerializer::class)
-interface AudioProcessorFactory<T: AudioProcessor> {
+interface AudioProcessorFactory<T: AudioProcessor> : IDisplayName {
     val name: String
     val descriptions: Set<AudioProcessorDescription>
-    val displayName: String
     suspend fun createAudioProcessor(description: AudioProcessorDescription): T
     suspend fun createAudioProcessor(path: String, json: JsonNode): T
 }

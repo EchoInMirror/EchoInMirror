@@ -98,7 +98,7 @@ private fun MixerTrack(track: Track, index: String, containerColor: Color = Mate
                         Modifier.fillMaxWidth().padding(vertical = 4.dp),
                         horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically
                     ) {
-                        IconButton({ track.isMute = !track.isMute }, Modifier.size(20.dp)) {
+                        IconButton({ track.isMute = !track.isMute }, 20.dp) {
                             if (track.isMute) Icon(Icons.Default.VolumeOff, null, tint = MaterialTheme.colorScheme.error)
                             else Icon(Icons.Default.VolumeUp, null)
                         }

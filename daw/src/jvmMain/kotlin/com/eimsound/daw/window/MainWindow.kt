@@ -51,6 +51,7 @@ fun ApplicationScope.MainWindow() {
         CLIPBOARD_MANAGER = LocalClipboardManager.current
         System.setProperty("eim.window.handler", window.windowHandle.toString())
         (EchoInMirror.windowManager as WindowManagerImpl).mainWindow = window
+        EchoInMirror.windowManager.floatingDialogProvider = LocalFloatingDialogProvider.current
         window.exceptionHandler = WindowExceptionHandler {
             it.printStackTrace()
         }

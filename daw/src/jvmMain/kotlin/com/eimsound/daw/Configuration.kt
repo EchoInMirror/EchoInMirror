@@ -5,7 +5,6 @@ package com.eimsound.daw
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.eimsound.daw.utils.mutableStateSetOf
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
@@ -24,6 +23,7 @@ val WORKING_PATH: Path = Path.of(
     else System.getProperty("user.home") + "/Library/Application Support"
 )
 val ROOT_PATH: Path = WORKING_PATH.resolve("EchoInMirror")
+val FAVORITE_AUDIO_PROCESSORS_PATH: Path = ROOT_PATH.resolve("favoriteAudioProcessors.json")
 @Suppress("MemberVisibilityCanBePrivate")
 val AUDIO_THUMBNAIL_CACHE_PATH: Path = ROOT_PATH.resolve("audioThumbnailCache.db")
 private val RECENT_PROJECT_PATH = ROOT_PATH.resolve("recentProjects.json")
@@ -41,7 +41,6 @@ object Configuration {
     var audioDeviceFactoryName by mutableStateOf("")
     var audioDeviceName by mutableStateOf("")
     var autoCutOver0db by mutableStateOf(true)
-    val favoriteAudioProcessors = mutableStateSetOf<String>()
 
     init {
         if (!Files.exists(ROOT_PATH)) Files.createDirectory(ROOT_PATH)

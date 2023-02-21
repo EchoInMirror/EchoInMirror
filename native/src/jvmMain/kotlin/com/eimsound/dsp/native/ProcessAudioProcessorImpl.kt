@@ -8,8 +8,8 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-val ProcessAudioProcessorDescription = DefaultAudioProcessorDescription("ProcessAudioProcessor", null,
-    "Echo In Mirror", "0.0.0", true)
+val ProcessAudioProcessorDescription = DefaultAudioProcessorDescription("ProcessAudioProcessor",
+    "ProcessAudioProcessor", null, "EIMSound", "0.0.0", true)
 
 @Suppress("MemberVisibilityCanBePrivate")
 open class ProcessAudioProcessorImpl(
