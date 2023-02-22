@@ -8,8 +8,6 @@ import com.eimsound.audioprocessor.*
 import com.eimsound.daw.utils.mutableStateSetOf
 import com.eimsound.dsp.native.isX86PEFile
 import com.fasterxml.jackson.annotation.JsonAutoDetect
-import com.fasterxml.jackson.annotation.JsonMerge
-import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
@@ -18,6 +16,10 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.sync.withPermit
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.decodeFromStream
 import org.apache.commons.lang3.SystemUtils
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -25,6 +27,7 @@ import java.nio.file.FileVisitResult
 import java.nio.file.Files
 import java.nio.file.Paths
 import kotlin.io.path.*
+import kotlin.system.measureTimeMillis
 
 class NativeAudioPluginImpl(
     override val description: NativeAudioPluginDescription,
@@ -54,6 +57,14 @@ class NativeAudioPluginImpl(
     }
 }
 
+@Serializable
+data class NativeAudioPluginFactoryData(
+    val descriptions: Set<NativeAudioPluginDescription>,
+    val scanPaths: Set<String>,
+    val skipList: Set<String>,
+)
+
+@OptIn(ExperimentalSerializationApi::class)
 @JsonAutoDetect(
     fieldVisibility = JsonAutoDetect.Visibility.NONE,
     setterVisibility = JsonAutoDetect.Visibility.NONE,
@@ -68,14 +79,8 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
     override val displayName = "原生"
     override val pluginIsFile = SystemUtils.IS_OS_WINDOWS || SystemUtils.IS_OS_LINUX
 
-    @JsonProperty
-    @JsonMerge
     override val descriptions: MutableSet<NativeAudioPluginDescription> = mutableStateSetOf()
-    @JsonProperty
-    @JsonMerge
     override val scanPaths: MutableSet<String> = mutableStateSetOf()
-    @JsonProperty
-    @JsonMerge
     override val skipList: MutableSet<String> = mutableStateSetOf()
     override lateinit var pluginExtensions: Set<String>
 
@@ -85,31 +90,37 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
 
     init {
         var read = false
-        if (configFile.toFile().exists()) {
-            try {
-                jacksonObjectMapper().readerForUpdating(this)
-                    .readValue<NativeAudioPluginFactoryImpl>(configFile.toFile())
-                read = true
-            } catch (e: Throwable) {
-                e.printStackTrace()
-                // Files.delete(NATIVE_AUDIO_PLUGIN_CONFIG)
+        println(measureTimeMillis {
+            if (configFile.toFile().exists()) {
+                try {
+                    Json.decodeFromStream<NativeAudioPluginFactoryData>(configFile.inputStream()).apply {
+                        println(descriptions)
+                    }
+//                    descriptions.addAll(data.descriptions)
+//                    scanPaths.addAll(data.scanPaths)
+//                    skipList.addAll(data.skipList)
+                    read = true
+                } catch (e: Throwable) {
+                    e.printStackTrace()
+                    // Files.delete(NATIVE_AUDIO_PLUGIN_CONFIG)
+                }
             }
-        }
-        if (!read) {
-            if (SystemUtils.IS_OS_WINDOWS) {
-                scanPaths.add("C:\\Program Files\\Common Files\\VST3")
-                scanPaths.add("C:\\Program Files\\Steinberg\\VSTPlugins")
-                scanPaths.add("C:\\Program Files\\VstPlugins")
-                scanPaths.add("C:\\Program Files\\Native Instruments\\VSTPlugins 64 bit")
-            } else if (SystemUtils.IS_OS_LINUX) {
-                scanPaths.addAll(System.getenv("LADSPA_PATH")
-                    .ifEmpty { "/usr/lib/ladspa;/usr/local/lib/ladspa;~/.ladspa" }
-                    .replace(":", ";").split(";"))
+            if (!read) {
+                if (SystemUtils.IS_OS_WINDOWS) {
+                    scanPaths.add("C:\\Program Files\\Common Files\\VST3")
+                    scanPaths.add("C:\\Program Files\\Steinberg\\VSTPlugins")
+                    scanPaths.add("C:\\Program Files\\VstPlugins")
+                    scanPaths.add("C:\\Program Files\\Native Instruments\\VSTPlugins 64 bit")
+                } else if (SystemUtils.IS_OS_LINUX) {
+                    scanPaths.addAll(System.getenv("LADSPA_PATH")
+                        .ifEmpty { "/usr/lib/ladspa;/usr/local/lib/ladspa;~/.ladspa" }
+                        .replace(":", ";").split(";"))
+                }
             }
-        }
-        pluginExtensions = if (SystemUtils.IS_OS_WINDOWS) setOf("dll", "vst", "vst3")
-        else if (SystemUtils.IS_OS_LINUX) setOf("so")
-        else setOf("dylib")
+            pluginExtensions = if (SystemUtils.IS_OS_WINDOWS) setOf("dll", "vst", "vst3")
+            else if (SystemUtils.IS_OS_LINUX) setOf("so")
+            else setOf("dylib")
+        })
     }
 
     @OptIn(ExperimentalPathApi::class)

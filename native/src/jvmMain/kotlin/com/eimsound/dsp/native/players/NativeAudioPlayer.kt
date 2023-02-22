@@ -10,11 +10,13 @@ import com.eimsound.audioprocessor.AudioProcessor
 import com.eimsound.audioprocessor.CurrentPosition
 import com.eimsound.daw.utils.ByteBufInputStream
 import com.eimsound.daw.utils.ByteBufOutputStream
+import com.eimsound.dsp.native.IS_SHM_SUPPORTED
 import com.fasterxml.jackson.databind.ObjectMapper
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.io.EOFException
+import java.io.IOException
 import java.lang.foreign.ValueLayout
 import java.util.*
 import kotlin.collections.ArrayList
@@ -25,7 +27,7 @@ class NativeAudioPlayer(
     currentPosition: CurrentPosition,
     processor: AudioProcessor,
     execFile: String,
-    enabledSharedMemory: Boolean = SharedMemory.isSupported() &&
+    enabledSharedMemory: Boolean = IS_SHM_SUPPORTED &&
             System.getProperty("eim.dsp.nativeaudioplayer.sharedmemory", "1") != "false",
     vararg commands: String,
 ) : AbstractAudioPlayer(factory, "[$type] $name", currentPosition, processor), Runnable {
@@ -46,7 +48,7 @@ class NativeAudioPlayer(
 
     init {
         try {
-            if (enabledSharedMemory && SharedMemory.isSupported()) try {
+            if (enabledSharedMemory && IS_SHM_SUPPORTED) try {
                 sharedMemory = SharedMemory.create("EIM-NativePlayer-${UUID.randomUUID()}", currentPosition.bufferSize * channels * 4)
             } catch (ignored: Throwable) { }
             val pb = ProcessBuilder(arrayListOf(execFile).apply {
@@ -173,7 +175,7 @@ class NativeAudioPlayer(
 
                 if (currentPosition.isPlaying) currentPosition.update(currentPosition.timeInSamples + bufferSize)
             }
-        } catch (ignored: EOFException) { } catch (ignored: InterruptedException) { } finally {
+        } catch (ignored: EOFException) { } catch (ignored: IOException) { } catch (ignored: InterruptedException) { } finally {
             close()
         }
     }

@@ -2,6 +2,7 @@ import org.jetbrains.compose.ExperimentalComposeLibrary
 
 plugins {
     kotlin("multiplatform")
+    kotlin("plugin.serialization") version "1.8.0"
     id("org.jetbrains.compose")
 }
 
@@ -33,8 +34,8 @@ kotlin {
                 implementation("org.apache.commons:commons-lang3:${extra["eim.dependencies.commons.lang"]}")
                 implementation("org.slf4j:slf4j-simple:${extra["eim.dependencies.slf4j"]}")
                 implementation("com.github.ShirasawaSama:JavaSharedMemory:0.0.2")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.0-RC")
 
-                @Suppress("OPT_IN_IS_NOT_ENABLED")
                 @OptIn(ExperimentalComposeLibrary::class)
                 compileOnly(compose.material3)
             }

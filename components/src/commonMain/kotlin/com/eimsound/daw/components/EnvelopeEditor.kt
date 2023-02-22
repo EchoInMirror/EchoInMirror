@@ -9,9 +9,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush.Companion.verticalGradient
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.*
@@ -37,14 +38,15 @@ import kotlin.math.*
 @Suppress("PrivatePropertyName")
 private val MAX_TEXT_SIZE = IntSize(40, 18)
 
-fun DrawScope.drawEnvelope(type: EnvelopeType, color: Color, tension: Float, x0: Float, x1: Float, value0: Float,
-                           value1: Float, style: Stroke = Stroke2PX) {
+fun EnvelopeType.toPath(height: Float, tension: Float, x0: Float, x1: Float,
+                        value0: Float, value1: Float) = Path().apply {
     if (value0 == value1) {
-        val y0True = (1 - value0) * size.height
-        drawLine(color, Offset(x0, y0True), Offset(x1, y0True), style.width)
-        return
+        val y0True = (1 - value0) * height
+        moveTo(x0, y0True)
+        lineTo(x1, y0True)
+        return@apply
     }
-    when (type) {
+    when (this@toPath) {
         EnvelopeType.SMOOTH -> {
             val controlPoint1X: Float
             val controlPoint1Y: Float
@@ -68,12 +70,9 @@ fun DrawScope.drawEnvelope(type: EnvelopeType, color: Color, tension: Float, x0:
                 controlPoint1X = x0
                 controlPoint2X = x1
             }
-            drawPath(Path().apply {
-                val height = size.height
-                moveTo(x0, (1 - value0) * height)
-                cubicTo(controlPoint1X, (1 - controlPoint1Y) * height, controlPoint2X,
-                    (1 - controlPoint2Y) * height, x1, (1 - value1) * height)
-            }, color, style = style)
+            moveTo(x0, (1 - value0) * height)
+            cubicTo(controlPoint1X, (1 - controlPoint1Y) * height, controlPoint2X,
+                (1 - controlPoint2Y) * height, x1, (1 - value1) * height)
         }
         EnvelopeType.EXPONENTIAL -> {
             val controlPoint1X: Float
@@ -91,23 +90,22 @@ fun DrawScope.drawEnvelope(type: EnvelopeType, color: Color, tension: Float, x0:
                 controlPoint2X = x1
                 controlPoint2Y = value1 + (value1 - value0) * tension
             }
-            drawPath(Path().apply {
-                val height = size.height
-                moveTo(x0, (1 - value0) * height)
-                cubicTo(controlPoint1X, (1 - controlPoint1Y) * height, controlPoint2X,
-                    (1 - controlPoint2Y) * height, x1, (1 - value1) * height)
-            }, color, style = style)
+            moveTo(x0, (1 - value0) * height)
+            cubicTo(controlPoint1X, (1 - controlPoint1Y) * height, controlPoint2X,
+                (1 - controlPoint2Y) * height, x1, (1 - value1) * height)
         }
         EnvelopeType.SQUARE -> {
-            val y0True = (1 - value0) * size.height
-            drawLine(color, Offset(x0, y0True), Offset(x1 - 0.5F, y0True), style.width)
-            drawLine(color, Offset(x1 - 0.5F, y0True), Offset(x1, (1 - value1) * size.height), style.width)
+            val y0True = (1 - value0) * height
+            moveTo(x0, y0True)
+            lineTo(x1 - 0.5F, y0True)
+            lineTo(x1, (1 - value1) * height)
         }
     }
 }
 
 private fun PointerInputScope.getSelectedPoint(position: Offset, points: EnvelopePointList, start: Float,
-                                                    valueRange: IntRange, noteWidth: MutableState<Dp>): Pair<Int, Int> {
+                                               valueRange: IntRange, noteWidth: MutableState<Dp>): Pair<Int, Int> {
+    if (points.isEmpty()) return -1 to -1
     val noteWidthPx = noteWidth.value.toPx()
     val targetX = start + position.x / noteWidthPx
     val pointIndex = points.binarySearch { it.time <= targetX }
@@ -183,11 +181,20 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange, pr
     @OptIn(ExperimentalTextApi::class)
     @Composable
     fun Editor(start: Float, color: Color, noteWidth: MutableState<Dp>, drawDots: Boolean = true, editUnit: Int = 24,
-                horizontalScrollState: ScrollState? = null, clipStartTime: Int = 0, style: Stroke = Stroke2PX) {
+               horizontalScrollState: ScrollState? = null, clipStartTime: Int = 0, style: Stroke = Stroke2PX) {
         val scope = rememberCoroutineScope()
         val measurer = rememberTextMeasurer(50)
         val primaryColor = MaterialTheme.colorScheme.primary
         val textStyle = MaterialTheme.typography.labelMedium.copy(color)
+        val primaryStyle = MaterialTheme.typography.labelMedium.copy(primaryColor)
+        val fillColor = verticalGradient(
+            0F to color.copy(0.4F),
+            1F to Color.Transparent
+        )
+        val primaryFillColor = verticalGradient(
+            0F to primaryColor.copy(0.4F),
+            1F to Color.Transparent
+        )
         startValue = start
         clipStartTimeValue = clipStartTime
         editUnitValue = editUnit
@@ -357,14 +364,21 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange, pr
             val movingPoints = tempPoints
             var lastTextX = Float.NEGATIVE_INFINITY
             var lastTextY = Float.NEGATIVE_INFINITY
+
             if (action == EditAction.MOVE && movingPoints != null) {
                 val first = movingPoints.firstOrNull()
                 val isFirstSelected = first != null && selectedPoints.contains(first)
-                val firstPointTime = if (first == null) 0F else (first.time + (if (isFirstSelected) tmpOffsetX else 0F)) - start
+                val firstPointTime =
+                    if (first == null) 0F else (first.time + (if (isFirstSelected) tmpOffsetX else 0F)) - start
                 if (first == null || firstPointTime > 0) {
-                    val y = size.height * (1 - mapValue(if (first == null) valueRange.first.toFloat() else
-                        first.value + (if (isFirstSelected) tmpOffsetY else 0F), valueRange))
-                    drawLine(if (isFirstSelected) primaryColor else color,
+                    val y = size.height * (1 - mapValue(
+                        if (first == null) valueRange.first.toFloat() else
+                            first.value + (if (isFirstSelected) tmpOffsetY else 0F), valueRange
+                    ))
+//                        moveTo(0F, y)
+//                        lineTo(if (first == null) size.width else firstPointTime * noteWidthPx, y)
+                    drawLine(
+                        if (isFirstSelected) primaryColor else color,
                         Offset(0F, y),
                         Offset(if (first == null) size.width else firstPointTime * noteWidthPx, y), 2F
                     )
@@ -392,13 +406,23 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange, pr
                             measurer,
                             if (isDecimal) "%.2f".format(curValue) else curValue.toInt().toString(),
                             Offset(startX + 6, if (currentY + 20 > size.height) currentY - 20 else currentY + 2),
-                            textStyle, maxSize = MAX_TEXT_SIZE
+                            if (isSelected) primaryStyle else textStyle, maxSize = MAX_TEXT_SIZE
                         )
                     }
-                    drawEnvelope(cur.type, if (isSelected) primaryColor else color,
+                    val curColor = if (isSelected) primaryColor else color
+                    val path = cur.type.toPath(
+                        size.height,
                         cur.tension, startX, endX, mapValue(curValue, valueRange),
-                        mapValue(nextPoint.value + (if (isNextSelected) tmpOffsetY else 0F), valueRange), style)
-                    if (drawDots) drawCircle(if (isSelected) primaryColor else color, 4F, Offset(startX, currentY))
+                        mapValue(nextPoint.value + (if (isNextSelected) tmpOffsetY else 0F), valueRange)
+                    )
+                    drawPath(path, curColor, style = style)
+                    drawPath(Path().apply {
+                        addPath(path)
+                        lineTo(endX, size.height)
+                        lineTo(startX, size.height)
+                        close()
+                    }, if (isSelected) primaryFillColor else fillColor, style = Fill)
+                    if (drawDots) drawCircle(curColor, 4F, Offset(startX, currentY))
                 }
             } else {
                 startIndex = (points.binarySearch { it.time < start } - 1).coerceAtLeast(0)
@@ -406,7 +430,8 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange, pr
                 val first = points.firstOrNull()
                 if (first == null || first.time > start) {
                     val y = size.height * (1 - mapValue(first?.value ?: valueRange.first.toFloat(), valueRange))
-                    drawLine(if (first == null || !selectedPoints.contains(first)) color else primaryColor,
+                    drawLine(
+                        if (first == null || !selectedPoints.contains(first)) color else primaryColor,
                         Offset(0F, y),
                         Offset(if (first == null) size.width else (first.time - start) * noteWidthPx, y)
                     )
@@ -429,14 +454,29 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange, pr
                             measurer,
                             if (isDecimal) "%.2f".format(cur.value) else cur.value.toInt().toString(),
                             Offset(startX + 6, if (currentY + 20 > size.height) currentY - 20 else currentY + 2),
-                            textStyle, maxSize = MAX_TEXT_SIZE
+                            if (isSelected) primaryStyle else textStyle, maxSize = MAX_TEXT_SIZE
                         )
                     }
-                    drawEnvelope(cur.type, if (isSelected) primaryColor else color,
-                        (cur.tension + (if (isSelected || currentAdjustingPoint == i) tmpOffsetTension else 0F)).coerceIn(-1F, 1F),
-                        startX, endX, mapValue(cur.value, valueRange), mapValue((next ?: cur).value, valueRange), style)
-                    if (drawDots) drawCircle(if (isSelected) primaryColor else color,
-                        if (hoveredId == i) 8F else 4F, Offset(startX, currentY))
+                    val curColor = if (isSelected) primaryColor else color
+                    val path = cur.type.toPath(
+                        size.height,
+                        (cur.tension + (if (isSelected || currentAdjustingPoint == i) tmpOffsetTension else 0F)).coerceIn(
+                            -1F,
+                            1F
+                        ),
+                        startX,
+                        endX,
+                        mapValue(cur.value, valueRange),
+                        mapValue((next ?: cur).value, valueRange)
+                    )
+                    drawPath(path, curColor, style = style)
+                    drawPath(Path().apply {
+                        addPath(path)
+                        lineTo(endX, size.height)
+                        lineTo(startX, size.height)
+                        close()
+                    }, if (isSelected) primaryFillColor else fillColor, style = Fill)
+                    if (drawDots) drawCircle(curColor, if (hoveredId == i) 8F else 4F, Offset(startX, currentY))
                 }
             }
 

@@ -5,6 +5,9 @@ import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.awt.ComposeWindow
 import java.nio.file.Path
 
+/**
+ * @see com.eimsound.daw.impl.WindowManagerImpl
+ */
 interface WindowManager {
     val dialogs: SnapshotStateMap<@Composable () -> Unit, Boolean>
     val panels: List<Panel>

@@ -4,6 +4,7 @@ import cn.apisium.shm.SharedMemory
 import com.eimsound.audioprocessor.*
 import com.eimsound.daw.utils.ByteBufInputStream
 import com.eimsound.daw.utils.ByteBufOutputStream
+import com.eimsound.dsp.native.IS_SHM_SUPPORTED
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
@@ -19,7 +20,7 @@ val ProcessAudioProcessorDescription = DefaultAudioProcessorDescription("Process
 open class ProcessAudioProcessorImpl(
     description: AudioProcessorDescription,
     factory: AudioProcessorFactory<*>,
-    private var enabledSharedMemory: Boolean = SharedMemory.isSupported() &&
+    private var enabledSharedMemory: Boolean = IS_SHM_SUPPORTED &&
             System.getProperty("eim.dsp.nativeaudioplugins.sharedmemory", "1") != "false",
 ) : ProcessAudioProcessor, AbstractAudioProcessor(description, factory) {
     override var inputChannelsCount = 0
@@ -100,7 +101,7 @@ open class ProcessAudioProcessorImpl(
         output.writeInt(sampleRate)
         output.writeInt(bufferSize)
         var newSize = 0
-        if (enabledSharedMemory && SharedMemory.isSupported()) {
+        if (enabledSharedMemory && IS_SHM_SUPPORTED) {
             val size = bufferSize * inputChannelsCount.coerceAtLeast(outputChannelsCount) * 4
             sharedMemory?.let {
                 if (it.size != size) {
@@ -131,7 +132,7 @@ open class ProcessAudioProcessorImpl(
                 args.add("-H")
                 args.add(handler)
             }
-            if (enabledSharedMemory && SharedMemory.isSupported()) {
+            if (enabledSharedMemory && IS_SHM_SUPPORTED) {
                 args.add("-M")
                 args.add(shmName)
             }
