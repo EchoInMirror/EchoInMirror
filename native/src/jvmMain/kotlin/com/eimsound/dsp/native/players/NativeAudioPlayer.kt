@@ -3,6 +3,7 @@ package com.eimsound.dsp.native.players
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import cn.apisium.shm.SharedMemory
 import com.eimsound.audioprocessor.AbstractAudioPlayer
 import com.eimsound.audioprocessor.AudioPlayerFactory
 import com.eimsound.audioprocessor.AudioProcessor
@@ -14,7 +15,9 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.io.EOFException
+import java.lang.foreign.ValueLayout
 import java.util.*
+import kotlin.collections.ArrayList
 
 class NativeAudioPlayer(
     factory: NativeAudioPlayerFactory,
@@ -22,6 +25,8 @@ class NativeAudioPlayer(
     currentPosition: CurrentPosition,
     processor: AudioProcessor,
     execFile: String,
+    enabledSharedMemory: Boolean = SharedMemory.isSupported() &&
+            System.getProperty("eim.dsp.nativeaudioplayer.sharedmemory", "1") != "false",
     vararg commands: String,
 ) : AbstractAudioPlayer(factory, "[$type] $name", currentPosition, processor), Runnable {
     private var thread: Thread? = null
@@ -31,6 +36,7 @@ class NativeAudioPlayer(
     private val mutex = Mutex()
     private var channels = 2
     private var hasControls = false
+    private var sharedMemory: SharedMemory? = null
     private lateinit var buffers: Array<FloatArray>
     override var inputLatency = 0
     override var outputLatency = 0
@@ -40,6 +46,9 @@ class NativeAudioPlayer(
 
     init {
         try {
+            if (enabledSharedMemory && SharedMemory.isSupported()) try {
+                sharedMemory = SharedMemory.create("EIM-NativePlayer-${UUID.randomUUID()}", currentPosition.bufferSize * channels * 4)
+            } catch (ignored: Throwable) { }
             val pb = ProcessBuilder(arrayListOf(execFile).apply {
                 addAll(commands)
                 add("-O")
@@ -52,6 +61,12 @@ class NativeAudioPlayer(
                 add(currentPosition.bufferSize.toString())
                 add("-R")
                 add(currentPosition.sampleRate.toString())
+                sharedMemory?.let {
+                    add("-M")
+                    add(it.name)
+                    add("-MS")
+                    add(it.size.toString())
+                }
             })
             pb.redirectOutput(ProcessBuilder.Redirect.INHERIT)
             val p = pb.start()
@@ -88,6 +103,10 @@ class NativeAudioPlayer(
         if (thread != null) {
             thread!!.interrupt()
             thread = null
+        }
+        if (sharedMemory != null) {
+            sharedMemory!!.close()
+            sharedMemory = null
         }
         closeCallback?.invoke()
         closeCallback = null
@@ -133,8 +152,16 @@ class NativeAudioPlayer(
                             0 -> {
                                 outputStream.write(0)
                                 outputStream.write(channels)
-                                for (j in 0 until channels) {
-                                    for (i in 0 until bufferSize) outputStream.writeFloat(buffers[j][i])
+                                if (sharedMemory == null) {
+                                    for (j in 0 until channels)
+                                        for (i in 0 until bufferSize) outputStream.writeFloat(buffers[j][i])
+                                } else {
+                                    val ms = sharedMemory!!.memorySegment
+                                    for (j in 0 until channels) {
+                                        val pos = j * bufferSize.toLong()
+                                        for (i in 0 until bufferSize)
+                                            ms.setAtIndex(ValueLayout.JAVA_FLOAT, pos + i, buffers[j][i])
+                                    }
                                 }
                                 outputStream.flush()
                             }
@@ -164,8 +191,19 @@ class NativeAudioPlayer(
         availableBufferSizes = IntArray(inputStream.readInt()) { inputStream.readInt() }
         hasControls = inputStream.readBoolean()
 
+        var outBufferSize = 0
+        sharedMemory?.let {
+            val newSize = bufferSize * channels * 4
+            if (it.size != newSize) {
+                it.close()
+                sharedMemory = SharedMemory.create(it.name, newSize)
+                outBufferSize = newSize
+            }
+        }
         buffers = arrayOf(FloatArray(bufferSize), FloatArray(bufferSize))
         processor.prepareToPlay(sampleRate, bufferSize)
+        outputStream.writeInt(outBufferSize)
+        outputStream.flush()
     }
 }
 

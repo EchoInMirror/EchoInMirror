@@ -14,6 +14,12 @@ cd EchoInMirror
 gradlew :daw:shadowJar
 ```
 
+## Run
+
+```bash
+java --enable-preview -jar daw/build/libs/daw.jar
+```
+
 ## Author
 
 Shirasawa

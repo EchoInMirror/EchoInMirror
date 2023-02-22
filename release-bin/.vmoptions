@@ -7,6 +7,8 @@
 -XX:-OmitStackTraceInFastThrow
 -XX:CompileCommand=exclude,com/intellij/openapi/vfs/impl/FilePartNodeRoot,trieDescend
 -ea
+--enable-preview
+--enable-native-access=ALL-UNNAMED
 -Dsun.io.useCanonCaches=false
 -Dsun.java2d.metal=true
 -Dsun.java2d.metal.displaySync=false

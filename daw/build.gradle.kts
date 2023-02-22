@@ -16,7 +16,7 @@ plugins {
 
 repositories {
     mavenCentral()
-//    maven("https://jitpack.io")
+    maven("https://jitpack.io")
     maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
     maven("https://mvn.0110.be/releases")
 }
