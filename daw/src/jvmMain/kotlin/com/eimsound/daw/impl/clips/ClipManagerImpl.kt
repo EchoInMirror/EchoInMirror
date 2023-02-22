@@ -6,9 +6,9 @@ import com.eimsound.daw.api.ClipFactory
 import com.eimsound.daw.api.ClipManager
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.utils.NoSuchFactoryException
-import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.ObjectMapper
-import java.io.File
+import com.eimsound.daw.utils.asInt
+import com.eimsound.daw.utils.asString
+import kotlinx.serialization.json.JsonObject
 import java.util.*
 
 class ClipManagerImpl : ClipManager {
@@ -24,16 +24,13 @@ class ClipManagerImpl : ClipManager {
     override suspend fun createClip(factory: String) =
         factories[factory]?.createClip() ?: throw NoSuchFactoryException(factory)
 
-    override suspend fun createClip(path: String, json: JsonNode) =
-        factories[json["factory"].asText()]?.createClip(path, json) ?: throw NoSuchFactoryException(json["factory"].asText())
-
-    override suspend fun createClip(path: String, id: String) =
-        createClip(path, ObjectMapper().readTree(File(path, "$id.json")))
+    override suspend fun createClip(path: String, json: JsonObject): Clip {
+        val name = json["factory"]?.asString()
+        return factories[name]?.createClip(path, json) ?: throw NoSuchFactoryException(name ?: "Null")
+    }
 
     override fun <T : Clip> createTrackClip(clip: T, time: Int, duration: Int, start: Int, track: Track?) =
         TrackClipImpl(clip, time, duration, start, track)
-    override suspend fun createTrackClip(path: String, json: JsonNode) = json["clip"]!!.let {
-        TrackClipImpl(if (it.isObject) createClip(path, it) else createClip(path, it.asText()),
-            json["time"]!!.asInt(), json["duration"]!!.asInt())
-    }
+    override suspend fun createTrackClip(path: String, json: JsonObject) =
+        TrackClipImpl(createClip(path, json["clip"] as JsonObject), json["time"].asInt(), json["duration"].asInt())
 }

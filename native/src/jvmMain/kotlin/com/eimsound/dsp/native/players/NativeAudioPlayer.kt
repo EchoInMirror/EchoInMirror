@@ -11,10 +11,11 @@ import com.eimsound.audioprocessor.CurrentPosition
 import com.eimsound.daw.utils.ByteBufInputStream
 import com.eimsound.daw.utils.ByteBufOutputStream
 import com.eimsound.dsp.native.IS_SHM_SUPPORTED
-import com.fasterxml.jackson.databind.ObjectMapper
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import java.io.EOFException
 import java.io.IOException
 import java.lang.foreign.ValueLayout
@@ -57,7 +58,7 @@ class NativeAudioPlayer(
                 add("#")
                 if (type.isNotEmpty()) {
                     add("-T")
-                    add(ObjectMapper().writeValueAsString(type))
+                    add(Json.encodeToString(type))
                 }
                 add("-B")
                 add(currentPosition.bufferSize.toString())

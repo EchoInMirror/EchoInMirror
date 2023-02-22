@@ -3,6 +3,7 @@
 package com.eimsound.daw.utils
 
 import androidx.compose.runtime.mutableStateOf
+import kotlinx.serialization.Transient
 import kotlin.reflect.KProperty
 
 interface IManualState {
@@ -11,7 +12,7 @@ interface IManualState {
 }
 
 open class ManualState : IManualState {
-    private var modification = mutableStateOf(0)
+    @Transient private var modification = mutableStateOf(0)
     override fun update() { modification.value++ }
     override fun read() { modification.value }
 }

@@ -3,12 +3,17 @@ package com.eimsound.daw.api
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.fasterxml.jackson.annotation.JsonIgnore
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
+import com.eimsound.daw.utils.*
+import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.Transient
+import kotlinx.serialization.json.*
 import java.nio.file.Path
 import kotlin.io.path.name
 
+/**
+ * Consider to make this class open.
+ * @see [DefaultProjectInformation]
+ */
 interface ProjectInformation {
     val root: Path
     var name: String
@@ -16,36 +21,45 @@ interface ProjectInformation {
     var description: String
     var timeCost: Int
 
-    fun save()
+    suspend fun save()
 }
 
-class DefaultProjectInformation(@JsonIgnore override val root: Path): ProjectInformation {
+class DefaultProjectInformation(override val root: Path): ProjectInformation, JsonObjectSerializable {
     override var name by mutableStateOf(root.name)
     override var author by mutableStateOf("")
     override var description by mutableStateOf("")
     override var timeCost by mutableStateOf(0)
 
-    @JsonIgnore
+    @Transient
     private val jsonFile = root.resolve("eim.json").toFile()
 
     init {
         var flag = false
         if (jsonFile.exists()) {
             try {
-                val map = ObjectMapper().readValue<Map<String, String>>(jsonFile)
-                name = map["name"] ?: root.name
-                author = map["author"] ?: ""
-                description = map["description"] ?: ""
-                timeCost = map["timeCost"]?.toIntOrNull() ?: 0
+                runBlocking { fromJsonFile(jsonFile) }
                 flag = true
             } catch (e: Throwable) {
                 e.printStackTrace()
             }
         }
-        if (!flag) save()
+        if (!flag) runBlocking { save() }
     }
 
-    override fun save() {
-        ObjectMapper().writerWithDefaultPrettyPrinter().writeValue(jsonFile, this)
+    override suspend fun save() { encodeJsonFile(jsonFile, true) }
+
+    override fun toJson() = mapOf(
+        "name" to name,
+        "author" to author,
+        "description" to description,
+        "timeCost" to timeCost,
+    )
+
+    override fun fromJson(json: JsonElement) {
+        json as JsonObject
+        name = json["name"]?.asString() ?: root.name
+        author = json["author"]?.asString() ?: ""
+        description = json["description"]?.asString() ?: ""
+        timeCost = json["timeCost"]?.asInt() ?: 0
     }
 }

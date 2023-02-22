@@ -28,11 +28,9 @@ import com.eimsound.daw.components.Timeline
 import com.eimsound.daw.components.splitpane.VerticalSplitPane
 import com.eimsound.daw.components.splitpane.rememberSplitPaneState
 import com.eimsound.daw.utils.*
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.module.SimpleModule
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.fasterxml.jackson.module.kotlin.kotlinModule
-import com.fasterxml.jackson.module.kotlin.readValue
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import java.util.*
 import kotlin.math.roundToInt
 
@@ -139,8 +137,8 @@ class DefaultMidiClipEditor(override val clip: TrackClip<MidiClip>, override val
     override fun copyAsString(): String {
         val editor = selectedEvent
         return if (isEventPanelActive && editor is SerializableEditor) editor.copyAsString()
-        else if (selectedNotes.isEmpty()) "" else jacksonObjectMapper().writeValueAsString(
-            SerializableNoteMessage(EchoInMirror.currentPosition.ppq, copyAsObject().toSet())
+        else if (selectedNotes.isEmpty()) "" else JsonIgnoreDefaults.encodeToString(
+            SerializableNoteMessages(EchoInMirror.currentPosition.ppq, copyAsObject().toSet())
         )
     }
 
@@ -166,19 +164,21 @@ class DefaultMidiClipEditor(override val clip: TrackClip<MidiClip>, override val
         }
     }
 
+    override fun canPasteFromString(value: String): Boolean {
+        val editor = selectedEvent
+        if (isEventPanelActive && editor is SerializableEditor) return editor.canPasteFromString(value)
+        return value.contains("NoteMessages")
+    }
+
     override fun pasteFromString(value: String) {
         val editor = selectedEvent
         if (isEventPanelActive && editor is SerializableEditor) {
             editor.pasteFromString(value)
             return
         }
+        if (!value.contains("NoteMessages")) return
         try {
-            val data = ObjectMapper()
-                .registerModule(kotlinModule())
-                .registerModule(
-                    SimpleModule()
-                    .addAbstractTypeMapping(NoteMessage::class.java, NoteMessageImpl::class.java))
-                .readValue<SerializableNoteMessage>(value)
+            val data = Json.decodeFromString<SerializableNoteMessages>(value)
             val scale = EchoInMirror.currentPosition.ppq.toDouble() / data.ppq
             data.notes.forEach {
                 it.time = (it.time * scale).roundToInt()

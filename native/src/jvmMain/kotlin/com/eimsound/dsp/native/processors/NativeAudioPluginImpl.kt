@@ -5,21 +5,14 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.eimsound.audioprocessor.*
-import com.eimsound.daw.utils.mutableStateSetOf
+import com.eimsound.daw.utils.*
 import com.eimsound.dsp.native.isX86PEFile
-import com.fasterxml.jackson.annotation.JsonAutoDetect
-import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.sync.withPermit
-import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.decodeFromStream
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.*
 import org.apache.commons.lang3.SystemUtils
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -36,16 +29,7 @@ class NativeAudioPluginImpl(
     override var name = description.name
 
     override suspend fun save(path: String) {
-        withContext(Dispatchers.IO) {
-            ObjectMapper().writerWithDefaultPrettyPrinter().writeValue(
-                File("$path.json"), mapOf(
-                    "factory" to factory.name,
-                    "name" to name,
-                    "id" to id,
-                    "identifier" to description.identifier
-                )
-            )
-        }
+        super.save(path)
         if (!isLaunched) return
         mutex.withLock {
             outputStream?.apply {
@@ -57,26 +41,12 @@ class NativeAudioPluginImpl(
     }
 }
 
-@Serializable
-data class NativeAudioPluginFactoryData(
-    val descriptions: Set<NativeAudioPluginDescription>,
-    val scanPaths: Set<String>,
-    val skipList: Set<String>,
-)
-
-@OptIn(ExperimentalSerializationApi::class)
-@JsonAutoDetect(
-    fieldVisibility = JsonAutoDetect.Visibility.NONE,
-    setterVisibility = JsonAutoDetect.Visibility.NONE,
-    getterVisibility = JsonAutoDetect.Visibility.NONE,
-    isGetterVisibility = JsonAutoDetect.Visibility.NONE,
-    creatorVisibility = JsonAutoDetect.Visibility.NONE
-)
 class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
     private val logger = LoggerFactory.getLogger(NativeAudioPluginFactoryImpl::class.java)
     private val configFile get() = Paths.get(System.getProperty("eim.dsp.nativeaudioplugins.list", "nativeAudioPlugins.json"))
     override val name = "NativeAudioPluginFactory"
     override val displayName = "原生"
+
     override val pluginIsFile = SystemUtils.IS_OS_WINDOWS || SystemUtils.IS_OS_LINUX
 
     override val descriptions: MutableSet<NativeAudioPluginDescription> = mutableStateSetOf()
@@ -93,12 +63,7 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
         println(measureTimeMillis {
             if (configFile.toFile().exists()) {
                 try {
-                    Json.decodeFromStream<NativeAudioPluginFactoryData>(configFile.inputStream()).apply {
-                        println(descriptions)
-                    }
-//                    descriptions.addAll(data.descriptions)
-//                    scanPaths.addAll(data.scanPaths)
-//                    skipList.addAll(data.skipList)
+                    runBlocking { fromJsonFile(configFile.toFile()) }
                     read = true
                 } catch (e: Throwable) {
                     e.printStackTrace()
@@ -162,16 +127,18 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
                 async {
                     scanSemaphore.withPermit {
                         logger.info("Scanning native audio plugin: {}", it)
-                        val pb = ProcessBuilder(getNativeHostPath(it), " -S ", jacksonObjectMapper().writeValueAsString(it))
+                        val pb = ProcessBuilder(getNativeHostPath(it), "-S", "#")
                         pb.redirectError()
                         val process = pb.start()
                         scanningPlugins[it] = process
+                        process.outputStream.write(it.encodeToByteArray())
+                        process.outputStream.write(0)
+                        process.outputStream.flush()
                         var result = ""
                         try {
                             result = process.inputStream.readAllBytes().decodeToString()
                                 .substringAfter("\$EIMHostScanner{{").substringBeforeLast("}}EIMHostScanner\$")
-                            jacksonObjectMapper().readValue<List<NativeAudioPluginDescription>>(result).forEach(descriptions::add)
-                            descriptions.distinctBy { it.identifier }
+                            descriptions.addAll(Json.decodeFromString<List<NativeAudioPluginDescription>>(result))
                         } catch (e: Throwable) {
                             logger.error("Failed to scan native audio plugin: $it, data: $result", e)
                             skipList.add(it)
@@ -192,22 +159,34 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
         if (description !is NativeAudioPluginDescription)
             throw NoSuchAudioProcessorException(description.identifier, name)
         return NativeAudioPluginImpl(description, this).apply {
-            launch(getNativeHostPath(description))
+            launch(getNativeHostPath(description), null)
         }
     }
 
-    override suspend fun createAudioProcessor(path: String, json: JsonNode): NativeAudioPlugin {
-        val description = descriptions.find { it.identifier == json["identifier"].asText() }
+    override suspend fun createAudioProcessor(path: String, json: JsonObject): NativeAudioPlugin {
+        val description = descriptions.find { it.identifier == json["identifier"].asString() }
             ?: throw NoSuchAudioProcessorException(path, name)
         return NativeAudioPluginImpl(description, this).apply {
-            jacksonObjectMapper().run { launch(getNativeHostPath(description), "-P",
-                writeValueAsString("$path/${json["id"]!!.asText()}.bin"), "-L",
-                writeValueAsString(writeValueAsString(description))) }
+            launch(getNativeHostPath(description), "$path/${json["id"].asString()}.bin")
         }
     }
 
-    override fun save() {
-        jacksonObjectMapper().writeValue(configFile.toFile(), this)
+    override suspend fun save() { encodeJsonFile(configFile.toFile()) }
+
+    override fun toJson() = mapOf(
+        "descriptions" to descriptions,
+        "scanPaths" to scanPaths,
+        "skipList" to skipList
+    )
+
+    override fun fromJson(json: JsonElement) {
+        json as JsonObject
+        descriptions.clear()
+        scanPaths.clear()
+        skipList.clear()
+        descriptions.addAll((json["descriptions"] as JsonArray).map(Json::decodeFromJsonElement))
+        scanPaths.addAll((json["scanPaths"] as JsonArray).map(JsonElement::asString))
+        skipList.addAll((json["skipList"] as JsonArray).map(JsonElement::asString))
     }
 
     private fun getNativeHostPath(isX86: Boolean) = Paths.get(System.getProperty("eim.dsp.nativeaudioplugins.host" +

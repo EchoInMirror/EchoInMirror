@@ -3,6 +3,7 @@ import org.jetbrains.compose.ExperimentalComposeLibrary
 
 plugins {
     kotlin("multiplatform")
+    kotlin("plugin.serialization") version "1.8.0"
     id("org.jetbrains.compose")
 }
 
@@ -14,7 +15,6 @@ kotlin {
         }
         withJava()
     }
-    @Suppress("OPT_IN_IS_NOT_ENABLED")
     sourceSets {
         named("commonMain") {
             dependencies {
@@ -29,7 +29,6 @@ kotlin {
                     exclude("org.jetbrains.kotlin")
                 }
                 implementation("org.jetbrains.compose.ui:ui-util:${ComposeBuildConfig.composeVersion}")
-                implementation("com.fasterxml.jackson.module:jackson-module-kotlin:${extra["eim.dependencies.jackson"]}")
                 api("cafe.adriel.bonsai:bonsai-core:1.2.0")
                 api("cafe.adriel.bonsai:bonsai-file-system:1.2.0")
             }

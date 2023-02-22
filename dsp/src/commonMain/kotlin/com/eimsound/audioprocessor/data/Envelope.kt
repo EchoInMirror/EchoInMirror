@@ -3,14 +3,13 @@ package com.eimsound.audioprocessor.data
 import androidx.compose.runtime.mutableStateOf
 import com.eimsound.daw.utils.IManualState
 import com.eimsound.daw.utils.binarySearch
-import com.fasterxml.jackson.annotation.JsonEnumDefaultValue
-import com.fasterxml.jackson.annotation.JsonIgnore
-import com.fasterxml.jackson.annotation.JsonInclude
-import com.fasterxml.jackson.annotation.JsonTypeInfo
+import kotlinx.serialization.EncodeDefault
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import kotlin.math.absoluteValue
 
 enum class EnvelopeType {
-    @JsonEnumDefaultValue
     SMOOTH,
     EXPONENTIAL,
     SQUARE;
@@ -55,32 +54,35 @@ enum class EnvelopeType {
         }
 }
 
-class EnvelopePoint(
+@Serializable
+data class EnvelopePoint(
     var time: Int,
     var value: Float,
-    tension: Float = 0F,
-    @get:JsonInclude(value = JsonInclude.Include.NON_DEFAULT)
+    var tension: Float = 0F,
     var type: EnvelopeType = EnvelopeType.SMOOTH
-) {
-    var tension = tension.coerceIn(-1F, 1F)
-        set(value) { field = value.coerceIn(-1F, 1F) }
-    fun copy(time: Int = this.time, value: Float = this.value, tension: Float = this.tension, type: EnvelopeType = this.type) =
-        EnvelopePoint(time, value, tension, type)
+)
+
+@Serializable
+data class SerializableEnvelopePointList(val points: List<EnvelopePoint>) {
+    @OptIn(ExperimentalSerializationApi::class)
+    @Suppress("unused")
+    @EncodeDefault
+    val className = "EnvelopePointList"
 }
 
-@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, property = "eim:class")
-data class SerializableEnvelopePointList(val points: List<EnvelopePoint>)
-
-interface EnvelopePointList : MutableList<EnvelopePoint>, IManualState {
+@Serializable
+sealed interface EnvelopePointList : MutableList<EnvelopePoint>, IManualState {
     fun sort()
     fun getValue(position: Int): Float
 }
 
+@Serializable
 class DefaultEnvelopePointList : EnvelopePointList, ArrayList<EnvelopePoint>() {
-    @JsonIgnore
+    @Transient
     private var modification = mutableStateOf(0)
-    @JsonIgnore
+    @Transient
     private var currentIndex = -1
+
     override fun sort() = sortBy { it.time }
     override fun getValue(position: Int): Float {
         if (size == 0) return 0F

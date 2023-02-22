@@ -1,8 +1,11 @@
 package com.eimsound.audioprocessor
 
+/**
+ * @see com.eimsound.dsp.native.processors.ProcessAudioProcessorImpl
+ */
 interface ProcessAudioProcessor: AudioProcessor {
     val isLaunched: Boolean
-    suspend fun launch(execFile: String, vararg commands: String): Boolean
+    suspend fun launch(execFile: String, preset: String?, vararg commands: String): Boolean
 }
 
 fun CurrentPosition.toFlags(): Int {

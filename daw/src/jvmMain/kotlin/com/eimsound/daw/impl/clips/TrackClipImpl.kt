@@ -6,6 +6,9 @@ import androidx.compose.runtime.setValue
 import com.eimsound.daw.api.Clip
 import com.eimsound.daw.api.TrackClip
 import com.eimsound.daw.api.processor.Track
+import com.eimsound.daw.utils.asInt
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
 import org.slf4j.LoggerFactory
 
 @Suppress("PrivatePropertyName")
@@ -27,6 +30,20 @@ class TrackClipImpl <T: Clip> (override val clip: T, time: Int = 0, duration: In
     override var currentIndex = -1
     override fun reset() {
         currentIndex = -1
+    }
+
+    override fun toJson() = mapOf(
+        "time" to time,
+        "duration" to duration,
+        "start" to start,
+        "clip" to clip.toJson()
+    )
+
+    override fun fromJson(json: JsonElement) {
+        json as JsonObject
+        json["time"]?.asInt()?.let { time = it }
+        json["duration"]?.asInt()?.let { duration = it }
+        json["start"]?.asInt()?.let { start = it }
     }
 
     override fun copy(time: Int, duration: Int, start: Int, clip: T, currentIndex: Int, track: Track?) =

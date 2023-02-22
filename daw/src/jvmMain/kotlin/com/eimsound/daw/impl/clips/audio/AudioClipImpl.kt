@@ -10,11 +10,12 @@ import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.api.*
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.components.Waveform
-import com.fasterxml.jackson.databind.JsonNode
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
 import java.nio.file.Path
 import kotlin.io.path.name
 
-class AudioClipImpl(json: JsonNode?, factory: ClipFactory<AudioClip>, target: AudioSource? = null):
+class AudioClipImpl(json: JsonObject?, factory: ClipFactory<AudioClip>, target: AudioSource? = null):
     AbstractClip<AudioClip>(json, factory), AudioClip {
     override var target: AudioSource = target ?:
     AudioSourceManager.instance.createAudioSource(json?.get("target") ?: throw IllegalStateException("No target"))
@@ -31,6 +32,14 @@ class AudioClipImpl(json: JsonNode?, factory: ClipFactory<AudioClip>, target: Au
     }
     override val defaultDuration get() = EchoInMirror.currentPosition.convertSamplesToPPQ(audioSource.length)
     override val maxDuration get() = defaultDuration
+    override fun toJson() = super.toJson().apply {
+        put("target", target.toJson())
+    }
+
+    override fun fromJson(json: JsonElement) {
+        TODO("Not yet implemented")
+    }
+
     override var thumbnail by mutableStateOf(AudioThumbnail(this.audioSource))
     override val name: String?
         get() {
@@ -51,7 +60,7 @@ class AudioClipFactoryImpl: AudioClipFactory {
         AudioSourceManager.instance.createAudioSource(path))
 
     override fun createClip() = AudioClipImpl(null, this)
-    override fun createClip(path: String, json: JsonNode) = AudioClipImpl(json, this)
+    override fun createClip(path: String, json: JsonObject) = AudioClipImpl(json, this)
     override fun getEditor(clip: TrackClip<AudioClip>, track: Track): ClipEditor? = null
 
     override fun processBlock(clip: TrackClip<AudioClip>, buffers: Array<FloatArray>, position: CurrentPosition,

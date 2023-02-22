@@ -10,6 +10,7 @@ import java.util.*
 
 plugins {
     kotlin("multiplatform")
+    kotlin("plugin.serialization") version "1.8.0"
     id("org.jetbrains.compose")
     id("com.github.johnrengelman.shadow") version "7.1.2"
 }
@@ -43,8 +44,6 @@ kotlin {
                 }
                 api(compose.materialIconsExtended)
                 @OptIn(ExperimentalComposeLibrary::class) api(compose.material3)
-                api("com.fasterxml.jackson.module:jackson-module-kotlin:${extra["eim.dependencies.jackson"]}")
-//                @OptIn(ExperimentalComposeLibrary::class) implementation(compose.desktop.components.splitPane)
 
                 api("commons-io:commons-io:2.11.0")
                 api("org.apache.commons:commons-lang3:${extra["eim.dependencies.commons.lang"]}")
