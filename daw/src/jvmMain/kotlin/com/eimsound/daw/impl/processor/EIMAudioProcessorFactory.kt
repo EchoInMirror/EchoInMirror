@@ -8,14 +8,15 @@ import com.eimsound.daw.processor.synthesizer.SineWaveSynthesizer
 import com.eimsound.daw.processor.synthesizer.SineWaveSynthesizerDescription
 import com.fasterxml.jackson.databind.JsonNode
 
-class EIMAudioProcessorDescription(name: String, category: String? = null, isInstrument: Boolean? = null):
-    DefaultAudioProcessorDescription(name, category, "Echo In Mirror", VERSION, isInstrument)
+class EIMAudioProcessorDescription(name: String, category: String? = null, isInstrument: Boolean = false):
+    DefaultAudioProcessorDescription(name, name, category, "EIMSound", VERSION, isInstrument)
 
 const val EIMAudioProcessorFactoryName = "EIMAudioProcessorFactory"
 val AudioProcessorManager.eimAudioProcessorFactory get() = factories[EIMAudioProcessorFactoryName] as EIMAudioProcessorFactory
 
 class EIMAudioProcessorFactory : AudioProcessorFactory<AudioProcessor> {
     override val name = EIMAudioProcessorFactoryName
+    override val displayName = "内置"
     override val descriptions = setOf(KarplusStrongSynthesizerDescription)
     private val audioProcessors = descriptions.associateBy { it.name }
 

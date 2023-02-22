@@ -14,12 +14,13 @@ import androidx.compose.ui.util.fastForEach
 import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.api.window.Panel
 import com.eimsound.daw.api.window.PanelDirection
+import com.eimsound.daw.components.LocalFloatingDialogProvider
 import com.eimsound.daw.components.icons.EIMLogo
 import com.eimsound.daw.components.splitpane.SplitPaneState
 import com.eimsound.daw.impl.WindowManagerImpl
 import com.eimsound.daw.utils.Border
 import com.eimsound.daw.utils.border
-import com.eimsound.daw.window.dialogs.QuickLoadDialog
+import com.eimsound.daw.window.dialogs.openQuickLoadDialog
 
 //    SideBarItem("Favorite", "收藏") { Icon(Icons.Default.Favorite, "Favorite") },
 //    SideBarItem("Plugins", "插件") { Icon(Icons.Default.SettingsInputHdmi, "Plugins") },
@@ -93,11 +94,12 @@ internal fun SideBar() {
         drawLine(lineColor, Offset(size.width - 0.3f, 0F), Offset(size.width - 0.3f, size.height), 0.6f)
     }, tonalElevation = 2.dp) {
         NavigationRail {
+            val floatingDialogProvider = LocalFloatingDialogProvider.current
             NavigationRailItem(
                 icon = { Icon(EIMLogo, "QuickLand") },
                 label = { Text("快速加载") },
                 selected = false,
-                onClick = { EchoInMirror.windowManager.dialogs[QuickLoadDialog] = true }
+                onClick = { floatingDialogProvider.openQuickLoadDialog() }
             )
             (EchoInMirror.windowManager as WindowManagerImpl).panels.filter { it.direction != PanelDirection.Horizontal }.fastForEach {
                 key(it) {

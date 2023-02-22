@@ -9,6 +9,7 @@ import com.eimsound.daw.utils.binarySearch
 
 val PreviewerDescription = DefaultAudioProcessorDescription(
     "Previewer",
+    "Previewer",
     manufacturerName = "EchoInMirror",
     isInstrument = true
 )

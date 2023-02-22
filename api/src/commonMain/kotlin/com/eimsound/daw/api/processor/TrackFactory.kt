@@ -8,7 +8,7 @@ import com.eimsound.daw.utils.Reloadable
 import com.fasterxml.jackson.databind.JsonNode
 import java.util.*
 
-object DefaultTrackDescription : DefaultAudioProcessorDescription("Track")
+object DefaultTrackDescription : DefaultAudioProcessorDescription("Track", "Track")
 interface TrackFactory<T: Track> : AudioProcessorFactory<T> {
     val canCreateBus: Boolean
     suspend fun createBus(project: ProjectInformation): Bus = throw UnsupportedOperationException()

@@ -38,6 +38,7 @@ class CommandManagerImpl : CommandManager {
         registerCommand(SaveCommand)
 
         registerCommand(OpenSettingsCommand)
+        registerCommand(OpenQuickLoadDialogCommand)
         registerCommand(PlayOrPauseCommand)
         registerCommand(UndoCommand)
         registerCommand(RedoCommand)

@@ -1,24 +1,342 @@
+@file:Suppress("PrivatePropertyName")
+
 package com.eimsound.daw.window.dialogs
 
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Surface
-import androidx.compose.runtime.Composable
+import androidx.compose.foundation.VerticalScrollbar
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollbarAdapter
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import com.eimsound.daw.EchoInMirror
-import java.awt.Dimension
+import com.eimsound.audioprocessor.AudioProcessorDescription
+import com.eimsound.audioprocessor.AudioProcessorFactory
+import com.eimsound.audioprocessor.AudioProcessorManager
+import com.eimsound.daw.FAVORITE_AUDIO_PROCESSORS_PATH
+import com.eimsound.daw.components.*
+import com.eimsound.daw.components.utils.warning
+import com.eimsound.daw.utils.IDisplayName
+import com.eimsound.daw.utils.mutableStateSetOf
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
+import kotlinx.coroutines.*
+import java.nio.file.Files
 
-private fun closeQuickLoadWindow() {
-    EchoInMirror.windowManager.dialogs[QuickLoadDialog] = false
+private val TOP_TEXTFIELD_HEIGHT = 60.dp
+private val BOTTOM_TEXTFIELD_HEIGHT = 60.dp
+private val SUB_PADDING = 5.dp
+private val KEY = Any()
+
+var searchText by mutableStateOf("")
+var selectedFactory by mutableStateOf<Any?>(null)
+var selectedManufacturer by mutableStateOf<String?>(null)
+var selectedCategory by mutableStateOf<String?>(null)
+var selectedInstrument by mutableStateOf<Boolean?>(null)
+val favoriteAudioProcessors = mutableStateSetOf<Pair<String, String>>()
+
+private const val FAVORITE_TITLE = "已收藏"
+
+@OptIn(DelicateCoroutinesApi::class)
+fun loadFavoriteAudioProcessors() {
+    GlobalScope.launch {
+        withContext(Dispatchers.IO) {
+            try {
+                if (Files.exists(FAVORITE_AUDIO_PROCESSORS_PATH)) {
+                    val data = jacksonObjectMapper().readValue<List<Pair<String, String>>>(FAVORITE_AUDIO_PROCESSORS_PATH.toFile())
+                    favoriteAudioProcessors.clear()
+                    favoriteAudioProcessors.addAll(data)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                Files.delete(FAVORITE_AUDIO_PROCESSORS_PATH)
+            }
+        }
+    }
 }
 
-val QuickLoadDialog = @Composable {
-    Dialog(::closeQuickLoadWindow, title = "快速加载") {
-        window.minimumSize = Dimension(860, 700)
-        window.isModal = false
-        Surface(Modifier.fillMaxSize(), tonalElevation = 4.dp) {
-            // TODO:
+@OptIn(DelicateCoroutinesApi::class)
+fun saveFavoriteAudioProcessors() {
+    GlobalScope.launch {
+        withContext(Dispatchers.IO) {
+            try {
+                jacksonObjectMapper().writeValue(FAVORITE_AUDIO_PROCESSORS_PATH.toFile(), favoriteAudioProcessors.toList())
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+fun FloatingDialogProvider.openQuickLoadDialog(onClose: ((AudioProcessorDescription?, AudioProcessorFactory<*>?) -> Unit) = { _, _ -> }) {
+    loadFavoriteAudioProcessors()
+    openFloatingDialog({
+        closeFloatingDialog(KEY)
+        onClose(null, null)
+    }, key = KEY) {
+        val favoriteIconColors = IconButtonDefaults.iconToggleButtonColors(
+            contentColor = MaterialTheme.colorScheme.outline,
+            checkedContentColor = MaterialTheme.colorScheme.warning
+        )
+        Dialog(true, Modifier.size(700.dp, 450.dp)) {
+            // 所有插件
+            val descriptions = arrayListOf<AudioProcessorDescription>()
+            val descriptionsToFactory = hashMapOf<AudioProcessorDescription, AudioProcessorFactory<*>>()
+            val favorites = hashSetOf<AudioProcessorDescription>()
+            val factories = arrayListOf<Any>(FAVORITE_TITLE)
+            val factoriesCountMap = hashMapOf<Any, Int>()
+            factoriesCountMap[FAVORITE_TITLE] = favoriteAudioProcessors.size
+            AudioProcessorManager.instance.factories.values.forEach {
+                factories.add(it)
+                factoriesCountMap[it] = it.descriptions.size
+                it.descriptions.forEach { desc ->
+                    descriptions.add(desc)
+                    descriptionsToFactory[desc] = it
+                    val pair = desc.identifier to it.name
+                    if (favoriteAudioProcessors.contains(pair)) favorites.add(desc)
+                }
+            }
+            descriptions.sort()
+            val descList = arrayListOf<AudioProcessorDescription>()
+            val categoryList = hashSetOf<String>()
+            val factoryList = hashSetOf<String>()
+            var categoryAllCount = 0
+            var manufacturerAllCount = 0
+            var instrumentAllCount = 0
+            val categoryCountMap = hashMapOf<String, Int>()
+            val manufacturerCountMap = hashMapOf<String, Int>()
+            val instrumentCountMap = hashMapOf<String, Int>()
+
+            val selectedManufacturer0 = selectedManufacturer
+            val selectedCategory0 = selectedCategory
+            val selectedInstrument0 = selectedInstrument
+            val selectedFactory0 = selectedFactory
+            val isFavorite = selectedFactory0 == FAVORITE_TITLE
+            descriptions.forEach {
+                if (!it.name.contains(searchText, true)) return@forEach
+                val isCurrentManufacturer = selectedManufacturer0 == null || it.manufacturerName == selectedManufacturer0
+                val isCurrentCategory = selectedCategory0 == null || it.category?.contains(selectedCategory0) == true
+                val isCurrentInstrument = selectedInstrument0 == null || it.isInstrument == selectedInstrument0
+                val isCurrentFactory = selectedFactory0 == null || (isFavorite && favorites.contains(it)) ||
+                        descriptionsToFactory[it] == selectedFactory0
+                // 根据已选的厂商、类别、乐器过滤插件
+                if (isCurrentManufacturer && isCurrentCategory && isCurrentInstrument && isCurrentFactory) descList.add(it)
+                // 根据已选的厂商、乐器过滤类别
+                if (isCurrentManufacturer && isCurrentInstrument && isCurrentFactory && it.category != null) {
+                    val list = it.category!!.split("|")
+                    list.forEach { c ->
+                        val category = c.trim()
+                        categoryList.add(category)
+                        categoryCountMap[category] = (categoryCountMap[category] ?: 0) + 1
+                        categoryAllCount++
+                    }
+                }
+                // 根据已选的类别、乐器过滤厂商
+                if (isCurrentCategory && isCurrentInstrument && isCurrentFactory) it.manufacturerName?.let { manufacturer ->
+                    factoryList.add(manufacturer)
+                    manufacturerCountMap[manufacturer] = (manufacturerCountMap[manufacturer] ?: 0) + 1
+                    manufacturerAllCount++
+                }
+                // 计算乐器和效果器的插件数量
+                if (isCurrentManufacturer && isCurrentCategory && isCurrentFactory) {
+                    val key = if (it.isInstrument) "乐器" else "效果器"
+                    instrumentCountMap[key] = (instrumentCountMap[key] ?: 0) + 1
+                    instrumentAllCount++
+                }
+            }
+
+            var selectedDescription by mutableStateOf<AudioProcessorDescription?>(null)
+            Scaffold(
+                modifier = Modifier.fillMaxSize(),
+                topBar = {
+                    Surface(Modifier.fillMaxWidth().height(TOP_TEXTFIELD_HEIGHT).padding(10.dp, 10.dp, 10.dp, 0.dp)) {
+                        TextField(searchText, { searchText = it }, Modifier.fillMaxSize(),
+                            leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                        )
+                    }
+                },
+                content = {
+                    Row(
+                        Modifier.fillMaxSize().padding(
+                            top = TOP_TEXTFIELD_HEIGHT + SUB_PADDING,
+                            bottom = BOTTOM_TEXTFIELD_HEIGHT + SUB_PADDING,
+                            start = SUB_PADDING,
+                            end = SUB_PADDING
+                        ), horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        Column(Modifier.weight(1f).fillMaxHeight()) {
+                            Column(Modifier.weight(1f).fillMaxHeight()) {
+                                DescList(
+                                    Modifier.weight(5f).padding(SUB_PADDING),
+                                    listOf("乐器", "效果器"),
+                                    if (selectedInstrument0 == true) "乐器" else if (selectedInstrument0 == false) "效果器" else null,
+                                    "所有类型", "类型",
+                                    countMap = instrumentCountMap,
+                                    allCount = instrumentAllCount
+                                ) { selectedInstrument = if (it == null) null else it == "乐器" }
+                                DescList(
+                                    Modifier.weight(5f).padding(SUB_PADDING),
+                                    factories,
+                                    selectedFactory0,
+                                    "所有",
+                                    countMap = factoriesCountMap
+                                ) { selectedFactory = it }
+                            }
+                        }
+                        DescList(
+                            Modifier.weight(1f).padding(SUB_PADDING), categoryList.sorted(),
+                            selectedCategory0, "所有类别", "类别",
+                            countMap = categoryCountMap,
+                            allCount = categoryAllCount
+                        ) { selectedCategory = it }
+                        DescList(
+                            Modifier.weight(1f).padding(SUB_PADDING), factoryList.sorted(),
+                            selectedManufacturer0, "所有厂商", "厂商",
+                            countMap = manufacturerCountMap,
+                            allCount = manufacturerAllCount
+                        ) { selectedManufacturer = it }
+                        DescList(
+                            Modifier.weight(1f).padding(SUB_PADDING), descList,
+                            selectedDescription, tailContent = {
+                                descriptionsToFactory[it]?.name?.let { factoryName ->
+                                    val pair = it.identifier to factoryName
+                                    IconToggleButton(favoriteAudioProcessors.contains(pair), {
+                                        if (!favoriteAudioProcessors.remove(pair)) favoriteAudioProcessors.add(pair)
+                                        saveFavoriteAudioProcessors()
+                                    }, 20.dp, colors = favoriteIconColors) {
+                                        Icon(Icons.Filled.Star, "收藏", Modifier.size(16.dp))
+                                    }
+                                }
+                            }
+                        ) { desc ->
+                            if (selectedDescription == desc) {
+                                closeFloatingDialog(KEY)
+                                onClose(desc, descriptionsToFactory[desc])
+                            } else selectedDescription = descList.find { it == desc }
+                        }
+                    }
+                },
+                bottomBar = {
+                    Row(
+                        Modifier.fillMaxWidth().height(BOTTOM_TEXTFIELD_HEIGHT).padding(10.dp, 0.dp, 10.dp, 10.dp)
+                    ) {
+                        var descriptiveName = selectedDescription?.descriptiveName ?: ""
+                        if (descriptiveName.isNotEmpty()) descriptiveName = ": $descriptiveName"
+                        Text(
+                            if (selectedDescription != null) "${selectedDescription?.name}${descriptiveName}" else "",
+                            Modifier.weight(1f).align(Alignment.CenterVertically),
+                            maxLines = 1, overflow = TextOverflow.Ellipsis
+                        )
+                        TextButton({
+                            closeFloatingDialog(KEY)
+                            onClose(null, null)
+                        }) {
+                            Text("取消")
+                        }
+                        Button({
+                            closeFloatingDialog(KEY)
+                            onClose(selectedDescription, descriptionsToFactory[selectedDescription])
+                        }, Modifier.padding(horizontal = 5.dp), selectedDescription != null) {
+                            Text("确定")
+                        }
+                    }
+                }
+            )
+        }
+    }
+}
+
+@Composable
+private fun <T> DescList(
+    modifier: Modifier = Modifier,
+    descList: List<T>,
+    selectedDesc: T?,
+    defaultText: String? = null,
+    title: String? = null,
+    countMap: Map<T, Int> = mapOf(),
+    allCount: Int = countMap.values.sum(),
+    tailContent: (@Composable RowScope.(T) -> Unit)? = null,
+    onClick: (it: T?) -> Unit
+) {
+    Column(modifier) {
+        if (title != null) Text(title,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(bottom = 4.dp),
+        )
+        Card(
+            Modifier.weight(1F), MaterialTheme.shapes.extraSmall,
+            CardDefaults.elevatedCardColors(MaterialTheme.colorScheme.surface),
+            CardDefaults.cardElevation((-4).dp),
+        ) {
+            Box(Modifier.fillMaxSize()) {
+                val state = rememberLazyListState()
+                LazyColumn(state = state) {
+                    if (defaultText != null) item {
+                        MenuItem(
+                            { onClick(null) },
+                            selectedDesc == null,
+                            modifier = Modifier.fillMaxWidth(),
+                            minHeight = 30.dp
+                        ) {
+                            Text(
+                                defaultText,
+                                Modifier.weight(1F),
+                                overflow = TextOverflow.Ellipsis,
+                                textAlign = TextAlign.Start,
+                                maxLines = 1,
+                                style = MaterialTheme.typography.labelMedium
+                            )
+                            if (allCount > 0) Text(
+                                if (allCount < 100) allCount.toString() else "99+",
+                                color = MaterialTheme.colorScheme.outline,
+                                maxLines = 1,
+                                textAlign = TextAlign.End,
+                                style = MaterialTheme.typography.labelMedium
+                            )
+                        }
+                    }
+                    items(descList) {
+                        MenuItem(
+                            { onClick(it) },
+                            selectedDesc == it,
+                            modifier = Modifier.fillMaxWidth().height(30.dp),
+                            minHeight = 30.dp
+                        ) {
+                            Marquee(Modifier.weight(1F)) {
+                                Text(
+                                    if (it is IDisplayName) it.displayName else it.toString(),
+                                    overflow = TextOverflow.Ellipsis,
+                                    textAlign = TextAlign.Start,
+                                    maxLines = 1,
+                                    style = MaterialTheme.typography.labelMedium
+                                )
+                            }
+                            if (tailContent != null) tailContent(it)
+                            else {
+                                val count = countMap.getOrDefault(it, 0)
+                                if (count > 0) Text(
+                                    if (count < 100) count.toString() else "99+",
+                                    color = MaterialTheme.colorScheme.outline,
+                                    maxLines = 1,
+                                    textAlign = TextAlign.End,
+                                    style = MaterialTheme.typography.labelSmall
+                                )
+                            }
+                        }
+                    }
+                }
+                VerticalScrollbar(rememberScrollbarAdapter(state), Modifier.align(Alignment.CenterEnd).fillMaxHeight())
+            }
         }
     }
 }

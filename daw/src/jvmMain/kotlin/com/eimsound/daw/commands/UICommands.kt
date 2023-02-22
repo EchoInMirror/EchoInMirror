@@ -6,11 +6,20 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.input.key.Key
 import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.api.AbstractCommand
+import com.eimsound.daw.impl.WindowManagerImpl
+import com.eimsound.daw.window.dialogs.openQuickLoadDialog
 import com.eimsound.daw.window.dialogs.settings.SettingsWindow
 
 object OpenSettingsCommand : AbstractCommand("EIM:Open Settings", "打开设置", arrayOf(Key.CtrlLeft, Key.Comma)) {
     override fun execute() {
         EchoInMirror.windowManager.dialogs[SettingsWindow] = true
+    }
+}
+
+object OpenQuickLoadDialogCommand : AbstractCommand("EIM:Open Quick Load Dialog", "打开快速加载窗口",
+    arrayOf(Key.CtrlLeft, Key.Q)) {
+    override fun execute() {
+        (EchoInMirror.windowManager as WindowManagerImpl).floatingDialogProvider?.openQuickLoadDialog()
     }
 }
 

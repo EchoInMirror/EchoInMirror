@@ -23,6 +23,7 @@ val WORKING_PATH: Path = Path.of(
     else System.getProperty("user.home") + "/Library/Application Support"
 )
 val ROOT_PATH: Path = WORKING_PATH.resolve("EchoInMirror")
+val FAVORITE_AUDIO_PROCESSORS_PATH: Path = ROOT_PATH.resolve("favoriteAudioProcessors.json")
 @Suppress("MemberVisibilityCanBePrivate")
 val AUDIO_THUMBNAIL_CACHE_PATH: Path = ROOT_PATH.resolve("audioThumbnailCache.db")
 private val RECENT_PROJECT_PATH = ROOT_PATH.resolve("recentProjects.json")

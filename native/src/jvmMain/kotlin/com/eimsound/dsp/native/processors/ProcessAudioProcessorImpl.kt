@@ -12,8 +12,8 @@ import java.lang.foreign.ValueLayout
 import java.util.*
 import kotlin.collections.ArrayList
 
-val ProcessAudioProcessorDescription = DefaultAudioProcessorDescription("ProcessAudioProcessor", null,
-    "Echo In Mirror", "0.0.0", true)
+val ProcessAudioProcessorDescription = DefaultAudioProcessorDescription("ProcessAudioProcessor",
+    "ProcessAudioProcessor", null, "EIMSound", "0.0.0", true)
 
 @Suppress("MemberVisibilityCanBePrivate")
 open class ProcessAudioProcessorImpl(

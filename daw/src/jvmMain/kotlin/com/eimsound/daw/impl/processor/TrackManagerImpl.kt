@@ -15,6 +15,7 @@ import kotlin.io.path.absolutePathString
 class DefaultTrackFactory : TrackFactory<Track> {
     override val canCreateBus = true
     override val name = "DefaultTrackFactory"
+    override val displayName = "默认"
     override val descriptions = setOf(DefaultTrackDescription)
 
     override suspend fun createAudioProcessor(description: AudioProcessorDescription) = TrackImpl(description, this)

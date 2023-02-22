@@ -12,7 +12,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.eimsound.daw.components.ColorPicker
 import com.eimsound.daw.components.FloatingDialogProvider
-import com.eimsound.daw.components.MenuDialog
+import com.eimsound.daw.components.Dialog
 import com.eimsound.daw.components.utils.HsvColor
 import com.eimsound.daw.components.utils.randomColor
 
@@ -25,7 +25,7 @@ fun FloatingDialogProvider.openColorPicker(initialColor: Color = randomColor(),
         closeFloatingDialog(KEY)
         onCancel?.invoke()
     }, key = KEY, hasOverlay = true) {
-        MenuDialog {
+        Dialog {
             var currentColor by remember { mutableStateOf(HsvColor.from(initialColor)) }
             ColorPicker(currentColor, Modifier.size(200.dp)) { currentColor = it }
             Row(Modifier.fillMaxWidth().padding(end = 10.dp),
