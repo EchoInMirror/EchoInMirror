@@ -46,7 +46,6 @@ import com.eimsound.daw.processor.PreviewerAudioProcessor
 import kotlinx.coroutines.*
 import okio.FileSystem
 import okio.Path
-import org.apache.commons.lang3.SystemUtils
 import java.io.File
 import javax.sound.midi.MidiSystem
 import kotlin.io.path.name
@@ -61,12 +60,6 @@ val fileBrowserPreviewer = PreviewerAudioProcessor(AudioProcessorManager.instanc
 object FileSystemBrowser: Panel {
     override val name = "文件浏览"
     override val direction = PanelDirection.Vertical
-    private val filePath = when {
-        SystemUtils.IS_OS_WINDOWS -> """C:\"""
-        SystemUtils.IS_OS_LINUX -> SystemUtils.getUserDir().toString()
-        SystemUtils.IS_OS_MAC -> SystemUtils.getUserDir().toString()
-        else -> """C:\"""
-    }
 
     @Composable
     override fun Icon() {
@@ -79,7 +72,7 @@ object FileSystemBrowser: Panel {
         Column {
             var component by remember { mutableStateOf<(@Composable BoxScope.() -> Unit)?>(null) }
             var nodeName by remember { mutableStateOf<String?>(null) }
-            Tree(FileSystemTree(File(filePath), true), FileSystemStyle, FileMapper, Modifier.weight(1F)) {
+            Tree(FileSystemTree(File("E:\\"), true), FileSystemStyle, FileMapper, Modifier.weight(1F)) {
                 if (FileSystem.SYSTEM.metadata(it.content).isDirectory) return@Tree
                 component = null
                 nodeName = null
