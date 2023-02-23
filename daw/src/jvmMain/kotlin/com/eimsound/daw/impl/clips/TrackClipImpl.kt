@@ -9,6 +9,8 @@ import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.utils.asInt
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import org.slf4j.LoggerFactory
 
 @Suppress("PrivatePropertyName")
@@ -32,12 +34,12 @@ class TrackClipImpl <T: Clip> (override val clip: T, time: Int = 0, duration: In
         currentIndex = -1
     }
 
-    override fun toJson() = mapOf(
-        "time" to time,
-        "duration" to duration,
-        "start" to start,
-        "clip" to clip.toJson()
-    )
+    override fun toJson() = buildJsonObject {
+        put("time", time)
+        put("duration", duration)
+        put("start", start)
+        put("clip", clip.toJson())
+    }
 
     override fun fromJson(json: JsonElement) {
         json as JsonObject

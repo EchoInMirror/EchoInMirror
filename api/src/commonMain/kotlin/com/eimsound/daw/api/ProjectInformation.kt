@@ -4,9 +4,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.eimsound.daw.utils.*
-import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Transient
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import java.nio.file.Path
 import kotlin.io.path.name
 
@@ -21,10 +23,10 @@ interface ProjectInformation {
     var description: String
     var timeCost: Int
 
-    suspend fun save()
+    fun save()
 }
 
-class DefaultProjectInformation(override val root: Path): ProjectInformation, JsonObjectSerializable {
+class DefaultProjectInformation(override val root: Path): ProjectInformation, JsonSerializable {
     override var name by mutableStateOf(root.name)
     override var author by mutableStateOf("")
     override var description by mutableStateOf("")
@@ -37,23 +39,23 @@ class DefaultProjectInformation(override val root: Path): ProjectInformation, Js
         var flag = false
         if (jsonFile.exists()) {
             try {
-                runBlocking { fromJsonFile(jsonFile) }
+                fromJsonFile(jsonFile)
                 flag = true
             } catch (e: Throwable) {
                 e.printStackTrace()
             }
         }
-        if (!flag) runBlocking { save() }
+        if (!flag) save()
     }
 
-    override suspend fun save() { encodeJsonFile(jsonFile, true) }
+    override fun save() { encodeJsonFile(jsonFile, true) }
 
-    override fun toJson() = mapOf(
-        "name" to name,
-        "author" to author,
-        "description" to description,
-        "timeCost" to timeCost,
-    )
+    override fun toJson() = buildJsonObject {
+        put("name", name)
+        put("author", author)
+        put("description", description)
+        put("timeCost", timeCost)
+    }
 
     override fun fromJson(json: JsonElement) {
         json as JsonObject

@@ -4,7 +4,10 @@ import be.tarsos.dsp.resample.Resampler
 import com.eimsound.audioprocessor.AudioSource
 import com.eimsound.audioprocessor.ResampledAudioSource
 import com.eimsound.audioprocessor.ResampledAudioSourceFactory
-import com.fasterxml.jackson.databind.JsonNode
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import kotlin.math.roundToInt
 import kotlin.math.roundToLong
 
@@ -39,6 +42,12 @@ class DefaultResampledAudioSource(override val factory: ResampledAudioSourceFact
         return consumed
     }
 
+    override fun toJson() = buildJsonObject {
+        put("factory", factory.name)
+        put("source", source.toJson())
+    }
+    override fun fromJson(json: JsonElement) = throw UnsupportedOperationException()
+
     override fun toString(): String {
         return "DefaultResampledAudioSource(source=$source, factor=$factor, channels=$channels, sampleRate=$sampleRate, length=$length)"
     }
@@ -46,6 +55,6 @@ class DefaultResampledAudioSource(override val factory: ResampledAudioSourceFact
 
 class DefaultResampledAudioSourceFactory: ResampledAudioSourceFactory<ResampledAudioSource> {
     override val name = "Resampled"
-    override fun createAudioSource(source: AudioSource?, json: JsonNode?) =
+    override fun createAudioSource(source: AudioSource?, json: JsonObject?) =
         DefaultResampledAudioSource(this, source!!)
 }

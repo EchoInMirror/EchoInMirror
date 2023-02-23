@@ -1,6 +1,6 @@
 package com.eimsound.audioprocessor
 
-import com.eimsound.daw.utils.JsonObjectSerializable
+import com.eimsound.daw.utils.JsonSerializable
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 
@@ -41,7 +41,7 @@ interface NativeAudioPlugin: ProcessAudioProcessor {
 /**
  * @see com.eimsound.dsp.native.processors.NativeAudioPluginFactoryImpl
  */
-interface NativeAudioPluginFactory: AudioProcessorFactory<NativeAudioPlugin>, JsonObjectSerializable {
+interface NativeAudioPluginFactory: AudioProcessorFactory<NativeAudioPlugin>, JsonSerializable {
     override val descriptions: Set<NativeAudioPluginDescription>
     val scanPaths: MutableSet<String>
     val skipList: MutableSet<String>

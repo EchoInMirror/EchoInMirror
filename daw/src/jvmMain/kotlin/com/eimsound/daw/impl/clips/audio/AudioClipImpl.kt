@@ -12,13 +12,15 @@ import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.components.Waveform
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import java.nio.file.Path
 import kotlin.io.path.name
 
 class AudioClipImpl(json: JsonObject?, factory: ClipFactory<AudioClip>, target: AudioSource? = null):
     AbstractClip<AudioClip>(json, factory), AudioClip {
     override var target: AudioSource = target ?:
-    AudioSourceManager.instance.createAudioSource(json?.get("target") ?: throw IllegalStateException("No target"))
+    AudioSourceManager.instance.createAudioSource(json?.get("target") as? JsonObject ?: throw IllegalStateException("No target"))
         set(value) {
             if (field == value) return
             close()
@@ -32,23 +34,27 @@ class AudioClipImpl(json: JsonObject?, factory: ClipFactory<AudioClip>, target: 
     }
     override val defaultDuration get() = EchoInMirror.currentPosition.convertSamplesToPPQ(audioSource.length)
     override val maxDuration get() = defaultDuration
-    override fun toJson() = super.toJson().apply {
+    override fun toJson() = buildJsonObject {
+        put("id", id)
+        put("factory", factory.name)
         put("target", target.toJson())
     }
 
     override fun fromJson(json: JsonElement) {
-        TODO("Not yet implemented")
+        super.fromJson(json)
+        json as JsonObject
+        json["target"]?.let { target = AudioSourceManager.instance.createAudioSource(it as JsonObject) }
     }
 
     override var thumbnail by mutableStateOf(AudioThumbnail(this.audioSource))
-    override val name: String?
+    override val name: String
         get() {
             var source: AudioSource? = target
             while (source != null) {
                 if (source is FileAudioSource) return source.file.name
                 source = source.source
             }
-            return null
+            return ""
         }
 
     override fun close() { target.close() }

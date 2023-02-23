@@ -4,10 +4,13 @@ import androidx.compose.runtime.mutableStateOf
 import com.eimsound.audioprocessor.data.EnvelopePoint
 import com.eimsound.daw.utils.IManualState
 import com.eimsound.daw.utils.mapValue
-import kotlinx.serialization.EncodeDefault
-import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
+import kotlinx.serialization.*
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.json.JsonDecoder
+import kotlinx.serialization.json.jsonArray
 
 /**
  * Consider make this class open.
@@ -87,6 +90,7 @@ fun NoteMessage.toNoteOffEvent(channel: Int = 0) = noteOff(channel, note)
 fun NoteMessage.toNoteOnRawData(channel: Int = 0) = 0x90 or channel or (note shl 8) or (velocity shl 16)
 fun NoteMessage.toNoteOffRawData(channel: Int = 0) = 0x80 or (70 shl 16) or channel or (note shl 8)
 
+@Serializable(NoteMessageListSerializer::class)
 interface NoteMessageList : MutableList<NoteMessage>, IManualState {
     fun sort()
 }
@@ -102,4 +106,21 @@ open class DefaultNoteMessageList : NoteMessageList, ArrayList<NoteMessage>() {
     }
     override fun update() { modification.value++ }
     override fun read() { modification.value }
+}
+
+object NoteMessageListSerializer : KSerializer<NoteMessageList> {
+    private val serializer = NoteMessage.serializer()
+    private val listSerializer = ListSerializer(serializer)
+    override val descriptor: SerialDescriptor = listSerializer.descriptor
+
+    override fun serialize(encoder: Encoder, value: NoteMessageList) {
+        listSerializer.serialize(encoder, value)
+    }
+
+    override fun deserialize(decoder: Decoder) = DefaultNoteMessageList().apply {
+        val v = decoder.decodeSerializableValue(listSerializer)
+        addAll(if (decoder is JsonDecoder) {
+            decoder.decodeJsonElement().jsonArray.map { decoder.json.decodeFromJsonElement(serializer, it) }
+        } else v)
+    }
 }

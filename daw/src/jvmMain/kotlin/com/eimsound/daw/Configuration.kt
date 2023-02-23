@@ -3,11 +3,13 @@
 package com.eimsound.daw
 
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
+import com.eimsound.daw.utils.*
+import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.json.*
 import org.apache.commons.lang3.SystemUtils
 import java.nio.file.Files
 import java.nio.file.Path
@@ -34,7 +36,7 @@ var VERSION = "0.0.0"
 var RELEASE_TIME: Long = System.currentTimeMillis()
     private set
 
-object Configuration {
+object Configuration : JsonSerializable {
     @Suppress("MemberVisibilityCanBePrivate")
     var nativeHostPath: Path
     var stopAudioOutputOnBlur = false
@@ -52,7 +54,7 @@ object Configuration {
                 RELEASE_TIME = manifest.mainAttributes.getValue("Release-Time").toLong()
             } catch (ignored: Throwable) { }
         }
-        if (CONFIG_PATH.exists()) load()
+        if (CONFIG_PATH.exists()) runBlocking { fromJsonFile(CONFIG_PATH.toFile()) }
         nativeHostPath = Paths.get("D:\\Cpp\\EIMPluginScanner\\build\\EIMHost_artefacts\\MinSizeRel\\EIMHost.exe")
         if (!Files.exists(nativeHostPath)) nativeHostPath = Paths.get("EIMHost-x64.exe")
         val x86Host = nativeHostPath.absolute().parent.resolve(nativeHostPath.name.replace("x64", "x86"))
@@ -64,22 +66,33 @@ object Configuration {
     }
 
     fun save() {
-        jacksonObjectMapper().writerWithDefaultPrettyPrinter().writeValue(CONFIG_PATH.toFile(), this)
+        runBlocking { encodeJsonFile(CONFIG_PATH.toFile(), true) }
     }
 
-    private fun load() {
-        jacksonObjectMapper()
-            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-            .readerForUpdating(this).readValue<Configuration>(CONFIG_PATH.toFile())
+    override fun toJson() = buildJsonObject {
+        put("stopAudioOutputOnBlur", stopAudioOutputOnBlur)
+        put("audioDeviceFactoryName", audioDeviceFactoryName)
+        put("audioDeviceName", audioDeviceName)
+        put("autoCutOver0db", autoCutOver0db)
+    }
+
+    override fun fromJson(json: JsonElement) {
+        json as JsonObject
+        json["stopAudioOutputOnBlur"]?.jsonPrimitive?.boolean?.let { stopAudioOutputOnBlur = it }
+        json["audioDeviceFactoryName"]?.jsonPrimitive?.contentOrNull?.let { audioDeviceFactoryName = it }
+        json["audioDeviceName"]?.jsonPrimitive?.contentOrNull?.let { audioDeviceName = it }
+        json["autoCutOver0db"]?.jsonPrimitive?.boolean?.let { autoCutOver0db = it }
     }
 }
 
 val IS_DEBUG = System.getProperty("cn.apisium.eim.debug") == "true"
 
-val recentProjects = mutableListOf<String>().apply {
-    runCatching { jacksonObjectMapper().readValue<List<String>>(RECENT_PROJECT_PATH.toFile()) }.onSuccess { addAll(it) }
+val recentProjects = mutableStateListOf<String>().apply {
+    runCatching { runBlocking { RECENT_PROJECT_PATH.toFile().toJson<List<String>>() } }.onSuccess(::addAll)
 }
 
+@OptIn(ExperimentalSerializationApi::class)
 fun saveRecentProjects() {
-    Files.write(RECENT_PROJECT_PATH, jacksonObjectMapper().writeValueAsBytes(recentProjects))
+    if (recentProjects.size > 20) recentProjects.subList(20, recentProjects.size).clear()
+    Json.encodeToStream<List<String>>(recentProjects, RECENT_PROJECT_PATH.toFile().outputStream())
 }

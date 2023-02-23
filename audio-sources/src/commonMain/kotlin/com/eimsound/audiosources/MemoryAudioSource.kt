@@ -1,7 +1,10 @@
 package com.eimsound.audiosources
 
 import com.eimsound.audioprocessor.*
-import com.fasterxml.jackson.databind.JsonNode
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 
 class DefaultMemoryAudioSource(override val factory: AudioSourceFactory<MemoryAudioSource>, override val source: AudioSource):
     MemoryAudioSource {
@@ -32,10 +35,17 @@ class DefaultMemoryAudioSource(override val factory: AudioSourceFactory<MemoryAu
     override fun toString(): String {
         return "DefaultMemoryAudioSource(source=$source, length=$length, channels=$channels, sampleRate=$sampleRate)"
     }
+
+    override fun toJson() = buildJsonObject {
+        put("factory", factory.name)
+        put("source", source.toJson())
+    }
+
+    override fun fromJson(json: JsonElement) = throw UnsupportedOperationException()
 }
 
 class DefaultMemoryAudioSourceFactory: MemoryAudioSourceFactory<MemoryAudioSource> {
     override val name = "Memory"
 
-    override fun createAudioSource(source: AudioSource?, json: JsonNode?) = DefaultMemoryAudioSource(this, source!!)
+    override fun createAudioSource(source: AudioSource?, json: JsonObject?) = DefaultMemoryAudioSource(this, source!!)
 }

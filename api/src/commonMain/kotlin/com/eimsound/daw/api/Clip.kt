@@ -9,8 +9,8 @@ import com.eimsound.audioprocessor.AudioSource
 import com.eimsound.audioprocessor.CurrentPosition
 import com.eimsound.audioprocessor.ResampledAudioSource
 import com.eimsound.audioprocessor.data.AudioThumbnail
-import com.eimsound.audioprocessor.data.DefaultEnvelopePointList
 import com.eimsound.audioprocessor.data.EnvelopePoint
+import com.eimsound.audioprocessor.data.EnvelopePointList
 import com.eimsound.audioprocessor.data.midi.MidiNoteRecorder
 import com.eimsound.audioprocessor.data.midi.NoteMessageList
 import com.eimsound.daw.api.processor.Track
@@ -85,7 +85,7 @@ interface ClipManager : Reloadable {
 val ClipManager.defaultMidiClipFactory get() = factories["MIDIClip"] as MidiClipFactory
 val ClipManager.defaultAudioClipFactory get() = factories["AudioClip"] as AudioClipFactory
 
-interface Clip : JsonMutableObjectSerializable {
+interface Clip : JsonSerializable {
     val id: String
     val name: String?
     val factory: ClipFactory<*>
@@ -98,7 +98,7 @@ interface Clip : JsonMutableObjectSerializable {
 }
 
 typealias MidiCCEvents = Map<Int, List<EnvelopePoint>>
-typealias MutableMidiCCEvents = MutableMap<Int, DefaultEnvelopePointList>
+typealias MutableMidiCCEvents = MutableMap<Int, EnvelopePointList>
 
 interface MidiClip : Clip {
     val notes: NoteMessageList
@@ -123,21 +123,16 @@ abstract class AbstractClip<T: Clip>(json: JsonObject?, override val factory: Cl
         return "MidiClipImpl(factory=$factory, id='$id')"
     }
 
-    override fun toJson() = hashMapOf<String, Any>(
-        "id" to id,
-        "factory" to factory.name
-    )
-
     override fun fromJson(json: JsonElement) {
         json as JsonObject
-        id = json["id"].asString()
+        id = json["id"]!!.asString()
     }
 }
 
 /**
  * @see com.eimsound.daw.impl.clips.TrackClipImpl
  */
-interface TrackClip<T: Clip> : JsonObjectSerializable {
+interface TrackClip<T: Clip> : JsonSerializable {
     var time: Int
     var duration: Int
     var start: Int

@@ -20,7 +20,6 @@ import java.nio.file.FileVisitResult
 import java.nio.file.Files
 import java.nio.file.Paths
 import kotlin.io.path.*
-import kotlin.system.measureTimeMillis
 
 class NativeAudioPluginImpl(
     override val description: NativeAudioPluginDescription,
@@ -48,45 +47,34 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
     override val displayName = "原生"
 
     override val pluginIsFile = SystemUtils.IS_OS_WINDOWS || SystemUtils.IS_OS_LINUX
+    override val pluginExtensions = if (SystemUtils.IS_OS_WINDOWS) setOf("dll", "vst", "vst3")
+    else if (SystemUtils.IS_OS_LINUX) setOf("so")
+    else setOf("dylib")
 
-    override val descriptions: MutableSet<NativeAudioPluginDescription> = mutableStateSetOf()
-    override val scanPaths: MutableSet<String> = mutableStateSetOf()
-    override val skipList: MutableSet<String> = mutableStateSetOf()
-    override lateinit var pluginExtensions: Set<String>
+    private var loaded = false
+    private val _descriptions: MutableSet<NativeAudioPluginDescription> = mutableStateSetOf()
+    private val _scanPaths: MutableSet<String> = mutableStateSetOf()
+    private val _skipList: MutableSet<String> = mutableStateSetOf()
 
     var scannedCount by mutableStateOf(0)
     var allScanCount by mutableStateOf(0)
     val scanningPlugins = mutableStateMapOf<String, Process>()
 
-    init {
-        var read = false
-        println(measureTimeMillis {
-            if (configFile.toFile().exists()) {
-                try {
-                    runBlocking { fromJsonFile(configFile.toFile()) }
-                    read = true
-                } catch (e: Throwable) {
-                    e.printStackTrace()
-                    // Files.delete(NATIVE_AUDIO_PLUGIN_CONFIG)
-                }
-            }
-            if (!read) {
-                if (SystemUtils.IS_OS_WINDOWS) {
-                    scanPaths.add("C:\\Program Files\\Common Files\\VST3")
-                    scanPaths.add("C:\\Program Files\\Steinberg\\VSTPlugins")
-                    scanPaths.add("C:\\Program Files\\VstPlugins")
-                    scanPaths.add("C:\\Program Files\\Native Instruments\\VSTPlugins 64 bit")
-                } else if (SystemUtils.IS_OS_LINUX) {
-                    scanPaths.addAll(System.getenv("LADSPA_PATH")
-                        .ifEmpty { "/usr/lib/ladspa;/usr/local/lib/ladspa;~/.ladspa" }
-                        .replace(":", ";").split(";"))
-                }
-            }
-            pluginExtensions = if (SystemUtils.IS_OS_WINDOWS) setOf("dll", "vst", "vst3")
-            else if (SystemUtils.IS_OS_LINUX) setOf("so")
-            else setOf("dylib")
-        })
-    }
+    override val descriptions: MutableSet<NativeAudioPluginDescription>
+        get() {
+            checkLoad()
+            return _descriptions
+        }
+    override val scanPaths: MutableSet<String>
+        get() {
+            checkLoad()
+            return _scanPaths
+        }
+    override val skipList: MutableSet<String>
+        get() {
+            checkLoad()
+            return _skipList
+        }
 
     @OptIn(ExperimentalPathApi::class)
     override suspend fun scan()  {
@@ -164,20 +152,20 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
     }
 
     override suspend fun createAudioProcessor(path: String, json: JsonObject): NativeAudioPlugin {
-        val description = descriptions.find { it.identifier == json["identifier"].asString() }
+        val description = descriptions.find { it.identifier == json["identifier"]!!.asString() }
             ?: throw NoSuchAudioProcessorException(path, name)
         return NativeAudioPluginImpl(description, this).apply {
-            launch(getNativeHostPath(description), "$path/${json["id"].asString()}.bin")
+            launch(getNativeHostPath(description), "$path/${json["id"]}.bin")
         }
     }
 
     override suspend fun save() { encodeJsonFile(configFile.toFile()) }
 
-    override fun toJson() = mapOf(
-        "descriptions" to descriptions,
-        "scanPaths" to scanPaths,
-        "skipList" to skipList
-    )
+    override fun toJson() = buildJsonObject {
+        put("descriptions", Json.encodeToJsonElement(descriptions))
+        put("scanPaths", Json.encodeToJsonElement(scanPaths))
+        put("skipList", Json.encodeToJsonElement(skipList))
+    }
 
     override fun fromJson(json: JsonElement) {
         json as JsonObject
@@ -187,6 +175,30 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
         descriptions.addAll((json["descriptions"] as JsonArray).map(Json::decodeFromJsonElement))
         scanPaths.addAll((json["scanPaths"] as JsonArray).map(JsonElement::asString))
         skipList.addAll((json["skipList"] as JsonArray).map(JsonElement::asString))
+    }
+
+    private fun checkLoad() {
+        if (loaded) return
+        loaded = true
+        if (configFile.toFile().exists()) {
+            try {
+                runBlocking { fromJsonFile(configFile.toFile()) }
+                return
+            } catch (e: Throwable) {
+                e.printStackTrace()
+                // Files.delete(NATIVE_AUDIO_PLUGIN_CONFIG)
+            }
+        }
+        if (SystemUtils.IS_OS_WINDOWS) {
+            scanPaths.add("C:\\Program Files\\Common Files\\VST3")
+            scanPaths.add("C:\\Program Files\\Steinberg\\VSTPlugins")
+            scanPaths.add("C:\\Program Files\\VstPlugins")
+            scanPaths.add("C:\\Program Files\\Native Instruments\\VSTPlugins 64 bit")
+        } else if (SystemUtils.IS_OS_LINUX) {
+            scanPaths.addAll(System.getenv("LADSPA_PATH")
+                .ifEmpty { "/usr/lib/ladspa;/usr/local/lib/ladspa;~/.ladspa" }
+                .replace(":", ";").split(";"))
+        }
     }
 
     private fun getNativeHostPath(isX86: Boolean) = Paths.get(System.getProperty("eim.dsp.nativeaudioplugins.host" +

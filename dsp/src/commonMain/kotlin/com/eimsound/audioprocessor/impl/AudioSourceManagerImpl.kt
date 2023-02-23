@@ -31,7 +31,7 @@ class AudioSourceManagerImpl : AudioSourceManager {
         var source: AudioSource? = null
         for (i in list.lastIndex downTo 0) {
             node = list[i]
-            val factory = node["factory"].asString()
+            val factory = node["factory"]!!.asString()
             val f = factories[factory] ?: throw NoSuchFactoryException(factory)
             source = f.createAudioSource(source, node)
         }

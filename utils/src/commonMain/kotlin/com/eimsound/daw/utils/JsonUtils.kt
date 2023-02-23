@@ -1,7 +1,7 @@
+@file:Suppress("NOTHING_TO_INLINE")
+
 package com.eimsound.daw.utils
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.*
@@ -10,50 +10,44 @@ import java.io.InputStream
 import java.io.InputStreamReader
 import java.io.OutputStream
 
-fun JsonElement?.asString() = this!!.jsonPrimitive.content
-fun JsonElement.asString() = jsonPrimitive.content
-fun JsonElement?.asInt() = this!!.jsonPrimitive.int
-fun JsonElement.asInt() = jsonPrimitive.int
+inline fun JsonElement.asString() = jsonPrimitive.content
+inline fun JsonElement.asInt() = jsonPrimitive.int
 val JsonIgnoreDefaults = Json { ignoreUnknownKeys = true; encodeDefaults = false }
 @OptIn(ExperimentalSerializationApi::class)
 val JsonPrettier = Json { ignoreUnknownKeys = true; encodeDefaults = false; prettyPrint = true; prettyPrintIndent = "  " }
 
-typealias JsonObjectSerializable = JsonSerializable<Map<String, Any>>
-typealias JsonMutableObjectSerializable = JsonSerializable<MutableMap<String, Any>>
-interface JsonSerializable<T : Any> {
-    fun toJson(): T
+interface JsonSerializable {
+    fun toJson(): JsonElement
     fun fromJson(json: JsonElement)
 }
 
-inline fun <reified T : Any> JsonSerializable<T>.toJsonString(prettier: Boolean = false) =
+fun JsonSerializable.toJsonString(prettier: Boolean = false) =
     (if (prettier) JsonPrettier else JsonIgnoreDefaults).encodeToString(toJson())
 
 @OptIn(ExperimentalSerializationApi::class)
-inline fun <reified T : Any> JsonSerializable<T>.encodeJsonStream(stream: OutputStream, prettier: Boolean = false) {
+fun JsonSerializable.encodeJsonStream(stream: OutputStream, prettier: Boolean = false) {
     val json = toJson()
     stream.use { (if (prettier) JsonPrettier else JsonIgnoreDefaults).encodeToStream(json, it) }
 }
 
 @OptIn(ExperimentalSerializationApi::class)
-suspend inline fun <reified T : Any> JsonSerializable<T>.encodeJsonFile(file: File, prettier: Boolean = false) {
+fun JsonSerializable.encodeJsonFile(file: File, prettier: Boolean = false) {
     val json = toJson()
-    withContext(Dispatchers.IO) {
-        file.outputStream().use { (if (prettier) JsonPrettier else JsonIgnoreDefaults).encodeToStream(json, it) }
-    }
+    file.outputStream().use { (if (prettier) JsonPrettier else JsonIgnoreDefaults).encodeToStream(json, it) }
 }
 
-fun <T: Any> JsonSerializable<T>.fromJsonString(json: String) = fromJson(Json.parseToJsonElement(json))
+fun JsonSerializable.fromJsonString(json: String) = fromJson(Json.parseToJsonElement(json))
 
-fun <T: Any> JsonSerializable<T>.fromJsonStream(stream: InputStream) {
+fun JsonSerializable.fromJsonStream(stream: InputStream) {
     fromJson(Json.parseToJsonElement(InputStreamReader(stream).use { it.readText() }))
 }
 
-suspend fun <T: Any> JsonSerializable<T>.fromJsonFile(file: File) {
-    fromJson(Json.parseToJsonElement(withContext(Dispatchers.IO) {
-        file.inputStream().use { it.reader().readText() }
-    }))
+fun JsonSerializable.fromJsonFile(file: File) {
+    fromJson(Json.parseToJsonElement(file.inputStream().use { it.reader().readText() }))
 }
 
-suspend fun File.toJsonElement() = Json.parseToJsonElement(withContext(Dispatchers.IO) {
-    inputStream().use { it.reader().readText() }
-})
+fun File.toJsonElement() = Json.parseToJsonElement(inputStream().use { it.reader().readText() })
+@OptIn(ExperimentalSerializationApi::class)
+inline fun <reified T> File.toJson() = Json.decodeFromStream<T>(inputStream())
+@OptIn(ExperimentalSerializationApi::class)
+fun JsonElement.encodeToFile(file: File) = file.outputStream().use { Json.encodeToStream(this, it) }

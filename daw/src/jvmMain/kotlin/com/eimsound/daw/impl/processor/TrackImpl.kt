@@ -218,22 +218,23 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         isRendering = false
     }
 
-    override fun toJson() = hashMapOf(
-        "factory" to factory.name,
-        "id" to id,
-        "name" to name,
-        "color" to color,
-        "pan" to pan,
-        "volume" to volume,
-        "height" to height,
-        "isMute" to isMute,
-        "isSolo" to isSolo,
-        "isDisabled" to isDisabled,
-        "subTracks" to subTracks.map { it.id },
-        "preProcessorsChain" to preProcessorsChain.map { it.id },
-        "postProcessorsChain" to postProcessorsChain.map { it.id },
-        "clips" to clips,
-    )
+    protected fun JsonObjectBuilder.buildJson() {
+        put("factory", factory.name)
+        put("id", id)
+        put("name", name)
+        put("color", color.value.toLong())
+        put("pan", pan)
+        put("volume", volume)
+        put("height", height)
+        put("isMute", isMute)
+        put("isSolo", isSolo)
+        put("isDisabled", isDisabled)
+        put("subTracks", Json.encodeToJsonElement(subTracks.map { it.id }))
+        put("preProcessorsChain", Json.encodeToJsonElement(preProcessorsChain.map { it.id }))
+        put("postProcessorsChain", Json.encodeToJsonElement(postProcessorsChain.map { it.id }))
+        put("clips", JsonArray(clips.map { it.toJson() }))
+    }
+    override fun toJson() = buildJsonObject { buildJson() }
 
     @OptIn(ExperimentalSerializationApi::class)
     override suspend fun save(path: String) {
@@ -271,7 +272,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
 
     override fun fromJson(json: JsonElement) {
         json as JsonObject
-        id = json["id"].asString()
+        id = json["id"]!!.asString()
         json["name"]?.asString()?.let { name = it }
         json["color"]?.jsonPrimitive?.long?.let { color = Color(it) }
         json["pan"]?.jsonPrimitive?.float?.let { pan = it }
@@ -286,8 +287,8 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         withContext(Dispatchers.IO) {
             try {
                 val dir = Paths.get(path)
-                id = json["id"].asString()
-                name = json["name"].asString()
+                id = json["id"]!!.asString()
+                name = json["name"]!!.asString()
                 color = Color(json["color"]!!.jsonPrimitive.long)
 
                 val clipsDir = dir.resolve("clips").absolutePathString()
@@ -336,7 +337,8 @@ class BusImpl(
         internalProcessorsChain.add(fileBrowserPreviewer)
     }
 
-    override fun toJson() = super.toJson().apply {
+    override fun toJson() = buildJsonObject {
+        buildJson()
         put("channelType", channelType.ordinal)
     }
 
@@ -350,7 +352,7 @@ class BusImpl(
 
     override suspend fun load(path: String, json: JsonObject) {
         super.load(path, json)
-        channelType = ChannelType.values()[json["channelType"].asInt()]
+        channelType = ChannelType.values()[json["channelType"]!!.asInt()]
     }
 
     override suspend fun processBlock(

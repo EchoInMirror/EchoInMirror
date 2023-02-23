@@ -62,7 +62,7 @@ interface AudioProcessor: AutoCloseable, SuddenChangeListener {
 abstract class AbstractAudioProcessor(
     description: AudioProcessorDescription,
     override val factory: AudioProcessorFactory<*>
-): AudioProcessor, JsonMutableObjectSerializable {
+): AudioProcessor, JsonSerializable {
     override val inputChannelsCount = 2
     override val outputChannelsCount = 2
     override var id = randomId()
@@ -73,12 +73,13 @@ abstract class AbstractAudioProcessor(
     private val _listeners = WeakHashMap<AudioProcessorListener, Unit>()
     protected val listeners: Set<AudioProcessorListener> get() = _listeners.keys
 
-    override fun toJson(): MutableMap<String, Any> = hashMapOf(
-        "factory" to factory.name,
-        "name" to name,
-        "id" to id,
-        "identifier" to description.name
-    )
+    override fun toJson() = buildJsonObject {
+        put("factory", factory.name)
+        put("name", name)
+        put("id", id)
+        put("identifier", description.name)
+    }
+
     override fun fromJson(json: JsonElement) {
         json as JsonObject
         name = json["name"]?.asString() ?: ""

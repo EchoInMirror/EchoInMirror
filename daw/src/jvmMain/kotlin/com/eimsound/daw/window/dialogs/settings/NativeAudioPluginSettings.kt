@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.eimsound.audioprocessor.AudioProcessorManager
+import com.eimsound.audioprocessor.NativeAudioPluginFactory
 import com.eimsound.audioprocessor.impl.nativeAudioPluginManager
 import com.eimsound.daw.components.Gap
 import com.eimsound.daw.components.Tab
@@ -24,6 +25,11 @@ import kotlinx.coroutines.launch
 import java.io.File
 import javax.swing.JFileChooser
 import javax.swing.filechooser.FileNameExtensionFilter
+
+@OptIn(DelicateCoroutinesApi::class)
+private fun NativeAudioPluginFactory.saveAsync() = GlobalScope.launch {
+    save()
+}
 
 private var scanningJob by mutableStateOf<Job?>(null)
 internal object NativeAudioPluginSettings: Tab {
@@ -82,7 +88,7 @@ internal object NativeAudioPluginSettings: Tab {
                             onClick = {
                                 openFolderBrowser(window)?.let {
                                     apm.scanPaths.add(it.absolutePath)
-                                    apm.save()
+                                    apm.saveAsync()
                                 }
                             },
                             modifier = Modifier.clip(CircleShape).size(28.dp)
@@ -105,7 +111,7 @@ internal object NativeAudioPluginSettings: Tab {
                                     IconButton(
                                         {
                                             apm.scanPaths.remove(it)
-                                            apm.save()
+                                            apm.saveAsync()
                                         },
                                         modifier = Modifier.size(24.dp).weight(1F)
                                     ) {
@@ -172,7 +178,7 @@ internal object NativeAudioPluginSettings: Tab {
                                 fileChooser.showOpenDialog(window)
                                 fileChooser.selectedFile?.let {
                                     apm.skipList.add(it.absolutePath)
-                                    apm.save()
+                                    apm.saveAsync()
                                 }
                             },
                             modifier = Modifier.clip(CircleShape).size(28.dp)
@@ -195,7 +201,7 @@ internal object NativeAudioPluginSettings: Tab {
                                     IconButton(
                                         {
                                             apm.skipList.remove(it)
-                                            apm.save()
+                                            apm.saveAsync()
                                         },
                                         modifier = Modifier.size(24.dp).weight(1F)
                                     ) {
