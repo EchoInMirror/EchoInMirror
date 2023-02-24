@@ -5,10 +5,11 @@ plugins {
 }
 
 kotlin {
-    jvmToolchain(19)
+    val jvmVersion = extra["jvm.version"] as String
+    jvmToolchain(jvmVersion.toInt())
     jvm {
         compilations.all {
-            kotlinOptions.jvmTarget = "19"
+            kotlinOptions.jvmTarget = jvmVersion
         }
     }
     sourceSets {
