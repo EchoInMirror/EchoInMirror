@@ -1,7 +1,10 @@
 package com.eimsound.audioprocessor.impl
 
 import androidx.compose.runtime.mutableStateMapOf
-import com.eimsound.audioprocessor.*
+import com.eimsound.audioprocessor.AudioProcessor
+import com.eimsound.audioprocessor.AudioProcessorDescription
+import com.eimsound.audioprocessor.AudioProcessorFactory
+import com.eimsound.audioprocessor.AudioProcessorManager
 import com.eimsound.daw.utils.NoSuchFactoryException
 import com.eimsound.daw.utils.asString
 import com.eimsound.daw.utils.toJsonElement
@@ -36,6 +39,3 @@ class AudioProcessorManagerImpl: AudioProcessorManager {
             ?: throw NoSuchFactoryException(factory ?: "Null")
     }
 }
-
-val AudioProcessorManager.nativeAudioPluginManager
-    get() = factories["NativeAudioPluginFactory"] as NativeAudioPluginFactory

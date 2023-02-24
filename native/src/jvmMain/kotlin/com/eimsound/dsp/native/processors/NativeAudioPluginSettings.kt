@@ -1,4 +1,4 @@
-package com.eimsound.daw.window.dialogs.settings
+package com.eimsound.dsp.native.processors
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -10,14 +10,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-import com.eimsound.audioprocessor.AudioProcessorManager
 import com.eimsound.audioprocessor.NativeAudioPluginFactory
-import com.eimsound.audioprocessor.impl.nativeAudioPluginManager
 import com.eimsound.daw.components.Gap
-import com.eimsound.daw.components.Tab
+import com.eimsound.daw.components.SettingTab
 import com.eimsound.daw.components.utils.clickableWithIcon
 import com.eimsound.daw.utils.*
-import com.eimsound.dsp.native.processors.NativeAudioPluginFactoryImpl
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
@@ -32,7 +29,7 @@ private fun NativeAudioPluginFactory.saveAsync() = GlobalScope.launch {
 }
 
 private var scanningJob by mutableStateOf<Job?>(null)
-internal object NativeAudioPluginSettings: Tab {
+class NativeAudioPluginSettings: SettingTab {
     @Composable
     override fun label() {
         Text("原生音频插件")
@@ -52,13 +49,13 @@ internal object NativeAudioPluginSettings: Tab {
         TextButton({
             if (scanningJob == null) {
                 scanningJob = GlobalScope.launch {
-                    AudioProcessorManager.instance.nativeAudioPluginManager.scan()
+                    NativeAudioPluginFactoryImpl.instance!!.scan()
                     scanningJob = null
                 }
             } else {
                 scanningJob!!.cancel()
                 scanningJob = null
-                val list = (AudioProcessorManager.instance.nativeAudioPluginManager as NativeAudioPluginFactoryImpl).scanningPlugins
+                val list = NativeAudioPluginFactoryImpl.instance!!.scanningPlugins
                 list.forEach { it.value.destroy() }
                 list.clear()
             }
@@ -75,7 +72,7 @@ internal object NativeAudioPluginSettings: Tab {
                 LocalAbsoluteTonalElevation provides 0.dp
             ) {
                 val window = CurrentWindow.current
-                val apm = AudioProcessorManager.instance.nativeAudioPluginManager as NativeAudioPluginFactoryImpl
+                val apm = NativeAudioPluginFactoryImpl.instance!!
                 Column(Modifier.width(300.dp)) {
                     Row {
                         Text(

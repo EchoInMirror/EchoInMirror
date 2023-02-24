@@ -57,6 +57,14 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
             return _skipList
         }
 
+    companion object {
+        var instance: NativeAudioPluginFactoryImpl? = null
+    }
+
+    init {
+        instance = this
+    }
+
     @OptIn(ExperimentalPathApi::class)
     override suspend fun scan()  {
         scanningPlugins.clear()

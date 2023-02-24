@@ -28,7 +28,7 @@ private fun Latency(title: String, latency: Int) {
     }
 }
 
-internal object AudioSettings : Tab {
+internal object AudioSettings : SettingTab {
     @Composable
     override fun label() {
         Text("音频")

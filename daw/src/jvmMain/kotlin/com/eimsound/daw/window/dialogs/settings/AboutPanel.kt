@@ -19,13 +19,13 @@ import com.eimsound.daw.RELEASE_TIME
 import com.eimsound.daw.VERSION
 import com.eimsound.daw.components.ClickableText
 import com.eimsound.daw.components.Gap
-import com.eimsound.daw.components.Tab
+import com.eimsound.daw.components.SettingTab
 import com.eimsound.daw.utils.openInBrowser
 import org.apache.commons.lang3.SystemUtils
 import java.net.URI
 import java.text.DateFormat
 
-internal object AboutPanel: Tab {
+internal object AboutPanel: SettingTab {
     @Composable
     override fun label() {
         Text("关于")

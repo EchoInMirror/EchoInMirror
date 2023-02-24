@@ -16,6 +16,7 @@ import com.eimsound.daw.impl.*
 import com.eimsound.daw.plugin.EIMPluginManager
 import com.eimsound.daw.utils.UndoManager
 import com.eimsound.daw.utils.impl.DefaultUndoManager
+import com.eimsound.daw.window.dialogs.settings.settingsTabsLoader
 import org.pf4j.PluginManager
 
 object EchoInMirror {
@@ -75,6 +76,7 @@ object EchoInMirror {
         AudioSourceManager.instance.reload()
         ClipManager.instance.reload()
         TrackManager.instance.reload()
+        settingsTabsLoader.reload()
     }
 
     val editUnit get() = quantification.getEditUnit(currentPosition)

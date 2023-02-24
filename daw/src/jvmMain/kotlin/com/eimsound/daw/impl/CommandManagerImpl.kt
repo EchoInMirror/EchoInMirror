@@ -5,11 +5,8 @@ package com.eimsound.daw.impl
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.input.key.*
 import com.eimsound.audioprocessor.AudioProcessorManager
-import com.eimsound.audioprocessor.NativeAudioPluginDescription
-import com.eimsound.audioprocessor.impl.nativeAudioPluginManager
 import com.eimsound.audioprocessor.oneBarPPQ
 import com.eimsound.daw.EchoInMirror
-import com.eimsound.daw.IS_DEBUG
 import com.eimsound.daw.ROOT_PATH
 import com.eimsound.daw.api.*
 import com.eimsound.daw.api.processor.TrackManager
@@ -64,7 +61,7 @@ class CommandManagerImpl : CommandManager {
                     subTrack2.clips.add(ClipManager.instance.createTrackClip(clip1))
                     val clip2 = ClipManager.instance.defaultMidiClipFactory.createClip()
                     subTrack1.clips.add(ClipManager.instance.createTrackClip(clip2, time, time))
-                    if (IS_DEBUG) {
+//                    if (IS_DEBUG) {
 //                        val midi = withContext(Dispatchers.IO) {
 //                            MidiSystem.getSequence(File("E:\\Midis\\UTMR&C VOL 1-14 [MIDI FILES] for other DAWs FINAL by Hunter UT\\VOL 13\\13.Darren Porter - To Feel Again LD.mid"))
 //                        }
@@ -80,16 +77,16 @@ class CommandManagerImpl : CommandManager {
 //                        val audioClip = EchoInMirror.clipManager.defaultAudioClipFactory.createClip()
 //                        subTrack2.clips.add(EchoInMirror.clipManager.createTrackClip(audioClip))
 
-                        var proQ: NativeAudioPluginDescription? = null
-                        var spire: NativeAudioPluginDescription? = null
-                        val napm = AudioProcessorManager.instance.nativeAudioPluginManager
-                        napm.descriptions.forEach {
-                            if (it.name == "FabFilter Pro-Q 3") proQ = it
-                            if (it.name == "Spire-1.5") spire = it
-                        }
-                        subTrack2.preProcessorsChain.add(napm.createAudioProcessor(spire!!))
-                        track.postProcessorsChain.add(napm.createAudioProcessor(proQ!!))
-                    }
+//                        var proQ: NativeAudioPluginDescription? = null
+//                        var spire: NativeAudioPluginDescription? = null
+//                        val napm = AudioProcessorManager.instance.nativeAudioPluginManager
+//                        napm.descriptions.forEach {
+//                            if (it.name == "FabFilter Pro-Q 3") proQ = it
+//                            if (it.name == "Spire-1.5") spire = it
+//                        }
+//                        subTrack2.preProcessorsChain.add(napm.createAudioProcessor(spire!!))
+//                        track.postProcessorsChain.add(napm.createAudioProcessor(proQ!!))
+//                    }
 
                     track.subTracks.add(subTrack1)
                     track.subTracks.add(subTrack2)

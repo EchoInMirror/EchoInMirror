@@ -26,8 +26,6 @@ kotlin {
         }
         named("jvmMain") {
             dependencies {
-                api(project(":dsp"))
-
                 implementation(project(":utils"))
                 implementation(compose.runtime)
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${extra["eim.dependencies.kotlinx.coroutines"]}")
@@ -37,6 +35,11 @@ kotlin {
 
                 @OptIn(ExperimentalComposeLibrary::class)
                 compileOnly(compose.material3)
+                compileOnly(compose.materialIconsExtended)
+                compileOnly(project(":components"))
+                compileOnly(project(":api"))
+                compileOnly(project(":dsp"))
+                compileOnly(project(":utils"))
             }
         }
     }

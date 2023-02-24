@@ -7,16 +7,19 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.components.*
 import java.awt.Dimension
+import java.util.*
 
+val settingsTabsLoader: ServiceLoader<SettingTab> by lazy { ServiceLoader.load(SettingTab::class.java) }
+val settingsTabs: List<SettingTab> get() = mutableListOf(AudioSettings, ShortcutKeySettings, AboutPanel).apply {
+    addAll(settingsTabsLoader)
+}
 
-val settingsTabs = mutableStateListOf(NativeAudioPluginSettings, AudioSettings, ShortcutKeySettings, AboutPanel)
 private fun closeSettingWindow() {
     EchoInMirror.windowManager.dialogs[SettingsWindow] = false
 }

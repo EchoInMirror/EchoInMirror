@@ -16,14 +16,14 @@ import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.api.Command
 import com.eimsound.daw.api.sortedKeys
 import com.eimsound.daw.components.ReadonlyTextField
-import com.eimsound.daw.components.Tab
+import com.eimsound.daw.components.SettingTab
 import com.eimsound.daw.components.utils.clickableWithIcon
 import com.eimsound.daw.impl.CommandManagerImpl
 import com.eimsound.daw.utils.mutableStateSetOf
 import com.eimsound.daw.utils.toMutableStateSet
 import java.awt.event.KeyEvent
 
-internal object ShortcutKeySettings : Tab {
+internal object ShortcutKeySettings : SettingTab {
     @Composable
     override fun label() {
         Text("快捷键")

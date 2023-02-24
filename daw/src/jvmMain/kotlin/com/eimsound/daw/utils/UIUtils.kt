@@ -1,7 +1,6 @@
 package com.eimsound.daw.utils
 
 import androidx.compose.foundation.ScrollState
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
@@ -13,16 +12,10 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.api.window.Panel
-import org.apache.commons.lang3.SystemUtils
 import org.ocpsoft.prettytime.PrettyTime
-import java.awt.Component
-import java.awt.Desktop
-import java.io.File
-import java.net.URI
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.*
-import javax.swing.JFileChooser
 
 @Suppress("PrivatePropertyName")
 private val ZERO_DATE = Date(0)
@@ -142,26 +135,7 @@ var ScrollState.openMaxValue
     @Suppress("INVISIBLE_SETTER")
     set(value) { maxValue = value }
 
-@Suppress("INVISIBLE_MEMBER")
-val CurrentWindow @Composable get() = androidx.compose.ui.window.LocalWindow
-
-fun openFolderBrowser(parent: Component? = null): File? {
-    val fileChooser = JFileChooser()
-    fileChooser.fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
-    fileChooser.showOpenDialog(parent)
-    return fileChooser.selectedFile
-}
-
 fun formatDuration(time: Long): String = DURATION_PRETTIER.formatDuration(Date(time)).ifEmpty { DURATION_PRETTIER.format(ZERO_DATE) }
-
-fun openInExplorer(file: File) = Desktop.getDesktop().open(file)
-fun openInBrowser(uri: URI) = Desktop.getDesktop().browse(uri)
-fun selectInExplorer(file: File) {
-    Desktop.getDesktop().apply {
-        if (isSupported(Desktop.Action.BROWSE_FILE_DIR)) browseFileDirectory(file)
-        else if (SystemUtils.IS_OS_WINDOWS) Runtime.getRuntime().exec(arrayOf("explorer.exe", "/select,\"${file.absolutePath}\""))
-    }
-}
 
 fun randomColor() = com.eimsound.daw.components.utils.randomColor(!EchoInMirror.windowManager.isDarkTheme)
 

@@ -47,7 +47,6 @@ kotlin {
                 @OptIn(ExperimentalComposeLibrary::class) api(compose.material3)
 
                 api("commons-io:commons-io:2.11.0")
-                api("org.apache.commons:commons-lang3:${extra["eim.dependencies.commons.lang"]}")
                 api("org.pf4j:pf4j:3.8.0")
                 api("org.ocpsoft.prettytime:prettytime:5.0.6.Final")
                 api("org.mapdb:mapdb:3.0.9") {
@@ -103,6 +102,7 @@ tasks.withType<Jar> {
 }
 
 tasks.withType<ShadowJar> {
+    mergeServiceFiles()
     archiveClassifier.set("")
     archiveVersion.set("")
 }
