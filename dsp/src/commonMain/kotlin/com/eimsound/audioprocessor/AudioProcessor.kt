@@ -7,7 +7,6 @@ import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
-import java.io.File
 import java.util.*
 
 /**
@@ -73,12 +72,14 @@ abstract class AbstractAudioProcessor(
     private val _listeners = WeakHashMap<AudioProcessorListener, Unit>()
     protected val listeners: Set<AudioProcessorListener> get() = _listeners.keys
 
-    override fun toJson() = buildJsonObject {
+    @Suppress("MemberVisibilityCanBePrivate")
+    protected fun JsonObjectBuilder.buildBaseJson() {
         put("factory", factory.name)
         put("name", name)
         put("id", id)
         put("identifier", description.name)
     }
+    override fun toJson() = buildJsonObject { buildBaseJson() }
 
     override fun fromJson(json: JsonElement) {
         json as JsonObject
@@ -86,7 +87,7 @@ abstract class AbstractAudioProcessor(
         json["id"]?.asString()?.let { if (it.isNotEmpty()) id = it }
     }
 
-    override suspend fun save(path: String) { encodeJsonFile(File("$path.json"), true) }
+    override suspend fun save(path: String) { }
     override suspend fun load(path: String, json: JsonObject) { fromJson(json) }
 
     override fun addListener(listener: AudioProcessorListener) { _listeners[listener] = Unit }

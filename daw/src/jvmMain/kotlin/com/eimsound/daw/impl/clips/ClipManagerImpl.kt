@@ -8,9 +8,11 @@ import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.utils.NoSuchFactoryException
 import com.eimsound.daw.utils.asInt
 import com.eimsound.daw.utils.asString
+import io.github.oshai.KotlinLogging
 import kotlinx.serialization.json.JsonObject
 import java.util.*
 
+private val logger = KotlinLogging.logger {  }
 class ClipManagerImpl : ClipManager {
     override val factories: MutableMap<String, ClipFactory<*>> = mutableStateMapOf()
 
@@ -26,6 +28,7 @@ class ClipManagerImpl : ClipManager {
 
     override suspend fun createClip(path: String, json: JsonObject): Clip {
         val name = json["factory"]?.asString()
+        logger.info("Creating clip ${json["id"]} in $path with factory $name")
         return factories[name]?.createClip(path, json) ?: throw NoSuchFactoryException(name ?: "Null")
     }
 

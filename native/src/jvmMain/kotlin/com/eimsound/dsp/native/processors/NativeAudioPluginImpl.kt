@@ -7,6 +7,7 @@ import androidx.compose.runtime.setValue
 import com.eimsound.audioprocessor.*
 import com.eimsound.daw.utils.*
 import com.eimsound.dsp.native.isX86PEFile
+import io.github.oshai.KotlinLogging
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withLock
@@ -14,34 +15,14 @@ import kotlinx.coroutines.sync.withPermit
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.*
 import org.apache.commons.lang3.SystemUtils
-import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.FileVisitResult
 import java.nio.file.Files
 import java.nio.file.Paths
 import kotlin.io.path.*
 
-class NativeAudioPluginImpl(
-    override val description: NativeAudioPluginDescription,
-    factory: AudioProcessorFactory<*>,
-) : NativeAudioPlugin, ProcessAudioProcessorImpl(description, factory) {
-    override var name = description.name
-
-    override suspend fun save(path: String) {
-        super.save(path)
-        if (!isLaunched) return
-        mutex.withLock {
-            outputStream?.apply {
-                write(3)
-                writeString("$path.bin")
-                flush()
-            }
-        }
-    }
-}
-
+private val logger = KotlinLogging.logger {  }
 class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
-    private val logger = LoggerFactory.getLogger(NativeAudioPluginFactoryImpl::class.java)
     private val configFile get() = Paths.get(System.getProperty("eim.dsp.nativeaudioplugins.list", "nativeAudioPlugins.json"))
     override val name = "NativeAudioPluginFactory"
     override val displayName = "原生"
@@ -206,4 +187,23 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
     private fun getNativeHostPath(description: NativeAudioPluginDescription) =
         getNativeHostPath(SystemUtils.IS_OS_WINDOWS && description.isX86)
     private fun getNativeHostPath(path: String) = getNativeHostPath(SystemUtils.IS_OS_WINDOWS && File(path).isX86PEFile())
+}
+
+class NativeAudioPluginImpl(
+    override val description: NativeAudioPluginDescription,
+    factory: AudioProcessorFactory<*>,
+) : NativeAudioPlugin, ProcessAudioProcessorImpl(description, factory) {
+    override var name = description.name
+
+    override suspend fun save(path: String) {
+        super.save(path)
+        if (!isLaunched) return
+        mutex.withLock {
+            outputStream?.apply {
+                write(3)
+                writeString("$path.bin")
+                flush()
+            }
+        }
+    }
 }

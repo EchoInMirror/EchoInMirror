@@ -1,6 +1,7 @@
 package com.eimsound.daw.utils
 
 import com.aventrix.jnanoid.jnanoid.NanoIdUtils
+import io.github.oshai.KLogger
 import kotlin.math.ceil
 import kotlin.math.roundToInt
 
@@ -30,3 +31,10 @@ inline fun <T> List<T>.binarySearch(comparator: (T) -> Boolean): Int {
 inline fun Float.coerceIn(range: IntRange) = coerceIn(range.first.toFloat(), range.last.toFloat())
 
 val IntRange.range get() = last - first
+
+inline fun <T> tryOrNull(logger: KLogger? = null, message: String? = null, block: () -> T): T? {
+    return try { block() } catch (e: Throwable) {
+        logger?.error(message, e)
+        null
+    }
+}

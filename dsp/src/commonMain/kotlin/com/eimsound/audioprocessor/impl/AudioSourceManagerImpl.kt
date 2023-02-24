@@ -23,10 +23,10 @@ class AudioSourceManagerImpl : AudioSourceManager {
 
     override fun createAudioSource(json: JsonObject): AudioSource {
         val list = arrayListOf<JsonObject>()
-        var node = json
-        while (node.contains("source")) {
+        var node: JsonObject? = json
+        while (node != null) {
             list.add(node)
-            node = node["source"] as JsonObject
+            node = node["source"] as? JsonObject
         }
         var source: AudioSource? = null
         for (i in list.lastIndex downTo 0) {

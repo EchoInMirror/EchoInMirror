@@ -18,6 +18,7 @@ import com.eimsound.daw.api.processor.*
 import com.eimsound.daw.components.utils.randomColor
 import com.eimsound.daw.utils.*
 import com.eimsound.daw.window.panels.fileBrowserPreviewer
+import io.github.oshai.KotlinLogging
 import kotlinx.coroutines.*
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.*
@@ -28,6 +29,7 @@ import java.util.*
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.pathString
 
+private val logger = KotlinLogging.logger { }
 open class TrackImpl(description: AudioProcessorDescription, factory: TrackFactory<*>) :
     Track, AbstractAudioProcessor(description, factory) {
     override var name by mutableStateOf("NewTrack")
@@ -230,8 +232,8 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         put("isSolo", isSolo)
         put("isDisabled", isDisabled)
         put("subTracks", Json.encodeToJsonElement(subTracks.map { it.id }))
-        put("preProcessorsChain", Json.encodeToJsonElement(preProcessorsChain.map { it.id }))
-        put("postProcessorsChain", Json.encodeToJsonElement(postProcessorsChain.map { it.id }))
+        put("preProcessorsChain", JsonArray(preProcessorsChain.map { if (it is JsonSerializable) it.toJson() else JsonPrimitive(it.id) }))
+        put("postProcessorsChain", JsonArray(postProcessorsChain.map { if (it is JsonSerializable) it.toJson() else JsonPrimitive(it.id) }))
         put("clips", JsonArray(clips.map { it.toJson() }))
     }
     override fun toJson() = buildJsonObject { buildJson() }
@@ -293,24 +295,40 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
 
                 val clipsDir = dir.resolve("clips").absolutePathString()
                 clips.addAll(json["clips"]!!.jsonArray.map {
-                    async { ClipManager.instance.createTrackClip(clipsDir, it as JsonObject) }
-                }.awaitAll())
+                    async {
+                        tryOrNull(logger, "Failed to load clip: $it") {
+                            ClipManager.instance.createTrackClip(clipsDir, it as JsonObject)
+                        }
+                    }
+                }.awaitAll().filterNotNull())
 
                 val tracksDir = dir.resolve("tracks")
                 subTracks.addAll(json["subTracks"]!!.jsonArray.map {
                     async {
-                        val trackID = it.asString()
-                        val trackPath = tracksDir.resolve(trackID)
-                        TrackManager.instance.createTrack(trackPath.absolutePathString(), trackID)
+                        tryOrNull(logger, "Failed to load track: $it") {
+                            val trackID = it.asString()
+                            val trackPath = tracksDir.resolve(trackID)
+                            TrackManager.instance.createTrack(trackPath.absolutePathString(), trackID)
+                        }
                     }
-                }.awaitAll())
+                }.awaitAll().filterNotNull())
                 val processorsDir = dir.resolve("processors").absolutePathString()
                 preProcessorsChain.addAll(json["preProcessorsChain"]!!.jsonArray.map {
-                    async { AudioProcessorManager.instance.createAudioProcessor(processorsDir, it.asString()) }
-                }.awaitAll())
+                    async {
+                        tryOrNull(logger, "Failed to load audio processor: $it") {
+                            if (it is JsonObject) AudioProcessorManager.instance.createAudioProcessor(processorsDir, it)
+                            else AudioProcessorManager.instance.createAudioProcessor(processorsDir, it.asString())
+                        }
+                    }
+                }.awaitAll().filterNotNull())
                 postProcessorsChain.addAll(json["postProcessorsChain"]!!.jsonArray.map {
-                    async { AudioProcessorManager.instance.createAudioProcessor(processorsDir, it.asString()) }
-                }.awaitAll())
+                    async {
+                        tryOrNull(logger, "Failed to load audio processor: $it") {
+                            if (it is JsonObject) AudioProcessorManager.instance.createAudioProcessor(processorsDir, it)
+                            else AudioProcessorManager.instance.createAudioProcessor(processorsDir, it.asString())
+                        }
+                    }
+                }.awaitAll().filterNotNull())
             } catch (_: FileNotFoundException) { }
         }
     }

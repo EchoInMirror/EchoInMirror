@@ -7,6 +7,7 @@ import com.eimsound.daw.api.processor.*
 import com.eimsound.daw.utils.NoSuchFactoryException
 import com.eimsound.daw.utils.asString
 import com.eimsound.daw.utils.toJsonElement
+import io.github.oshai.KotlinLogging
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
@@ -18,20 +19,7 @@ import java.util.*
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.readText
 
-class DefaultTrackFactory : TrackFactory<Track> {
-    override val canCreateBus = true
-    override val name = "DefaultTrackFactory"
-    override val displayName = "默认"
-    override val descriptions = setOf(DefaultTrackDescription)
-
-    override suspend fun createAudioProcessor(description: AudioProcessorDescription) = TrackImpl(description, this)
-
-    override suspend fun createAudioProcessor(path: String, json: JsonObject) =
-        TrackImpl(DefaultTrackDescription, this).apply { load(path, json) }
-
-    override suspend fun createBus(project: ProjectInformation) = BusImpl(project, DefaultTrackDescription, this)
-}
-
+private val logger = KotlinLogging.logger {  }
 class TrackManagerImpl : TrackManager {
     override val factories = mutableStateMapOf<String, TrackFactory<*>>()
 
@@ -43,6 +31,7 @@ class TrackManagerImpl : TrackManager {
 
     override suspend fun createTrack(path: String, json: JsonObject): Track {
         val factory = json["factory"]?.asString()
+        logger.info("Creating clip ${json["id"]} in $path with factory $factory")
         return factories[factory]?.createAudioProcessor(path, json)
             ?: throw NoSuchFactoryException(factory ?: "Null")
     }
@@ -68,4 +57,18 @@ class TrackManagerImpl : TrackManager {
         factories.clear()
         factories.putAll(ServiceLoader.load(TrackFactory::class.java).associateBy { it.name })
     }
+}
+
+class DefaultTrackFactory : TrackFactory<Track> {
+    override val canCreateBus = true
+    override val name = "DefaultTrackFactory"
+    override val displayName = "默认"
+    override val descriptions = setOf(DefaultTrackDescription)
+
+    override suspend fun createAudioProcessor(description: AudioProcessorDescription) = TrackImpl(description, this)
+
+    override suspend fun createAudioProcessor(path: String, json: JsonObject) =
+        TrackImpl(DefaultTrackDescription, this).apply { load(path, json) }
+
+    override suspend fun createBus(project: ProjectInformation) = BusImpl(project, DefaultTrackDescription, this)
 }
