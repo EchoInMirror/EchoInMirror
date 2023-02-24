@@ -5,5 +5,5 @@ import org.pf4j.DefaultPluginManager
 
 class EIMPluginManager : DefaultPluginManager() {
     override fun createPluginDescriptorFinder(): CompoundPluginDescriptorFinder =
-        CompoundPluginDescriptorFinder().add(JSONPluginDescriptorFinder())
+        CompoundPluginDescriptorFinder()
 }

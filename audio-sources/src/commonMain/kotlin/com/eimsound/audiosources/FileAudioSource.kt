@@ -4,7 +4,11 @@ import com.eimsound.audioprocessor.AudioSource
 import com.eimsound.audioprocessor.FileAudioSource
 import com.eimsound.audioprocessor.FileAudioSourceFactory
 import com.eimsound.daw.utils.RandomFileInputStream
-import com.fasterxml.jackson.databind.JsonNode
+import com.eimsound.daw.utils.asString
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import org.jflac.FLACDecoder
 import org.jflac.sound.spi.FlacFileFormatType
 import org.jflac.util.ByteData
@@ -19,6 +23,7 @@ import java.nio.file.Paths
 import javax.sound.sampled.AudioFileFormat
 import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioSystem
+import kotlin.io.path.pathString
 import kotlin.math.absoluteValue
 
 private const val MB500 = 500 * 1024 * 1024
@@ -89,6 +94,13 @@ class DefaultFileAudioSource(override val factory: FileAudioSourceFactory<*>, ov
         }
         return consumed
     }
+
+    override fun toJson() = buildJsonObject {
+        put("factory", factory.name)
+        put("file", file.pathString)
+    }
+
+    override fun fromJson(json: JsonElement) = throw UnsupportedOperationException()
 
     override fun close() {
         stream?.close()
@@ -170,8 +182,8 @@ class DefaultFileAudioSourceFactory : FileAudioSourceFactory<DefaultFileAudioSou
     override val supportedFormats = listOf("wav", "flac", "mp3", "ogg", "aiff", "aif", "aifc", "au", "snd")
     override val name = "File"
     override fun createAudioSource(file: Path) = DefaultFileAudioSource(this, file)
-    override fun createAudioSource(source: AudioSource?, json: JsonNode?): DefaultFileAudioSource {
-        val file = json?.get("file")?.asText() ?: throw IllegalArgumentException("File not found!")
+    override fun createAudioSource(source: AudioSource?, json: JsonObject?): DefaultFileAudioSource {
+        val file = json?.get("file")?.asString() ?: throw IllegalArgumentException("File not found!")
         return createAudioSource(Paths.get(file))
     }
 }

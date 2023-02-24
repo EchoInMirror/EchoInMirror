@@ -5,123 +5,57 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.eimsound.audioprocessor.*
-import com.eimsound.daw.utils.mutableStateSetOf
+import com.eimsound.daw.utils.*
 import com.eimsound.dsp.native.isX86PEFile
-import com.fasterxml.jackson.annotation.JsonAutoDetect
-import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
+import io.github.oshai.KotlinLogging
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.sync.withPermit
-import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.decodeFromStream
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.*
 import org.apache.commons.lang3.SystemUtils
-import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.FileVisitResult
 import java.nio.file.Files
 import java.nio.file.Paths
 import kotlin.io.path.*
-import kotlin.system.measureTimeMillis
 
-class NativeAudioPluginImpl(
-    override val description: NativeAudioPluginDescription,
-    factory: AudioProcessorFactory<*>,
-) : NativeAudioPlugin, ProcessAudioProcessorImpl(description, factory) {
-    override var name = description.name
-
-    override suspend fun save(path: String) {
-        withContext(Dispatchers.IO) {
-            ObjectMapper().writerWithDefaultPrettyPrinter().writeValue(
-                File("$path.json"), mapOf(
-                    "factory" to factory.name,
-                    "name" to name,
-                    "id" to id,
-                    "identifier" to description.identifier
-                )
-            )
-        }
-        if (!isLaunched) return
-        mutex.withLock {
-            outputStream?.apply {
-                write(3)
-                writeString("$path.bin")
-                flush()
-            }
-        }
-    }
-}
-
-@Serializable
-data class NativeAudioPluginFactoryData(
-    val descriptions: Set<NativeAudioPluginDescription>,
-    val scanPaths: Set<String>,
-    val skipList: Set<String>,
-)
-
-@OptIn(ExperimentalSerializationApi::class)
-@JsonAutoDetect(
-    fieldVisibility = JsonAutoDetect.Visibility.NONE,
-    setterVisibility = JsonAutoDetect.Visibility.NONE,
-    getterVisibility = JsonAutoDetect.Visibility.NONE,
-    isGetterVisibility = JsonAutoDetect.Visibility.NONE,
-    creatorVisibility = JsonAutoDetect.Visibility.NONE
-)
+private val logger = KotlinLogging.logger {  }
 class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
-    private val logger = LoggerFactory.getLogger(NativeAudioPluginFactoryImpl::class.java)
     private val configFile get() = Paths.get(System.getProperty("eim.dsp.nativeaudioplugins.list", "nativeAudioPlugins.json"))
     override val name = "NativeAudioPluginFactory"
     override val displayName = "原生"
-    override val pluginIsFile = SystemUtils.IS_OS_WINDOWS || SystemUtils.IS_OS_LINUX
 
-    override val descriptions: MutableSet<NativeAudioPluginDescription> = mutableStateSetOf()
-    override val scanPaths: MutableSet<String> = mutableStateSetOf()
-    override val skipList: MutableSet<String> = mutableStateSetOf()
-    override lateinit var pluginExtensions: Set<String>
+    override val pluginIsFile = SystemUtils.IS_OS_WINDOWS || SystemUtils.IS_OS_LINUX
+    override val pluginExtensions = if (SystemUtils.IS_OS_WINDOWS) setOf("dll", "vst", "vst3")
+    else if (SystemUtils.IS_OS_LINUX) setOf("so")
+    else setOf("dylib")
+
+    private var loaded = false
+    private val _descriptions: MutableSet<NativeAudioPluginDescription> = mutableStateSetOf()
+    private val _scanPaths: MutableSet<String> = mutableStateSetOf()
+    private val _skipList: MutableSet<String> = mutableStateSetOf()
 
     var scannedCount by mutableStateOf(0)
     var allScanCount by mutableStateOf(0)
     val scanningPlugins = mutableStateMapOf<String, Process>()
 
-    init {
-        var read = false
-        println(measureTimeMillis {
-            if (configFile.toFile().exists()) {
-                try {
-                    Json.decodeFromStream<NativeAudioPluginFactoryData>(configFile.inputStream()).apply {
-                        println(descriptions)
-                    }
-//                    descriptions.addAll(data.descriptions)
-//                    scanPaths.addAll(data.scanPaths)
-//                    skipList.addAll(data.skipList)
-                    read = true
-                } catch (e: Throwable) {
-                    e.printStackTrace()
-                    // Files.delete(NATIVE_AUDIO_PLUGIN_CONFIG)
-                }
-            }
-            if (!read) {
-                if (SystemUtils.IS_OS_WINDOWS) {
-                    scanPaths.add("C:\\Program Files\\Common Files\\VST3")
-                    scanPaths.add("C:\\Program Files\\Steinberg\\VSTPlugins")
-                    scanPaths.add("C:\\Program Files\\VstPlugins")
-                    scanPaths.add("C:\\Program Files\\Native Instruments\\VSTPlugins 64 bit")
-                } else if (SystemUtils.IS_OS_LINUX) {
-                    scanPaths.addAll(System.getenv("LADSPA_PATH")
-                        .ifEmpty { "/usr/lib/ladspa;/usr/local/lib/ladspa;~/.ladspa" }
-                        .replace(":", ";").split(";"))
-                }
-            }
-            pluginExtensions = if (SystemUtils.IS_OS_WINDOWS) setOf("dll", "vst", "vst3")
-            else if (SystemUtils.IS_OS_LINUX) setOf("so")
-            else setOf("dylib")
-        })
-    }
+    override val descriptions: MutableSet<NativeAudioPluginDescription>
+        get() {
+            checkLoad()
+            return _descriptions
+        }
+    override val scanPaths: MutableSet<String>
+        get() {
+            checkLoad()
+            return _scanPaths
+        }
+    override val skipList: MutableSet<String>
+        get() {
+            checkLoad()
+            return _skipList
+        }
 
     @OptIn(ExperimentalPathApi::class)
     override suspend fun scan()  {
@@ -162,16 +96,18 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
                 async {
                     scanSemaphore.withPermit {
                         logger.info("Scanning native audio plugin: {}", it)
-                        val pb = ProcessBuilder(getNativeHostPath(it), " -S ", jacksonObjectMapper().writeValueAsString(it))
+                        val pb = ProcessBuilder(getNativeHostPath(it), "-S", "#")
                         pb.redirectError()
                         val process = pb.start()
                         scanningPlugins[it] = process
+                        process.outputStream.write(it.encodeToByteArray())
+                        process.outputStream.write(0)
+                        process.outputStream.flush()
                         var result = ""
                         try {
                             result = process.inputStream.readAllBytes().decodeToString()
                                 .substringAfter("\$EIMHostScanner{{").substringBeforeLast("}}EIMHostScanner\$")
-                            jacksonObjectMapper().readValue<List<NativeAudioPluginDescription>>(result).forEach(descriptions::add)
-                            descriptions.distinctBy { it.identifier }
+                            descriptions.addAll(Json.decodeFromString<List<NativeAudioPluginDescription>>(result))
                         } catch (e: Throwable) {
                             logger.error("Failed to scan native audio plugin: $it, data: $result", e)
                             skipList.add(it)
@@ -192,22 +128,58 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
         if (description !is NativeAudioPluginDescription)
             throw NoSuchAudioProcessorException(description.identifier, name)
         return NativeAudioPluginImpl(description, this).apply {
-            launch(getNativeHostPath(description))
+            launch(getNativeHostPath(description), null)
         }
     }
 
-    override suspend fun createAudioProcessor(path: String, json: JsonNode): NativeAudioPlugin {
-        val description = descriptions.find { it.identifier == json["identifier"].asText() }
+    override suspend fun createAudioProcessor(path: String, json: JsonObject): NativeAudioPlugin {
+        val description = descriptions.find { it.identifier == json["identifier"]!!.asString() }
             ?: throw NoSuchAudioProcessorException(path, name)
         return NativeAudioPluginImpl(description, this).apply {
-            jacksonObjectMapper().run { launch(getNativeHostPath(description), "-P",
-                writeValueAsString("$path/${json["id"]!!.asText()}.bin"), "-L",
-                writeValueAsString(writeValueAsString(description))) }
+            launch(getNativeHostPath(description), "$path/${json["id"]}.bin")
         }
     }
 
-    override fun save() {
-        jacksonObjectMapper().writeValue(configFile.toFile(), this)
+    override suspend fun save() { encodeJsonFile(configFile.toFile()) }
+
+    override fun toJson() = buildJsonObject {
+        put("descriptions", Json.encodeToJsonElement(descriptions))
+        put("scanPaths", Json.encodeToJsonElement(scanPaths))
+        put("skipList", Json.encodeToJsonElement(skipList))
+    }
+
+    override fun fromJson(json: JsonElement) {
+        json as JsonObject
+        descriptions.clear()
+        scanPaths.clear()
+        skipList.clear()
+        descriptions.addAll((json["descriptions"] as JsonArray).map(Json::decodeFromJsonElement))
+        scanPaths.addAll((json["scanPaths"] as JsonArray).map(JsonElement::asString))
+        skipList.addAll((json["skipList"] as JsonArray).map(JsonElement::asString))
+    }
+
+    private fun checkLoad() {
+        if (loaded) return
+        loaded = true
+        if (configFile.toFile().exists()) {
+            try {
+                runBlocking { fromJsonFile(configFile.toFile()) }
+                return
+            } catch (e: Throwable) {
+                e.printStackTrace()
+                // Files.delete(NATIVE_AUDIO_PLUGIN_CONFIG)
+            }
+        }
+        if (SystemUtils.IS_OS_WINDOWS) {
+            scanPaths.add("C:\\Program Files\\Common Files\\VST3")
+            scanPaths.add("C:\\Program Files\\Steinberg\\VSTPlugins")
+            scanPaths.add("C:\\Program Files\\VstPlugins")
+            scanPaths.add("C:\\Program Files\\Native Instruments\\VSTPlugins 64 bit")
+        } else if (SystemUtils.IS_OS_LINUX) {
+            scanPaths.addAll(System.getenv("LADSPA_PATH")
+                .ifEmpty { "/usr/lib/ladspa;/usr/local/lib/ladspa;~/.ladspa" }
+                .replace(":", ";").split(";"))
+        }
     }
 
     private fun getNativeHostPath(isX86: Boolean) = Paths.get(System.getProperty("eim.dsp.nativeaudioplugins.host" +
@@ -215,4 +187,23 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
     private fun getNativeHostPath(description: NativeAudioPluginDescription) =
         getNativeHostPath(SystemUtils.IS_OS_WINDOWS && description.isX86)
     private fun getNativeHostPath(path: String) = getNativeHostPath(SystemUtils.IS_OS_WINDOWS && File(path).isX86PEFile())
+}
+
+class NativeAudioPluginImpl(
+    override val description: NativeAudioPluginDescription,
+    factory: AudioProcessorFactory<*>,
+) : NativeAudioPlugin, ProcessAudioProcessorImpl(description, factory) {
+    override var name = description.name
+
+    override suspend fun save(path: String) {
+        super.save(path)
+        if (!isLaunched) return
+        mutex.withLock {
+            outputStream?.apply {
+                write(3)
+                writeString("$path.bin")
+                flush()
+            }
+        }
+    }
 }

@@ -4,22 +4,25 @@ import androidx.compose.runtime.mutableStateOf
 import com.eimsound.audioprocessor.data.EnvelopePoint
 import com.eimsound.daw.utils.IManualState
 import com.eimsound.daw.utils.mapValue
-import com.fasterxml.jackson.annotation.JsonInclude
-import com.fasterxml.jackson.annotation.JsonTypeInfo
-import com.fasterxml.jackson.core.JsonGenerator
-import com.fasterxml.jackson.core.type.TypeReference
-import com.fasterxml.jackson.databind.SerializerProvider
-import com.fasterxml.jackson.databind.annotation.JsonSerialize
-import com.fasterxml.jackson.databind.ser.std.StdSerializer
+import kotlinx.serialization.*
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.json.JsonDecoder
+import kotlinx.serialization.json.jsonArray
 
-interface NoteMessage {
+/**
+ * Consider make this class open.
+ * @see [DefaultNoteMessage]
+ */
+@Serializable
+sealed interface NoteMessage {
     var note: Int
     var velocity: Int
     var time: Int
     var duration: Int
-    @get:JsonInclude(value = JsonInclude.Include.NON_DEFAULT)
     var disabled: Boolean
-    @get:JsonInclude(value = JsonInclude.Include.NON_NULL, content = JsonInclude.Include.NON_EMPTY)
     var extraData: MutableMap<String, Any>?
     fun copy(note: Int = this.note, velocity: Int = this.velocity, time: Int = this.time,
              duration: Int = this.duration, disabled: Boolean = this.disabled): NoteMessage
@@ -27,13 +30,18 @@ interface NoteMessage {
 
 val NoteMessage.colorSaturation get() = 0.4F + 0.6F * if (disabled) 0F else mapValue(velocity, 0, 127)
 
-@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, property = "eim:class")
-data class SerializableNoteMessage(val ppq: Int, val notes: Collection<NoteMessage>)
+@Serializable
+data class SerializableNoteMessages(val ppq: Int, val notes: Collection<NoteMessage>) {
+    @OptIn(ExperimentalSerializationApi::class)
+    @Suppress("unused")
+    @EncodeDefault
+    val className = "NoteMessages"
+}
 
 fun defaultNoteMessage(note: Int, time: Int, duration: Int = 0, velocity: Int = 70, disabled: Boolean = false) =
-    NoteMessageImpl(note, time, duration, velocity, disabled)
+    DefaultNoteMessage(note, time, duration, velocity, disabled)
 
-open class NoteMessageImpl(note: Int, override var time: Int, duration: Int = 0, override var velocity: Int = 70,
+open class DefaultNoteMessage(note: Int, override var time: Int, duration: Int = 0, override var velocity: Int = 70,
                            override var disabled: Boolean = false) : NoteMessage {
     override var note = note.coerceIn(0, 127)
         set(value) { field = value.coerceIn(0, 127) }
@@ -42,10 +50,10 @@ open class NoteMessageImpl(note: Int, override var time: Int, duration: Int = 0,
     override var extraData: MutableMap<String, Any>? = null
 
     override fun copy(note: Int, velocity: Int, time: Int, duration: Int, disabled: Boolean) =
-        NoteMessageImpl(note, time, duration, velocity, disabled)
+        DefaultNoteMessage(note, time, duration, velocity, disabled)
 
     override fun toString(): String {
-        return "NoteMessageImpl(note=$note, time=$time, duration=$duration, velocity=$velocity, disabled=$disabled)"
+        return "DefaultNoteMessage(note=$note, time=$time, duration=$duration, velocity=$velocity, disabled=$disabled)"
     }
 }
 
@@ -82,12 +90,14 @@ fun NoteMessage.toNoteOffEvent(channel: Int = 0) = noteOff(channel, note)
 fun NoteMessage.toNoteOnRawData(channel: Int = 0) = 0x90 or channel or (note shl 8) or (velocity shl 16)
 fun NoteMessage.toNoteOffRawData(channel: Int = 0) = 0x80 or (70 shl 16) or channel or (note shl 8)
 
-@JsonSerialize(using = NoteMessageListSerializer::class)
+@Serializable(NoteMessageListSerializer::class)
 interface NoteMessageList : MutableList<NoteMessage>, IManualState {
     fun sort()
 }
 
+@Serializable
 open class DefaultNoteMessageList : NoteMessageList, ArrayList<NoteMessage>() {
+    @Transient
     private var modification = mutableStateOf(0)
     override fun sort() = sortWith { o1, o2 ->
         if (o1.time == o2.time)
@@ -98,11 +108,19 @@ open class DefaultNoteMessageList : NoteMessageList, ArrayList<NoteMessage>() {
     override fun read() { modification.value }
 }
 
-class NoteMessageListSerializer @JvmOverloads constructor(t: Class<NoteMessageList>? = null) :
-    StdSerializer<NoteMessageList>(t) {
-    override fun serialize(value: NoteMessageList, jgen: JsonGenerator, provider: SerializerProvider?) {
-        jgen.writeObject(value.toList())
+object NoteMessageListSerializer : KSerializer<NoteMessageList> {
+    private val serializer = NoteMessage.serializer()
+    private val listSerializer = ListSerializer(serializer)
+    override val descriptor: SerialDescriptor = listSerializer.descriptor
+
+    override fun serialize(encoder: Encoder, value: NoteMessageList) {
+        listSerializer.serialize(encoder, value)
+    }
+
+    override fun deserialize(decoder: Decoder) = DefaultNoteMessageList().apply {
+        val v = decoder.decodeSerializableValue(listSerializer)
+        addAll(if (decoder is JsonDecoder) {
+            decoder.decodeJsonElement().jsonArray.map { decoder.json.decodeFromJsonElement(serializer, it) }
+        } else v)
     }
 }
-
-object NoteMessageListTypeReference : TypeReference<MutableList<NoteMessageImpl>>()

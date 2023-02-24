@@ -9,19 +9,20 @@ import com.eimsound.audioprocessor.AudioSource
 import com.eimsound.audioprocessor.CurrentPosition
 import com.eimsound.audioprocessor.ResampledAudioSource
 import com.eimsound.audioprocessor.data.AudioThumbnail
+import com.eimsound.audioprocessor.data.EnvelopePoint
 import com.eimsound.audioprocessor.data.EnvelopePointList
 import com.eimsound.audioprocessor.data.midi.MidiNoteRecorder
 import com.eimsound.audioprocessor.data.midi.NoteMessageList
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.utils.*
-import com.fasterxml.jackson.annotation.JsonIgnore
-import com.fasterxml.jackson.core.JsonGenerator
-import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.SerializerProvider
-import com.fasterxml.jackson.databind.annotation.JsonSerialize
-import com.fasterxml.jackson.databind.ser.std.StdSerializer
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import java.io.File
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
+import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
 import java.nio.file.Path
 import java.util.*
 
@@ -35,16 +36,14 @@ interface MidiClipEditor: ClipEditor, SerializableEditor {
     val track: Track
 }
 
-@JsonSerialize(using = ClipFactoryNameSerializer::class)
+@Serializable(with = ClipFactoryNameSerializer::class)
 interface ClipFactory<T: Clip> {
     val name: String
     fun createClip(): T
-    fun createClip(path: String, json: JsonNode): T
+    fun createClip(path: String, json: JsonObject): T
     fun processBlock(clip: TrackClip<T>, buffers: Array<FloatArray>, position: CurrentPosition,
                      midiBuffer: ArrayList<Int>, noteRecorder: MidiNoteRecorder, pendingNoteOns: LongArray)
-    fun save(clip: T, path: String) {
-        jacksonObjectMapper().writerWithDefaultPrettyPrinter().writeValue(File("$path.json"), clip)
-    }
+    fun save(clip: T, path: String) { }
     fun getEditor(clip: TrackClip<T>, track: Track): ClipEditor?
     @Composable
     fun playlistContent(clip: TrackClip<T>, track: Track, contentColor: Color,
@@ -77,50 +76,45 @@ interface ClipManager : Reloadable {
     @Throws(NoSuchFactoryException::class)
     suspend fun createClip(factory: String): Clip
     @Throws(NoSuchFactoryException::class)
-    suspend fun createClip(path: String, json: JsonNode): Clip
-    @Throws(NoSuchFactoryException::class)
-    suspend fun createClip(path: String, id: String): Clip
+    suspend fun createClip(path: String, json: JsonObject): Clip
     fun <T: Clip> createTrackClip(clip: T, time: Int = 0, duration: Int = clip.defaultDuration.coerceAtLeast(0),
                                   start: Int = 0, track: Track? = null): TrackClip<T>
-    suspend fun createTrackClip(path: String, json: JsonNode): TrackClip<Clip>
+    suspend fun createTrackClip(path: String, json: JsonObject): TrackClip<Clip>
 }
 
 val ClipManager.defaultMidiClipFactory get() = factories["MIDIClip"] as MidiClipFactory
 val ClipManager.defaultAudioClipFactory get() = factories["AudioClip"] as AudioClipFactory
 
-interface Clip {
+interface Clip : JsonSerializable {
     val id: String
     val name: String?
     val factory: ClipFactory<*>
-    @get:JsonIgnore
+    @Transient
     val defaultDuration: Int
-    @get:JsonIgnore
+    @Transient
     val isExpandable: Boolean
-    @get:JsonIgnore
+    @Transient
     val maxDuration: Int
 }
 
-interface MidiCCEvent {
-    val id: Int
-    val points: EnvelopePointList
-}
+typealias MidiCCEvents = Map<Int, List<EnvelopePoint>>
+typealias MutableMidiCCEvents = MutableMap<Int, EnvelopePointList>
 
-@JsonSerialize(using = ClipIdSerializer::class)
 interface MidiClip : Clip {
     val notes: NoteMessageList
-    val events: MutableList<MidiCCEvent>
+    val events: MutableMidiCCEvents
 }
 interface AudioClip : Clip, AutoCloseable {
     var target: AudioSource
-    @get:JsonIgnore
+    @Transient
     val audioSource: ResampledAudioSource
-    @get:JsonIgnore
+    @Transient
     val thumbnail: AudioThumbnail
 }
 
-abstract class AbstractClip<T: Clip>(json: JsonNode?, override val factory: ClipFactory<T>) : Clip {
-    override val id = json?.get("id")?.asText() ?: randomId()
-    override val name: String? = null
+abstract class AbstractClip<T: Clip>(json: JsonObject?, override val factory: ClipFactory<T>) : Clip {
+    override var id = json?.get("id")?.asString() ?: randomId()
+    override val name: String = ""
     override val isExpandable = false
     override val defaultDuration = -1
     override val maxDuration = -1
@@ -128,16 +122,24 @@ abstract class AbstractClip<T: Clip>(json: JsonNode?, override val factory: Clip
     override fun toString(): String {
         return "MidiClipImpl(factory=$factory, id='$id')"
     }
+
+    override fun fromJson(json: JsonElement) {
+        json as JsonObject
+        id = json["id"]!!.asString()
+    }
 }
 
-interface TrackClip<T: Clip> {
+/**
+ * @see com.eimsound.daw.impl.clips.TrackClipImpl
+ */
+interface TrackClip<T: Clip> : JsonSerializable {
     var time: Int
     var duration: Int
     var start: Int
     val clip: T
-    @get:JsonIgnore
+    @Transient
     var currentIndex: Int
-    @get:JsonIgnore
+    @Transient
     var track: Track?
     fun reset()
     fun copy(time: Int = this.time, duration: Int = this.duration, start: Int = this.start,
@@ -154,8 +156,8 @@ interface TrackClipList : MutableList<TrackClip<*>>, IManualState {
     fun sort()
 }
 
-class DefaultTrackClipList(@JsonIgnore private val track: Track) : TrackClipList, ArrayList<TrackClip<*>>() {
-    private var modification = mutableStateOf(0)
+class DefaultTrackClipList(private val track: Track) : TrackClipList, ArrayList<TrackClip<*>>() {
+    @Transient private var modification = mutableStateOf(0)
     override fun sort() = sortWith { o1, o2 ->
         if (o1.time == o2.time) o1.duration - o2.duration
         else o1.time - o2.time
@@ -198,16 +200,11 @@ class DefaultTrackClipList(@JsonIgnore private val track: Track) : TrackClipList
     }
 }
 
-class ClipIdSerializer @JvmOverloads constructor(t: Class<Clip>? = null) :
-    StdSerializer<Clip>(t) {
-    override fun serialize(value: Clip, jgen: JsonGenerator, provider: SerializerProvider?) {
-        jgen.writeString(value.id)
-    }
-}
-
-class ClipFactoryNameSerializer @JvmOverloads constructor(t: Class<ClipFactory<*>>? = null) :
-    StdSerializer<ClipFactory<*>>(t) {
-    override fun serialize(value: ClipFactory<*>, jgen: JsonGenerator, provider: SerializerProvider?) {
-        jgen.writeString(value.name)
+object ClipFactoryNameSerializer : KSerializer<ClipFactory<*>> {
+    override val descriptor = String.serializer().descriptor
+    override fun serialize(encoder: Encoder, value: ClipFactory<*>) { encoder.encodeString(value.name) }
+    override fun deserialize(decoder: Decoder): ClipFactory<*> {
+        val name = decoder.decodeString()
+        return ClipManager.instance.factories[name] ?: throw NoSuchFactoryException(name)
     }
 }

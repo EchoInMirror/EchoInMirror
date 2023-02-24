@@ -3,14 +3,14 @@ package com.eimsound.audioprocessor.impl
 import androidx.compose.runtime.mutableStateMapOf
 import com.eimsound.audioprocessor.*
 import com.eimsound.daw.utils.NoSuchFactoryException
-import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.ObjectMapper
+import com.eimsound.daw.utils.asString
+import com.eimsound.daw.utils.toJsonElement
+import io.github.oshai.KotlinLogging
+import kotlinx.serialization.json.JsonObject
 import java.io.File
 import java.util.*
 
-val AudioProcessorManager.nativeAudioPluginManager
-    get() = factories["NativeAudioPluginFactory"] as NativeAudioPluginFactory
-
+private val logger = KotlinLogging.logger {  }
 class AudioProcessorManagerImpl: AudioProcessorManager {
     override val factories = mutableStateMapOf<String, AudioProcessorFactory<*>>()
 
@@ -21,15 +21,21 @@ class AudioProcessorManagerImpl: AudioProcessorManager {
         ServiceLoader.load(AudioProcessorFactory::class.java).forEach { factories[it.name] = it }
     }
 
-    override suspend fun createAudioProcessor(factory: String, description: AudioProcessorDescription) =
-        factories[factory]?.createAudioProcessor(description) ?: throw NoSuchFactoryException(factory)
+    override suspend fun createAudioProcessor(factory: String, description: AudioProcessorDescription): AudioProcessor {
+        logger.info("Creating audio processor ${description.name} with factory $factory")
+        return factories[factory]?.createAudioProcessor(description) ?: throw NoSuchFactoryException(factory)
+    }
 
-    override suspend fun createAudioProcessor(path: String, id: String) =
-        createAudioProcessor(path, ObjectMapper().readTree(File(path, "$id.json")))
+    override suspend fun createAudioProcessor(path: String, id: String) = createAudioProcessor(path,
+        File("$path/$id.json").toJsonElement() as JsonObject)
 
-    override suspend fun createAudioProcessor(path: String, json: JsonNode): AudioProcessor {
-        val factory = json["factory"]?.asText()
+    override suspend fun createAudioProcessor(path: String, json: JsonObject): AudioProcessor {
+        val factory = json["factory"]?.asString()
+        logger.info("Creating audio processor ${json["id"]} in $path with factory $factory")
         return factories[factory]?.createAudioProcessor(path, json)
             ?: throw NoSuchFactoryException(factory ?: "Null")
     }
 }
+
+val AudioProcessorManager.nativeAudioPluginManager
+    get() = factories["NativeAudioPluginFactory"] as NativeAudioPluginFactory

@@ -3,7 +3,8 @@ package com.eimsound.audioprocessor.impl
 import androidx.compose.runtime.mutableStateMapOf
 import com.eimsound.audioprocessor.*
 import com.eimsound.daw.utils.NoSuchFactoryException
-import com.fasterxml.jackson.databind.JsonNode
+import com.eimsound.daw.utils.asString
+import kotlinx.serialization.json.JsonObject
 import java.nio.file.Path
 import java.util.*
 
@@ -20,17 +21,17 @@ class AudioSourceManagerImpl : AudioSourceManager {
         return factories[factory]?.createAudioSource(source) ?: throw NoSuchFactoryException(factory)
     }
 
-    override fun createAudioSource(json: JsonNode): AudioSource {
-        val list = arrayListOf<JsonNode>()
-        var node = json
-        while (node.has("source")) {
+    override fun createAudioSource(json: JsonObject): AudioSource {
+        val list = arrayListOf<JsonObject>()
+        var node: JsonObject? = json
+        while (node != null) {
             list.add(node)
-            node = node["source"]
+            node = node["source"] as? JsonObject
         }
         var source: AudioSource? = null
         for (i in list.lastIndex downTo 0) {
             node = list[i]
-            val factory = node["factory"].asText()
+            val factory = node["factory"]!!.asString()
             val f = factories[factory] ?: throw NoSuchFactoryException(factory)
             source = f.createAudioSource(source, node)
         }

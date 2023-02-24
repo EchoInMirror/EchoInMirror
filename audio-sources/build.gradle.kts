@@ -1,5 +1,6 @@
 plugins {
     kotlin("multiplatform")
+    kotlin("plugin.serialization") version "1.8.0"
 }
 
 repositories {
@@ -28,7 +29,6 @@ kotlin {
                 }
                 implementation("com.github.trilarion:vorbis-support:1.1.0")
                 implementation("org.jflac:jflac-codec:1.5.2")
-                implementation("com.fasterxml.jackson.module:jackson-module-kotlin:${extra["eim.dependencies.jackson"]}")
             }
         }
         named("jvmMain") {

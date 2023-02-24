@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -12,39 +13,51 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.util.fastForEach
 import com.eimsound.audioprocessor.CurrentPosition
 import com.eimsound.audioprocessor.convertPPQToSamples
 import com.eimsound.audioprocessor.convertSamplesToPPQ
 import com.eimsound.audioprocessor.data.DefaultEnvelopePointList
-import com.eimsound.audioprocessor.data.EnvelopePoint
 import com.eimsound.audioprocessor.data.midi.*
 import com.eimsound.daw.api.*
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.components.EnvelopeEditor
 import com.eimsound.daw.impl.clips.midi.editor.DefaultMidiClipEditor
 import com.eimsound.daw.utils.binarySearch
-import com.fasterxml.jackson.core.type.TypeReference
-import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import kotlinx.serialization.json.*
 
-data class MidiCCEventImpl(override val id: Int, override val points: DefaultEnvelopePointList) : MidiCCEvent
-object MidiCCEventImplTypeReference : TypeReference<MutableList<MidiCCEventImpl>>()
-
-class MidiClipImpl(json: JsonNode?, factory: ClipFactory<MidiClip>) : AbstractClip<MidiClip>(json, factory), MidiClip {
+class MidiClipImpl(json: JsonObject?, factory: ClipFactory<MidiClip>) : AbstractClip<MidiClip>(json, factory), MidiClip {
     override val notes = DefaultNoteMessageList()
-    override val events = mutableListOf<MidiCCEvent>(MidiCCEventImpl(1, DefaultEnvelopePointList().apply {
-        add(EnvelopePoint(0, 0F, 0.2F))
-        add(EnvelopePoint(600, 80F))
-    }))
+    override val events: MutableMidiCCEvents = mutableStateMapOf()
     override val isExpandable = true
+
     val ccPrevValues = ByteArray(128)
 
     init {
-        if (json != null) {
-            notes.addAll(json["notes"].traverse(jacksonObjectMapper()).readValueAs(NoteMessageListTypeReference))
-            events.addAll(json["events"].traverse(jacksonObjectMapper()).readValueAs(MidiCCEventImplTypeReference))
+        if (json != null) fromJson(json)
+    }
+
+    override fun toJson() = buildJsonObject {
+        put("id", id)
+        put("factory", factory.name)
+        put("notes", Json.encodeToJsonElement<List<NoteMessage>>(notes))
+        put("events", Json.encodeToJsonElement(events))
+    }
+
+    override fun fromJson(json: JsonElement) {
+        super.fromJson(json)
+        notes.clear()
+        events.clear()
+        json as JsonObject
+        json["notes"]?.let {
+            notes.addAll(Json.decodeFromJsonElement<List<NoteMessage>>(it))
             notes.update()
+        }
+        json["events"]?.let {
+            val e2: MutableMidiCCEvents = hashMapOf()
+            Json.decodeFromJsonElement<MidiCCEvents>(it).forEach { (id, points) ->
+                e2[id] = DefaultEnvelopePointList().apply { addAll(points) }
+            }
+            events.putAll(e2)
         }
     }
 
@@ -56,7 +69,7 @@ class MidiClipImpl(json: JsonNode?, factory: ClipFactory<MidiClip>) : AbstractCl
 class MidiClipFactoryImpl : MidiClipFactory {
     override val name = "MIDIClip"
     override fun createClip() = MidiClipImpl(null, this)
-    override fun createClip(path: String, json: JsonNode) = MidiClipImpl(json, this)
+    override fun createClip(path: String, json: JsonObject) = MidiClipImpl(json, this)
     override fun getEditor(clip: TrackClip<MidiClip>, track: Track) = DefaultMidiClipEditor(clip, track)
 
     override fun processBlock(clip: TrackClip<MidiClip>, buffers: Array<FloatArray>, position: CurrentPosition,
@@ -71,15 +84,15 @@ class MidiClipFactoryImpl : MidiClipFactory {
             val startPPQ = position.timeInPPQ - startTime
             clip.currentIndex = notes.binarySearch { it.time <= startPPQ }
         }
-        clip.clip.events.fastForEach {
-            if (it.id !in 0..127) return@fastForEach
+        clip.clip.events.forEach { (id, points) ->
+            if (id !in 0..127) return@forEach
             for (i in 0 until position.bufferSize step position.ppq) {
                 val ppq = position.convertSamplesToPPQ(timeInSamples + i) - startTime
-                val value = it.points.getValue(ppq).toInt()
+                val value = points.getValue(ppq).toInt()
                 val byteValue = value.toByte()
-                if (byteValue == c.ccPrevValues[it.id]) continue
-                c.ccPrevValues[it.id] = byteValue
-                midiBuffer.add(controllerEvent(0, it.id, value).rawData)
+                if (byteValue == c.ccPrevValues[id]) continue
+                c.ccPrevValues[id] = byteValue
+                midiBuffer.add(controllerEvent(0, id, value).rawData)
                 midiBuffer.add(i)
             }
         }
@@ -131,10 +144,10 @@ class MidiClipFactoryImpl : MidiClipFactory {
                     )
                 }
             }
-            clip.clip.events.fastForEach {
-                it.points.read()
-                remember(it.points) {
-                    EnvelopeEditor(it.points, 0..127)
+            clip.clip.events.forEach { (_, points) ->
+                points.read()
+                remember(points) {
+                    EnvelopeEditor(points, 0..127)
                 }.Editor(startPPQ, contentColor, noteWidth, false, clipStartTime = clip.start, style = Stroke(0.5F))
             }
         }

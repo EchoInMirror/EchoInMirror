@@ -1,10 +1,8 @@
 package com.eimsound.audioprocessor
 
-import com.fasterxml.jackson.annotation.JsonFormat
-import com.fasterxml.jackson.annotation.JsonIgnore
-import com.fasterxml.jackson.annotation.JsonInclude
+import com.eimsound.daw.utils.JsonSerializable
 import kotlinx.serialization.Serializable
-import java.util.*
+import kotlinx.serialization.Transient
 
 @Serializable
 data class NativeAudioPluginDescription(
@@ -15,39 +13,42 @@ data class NativeAudioPluginDescription(
     override val version: String,
     override val identifier: String,
     val fileOrIdentifier: String,
-    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     override val isInstrument: Boolean,
-    @JsonFormat(shape = JsonFormat.Shape.NUMBER)
     val lastFileModTime: Long,
-    @JsonFormat(shape = JsonFormat.Shape.NUMBER)
     val lastInfoUpdateTime: Long,
     val hasSharedContainer: Boolean,
-    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     val hasARAExtension: Boolean,
     val deprecatedUid: Int,
     val uniqueId: Int,
     override val descriptiveName: String?,
-    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     var isX86: Boolean = false
 ): AudioProcessorDescription {
+    @Transient
     override val isDeprecated = isX86 || pluginFormatName == "VST"
+    @Transient
     override val displayName = name + (if (pluginFormatName == "VST") " (VST2)" else "") + (if (isX86) " (32位)" else "")
 }
 
 class FailedToLoadAudioPluginException(message: String) : RuntimeException(message)
 
+/**
+ * @see com.eimsound.dsp.native.processors.NativeAudioPluginImpl
+ */
 interface NativeAudioPlugin: ProcessAudioProcessor {
     override val description: NativeAudioPluginDescription
 }
 
-interface NativeAudioPluginFactory: AudioProcessorFactory<NativeAudioPlugin> {
+/**
+ * @see com.eimsound.dsp.native.processors.NativeAudioPluginFactoryImpl
+ */
+interface NativeAudioPluginFactory: AudioProcessorFactory<NativeAudioPlugin>, JsonSerializable {
     override val descriptions: Set<NativeAudioPluginDescription>
     val scanPaths: MutableSet<String>
     val skipList: MutableSet<String>
-    @get:JsonIgnore
+    @Transient
     val pluginExtensions: Set<String>
-    @get:JsonIgnore
+    @Transient
     val pluginIsFile: Boolean
     suspend fun scan()
-    fun save()
+    suspend fun save()
 }

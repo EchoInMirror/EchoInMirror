@@ -1,18 +1,12 @@
 package com.eimsound.audioprocessor
 
-import com.eimsound.daw.utils.IDisplayName
-import com.eimsound.daw.utils.randomId
-import com.fasterxml.jackson.annotation.JsonIgnore
-import com.fasterxml.jackson.annotation.JsonInclude
-import com.fasterxml.jackson.annotation.JsonProperty
-import com.fasterxml.jackson.core.JsonGenerator
-import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.SerializerProvider
-import com.fasterxml.jackson.databind.ser.std.StdSerializer
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import java.io.File
+import com.eimsound.daw.utils.*
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Transient
+import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.json.*
 import java.util.*
 
 /**
@@ -27,9 +21,9 @@ interface AudioProcessorDescription : Comparable<AudioProcessorDescription>, IDi
     val isInstrument: Boolean
     val identifier: String
     val descriptiveName: String?
-    @get:JsonIgnore
+    @Transient
     val isDeprecated: Boolean?
-    @get:JsonIgnore
+    @Transient
     override val displayName: String
     override fun compareTo(other: AudioProcessorDescription) =
         if (other.isDeprecated != isDeprecated) {
@@ -46,14 +40,14 @@ interface SuddenChangeListener {
 }
 
 interface AudioProcessor: AutoCloseable, SuddenChangeListener {
-    @get:JsonProperty
     var name: String
+    @Transient
     val description: AudioProcessorDescription
+    @Transient
     val inputChannelsCount: Int
+    @Transient
     val outputChannelsCount: Int
-    @get:JsonProperty(access = JsonProperty.Access.READ_ONLY)
     val factory: AudioProcessorFactory<*>
-    @get:JsonProperty
     val id: String
     suspend fun processBlock(buffers: Array<FloatArray>, position: CurrentPosition, midiBuffer: ArrayList<Int>) { }
     fun prepareToPlay(sampleRate: Int, bufferSize: Int) { }
@@ -61,13 +55,13 @@ interface AudioProcessor: AutoCloseable, SuddenChangeListener {
     fun addListener(listener: AudioProcessorListener)
     fun removeListener(listener: AudioProcessorListener)
     suspend fun save(path: String)
-    suspend fun load(path: String, json: JsonNode)
+    suspend fun load(path: String, json: JsonObject)
 }
 
 abstract class AbstractAudioProcessor(
     description: AudioProcessorDescription,
     override val factory: AudioProcessorFactory<*>
-): AudioProcessor {
+): AudioProcessor, JsonSerializable {
     override val inputChannelsCount = 2
     override val outputChannelsCount = 2
     override var id = randomId()
@@ -78,21 +72,23 @@ abstract class AbstractAudioProcessor(
     private val _listeners = WeakHashMap<AudioProcessorListener, Unit>()
     protected val listeners: Set<AudioProcessorListener> get() = _listeners.keys
 
-    override suspend fun save(path: String) {
-        withContext(Dispatchers.IO) {
-            ObjectMapper().writerWithDefaultPrettyPrinter().writeValue(File("$path.json"), mapOf(
-                "factory" to factory.name,
-                "name" to name,
-                "id" to id,
-                "identifier" to description.name
-            ))
-        }
+    @Suppress("MemberVisibilityCanBePrivate")
+    protected fun JsonObjectBuilder.buildBaseJson() {
+        put("factory", factory.name)
+        put("name", name)
+        put("id", id)
+        put("identifier", description.name)
+    }
+    override fun toJson() = buildJsonObject { buildBaseJson() }
+
+    override fun fromJson(json: JsonElement) {
+        json as JsonObject
+        name = json["name"]?.asString() ?: ""
+        json["id"]?.asString()?.let { if (it.isNotEmpty()) id = it }
     }
 
-    override suspend fun load(path: String, json: JsonNode) {
-        name = json["name"]?.asText() ?: ""
-        json["id"]?.asText()?.let { if (it.isNotEmpty()) id = it }
-    }
+    override suspend fun save(path: String) { }
+    override suspend fun load(path: String, json: JsonObject) { fromJson(json) }
 
     override fun addListener(listener: AudioProcessorListener) { _listeners[listener] = Unit }
     override fun removeListener(listener: AudioProcessorListener) { _listeners.remove(listener) }
@@ -101,7 +97,6 @@ abstract class AbstractAudioProcessor(
     override fun onSuddenChange() { }
 }
 
-@JsonInclude(JsonInclude.Include.NON_NULL)
 open class DefaultAudioProcessorDescription(
     override val name: String,
     override val identifier: String,
@@ -115,16 +110,23 @@ open class DefaultAudioProcessorDescription(
     override val displayName get() = name
 }
 
-class AudioProcessorIDSerializer @JvmOverloads constructor(t: Class<AudioProcessor>? = null) : StdSerializer<AudioProcessor>(t) {
-    override fun serialize(value: AudioProcessor, jgen: JsonGenerator, provider: SerializerProvider?) {
-        jgen.writeString(value.id)
-    }
+// kotlin AudioProcessorIDSerializer
+object AudioProcessorIDSerializer : KSerializer<AudioProcessor> {
+    override val descriptor = String.serializer().descriptor
+    override fun serialize(encoder: Encoder, value: AudioProcessor) { encoder.encodeString(value.id) }
+    override fun deserialize(decoder: Decoder) = throw UnsupportedOperationException()
 }
-class AudioProcessorCollectionIDSerializer @JvmOverloads constructor(t: Class<Collection<AudioProcessor>>? = null) :
-    StdSerializer<Collection<AudioProcessor>>(t) {
-    override fun serialize(value: Collection<AudioProcessor>, jgen: JsonGenerator, provider: SerializerProvider?) {
-        jgen.writeStartArray()
-        value.forEach { jgen.writeString(it.id) }
-        jgen.writeEndArray()
-    }
-}
+
+//class AudioProcessorIDSerializer @JvmOverloads constructor(t: Class<AudioProcessor>? = null) : StdSerializer<AudioProcessor>(t) {
+//    override fun serialize(value: AudioProcessor, jgen: JsonGenerator, provider: SerializerProvider?) {
+//        jgen.writeString(value.id)
+//    }
+//}
+//class AudioProcessorCollectionIDSerializer @JvmOverloads constructor(t: Class<Collection<AudioProcessor>>? = null) :
+//    StdSerializer<Collection<AudioProcessor>>(t) {
+//    override fun serialize(value: Collection<AudioProcessor>, jgen: JsonGenerator, provider: SerializerProvider?) {
+//        jgen.writeStartArray()
+//        value.forEach { jgen.writeString(it.id) }
+//        jgen.writeEndArray()
+//    }
+//}

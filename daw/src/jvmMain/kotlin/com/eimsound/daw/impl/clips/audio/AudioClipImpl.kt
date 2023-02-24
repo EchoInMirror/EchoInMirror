@@ -10,14 +10,17 @@ import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.api.*
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.components.Waveform
-import com.fasterxml.jackson.databind.JsonNode
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import java.nio.file.Path
 import kotlin.io.path.name
 
-class AudioClipImpl(json: JsonNode?, factory: ClipFactory<AudioClip>, target: AudioSource? = null):
+class AudioClipImpl(json: JsonObject?, factory: ClipFactory<AudioClip>, target: AudioSource? = null):
     AbstractClip<AudioClip>(json, factory), AudioClip {
     override var target: AudioSource = target ?:
-    AudioSourceManager.instance.createAudioSource(json?.get("target") ?: throw IllegalStateException("No target"))
+    AudioSourceManager.instance.createAudioSource(json?.get("target") as? JsonObject ?: throw IllegalStateException("No target"))
         set(value) {
             if (field == value) return
             close()
@@ -31,15 +34,27 @@ class AudioClipImpl(json: JsonNode?, factory: ClipFactory<AudioClip>, target: Au
     }
     override val defaultDuration get() = EchoInMirror.currentPosition.convertSamplesToPPQ(audioSource.length)
     override val maxDuration get() = defaultDuration
+    override fun toJson() = buildJsonObject {
+        put("id", id)
+        put("factory", factory.name)
+        put("target", target.toJson())
+    }
+
+    override fun fromJson(json: JsonElement) {
+        super.fromJson(json)
+        json as JsonObject
+        json["target"]?.let { target = AudioSourceManager.instance.createAudioSource(it as JsonObject) }
+    }
+
     override var thumbnail by mutableStateOf(AudioThumbnail(this.audioSource))
-    override val name: String?
+    override val name: String
         get() {
             var source: AudioSource? = target
             while (source != null) {
                 if (source is FileAudioSource) return source.file.name
                 source = source.source
             }
-            return null
+            return ""
         }
 
     override fun close() { target.close() }
@@ -51,7 +66,7 @@ class AudioClipFactoryImpl: AudioClipFactory {
         AudioSourceManager.instance.createAudioSource(path))
 
     override fun createClip() = AudioClipImpl(null, this)
-    override fun createClip(path: String, json: JsonNode) = AudioClipImpl(json, this)
+    override fun createClip(path: String, json: JsonObject) = AudioClipImpl(json, this)
     override fun getEditor(clip: TrackClip<AudioClip>, track: Track): ClipEditor? = null
 
     override fun processBlock(clip: TrackClip<AudioClip>, buffers: Array<FloatArray>, position: CurrentPosition,

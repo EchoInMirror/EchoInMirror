@@ -1,32 +1,27 @@
 package com.eimsound.audioprocessor
 
+import com.eimsound.daw.utils.JsonSerializable
+import com.eimsound.daw.utils.NoSuchFactoryException
 import com.eimsound.daw.utils.Reloadable
-import com.fasterxml.jackson.annotation.JsonAutoDetect
-import com.fasterxml.jackson.annotation.JsonInclude
-import com.fasterxml.jackson.annotation.JsonProperty
-import com.fasterxml.jackson.core.JsonGenerator
-import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.SerializerProvider
-import com.fasterxml.jackson.databind.annotation.JsonSerialize
-import com.fasterxml.jackson.databind.ser.std.StdSerializer
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
+import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.json.JsonObject
 import java.nio.file.Path
 import java.util.*
 
-@JsonAutoDetect(
-    fieldVisibility = JsonAutoDetect.Visibility.NONE,
-    setterVisibility = JsonAutoDetect.Visibility.NONE,
-    getterVisibility = JsonAutoDetect.Visibility.NONE,
-    isGetterVisibility = JsonAutoDetect.Visibility.NONE,
-    creatorVisibility = JsonAutoDetect.Visibility.NONE
-)
-interface AudioSource {
-    @get:JsonInclude(JsonInclude.Include.NON_NULL)
-    @get:JsonProperty(access = JsonProperty.Access.READ_ONLY)
+interface AudioSource : JsonSerializable {
     val source: AudioSource?
+    @Transient
     val sampleRate: Float
+    @Transient
     val channels: Int
+    @Transient
     val length: Long // timeInSamples
-    @get:JsonProperty(access = JsonProperty.Access.READ_ONLY)
     val factory: AudioSourceFactory<*>
     fun getSamples(start: Long, buffers: Array<FloatArray>): Int
 }
@@ -35,8 +30,8 @@ interface AudioSource {
  * @see com.eimsound.audiosources.DefaultFileAudioSource
  */
 interface FileAudioSource : AudioSource, AutoCloseable {
-    @get:JsonProperty
     val file: Path
+    @Transient
     val isRandomAccessible: Boolean
     override val factory: FileAudioSourceFactory<*>
 }
@@ -45,6 +40,7 @@ interface FileAudioSource : AudioSource, AutoCloseable {
  * @see com.eimsound.audiosources.DefaultResampledAudioSource
  */
 interface ResampledAudioSource : AudioSource {
+    @Transient
     var factor: Double
     override val factory: ResampledAudioSourceFactory<*>
 }
@@ -54,10 +50,10 @@ interface ResampledAudioSource : AudioSource {
  */
 interface MemoryAudioSource : AudioSource, AutoCloseable
 
-@JsonSerialize(using = AudioSourceFactoryNameSerializer::class)
+@Serializable(with = AudioSourceFactoryNameSerializer::class)
 interface AudioSourceFactory <T: AudioSource> {
     val name: String
-    fun createAudioSource(source: AudioSource? = null, json: JsonNode? = null): T
+    fun createAudioSource(source: AudioSource? = null, json: JsonObject? = null): T
 }
 
 /**
@@ -88,18 +84,20 @@ interface AudioSourceManager : Reloadable {
     val factories: Map<String, AudioSourceFactory<*>>
     val supportedFormats: Set<String>
     fun createAudioSource(factory: String, source: AudioSource? = null): AudioSource
-    fun createAudioSource(json: JsonNode): AudioSource
+    fun createAudioSource(json: JsonObject): AudioSource
     fun createAudioSource(file: Path, factory: String? = null): FileAudioSource
     fun createAutoWrappedAudioSource(file: Path): AudioSource
     fun createMemorySource(source: AudioSource, factory: String? = null): MemoryAudioSource
     fun createResampledSource(source: AudioSource, factory: String? = null): ResampledAudioSource
 }
 
-class AudioSourceFactoryNameSerializer @JvmOverloads constructor(t: Class<AudioSourceFactory<*>>? = null) :
-    StdSerializer<AudioSourceFactory<*>>(t) {
-    override fun serialize(value: AudioSourceFactory<*>, jgen: JsonGenerator, provider: SerializerProvider?) {
-        jgen.writeString(value.name)
+object AudioSourceFactoryNameSerializer : KSerializer<AudioSourceFactory<*>> {
+    override val descriptor: SerialDescriptor = String.serializer().descriptor
+    override fun deserialize(decoder: Decoder): AudioSourceFactory<*> {
+        val name = decoder.decodeString()
+        return AudioSourceManager.instance.factories[name] ?: throw NoSuchFactoryException(name)
     }
+    override fun serialize(encoder: Encoder, value: AudioSourceFactory<*>) { encoder.encodeString(value.name) }
 }
 
 fun AudioSource.close() {

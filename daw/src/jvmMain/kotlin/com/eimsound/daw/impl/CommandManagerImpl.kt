@@ -14,16 +14,19 @@ import com.eimsound.daw.ROOT_PATH
 import com.eimsound.daw.api.*
 import com.eimsound.daw.api.processor.TrackManager
 import com.eimsound.daw.commands.*
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
+import com.eimsound.daw.utils.*
 import kotlinx.coroutines.*
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.encodeToStream
+import java.nio.file.Paths
 import kotlin.io.path.exists
 
 @OptIn(ExperimentalComposeUiApi::class)
 class CommandManagerImpl : CommandManager {
     override val commands = mutableMapOf<String, Command>()
     val commandsMap = mutableMapOf<String, Command>()
-    var customCommands = mutableMapOf<String, String>()
+    val customCommands = mutableMapOf<String, String>()
     private val customShortcutKeyPath = ROOT_PATH.resolve("shortcutKey.json")
     private val commandHandlers = mutableMapOf<Command, MutableSet<() -> Unit>>()
 
@@ -57,8 +60,8 @@ class CommandManagerImpl : CommandManager {
                     val desc = factory.descriptions.find { it.name == "KarplusStrongSynthesizer" }!!
                     subTrack1.preProcessorsChain.add(factory.createAudioProcessor(desc))
                     val time = EchoInMirror.currentPosition.oneBarPPQ
-//                    val clip1 = ClipManager.instance.defaultAudioClipFactory.createClip(Paths.get("C:\\Python311\\op.wav"))
-//                    subTrack2.clips.add(ClipManager.instance.createTrackClip(clip1))
+                    val clip1 = ClipManager.instance.defaultAudioClipFactory.createClip(Paths.get("C:\\Python311\\op.wav"))
+                    subTrack2.clips.add(ClipManager.instance.createTrackClip(clip1))
                     val clip2 = ClipManager.instance.defaultMidiClipFactory.createClip()
                     subTrack1.clips.add(ClipManager.instance.createTrackClip(clip2, time, time))
                     if (IS_DEBUG) {
@@ -98,12 +101,13 @@ class CommandManagerImpl : CommandManager {
         })
 
         if (customShortcutKeyPath.exists()) {
-            customCommands = ObjectMapper().readValue(customShortcutKeyPath.toFile())
+            customCommands.putAll(customShortcutKeyPath.toFile().toJson<Map<String, String>>())
         }
     }
 
+    @OptIn(ExperimentalSerializationApi::class)
     fun saveCustomShortcutKeys() {
-        ObjectMapper().writerWithDefaultPrettyPrinter().writeValue(customShortcutKeyPath.toFile(), customCommands)
+        Json.encodeToStream(customCommands, customShortcutKeyPath.toFile().outputStream())
     }
 
     override fun registerCommand(command: Command) {

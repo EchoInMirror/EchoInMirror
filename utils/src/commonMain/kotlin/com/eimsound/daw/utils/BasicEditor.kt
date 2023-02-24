@@ -14,6 +14,7 @@ interface BasicEditor {
 }
 
 interface SerializableEditor : BasicEditor {
+    fun canPasteFromString(value: String) = true
     fun copyAsString(): String
     fun pasteFromString(value: String)
 }

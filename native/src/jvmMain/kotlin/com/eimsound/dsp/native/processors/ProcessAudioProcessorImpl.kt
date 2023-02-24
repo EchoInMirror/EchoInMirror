@@ -5,16 +5,17 @@ import com.eimsound.audioprocessor.*
 import com.eimsound.daw.utils.ByteBufInputStream
 import com.eimsound.daw.utils.ByteBufOutputStream
 import com.eimsound.dsp.native.IS_SHM_SUPPORTED
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import java.lang.foreign.ValueLayout
 import java.util.*
 import kotlin.collections.ArrayList
 
-val ProcessAudioProcessorDescription = DefaultAudioProcessorDescription("ProcessAudioProcessor",
-    "ProcessAudioProcessor", null, "EIMSound", "0.0.0", true)
+//val ProcessAudioProcessorDescription = DefaultAudioProcessorDescription("ProcessAudioProcessor",
+//    "ProcessAudioProcessor", null, "EIMSound", "0.0.0", true)
 
 @Suppress("MemberVisibilityCanBePrivate")
 open class ProcessAudioProcessorImpl(
@@ -123,7 +124,7 @@ open class ProcessAudioProcessorImpl(
         output.flush()
     }
 
-    override suspend fun launch(execFile: String, vararg commands: String): Boolean {
+    override suspend fun launch(execFile: String, preset: String?, vararg commands: String): Boolean {
         if (isLaunched) return true
         return withContext(Dispatchers.IO) {
             val args = ArrayList<String>()
@@ -137,7 +138,8 @@ open class ProcessAudioProcessorImpl(
                 args.add(shmName)
             }
             args.addAll(commands)
-            val pb = ProcessBuilder(execFile, "-L", "#", *args.toTypedArray())
+            val pb = if (preset == null) ProcessBuilder(execFile, "-L", "#", *args.toTypedArray())
+            else ProcessBuilder(execFile, "-L", "#", "-P", "#", *args.toTypedArray())
 
             pb.redirectOutput(ProcessBuilder.Redirect.INHERIT)
             val p = pb.start()
@@ -148,7 +150,8 @@ open class ProcessAudioProcessorImpl(
             val input = ByteBufInputStream(isBigEndian, p.errorStream)
             val output = ByteBufOutputStream(isBigEndian, p.outputStream)
 
-            output.writeString(jacksonObjectMapper().writeValueAsString(description))
+            output.writeString(Json.encodeToString(description))
+            if (preset != null) output.writeString(preset)
             output.flush()
 
             val id = input.read()

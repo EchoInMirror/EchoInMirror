@@ -30,9 +30,9 @@ import com.eimsound.daw.components.utils.EditAction
 import com.eimsound.daw.components.utils.Stroke1PX
 import com.eimsound.daw.components.utils.Stroke2PX
 import com.eimsound.daw.utils.*
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
 import kotlinx.coroutines.launch
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
 import kotlin.math.*
 
 @Suppress("PrivatePropertyName")
@@ -163,13 +163,13 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange, pr
         selectedPoints.clear()
         selectedPoints.addAll(result)
     }
-    override fun copyAsString(): String = if (selectedPoints.isEmpty()) "" else jacksonObjectMapper().writeValueAsString(
+    override fun copyAsString() = if (selectedPoints.isEmpty()) "" else JsonIgnoreDefaults.encodeToString(
         SerializableEnvelopePointList(copyAsObject()))
 
     override fun pasteFromString(value: String) {
         try {
             val result = eventHandler?.onPastePoints(this,
-                jacksonObjectMapper().readValue<SerializableEnvelopePointList>(value).points) ?: return
+                JsonIgnoreDefaults.decodeFromString<SerializableEnvelopePointList>(value).points) ?: return
             selectedPoints.clear()
             selectedPoints.addAll(result)
         } catch (ignored: Throwable) { }

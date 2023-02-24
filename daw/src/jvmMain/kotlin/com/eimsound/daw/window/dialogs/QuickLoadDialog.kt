@@ -26,34 +26,39 @@ import com.eimsound.daw.components.*
 import com.eimsound.daw.components.utils.warning
 import com.eimsound.daw.utils.IDisplayName
 import com.eimsound.daw.utils.mutableStateSetOf
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
+import com.eimsound.daw.utils.toJson
 import kotlinx.coroutines.*
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.encodeToStream
 import java.nio.file.Files
+import kotlin.io.path.outputStream
 
 private val TOP_TEXTFIELD_HEIGHT = 60.dp
 private val BOTTOM_TEXTFIELD_HEIGHT = 60.dp
 private val SUB_PADDING = 5.dp
 private val KEY = Any()
 
-var searchText by mutableStateOf("")
-var selectedFactory by mutableStateOf<Any?>(null)
-var selectedManufacturer by mutableStateOf<String?>(null)
-var selectedCategory by mutableStateOf<String?>(null)
-var selectedInstrument by mutableStateOf<Boolean?>(null)
-val favoriteAudioProcessors = mutableStateSetOf<Pair<String, String>>()
+private var searchText by mutableStateOf("")
+private var selectedFactory by mutableStateOf<Any?>(null)
+private var selectedManufacturer by mutableStateOf<String?>(null)
+private var selectedCategory by mutableStateOf<String?>(null)
+private var selectedInstrument by mutableStateOf<Boolean?>(null)
+private val favoriteAudioProcessors = mutableStateSetOf<Pair<String, String>>()
+private var favoriteAudioProcessorsLoaded = false
 
 private const val FAVORITE_TITLE = "已收藏"
 
 @OptIn(DelicateCoroutinesApi::class)
-fun loadFavoriteAudioProcessors() {
+private fun loadFavoriteAudioProcessors() {
+    if (favoriteAudioProcessorsLoaded) return
+    favoriteAudioProcessorsLoaded = true
     GlobalScope.launch {
         withContext(Dispatchers.IO) {
             try {
                 if (Files.exists(FAVORITE_AUDIO_PROCESSORS_PATH)) {
-                    val data = jacksonObjectMapper().readValue<List<Pair<String, String>>>(FAVORITE_AUDIO_PROCESSORS_PATH.toFile())
-                    favoriteAudioProcessors.clear()
-                    favoriteAudioProcessors.addAll(data)
+                    favoriteAudioProcessors.addAll(FAVORITE_AUDIO_PROCESSORS_PATH.toFile()
+                        .toJson<List<Pair<String, String>>>())
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -63,12 +68,12 @@ fun loadFavoriteAudioProcessors() {
     }
 }
 
-@OptIn(DelicateCoroutinesApi::class)
-fun saveFavoriteAudioProcessors() {
+@OptIn(DelicateCoroutinesApi::class, ExperimentalSerializationApi::class)
+private fun saveFavoriteAudioProcessors() {
     GlobalScope.launch {
         withContext(Dispatchers.IO) {
             try {
-                jacksonObjectMapper().writeValue(FAVORITE_AUDIO_PROCESSORS_PATH.toFile(), favoriteAudioProcessors.toList())
+                Json.encodeToStream(favoriteAudioProcessors.toList(), FAVORITE_AUDIO_PROCESSORS_PATH.outputStream())
             } catch (e: Exception) {
                 e.printStackTrace()
             }
