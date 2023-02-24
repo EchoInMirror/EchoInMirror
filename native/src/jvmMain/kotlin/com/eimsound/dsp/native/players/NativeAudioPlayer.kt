@@ -18,9 +18,8 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.EOFException
 import java.io.IOException
-import java.lang.foreign.ValueLayout
+import java.nio.ByteBuffer
 import java.util.*
-import kotlin.collections.ArrayList
 
 class NativeAudioPlayer(
     factory: NativeAudioPlayerFactory,
@@ -40,6 +39,7 @@ class NativeAudioPlayer(
     private var channels = 2
     private var hasControls = false
     private var sharedMemory: SharedMemory? = null
+    private var byteBuffer: ByteBuffer? = null
     private lateinit var buffers: Array<FloatArray>
     override var inputLatency = 0
     override var outputLatency = 0
@@ -50,7 +50,9 @@ class NativeAudioPlayer(
     init {
         try {
             if (enabledSharedMemory && IS_SHM_SUPPORTED) try {
-                sharedMemory = SharedMemory.create("EIM-NativePlayer-${UUID.randomUUID()}", currentPosition.bufferSize * channels * 4)
+                sharedMemory = SharedMemory.create("EIM-NativePlayer-${UUID.randomUUID()}",
+                    currentPosition.bufferSize * channels * 4)
+                byteBuffer = sharedMemory!!.toByteBuffer()
             } catch (ignored: Throwable) { }
             val pb = ProcessBuilder(arrayListOf(execFile).apply {
                 addAll(commands)
@@ -108,6 +110,7 @@ class NativeAudioPlayer(
             thread = null
         }
         if (sharedMemory != null) {
+            byteBuffer = null
             sharedMemory!!.close()
             sharedMemory = null
         }
@@ -155,16 +158,16 @@ class NativeAudioPlayer(
                             0 -> {
                                 outputStream.write(0)
                                 outputStream.write(channels)
-                                if (sharedMemory == null) {
-                                    for (j in 0 until channels)
-                                        for (i in 0 until bufferSize) outputStream.writeFloat(buffers[j][i])
-                                } else {
-                                    val ms = sharedMemory!!.memorySegment
-                                    for (j in 0 until channels) {
-                                        val pos = j * bufferSize.toLong()
-                                        for (i in 0 until bufferSize)
-                                            ms.setAtIndex(ValueLayout.JAVA_FLOAT, pos + i, buffers[j][i])
+                                val bf = byteBuffer
+                                if (bf == null) {
+                                    repeat(channels) { i ->
+                                        repeat(bufferSize) { j -> outputStream.writeFloat(buffers[i][j]) }
                                     }
+                                } else {
+                                    repeat(channels) { i ->
+                                        repeat(bufferSize) { j -> outputStream.writeFloat(buffers[i][j]) }
+                                    }
+                                    bf.rewind()
                                 }
                                 outputStream.flush()
                             }
@@ -200,6 +203,7 @@ class NativeAudioPlayer(
             if (it.size != newSize) {
                 it.close()
                 sharedMemory = SharedMemory.create(it.name, newSize)
+                byteBuffer = sharedMemory!!.toByteBuffer()
                 outBufferSize = newSize
             }
         }

@@ -10,9 +10,8 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import java.lang.foreign.ValueLayout
+import java.nio.ByteBuffer
 import java.util.*
-import kotlin.collections.ArrayList
 
 //val ProcessAudioProcessorDescription = DefaultAudioProcessorDescription("ProcessAudioProcessor",
 //    "ProcessAudioProcessor", null, "EIMSound", "0.0.0", true)
@@ -34,6 +33,7 @@ open class ProcessAudioProcessorImpl(
     private var process: Process? = null
     private var prepared = false
     private var sharedMemory: SharedMemory? = null
+    private var byteBuffer: ByteBuffer? = null
     private val shmName = if (enabledSharedMemory) "EIM-NativePlayer-${UUID.randomUUID()}" else ""
     protected var inputStream: ByteBufInputStream? = null
     protected var outputStream: ByteBufOutputStream? = null
@@ -54,12 +54,16 @@ open class ProcessAudioProcessorImpl(
             output.write(inputChannels)
             output.write(outputChannels)
             output.writeShort((midiBuffer.size / 2).toShort())
-            val ms = sharedMemory?.memorySegment
-            if (ms == null) for (i in 0 until inputChannels)
-                for (j in 0 until bufferSize) output.writeFloat(buffers[i][j])
-            else for (i in 0 until inputChannels) {
-                val pos = i * bufferSize.toLong()
-                for (j in 0 until bufferSize) ms.setAtIndex(ValueLayout.JAVA_FLOAT, pos + j, buffers[i][j])
+            val bf = byteBuffer
+            if (bf == null) {
+                repeat(inputChannels) { i ->
+                    repeat(bufferSize) { j -> output.writeFloat(buffers[i][j]) }
+                }
+            } else {
+                repeat(inputChannels) { i ->
+                    repeat(bufferSize) { j -> bf.putFloat(buffers[i][j]) }
+                }
+                bf.rewind()
             }
             for (i in 0 until midiBuffer.size step 2) {
                 output.writeInt(midiBuffer[i])
@@ -73,11 +77,15 @@ open class ProcessAudioProcessorImpl(
                 val id = input.read()
                 handleInput(id)
             } while (id != 1)
-            if (ms == null) for (i in 0 until outputChannels)
-                for (j in 0 until bufferSize) buffers[i][j] = input.readFloat()
-            else for (i in 0 until outputChannels) {
-                val pos = i * bufferSize.toLong()
-                for (j in 0 until bufferSize) buffers[i][j] = ms.getAtIndex(ValueLayout.JAVA_FLOAT, pos + j)
+            if (bf == null) {
+                repeat(outputChannels) { i ->
+                    repeat(bufferSize) { j -> buffers[i][j] = input.readFloat() }
+                }
+            } else {
+                repeat(outputChannels) { i ->
+                    repeat(bufferSize) { j -> buffers[i][j] = bf.float }
+                }
+                bf.rewind()
             }
         }
     }
@@ -109,9 +117,11 @@ open class ProcessAudioProcessorImpl(
                     it.close()
                     try {
                         sharedMemory = SharedMemory.create(shmName, size)
+                        byteBuffer = sharedMemory!!.toByteBuffer()
                         newSize = size
                     } catch (ignored: Throwable) {
                         sharedMemory = null
+                        byteBuffer = null
                     }
                 }
             }
@@ -187,6 +197,7 @@ open class ProcessAudioProcessorImpl(
 
     override fun close() {
         if (sharedMemory != null) {
+            byteBuffer = null
             sharedMemory!!.close()
             sharedMemory = null
         }
