@@ -8,7 +8,6 @@ import kotlinx.serialization.Transient
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.put
 import java.nio.file.Path
 import kotlin.io.path.name
 
@@ -51,10 +50,10 @@ class DefaultProjectInformation(override val root: Path): ProjectInformation, Js
     override fun save() { encodeJsonFile(jsonFile, true) }
 
     override fun toJson() = buildJsonObject {
-        put("name", name)
-        put("author", author)
-        put("description", description)
-        put("timeCost", timeCost)
+        putNotDefault("name", name)
+        putNotDefault("author", author)
+        putNotDefault("description", description)
+        putNotDefault("timeCost", timeCost)
     }
 
     override fun fromJson(json: JsonElement) {

@@ -23,6 +23,7 @@ import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.components.EnvelopeEditor
 import com.eimsound.daw.impl.clips.midi.editor.DefaultMidiClipEditor
 import com.eimsound.daw.utils.binarySearch
+import com.eimsound.daw.utils.putNotDefault
 import kotlinx.serialization.json.*
 
 class MidiClipImpl(json: JsonObject?, factory: ClipFactory<MidiClip>) : AbstractClip<MidiClip>(json, factory), MidiClip {
@@ -39,8 +40,8 @@ class MidiClipImpl(json: JsonObject?, factory: ClipFactory<MidiClip>) : Abstract
     override fun toJson() = buildJsonObject {
         put("id", id)
         put("factory", factory.name)
-        put("notes", Json.encodeToJsonElement<List<NoteMessage>>(notes))
-        put("events", Json.encodeToJsonElement(events))
+        putNotDefault("notes", Json.encodeToJsonElement<List<NoteMessage>>(notes))
+        putNotDefault("events", Json.encodeToJsonElement(events))
     }
 
     override fun fromJson(json: JsonElement) {

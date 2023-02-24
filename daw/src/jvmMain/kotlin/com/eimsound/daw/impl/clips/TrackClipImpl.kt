@@ -7,11 +7,11 @@ import com.eimsound.daw.api.Clip
 import com.eimsound.daw.api.TrackClip
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.utils.asInt
+import com.eimsound.daw.utils.putNotDefault
 import io.github.oshai.KotlinLogging
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.put
 
 private val logger = KotlinLogging.logger {  }
 class TrackClipImpl <T: Clip> (override val clip: T, time: Int = 0, duration: Int = 0, start: Int = 0,
@@ -33,9 +33,9 @@ class TrackClipImpl <T: Clip> (override val clip: T, time: Int = 0, duration: In
     }
 
     override fun toJson() = buildJsonObject {
-        put("time", time)
-        put("duration", duration)
-        put("start", start)
+        putNotDefault("time", time)
+        putNotDefault("duration", duration)
+        putNotDefault("start", start)
         put("clip", clip.toJson())
     }
 

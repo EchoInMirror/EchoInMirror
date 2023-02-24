@@ -1,4 +1,4 @@
-@file:Suppress("NOTHING_TO_INLINE")
+@file:Suppress("NOTHING_TO_INLINE", "unused")
 
 package com.eimsound.daw.utils
 
@@ -12,6 +12,10 @@ import java.io.OutputStream
 
 inline fun JsonElement.asString() = jsonPrimitive.content
 inline fun JsonElement.asInt() = jsonPrimitive.int
+inline fun JsonElement.asLong() = jsonPrimitive.long
+inline fun JsonElement.asDouble() = jsonPrimitive.double
+inline fun JsonElement.asBoolean() = jsonPrimitive.boolean
+inline fun JsonElement.asFloat() = jsonPrimitive.float
 val JsonIgnoreDefaults = Json { ignoreUnknownKeys = true; encodeDefaults = false }
 @OptIn(ExperimentalSerializationApi::class)
 val JsonPrettier = Json { ignoreUnknownKeys = true; encodeDefaults = false; prettyPrint = true; prettyPrintIndent = "  " }
@@ -51,3 +55,29 @@ fun File.toJsonElement() = Json.parseToJsonElement(inputStream().use { it.reader
 inline fun <reified T> File.toJson() = Json.decodeFromStream<T>(inputStream())
 @OptIn(ExperimentalSerializationApi::class)
 fun JsonElement.encodeToFile(file: File) = file.outputStream().use { Json.encodeToStream(this, it) }
+
+inline fun JsonObjectBuilder.put(key: String, value: Collection<String>) { put(key, JsonArray(value.map { JsonPrimitive(it) })) }
+@JvmName("putNotDefaultStringList")
+inline fun JsonObjectBuilder.putNotDefault(key: String, value: Collection<String>?) {
+    if (!value.isNullOrEmpty()) put(key, JsonArray(value.map { JsonPrimitive(it) }))
+}
+inline fun JsonObjectBuilder.putNotDefault(key: String, value: List<JsonElement>?) {
+    if (!value.isNullOrEmpty()) put(key, JsonArray(value))
+}
+inline fun JsonObjectBuilder.putNotDefault(key: String, value: Collection<JsonSerializable>?) {
+    if (!value.isNullOrEmpty()) put(key, JsonArray(value.map(JsonSerializable::toJson)))
+}
+inline fun JsonObjectBuilder.putNotDefault(key: String, value: JsonElement?) {
+    if (value == null || (value is JsonArray && value.isEmpty()) || (value is JsonObject && value.isEmpty())) return
+    put(key, value)
+}
+inline fun JsonObjectBuilder.putNotDefault(key: String, value: String?) { if (!value.isNullOrEmpty()) put(key, value) }
+inline fun JsonObjectBuilder.putNotDefault(key: String, value: Int?, defaultValue: Int = 0) {
+    if (value != null && value != defaultValue) put(key, value)
+}
+inline fun JsonObjectBuilder.putNotDefault(key: String, value: Boolean?) { if (value != null && value) put(key, value) }
+inline fun JsonObjectBuilder.putNotDefault(key: String, value: Double?) { if (value != null && value != 0.0) put(key, value) }
+inline fun JsonObjectBuilder.putNotDefault(key: String, value: Float?, defaultValue: Float = 0F) {
+    if (value != null && value != defaultValue) put(key, value)
+}
+inline fun JsonObjectBuilder.putNotDefault(key: String, value: Long?) { if (value != null && value != 0L) put(key, value) }

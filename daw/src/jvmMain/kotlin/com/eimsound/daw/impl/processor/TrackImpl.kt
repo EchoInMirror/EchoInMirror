@@ -223,18 +223,18 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
     protected fun JsonObjectBuilder.buildJson() {
         put("factory", factory.name)
         put("id", id)
-        put("name", name)
+        putNotDefault("name", name)
         put("color", color.value.toLong())
-        put("pan", pan)
-        put("volume", volume)
-        put("height", height)
-        put("isMute", isMute)
-        put("isSolo", isSolo)
-        put("isDisabled", isDisabled)
-        put("subTracks", Json.encodeToJsonElement(subTracks.map { it.id }))
-        put("preProcessorsChain", JsonArray(preProcessorsChain.map { if (it is JsonSerializable) it.toJson() else JsonPrimitive(it.id) }))
-        put("postProcessorsChain", JsonArray(postProcessorsChain.map { if (it is JsonSerializable) it.toJson() else JsonPrimitive(it.id) }))
-        put("clips", JsonArray(clips.map { it.toJson() }))
+        putNotDefault("pan", pan)
+        putNotDefault("volume", volume, 1F)
+        putNotDefault("height", height)
+        putNotDefault("isMute", isMute)
+        putNotDefault("isSolo", isSolo)
+        putNotDefault("isDisabled", isDisabled)
+        putNotDefault("subTracks", subTracks.map { it.id })
+        putNotDefault("preProcessorsChain", preProcessorsChain.map { if (it is JsonSerializable) it.toJson() else JsonPrimitive(it.id) })
+        putNotDefault("postProcessorsChain", postProcessorsChain.map { if (it is JsonSerializable) it.toJson() else JsonPrimitive(it.id) })
+        putNotDefault("clips", clips)
     }
     override fun toJson() = buildJsonObject { buildJson() }
 
@@ -276,59 +276,65 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         json as JsonObject
         id = json["id"]!!.asString()
         json["name"]?.asString()?.let { name = it }
-        json["color"]?.jsonPrimitive?.long?.let { color = Color(it) }
-        json["pan"]?.jsonPrimitive?.float?.let { pan = it }
-        json["volume"]?.jsonPrimitive?.float?.let { volume = it }
-        json["height"]?.jsonPrimitive?.int?.let { height = it }
-        json["isMute"]?.jsonPrimitive?.boolean?.let { isMute = it }
-        json["isSolo"]?.jsonPrimitive?.boolean?.let { isSolo = it }
-        json["isDisabled"]?.jsonPrimitive?.boolean?.let { isDisabled = it }
+        json["color"]?.asLong()?.let { color = Color(it.toULong()) }
+        json["pan"]?.asFloat()?.let { pan = it }
+        json["volume"]?.asFloat()?.let { volume = it }
+        json["height"]?.asInt()?.let { height = it }
+        json["isMute"]?.asBoolean()?.let { isMute = it }
+        json["isSolo"]?.asBoolean()?.let { isSolo = it }
+        json["isDisabled"]?.asBoolean()?.let { isDisabled = it }
     }
 
     override suspend fun load(path: String, json: JsonObject) {
         withContext(Dispatchers.IO) {
             try {
+                fromJson(json)
                 val dir = Paths.get(path)
-                id = json["id"]!!.asString()
-                name = json["name"]!!.asString()
-                color = Color(json["color"]!!.jsonPrimitive.long)
 
-                val clipsDir = dir.resolve("clips").absolutePathString()
-                clips.addAll(json["clips"]!!.jsonArray.map {
-                    async {
-                        tryOrNull(logger, "Failed to load clip: $it") {
-                            ClipManager.instance.createTrackClip(clipsDir, it as JsonObject)
+                json["clips"]?.let { json ->
+                    val clipsDir = dir.resolve("clips").absolutePathString()
+                    clips.addAll(json.jsonArray.map {
+                        async {
+                            tryOrNull(logger, "Failed to load clip: $it") {
+                                ClipManager.instance.createTrackClip(clipsDir, it as JsonObject)
+                            }
                         }
-                    }
-                }.awaitAll().filterNotNull())
+                    }.awaitAll().filterNotNull())
+                }
 
-                val tracksDir = dir.resolve("tracks")
-                subTracks.addAll(json["subTracks"]!!.jsonArray.map {
-                    async {
-                        tryOrNull(logger, "Failed to load track: $it") {
-                            val trackID = it.asString()
-                            val trackPath = tracksDir.resolve(trackID)
-                            TrackManager.instance.createTrack(trackPath.absolutePathString(), trackID)
+                json["subTracks"]?.let { json ->
+                    val tracksDir = dir.resolve("tracks")
+                    subTracks.addAll(json.jsonArray.map {
+                        async {
+                            tryOrNull(logger, "Failed to load track: $it") {
+                                val trackID = it.asString()
+                                val trackPath = tracksDir.resolve(trackID)
+                                TrackManager.instance.createTrack(trackPath.absolutePathString(), trackID)
+                            }
                         }
-                    }
-                }.awaitAll().filterNotNull())
+                    }.awaitAll().filterNotNull())
+                }
                 val processorsDir = dir.resolve("processors").absolutePathString()
-                preProcessorsChain.addAll(json["preProcessorsChain"]!!.jsonArray.map {
-                    async {
-                        tryOrNull(logger, "Failed to load audio processor: $it") {
-                            if (it is JsonObject) AudioProcessorManager.instance.createAudioProcessor(processorsDir, it)
-                            else AudioProcessorManager.instance.createAudioProcessor(processorsDir, it.asString())
+                json["preProcessorsChain"]?.let { json ->
+                    preProcessorsChain.addAll(json.jsonArray.map {
+                        async {
+                            tryOrNull(logger, "Failed to load audio processor: $it") {
+                                if (it is JsonObject) AudioProcessorManager.instance.createAudioProcessor(processorsDir, it)
+                                else AudioProcessorManager.instance.createAudioProcessor(processorsDir, it.asString())
+                            }
                         }
-                    }
-                }.awaitAll().filterNotNull())
-                postProcessorsChain.addAll(json["postProcessorsChain"]!!.jsonArray.map {
-                    async {
-                        tryOrNull(logger, "Failed to load audio processor: $it") {
-                            if (it is JsonObject) AudioProcessorManager.instance.createAudioProcessor(processorsDir, it)
-                            else AudioProcessorManager.instance.createAudioProcessor(processorsDir, it.asString())
+                    }.awaitAll().filterNotNull())
+                }
+                json["postProcessorsChain"]?.let { json ->
+                    postProcessorsChain.addAll(json.jsonArray.map {
+                        async {
+                            tryOrNull(logger, "Failed to load audio processor: $it") {
+                                if (it is JsonObject) AudioProcessorManager.instance.createAudioProcessor(processorsDir, it)
+                                else AudioProcessorManager.instance.createAudioProcessor(processorsDir, it.asString())
+                            }
                         }
-                    }
-                }.awaitAll().filterNotNull())
+                    }.awaitAll().filterNotNull())
+                }
             } catch (_: FileNotFoundException) { }
         }
     }
@@ -357,7 +363,13 @@ class BusImpl(
 
     override fun toJson() = buildJsonObject {
         buildJson()
-        put("channelType", channelType.ordinal)
+        putNotDefault("channelType", channelType.ordinal)
+    }
+
+    override fun fromJson(json: JsonElement) {
+        json as JsonObject
+        super.fromJson(json)
+        json["channelType"]?.asInt()?.let { channelType = ChannelType.values()[it] }
     }
 
     override suspend fun save() {
@@ -366,11 +378,6 @@ class BusImpl(
         lastSaveTime = time
         project.save()
         save(project.root.pathString)
-    }
-
-    override suspend fun load(path: String, json: JsonObject) {
-        super.load(path, json)
-        channelType = ChannelType.values()[json["channelType"]!!.asInt()]
     }
 
     override suspend fun processBlock(
