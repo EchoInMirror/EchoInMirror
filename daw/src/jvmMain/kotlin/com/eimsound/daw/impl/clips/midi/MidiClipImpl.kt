@@ -10,13 +10,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
 import com.eimsound.audioprocessor.CurrentPosition
 import com.eimsound.audioprocessor.convertPPQToSamples
 import com.eimsound.audioprocessor.convertSamplesToPPQ
 import com.eimsound.audioprocessor.data.DefaultEnvelopePointList
+import com.eimsound.audioprocessor.data.EnvelopePoint
 import com.eimsound.audioprocessor.data.midi.*
 import com.eimsound.daw.api.*
 import com.eimsound.daw.api.processor.Track
@@ -28,7 +28,12 @@ import kotlinx.serialization.json.*
 
 class MidiClipImpl(json: JsonObject?, factory: ClipFactory<MidiClip>) : AbstractClip<MidiClip>(json, factory), MidiClip {
     override val notes = DefaultNoteMessageList()
-    override val events: MutableMidiCCEvents = mutableStateMapOf()
+    override val events: MutableMidiCCEvents = mutableStateMapOf(
+        1 to DefaultEnvelopePointList().apply {
+            add(EnvelopePoint(96, 0.2F))
+            add(EnvelopePoint(96 * 6, 0.8F))
+        },
+    )
     override val isExpandable = true
 
     val ccPrevValues = ByteArray(128)
@@ -149,7 +154,7 @@ class MidiClipFactoryImpl : MidiClipFactory {
                 points.read()
                 remember(points) {
                     EnvelopeEditor(points, 0..127)
-                }.Editor(startPPQ, contentColor, noteWidth, false, clipStartTime = clip.start, style = Stroke(0.5F))
+                }.Editor(startPPQ, contentColor, noteWidth, false, clipStartTime = clip.start, stroke = 0.5F)
             }
         }
     }

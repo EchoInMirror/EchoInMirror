@@ -87,7 +87,7 @@ val ClipManager.defaultAudioClipFactory get() = factories["AudioClip"] as AudioC
 
 interface Clip : JsonSerializable {
     val id: String
-    val name: String?
+    val name: String
     val factory: ClipFactory<*>
     @Transient
     val defaultDuration: Int

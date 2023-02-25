@@ -26,10 +26,10 @@ import com.eimsound.daw.components.dragdrop.PlatformDropTargetModifier
 import com.eimsound.daw.components.splitpane.HorizontalSplitPane
 import com.eimsound.daw.components.splitpane.VerticalSplitPane
 import com.eimsound.daw.impl.WindowManagerImpl
-import com.eimsound.daw.utils.Border
-import com.eimsound.daw.utils.CLIPBOARD_MANAGER
-import com.eimsound.daw.utils.Logo
-import com.eimsound.daw.utils.border
+import com.eimsound.daw.dawutils.Border
+import com.eimsound.daw.dawutils.CLIPBOARD_MANAGER
+import com.eimsound.daw.dawutils.Logo
+import com.eimsound.daw.dawutils.border
 import com.eimsound.daw.window.panels.playlist.mainPlaylist
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalMaterial3Api::class)

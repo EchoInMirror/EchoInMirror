@@ -10,6 +10,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.text.font.FontStyle
@@ -43,11 +44,11 @@ fun Keyboard(
     val blackKeyColor0 = if (swapColor) whiteKeyColor else blackKeyColor
     val whiteKeyTextColor = whiteKeyColor0.toOnSurfaceColor()
     val blackKeyTextColor = blackKeyColor0.toOnSurfaceColor()
-    Column(modifier.width(keyWidth)) {
+    Column(modifier.size(keyWidth, keyHeight * KEYBOARD_KEYS).graphicsLayer {  }) {
         for (i in (KEYBOARD_KEYS - 1) downTo 0) {
             val name = KEY_NAMES[i % 12]
             val isBlack = defaultScale.scale[i % 12]
-            Box(Modifier.fillMaxWidth().height(keyHeight - 1.dp)
+            Box(Modifier.fillMaxWidth().weight(1F)
                 .background(if (isBlack) blackKeyColor0 else whiteKeyColor0)
                 .clickableWithIcon()
                 .onPointerEvent(PointerEventType.Press) {

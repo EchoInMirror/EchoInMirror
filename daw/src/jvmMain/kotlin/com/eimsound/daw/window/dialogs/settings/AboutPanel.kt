@@ -1,29 +1,43 @@
 package com.eimsound.daw.window.dialogs.settings
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Help
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.eimsound.daw.RELEASE_TIME
 import com.eimsound.daw.VERSION
+import com.eimsound.daw.api.window.EditorExtension
 import com.eimsound.daw.components.ClickableText
 import com.eimsound.daw.components.Gap
 import com.eimsound.daw.components.SettingTab
+import com.eimsound.daw.dawutils.EIMChan
+import com.eimsound.daw.impl.clips.midi.editor.notesEditorExtensions
 import com.eimsound.daw.utils.openInBrowser
+import com.eimsound.daw.window.panels.playlist.playListExtensions
 import org.apache.commons.lang3.SystemUtils
 import java.net.URI
 import java.text.DateFormat
+
+object EditorEIMChan : EditorExtension {
+    override val key = this
+    override val isBackground = true
+    var alpha by mutableStateOf(0F)
+
+    @Composable
+    override fun Content() {
+        Box(Modifier.fillMaxSize()) {
+            Image(EIMChan, "EIM Chan", Modifier.widthIn(max = 400.dp).align(Alignment.BottomEnd), alpha = alpha)
+        }
+    }
+}
 
 internal object AboutPanel: SettingTab {
     @Composable
@@ -39,7 +53,7 @@ internal object AboutPanel: SettingTab {
     @Composable
     override fun content() {
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-            Image(painterResource("eim-chan.png"), "EIM Chan", Modifier.size(400.dp))
+            Image(EIMChan, "EIM Chan", Modifier.size(400.dp))
             MaterialTheme.typography.apply {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("EchoInMirror ", style = headlineLarge)
@@ -60,6 +74,22 @@ internal object AboutPanel: SettingTab {
                 Gap(20)
                 Text("系统版本: ${SystemUtils.OS_NAME} (${SystemUtils.OS_VERSION}, ${SystemUtils.OS_ARCH})", style = bodySmall)
                 Text("Java 版本: ${SystemUtils.JAVA_VM_NAME} (${SystemUtils.JAVA_VM_VERSION}, ${SystemUtils.JAVA_VENDOR})", style = bodySmall)
+                Gap(16)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("编辑器中 EIM 娘的透明度: ", style = bodySmall)
+                    Slider(EditorEIMChan.alpha, {
+                        val prev = EditorEIMChan.alpha
+                        if (prev == it) return@Slider
+                        EditorEIMChan.alpha = it
+                        if (it == 0F) {
+                            playListExtensions.remove(EditorEIMChan)
+                            notesEditorExtensions.remove(EditorEIMChan)
+                        } else if (prev == 0F) {
+                            playListExtensions.add(EditorEIMChan)
+                            notesEditorExtensions.add(EditorEIMChan)
+                        }
+                    }, Modifier.width(160.dp))
+                }
             }
         }
     }

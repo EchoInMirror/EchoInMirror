@@ -6,18 +6,19 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.scrollable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerIconDefaults
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
@@ -37,11 +38,14 @@ import com.eimsound.audioprocessor.projectDisplayPPQ
 import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.api.asMidiTrackClipOrNull
 import com.eimsound.daw.api.processor.Track
+import com.eimsound.daw.api.window.EditorExtension
+import com.eimsound.daw.api.window.EditorExtensions
 import com.eimsound.daw.components.EditorGrid
 import com.eimsound.daw.components.KEYBOARD_KEYS
 import com.eimsound.daw.components.LocalFloatingDialogProvider
 import com.eimsound.daw.components.dragdrop.dropTarget
 import com.eimsound.daw.components.utils.*
+import com.eimsound.daw.dawutils.openMaxValue
 import com.eimsound.daw.utils.*
 import kotlin.math.absoluteValue
 
@@ -65,6 +69,29 @@ private data class NoteDrawObject(val note: NoteMessage, val offset: Offset, val
                                   val keyNameOffset: Offset?)
 private data class BackingTrack(val track: Track, val notes: ArrayList<NoteDrawObject>)
 
+
+val notesEditorExtensions: MutableList<EditorExtension> = mutableStateListOf()
+
+@Composable
+private fun DefaultMidiClipEditor.EditorHorizontalGrid() {
+    val highlightNoteColor = MaterialTheme.colorScheme.onBackground.copy(0.05F)
+    val outlineColor = MaterialTheme.colorScheme.surfaceVariant
+    Canvas(Modifier.fillMaxSize().graphicsLayer {  }) {
+        val noteHeightPx = noteHeight.toPx()
+        val isDarkTheme = EchoInMirror.windowManager.isDarkTheme
+        val canvasHeight = size.height
+        val verticalScrollValue = verticalScrollState.value
+        for (i in (verticalScrollValue / noteHeightPx).toInt()..
+                ((verticalScrollValue + canvasHeight) / noteHeightPx).toInt()) {
+            val y = i * noteHeightPx - verticalScrollValue
+            if (y < 0) continue
+            drawLine(outlineColor, Offset(0f, y), Offset(size.width, y), density)
+            if (defaultScale.scale[11 - (i + 4) % 12] != isDarkTheme)
+                drawRect(highlightNoteColor, Offset(0f, y), Size(size.width, noteHeightPx))
+        }
+    }
+}
+
 @OptIn(ExperimentalTextApi::class)
 @Suppress("DuplicatedCode")
 @Composable
@@ -84,8 +111,6 @@ internal fun NotesEditorCanvas(editor: DefaultMidiClipEditor) {
                     true
                 }
         ) {
-            val highlightNoteColor = MaterialTheme.colorScheme.onBackground.copy(0.05F)
-            val outlineColor = MaterialTheme.colorScheme.surfaceVariant
             val primaryColor = MaterialTheme.colorScheme.primary
             val labelMediumStyle = MaterialTheme.typography.labelMedium
             val displayPPQ = EchoInMirror.currentPosition.projectDisplayPPQ
@@ -101,6 +126,8 @@ internal fun NotesEditorCanvas(editor: DefaultMidiClipEditor) {
             EchoInMirror.currentPosition.apply {
                 EditorGrid(noteWidth, horizontalScrollState, range, ppq, timeSigDenominator, timeSigNumerator)
             }
+            EditorHorizontalGrid()
+            notesEditorExtensions.EditorExtensions(true)
             Spacer(Modifier.fillMaxSize().drawWithCache {
                 val noteWidthPx = noteWidth.value.toPx()
                 val verticalScrollValue = verticalScrollState.value
@@ -175,23 +202,15 @@ internal fun NotesEditorCanvas(editor: DefaultMidiClipEditor) {
                     backingsNotes.add(BackingTrack(track, curNotes))
                 }
 
-                onDrawBehind {
-                    val isDarkTheme = EchoInMirror.windowManager.isDarkTheme
-                    for (i in (verticalScrollValue / noteHeightPx).toInt()..
-                            ((verticalScrollValue + canvasHeight) / noteHeightPx).toInt()) {
-                        val y = i * noteHeightPx - verticalScrollValue
-                        if (y < 0) continue
-                        drawLine(outlineColor, Offset(0f, y), Offset(size.width, y), 1F)
-                        if (defaultScale.scale[11 - (i + 4) % 12] != isDarkTheme)
-                            drawRect(highlightNoteColor, Offset(0f, y), Size(size.width, noteHeightPx))
-                    }
+                val borderCornerRadius2PX = CornerRadius(2F * density, 2F * density)
 
+                onDrawBehind {
                     backingsNotes.fastForEach { cur ->
                         val color = cur.track.color.copy(0.16F)
-                        cur.notes.fastForEach { drawRoundRect(color, it.offset, it.size, BorderCornerRadius2PX) }
+                        cur.notes.fastForEach { drawRoundRect(color, it.offset, it.size, borderCornerRadius2PX) }
                     }
                     notes.fastForEach {
-                        drawRoundRect(it.color, it.offset, it.size, BorderCornerRadius2PX)
+                        drawRoundRect(it.color, it.offset, it.size, borderCornerRadius2PX)
                         if (it.keyNameOffset != null)
                             drawText(measurer, getNoteName(it.note.note), it.keyNameOffset,
                                 keyNameTextStyle, maxSize = MAX_KEY_NAME_SIZE)
@@ -222,14 +241,15 @@ internal fun NotesEditorCanvas(editor: DefaultMidiClipEditor) {
                             }
                         }
                         if (size.height <= 0 || size.width <= 0) return@forEach
-                        drawRoundRect(trackColor.saturate(it.colorSaturation), offset, size, BorderCornerRadius2PX)
-                        drawRoundRect(primaryColor, offset, size, BorderCornerRadius2PX, Stroke1_5PX)
+                        drawRoundRect(trackColor.saturate(it.colorSaturation), offset, size, borderCornerRadius2PX)
+                        drawRoundRect(primaryColor, offset, size, borderCornerRadius2PX, Stroke(1.5f * density))
                         if (shouldDrawNoteName && size.width > MIN_NOTE_WIDTH_WITH_KEY_NAME)
                             drawText(measurer, getNoteName(it.note - offsetNote),
                                 Offset(offset.x + 2, y), keyNameTextStyle, maxSize = MAX_KEY_NAME_SIZE)
                     }
                 }
             })
+            notesEditorExtensions.EditorExtensions(false)
             Canvas(Modifier.fillMaxSize().pointerHoverIcon(action.toPointerIcon(cursor))) {
                 if (selectionX == 0F && selectionStartX == 0F) return@Canvas
                 val scrollX = horizontalScrollState.value
@@ -248,7 +268,7 @@ internal fun NotesEditorCanvas(editor: DefaultMidiClipEditor) {
                             (if (y < 0) -y % noteHeightPx else 0F)
                 )
                 drawRect(primaryColor.copy(0.1F), pos, size)
-                drawRect(primaryColor, pos, size, style = Stroke1PX)
+                drawRect(primaryColor, pos, size, style = Stroke(density))
             }
         }
     }

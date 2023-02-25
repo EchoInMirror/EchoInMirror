@@ -18,8 +18,8 @@ import com.eimsound.daw.components.LocalFloatingDialogProvider
 import com.eimsound.daw.components.icons.EIMLogo
 import com.eimsound.daw.components.splitpane.SplitPaneState
 import com.eimsound.daw.impl.WindowManagerImpl
-import com.eimsound.daw.utils.Border
-import com.eimsound.daw.utils.border
+import com.eimsound.daw.dawutils.Border
+import com.eimsound.daw.dawutils.border
 import com.eimsound.daw.window.dialogs.openQuickLoadDialog
 
 //    SideBarItem("Favorite", "收藏") { Icon(Icons.Default.Favorite, "Favorite") },

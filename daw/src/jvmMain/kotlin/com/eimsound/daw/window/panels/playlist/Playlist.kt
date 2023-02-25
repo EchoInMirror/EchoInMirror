@@ -26,6 +26,8 @@ import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.actions.doClipsAmountAction
 import com.eimsound.daw.api.TrackClip
 import com.eimsound.daw.api.processor.Track
+import com.eimsound.daw.api.window.EditorExtension
+import com.eimsound.daw.api.window.EditorExtensions
 import com.eimsound.daw.api.window.Panel
 import com.eimsound.daw.api.window.PanelDirection
 import com.eimsound.daw.components.*
@@ -34,7 +36,7 @@ import com.eimsound.daw.components.utils.EditAction
 import com.eimsound.daw.utils.BasicEditor
 import com.eimsound.daw.utils.fitInUnitCeil
 import com.eimsound.daw.utils.mutableStateSetOf
-import com.eimsound.daw.utils.openMaxValue
+import com.eimsound.daw.dawutils.openMaxValue
 import com.eimsound.daw.window.dialogs.openMidiImportDialog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -67,6 +69,8 @@ fun Density.calcScroll(event: PointerEvent, noteWidth: MutableState<Dp>, horizon
         change.consume()
     }
 }
+
+val playListExtensions: MutableList<EditorExtension> = mutableStateListOf()
 
 class Playlist : Panel, BasicEditor {
     override val name = "Playlist"
@@ -148,6 +152,7 @@ class Playlist : Panel, BasicEditor {
                         remember(width, localDensity) {
                             with (localDensity) { horizontalScrollState.openMaxValue = width.toPx().toInt() }
                         }
+                        playListExtensions.EditorExtensions(true)
                         Column(Modifier.verticalScroll(verticalScrollState).fillMaxSize()) {
                             Divider()
                             var i = 0
@@ -155,6 +160,7 @@ class Playlist : Panel, BasicEditor {
                                 key(it.id) { i += TrackContent(this@Playlist, it, i, localDensity) }
                             }
                         }
+                        playListExtensions.EditorExtensions(false)
                         val floatingDialogProvider = LocalFloatingDialogProvider.current
                         FileDropTarget({ data, _ ->
                             if (data.extension.lowercase() == "mid") floatingDialogProvider.openMidiImportDialog(data) {

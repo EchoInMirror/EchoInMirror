@@ -1,4 +1,4 @@
-package com.eimsound.daw.utils
+package com.eimsound.daw.dawutils
 
 import androidx.compose.foundation.ScrollState
 import androidx.compose.ui.Modifier
@@ -135,7 +135,9 @@ var ScrollState.openMaxValue
     @Suppress("INVISIBLE_SETTER")
     set(value) { maxValue = value }
 
-fun formatDuration(time: Long): String = DURATION_PRETTIER.formatDuration(Date(time)).ifEmpty { DURATION_PRETTIER.format(ZERO_DATE) }
+fun formatDuration(time: Long): String = DURATION_PRETTIER.formatDuration(Date(time)).ifEmpty { DURATION_PRETTIER.format(
+    ZERO_DATE
+) }
 
 fun randomColor() = com.eimsound.daw.components.utils.randomColor(!EchoInMirror.windowManager.isDarkTheme)
 

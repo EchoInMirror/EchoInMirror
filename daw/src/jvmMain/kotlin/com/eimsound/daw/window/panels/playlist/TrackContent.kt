@@ -246,7 +246,7 @@ internal fun TrackContent(playlist: Playlist, track: Track, index: Int, density:
                                         ) {
                                             val contentColor = trackColor.toOnSurfaceColor()
                                             Text(
-                                                it.clip.name ?: track.name,
+                                                it.clip.name.ifEmpty { track.name },
                                                 Modifier.fillMaxWidth().background(track.color).padding(horizontal = 4.dp),
                                                 contentColor, style = MaterialTheme.typography.labelMedium,
                                                 maxLines = 1, overflow = TextOverflow.Ellipsis

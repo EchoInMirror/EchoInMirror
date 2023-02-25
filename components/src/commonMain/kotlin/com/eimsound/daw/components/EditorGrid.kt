@@ -9,6 +9,7 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
 
 @Composable
@@ -26,7 +27,7 @@ fun EditorGrid(
     val barsOutlineColor = MaterialTheme.colorScheme.outlineVariant
     val eightBarsOutlineColor = MaterialTheme.colorScheme.outline.copy(0.7F)
     val rangeColor = MaterialTheme.colorScheme.primary.copy(0.07F)
-    Canvas(modifier) {
+    Canvas(modifier.graphicsLayer {  }) {
         val noteWidthPx = noteWidth.value.toPx()
         val horizontalScrollValue = horizontalScrollState.value
 

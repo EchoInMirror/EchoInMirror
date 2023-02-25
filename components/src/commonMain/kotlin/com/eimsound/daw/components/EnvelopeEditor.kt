@@ -16,19 +16,18 @@ import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.*
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.util.fastAll
 import com.eimsound.audioprocessor.data.EnvelopePoint
 import com.eimsound.audioprocessor.data.EnvelopePointList
 import com.eimsound.audioprocessor.data.EnvelopeType
 import com.eimsound.audioprocessor.data.SerializableEnvelopePointList
 import com.eimsound.daw.components.utils.EditAction
-import com.eimsound.daw.components.utils.Stroke1PX
-import com.eimsound.daw.components.utils.Stroke2PX
 import com.eimsound.daw.utils.*
 import kotlinx.coroutines.launch
 import kotlinx.serialization.decodeFromString
@@ -36,7 +35,7 @@ import kotlinx.serialization.encodeToString
 import kotlin.math.*
 
 @Suppress("PrivatePropertyName")
-private val MAX_TEXT_SIZE = IntSize(40, 18)
+private val MAX_TEXT_SIZE = Constraints(maxWidth = 40, maxHeight = 24)
 
 fun EnvelopeType.toPath(height: Float, tension: Float, x0: Float, x1: Float,
                         value0: Float, value1: Float) = Path().apply {
@@ -181,15 +180,14 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange, pr
     @OptIn(ExperimentalTextApi::class)
     @Composable
     fun Editor(start: Float, color: Color, noteWidth: MutableState<Dp>, drawDots: Boolean = true, editUnit: Int = 24,
-               horizontalScrollState: ScrollState? = null, clipStartTime: Int = 0, style: Stroke = Stroke2PX) {
+               horizontalScrollState: ScrollState? = null, clipStartTime: Int = 0, stroke: Float = 2F) {
         val scope = rememberCoroutineScope()
         val measurer = rememberTextMeasurer(50)
         val primaryColor = MaterialTheme.colorScheme.primary
-        val textStyle = MaterialTheme.typography.labelMedium.copy(color)
-        val primaryStyle = MaterialTheme.typography.labelMedium.copy(primaryColor)
+        val textStyle = MaterialTheme.typography.labelMedium
         val fillColor = verticalGradient(
             0F to color.copy(0.4F),
-            1F to Color.Transparent
+            1.4F to Color.Transparent
         )
         val primaryFillColor = verticalGradient(
             0F to primaryColor.copy(0.4F),
@@ -351,6 +349,7 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange, pr
                 }
             }
         }) {
+            val strokeStyle = Stroke(stroke * density)
             val noteWidthPx = noteWidth.value.toPx()
             val end = start + size.width / noteWidthPx
             // binary search for start point
@@ -399,23 +398,27 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange, pr
                     val curValue = cur.value + (if (isSelected) tmpOffsetY else 0F)
                     val nextPoint = next ?: cur
                     val currentY = size.height * (1 - curValue.coerceIn(valueRange) / range)
+                    val curColor = if (isSelected) primaryColor else color
                     if (drawDots && (lastTextX + 34 < startX || (lastTextY - currentY).absoluteValue > 30)) {
                         lastTextX = startX
                         lastTextY = currentY
                         drawText(
-                            measurer,
-                            if (isDecimal) "%.2f".format(curValue) else curValue.toInt().toString(),
-                            Offset(startX + 6, if (currentY + 20 > size.height) currentY - 20 else currentY + 2),
-                            if (isSelected) primaryStyle else textStyle, maxSize = MAX_TEXT_SIZE
+                            measurer.measure(
+                                AnnotatedString(if (isDecimal) "%.2f".format(curValue) else curValue.toInt().toString()),
+                                textStyle,
+                                maxLines = 1,
+                                constraints = MAX_TEXT_SIZE
+                            ),
+                            curColor,
+                            Offset(startX + 6, if (currentY + 20 > size.height) currentY - 20 else currentY + 2)
                         )
                     }
-                    val curColor = if (isSelected) primaryColor else color
                     val path = cur.type.toPath(
                         size.height,
                         cur.tension, startX, endX, mapValue(curValue, valueRange),
                         mapValue(nextPoint.value + (if (isNextSelected) tmpOffsetY else 0F), valueRange)
                     )
-                    drawPath(path, curColor, style = style)
+                    drawPath(path, curColor, style = strokeStyle)
                     drawPath(Path().apply {
                         addPath(path)
                         lineTo(endX, size.height)
@@ -447,17 +450,21 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange, pr
                     val endX = if (next == null) size.width else (next.time - start) * noteWidthPx
                     val isSelected = selectedPoints.contains(cur)
                     val currentY = size.height * (1 - cur.value.coerceIn(valueRange) / range)
+                    val curColor = if (isSelected) primaryColor else color
                     if (drawDots && (lastTextX + 34 < startX || (lastTextY - currentY).absoluteValue > 30)) {
                         lastTextX = startX
                         lastTextY = currentY
                         drawText(
-                            measurer,
-                            if (isDecimal) "%.2f".format(cur.value) else cur.value.toInt().toString(),
-                            Offset(startX + 6, if (currentY + 20 > size.height) currentY - 20 else currentY + 2),
-                            if (isSelected) primaryStyle else textStyle, maxSize = MAX_TEXT_SIZE
+                            measurer.measure(
+                                AnnotatedString(if (isDecimal) "%.2f".format(cur.value) else cur.value.toInt().toString()),
+                                textStyle,
+                                maxLines = 1,
+                                constraints = MAX_TEXT_SIZE
+                            ),
+                            curColor,
+                            Offset(startX + 6, if (currentY + 20 > size.height) currentY - 20 else currentY + 2)
                         )
                     }
-                    val curColor = if (isSelected) primaryColor else color
                     val path = cur.type.toPath(
                         size.height,
                         (cur.tension + (if (isSelected || currentAdjustingPoint == i) tmpOffsetTension else 0F)).coerceIn(
@@ -469,7 +476,7 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange, pr
                         mapValue(cur.value, valueRange),
                         mapValue((next ?: cur).value, valueRange)
                     )
-                    drawPath(path, curColor, style = style)
+                    drawPath(path, curColor, style = strokeStyle)
                     drawPath(Path().apply {
                         addPath(path)
                         lineTo(endX, size.height)
@@ -489,7 +496,7 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange, pr
                 val pos = Offset(startX, startY)
                 val size = Size(endX - startX, endY - startY)
                 drawRect(primaryColor.copy(0.1F), pos, size)
-                drawRect(primaryColor, pos, size, style = Stroke1PX)
+                drawRect(primaryColor, pos, size, style = Stroke(density))
             }
         }
     }

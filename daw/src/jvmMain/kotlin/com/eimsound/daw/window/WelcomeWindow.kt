@@ -15,6 +15,10 @@ import androidx.compose.ui.window.rememberWindowState
 import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.components.*
 import com.eimsound.daw.components.utils.clickableWithIcon
+import com.eimsound.daw.dawutils.Logo
+import com.eimsound.daw.dawutils.TIME_FORMATTER
+import com.eimsound.daw.dawutils.TIME_PRETTIER
+import com.eimsound.daw.dawutils.randomColor
 import com.eimsound.daw.recentProjects
 import com.eimsound.daw.utils.*
 import java.awt.Dimension

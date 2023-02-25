@@ -8,7 +8,7 @@ import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.api.Command
 import com.eimsound.daw.commands.*
 import com.eimsound.daw.utils.BasicEditor
-import com.eimsound.daw.utils.CLIPBOARD_MANAGER
+import com.eimsound.daw.dawutils.CLIPBOARD_MANAGER
 import com.eimsound.daw.utils.SerializableEditor
 
 @Composable
