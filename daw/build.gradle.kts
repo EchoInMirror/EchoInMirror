@@ -52,6 +52,7 @@ kotlin {
                 api("org.mapdb:mapdb:3.0.9") {
                     exclude(group = "com.google.guava")
                 }
+                implementation("com.github.albfernandez:juniversalchardet:2.4.0")
                 implementation("org.slf4j:slf4j-simple:${extra["eim.dependencies.slf4j"]}")
                 implementation("org.jetbrains.compose.ui:ui-util:${ComposeBuildConfig.composeVersion}")
             }
