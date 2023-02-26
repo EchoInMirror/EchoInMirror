@@ -76,7 +76,7 @@ internal object AboutPanel: SettingTab {
                 Text("Java 版本: ${SystemUtils.JAVA_VM_NAME} (${SystemUtils.JAVA_VM_VERSION}, ${SystemUtils.JAVA_VENDOR})", style = bodySmall)
                 Gap(16)
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("编辑器中 EIM 娘的透明度: ", style = bodySmall)
+                    Text("编辑器中 EIM 娘的不透明度: ", style = bodySmall)
                     Slider(EditorEIMChan.alpha, {
                         val prev = EditorEIMChan.alpha
                         if (prev == it) return@Slider
