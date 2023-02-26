@@ -104,7 +104,7 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
                 async {
                     scanSemaphore.withPermit {
                         logger.info("Scanning native audio plugin: {}", it)
-                        val pb = ProcessBuilder(getNativeHostPath(it), "-S", "#")
+                        val pb = ProcessBuilder(getNativeHostPath(it), "-S", it)
                         pb.redirectError()
                         val process = pb.start()
                         scanningPlugins[it] = process
