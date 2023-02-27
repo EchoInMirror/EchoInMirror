@@ -37,7 +37,7 @@ jobs:
           mkdir package
           ./gradlew :daw:shadowJar
           cp daw/build/libs/daw.jar package/EchoInMirror.jar
-          cp release-bin/**/* package/
+          cp -R release-bin/. package/
           curl https://github.com/EchoInMirror/EIMHost/releases/download/1.0.6/EIMHost.exe -o package/EIMHost.exe -L
 
       - name: Download ffmpeg
