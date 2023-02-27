@@ -6,6 +6,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.material3.*
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -23,8 +24,7 @@ import kotlin.math.pow
 
 @OptIn(ExperimentalMaterial3Api::class)
 fun FloatingDialogProvider.openMidiImportDialog(file: File, onClose: (List<ParsedMidiMessages>) -> Unit) {
-    val list = MidiSystem.getSequence(file).getMidiTracks()
-
+    val list = MidiSystem.getSequence(file).getMidiTracks().filter { it.hasNoteOrCtrlrolEvents }
     val key = Any()
     openFloatingDialog({
         closeFloatingDialog(key)
@@ -35,7 +35,7 @@ fun FloatingDialogProvider.openMidiImportDialog(file: File, onClose: (List<Parse
             Divider()
             Row {
                 Column(Modifier.weight(12f)) {
-                    val checkboxStates = Array(list.size) { mutableStateOf(true) }
+                    val checkboxes = remember { mutableSetOf<Int>() }
                     val selectAll = mutableStateOf(true)
 
                     Box(Modifier.heightIn(max = 1000.dp).fillMaxSize()) {
@@ -50,9 +50,8 @@ fun FloatingDialogProvider.openMidiImportDialog(file: File, onClose: (List<Parse
                                     Checkbox(
                                         checked = selectAll.value, onCheckedChange = {
                                             selectAll.value = it
-                                            checkboxStates.forEach { checkboxState ->
-                                                checkboxState.value = selectAll.value
-                                            }
+                                            if (it) checkboxes.addAll(list.indices)
+                                            else checkboxes.clear()
                                         }
                                     )
                                 }
@@ -64,8 +63,10 @@ fun FloatingDialogProvider.openMidiImportDialog(file: File, onClose: (List<Parse
                                     },
                                     leadingContent = {
                                         Checkbox(
-                                            checked = checkboxStates[index].value, onCheckedChange = {
-                                                checkboxStates[index].value = it
+                                            checked = checkboxes.contains(index), onCheckedChange = {
+                                                if (it) checkboxes.add(index)
+                                                else checkboxes.remove(index)
+                                                selectAll.value = checkboxes.size == list.size
                                             }
                                         )
                                     }
@@ -128,7 +129,9 @@ class MidiTrack() {
     val channelPressureEvents: MutableList<MidiEvent> = mutableListOf()
     val pitchBendEvents: MutableList<MidiEvent> = mutableListOf()
 
-    val hasNoteEvents get() = noteEvents.size > 0
+    val hasNoteOrCtrlrolEvents get() = (noteEvents.size > 0) or (keyPressureEvents.size > 0) or
+            (controlChangeEvents.size > 0) or (programChangeEvents.size > 0) or (channelPressureEvents.size > 0) or
+            (pitchBendEvents.size > 0)
     val name get() = trackName ?: instrumentName
 }
 
@@ -142,19 +145,19 @@ fun Sequence.getMidiTracks(): List<MidiTrack> {
             val midiEvent = it[i]
             when {
                 // NOTE_ON
-                midiEvent.byte1() in 0x80..0x8F -> track.noteEvents.add(midiEvent)
+                midiEvent.byte1() and 0xF0.toByte() == 0x80.toByte() -> track.noteEvents.add(midiEvent)
                 // NOTE_OFF
-                midiEvent.byte1() in 0x90..0x9F -> track.noteEvents.add(midiEvent)
+                midiEvent.byte1() and 0xF0.toByte() == 0x90.toByte() -> track.noteEvents.add(midiEvent)
                 // KEY_PRESSURE
-                midiEvent.byte1() in 0xA0..0xAF -> track.keyPressureEvents.add(midiEvent)
+                midiEvent.byte1() and 0xF0.toByte() == 0xA0.toByte() -> track.keyPressureEvents.add(midiEvent)
                 // CONTROL_CHANGE
-                midiEvent.byte1() in 0xB0..0xBF -> track.controlChangeEvents.add(midiEvent)
+                midiEvent.byte1() and 0xF0.toByte() == 0xB0.toByte() -> track.controlChangeEvents.add(midiEvent)
                 // PROGRAM_CHANGE
-                midiEvent.byte1() in 0xC0..0xCF -> track.programChangeEvents.add(midiEvent)
+                midiEvent.byte1() and 0xF0.toByte() == 0xC0.toByte() -> track.programChangeEvents.add(midiEvent)
                 // CHANNEL_PRESSURE
-                midiEvent.byte1() in 0xD0..0xDF -> track.channelPressureEvents.add(midiEvent)
+                midiEvent.byte1() and 0xF0.toByte() == 0xD0.toByte() -> track.channelPressureEvents.add(midiEvent)
                 // PITCH_BEND
-                midiEvent.byte1() in 0xE0..0xEF -> track.pitchBendEvents.add(midiEvent)
+                midiEvent.byte1() and 0xF0.toByte() == 0xE0.toByte() -> track.pitchBendEvents.add(midiEvent)
                 // META_EVENT
                 midiEvent.byte1() == 0xFF.toByte() -> {
                     when {

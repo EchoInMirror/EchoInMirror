@@ -57,12 +57,12 @@ value class MidiEvent(val rawData: Int) {
     val byte2Int get() = rawData ushr 8 and 0xFF
     val byte3Int get() = rawData ushr 16 and 0xFF
     val byte4Int get() = rawData ushr 24 and 0xFF
-    val isNoteOn get() = byte1Int == 0x90 && byte3Int != 0
-    val isNoteOff get() = byte1Int == 0x80 || (byte1Int == 0x90 && byte3Int == 0)
+    val isNoteOn get() = byte1Int and 0xF0 == 0x90
+    val isNoteOff get() = byte1Int and 0xF0 == 0x80 || (byte1Int and 0xF0 == 0x90 && byte3Int == 0)
     val isNote get() = isNoteOn || isNoteOff
-    val isController get() = byte1Int == 0xB0
-    val isProgramChange get() = byte1Int == 0xC0
-    val isPitchBend get() = byte1Int == 0xE0
+    val isController get() = byte1Int and 0xF0 == 0xB0
+    val isProgramChange get() = byte1Int and 0xF0 == 0xC0
+    val isPitchBend get() = byte1Int and 0xF0 == 0xE0
     val isMeta get() = byte1Int == 0xFF
     val isSysex get() = byte1Int == 0xF0
     val isSysexEnd get() = byte1Int == 0xF7
