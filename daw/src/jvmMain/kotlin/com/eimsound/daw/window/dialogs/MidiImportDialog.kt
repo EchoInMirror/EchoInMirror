@@ -4,94 +4,81 @@ import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.rememberScrollbarAdapter
-import androidx.compose.material3.*
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.eimsound.audioprocessor.data.midi.*
-import com.eimsound.daw.components.Dialog
-import com.eimsound.daw.components.FloatingDialogProvider
-import com.eimsound.daw.components.MenuTitle
+import androidx.compose.ui.util.fastForEachIndexed
+import com.eimsound.audioprocessor.data.midi.ParsedMidiMessages
+import com.eimsound.daw.components.*
 import org.mozilla.universalchardet.UniversalDetector
 import java.io.File
 import java.nio.charset.Charset
-import javax.sound.midi.*
 import javax.sound.midi.MidiEvent
+import javax.sound.midi.MidiSystem
+import javax.sound.midi.Sequence
 import kotlin.experimental.and
 import kotlin.math.pow
 
-@OptIn(ExperimentalMaterial3Api::class)
 fun FloatingDialogProvider.openMidiImportDialog(file: File, onClose: (List<ParsedMidiMessages>) -> Unit) {
-    val list = MidiSystem.getSequence(file).getMidiTracks().filter { it.hasNoteOrCtrlrolEvents }
+    val list = MidiSystem.getSequence(file).getMidiTracks()
+
     val key = Any()
     openFloatingDialog({
         closeFloatingDialog(key)
     }, key = key, hasOverlay = true) {
-        Dialog(modifier = Modifier.width(1000.dp)) {
+        Dialog {
             MenuTitle("导入 MIDI 文件", modifier = Modifier.padding(top = 10.dp, bottom = 10.dp))
             // TODO: 添加相关的UI, 选择不同的track(可多选), 同时调用 MidiViewer 进行预览
-            Divider()
-            Row {
-                Column(Modifier.weight(12f)) {
+            Row(Modifier.sizeIn(400.dp, 300.dp, 600.dp, 400.dp).padding(horizontal = 10.dp)) {
+                Column(Modifier.weight(1F)) {
                     val checkboxes = remember { mutableSetOf<Int>() }
-                    val selectAll = mutableStateOf(true)
+                    val stateVertical = rememberScrollState(0)
 
-                    Box(Modifier.heightIn(max = 1000.dp).fillMaxSize()) {
-                        val stateVertical = rememberScrollState(0)
-
-                        Column(modifier = Modifier.heightIn(max = 1000.dp)) {
-                            ListItem(
-                                headlineText = {
-                                    Text("全选")
-                                },
-                                leadingContent = {
-                                    Checkbox(
-                                        checked = selectAll.value, onCheckedChange = {
-                                            selectAll.value = it
-                                            if (it) checkboxes.addAll(list.indices)
-                                            else checkboxes.clear()
-                                        }
-                                    )
-                                }
-                            )
-                            list.forEachIndexed { index, midiTrack ->
-                                ListItem(
-                                    headlineText = {
-                                        Text(midiTrack.name ?: "轨道${index + 1}")
-                                    },
-                                    leadingContent = {
-                                        Checkbox(
-                                            checked = checkboxes.contains(index), onCheckedChange = {
-                                                if (it) checkboxes.add(index)
-                                                else checkboxes.remove(index)
-                                                selectAll.value = checkboxes.size == list.size
-                                            }
-                                        )
-                                    }
-                                )
-                            }
-                        }
-                        VerticalScrollbar(
-                            rememberScrollbarAdapter(stateVertical),
-                            Modifier.align(Alignment.CenterEnd).fillMaxHeight()
+                    Row {
+                        Text("轨道",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(bottom = 4.dp),
                         )
                     }
-                }
-                Column(Modifier.weight(12f)) {
-                    ListItem(
-                        headlineText = { Text("One line list item with 24x24 icon") },
-                        leadingContent = {
-                            Checkbox(
-                                checked = false, onCheckedChange = {}
+                    AbsoluteElevationCard {
+                        Box(Modifier.fillMaxSize()) {
+                            Column(Modifier.verticalScroll(stateVertical)) {
+                                list.fastForEachIndexed { index, midiTrack ->
+                                    MenuItem {
+                                        Text(midiTrack.name ?: "轨道${index + 1}", Modifier.weight(1F))
+                                        Checkbox(checkboxes.contains(index), {
+                                            if (!checkboxes.remove(index)) checkboxes.add(index)
+                                        })
+                                    }
+                                }
+                            }
+                            VerticalScrollbar(
+                                rememberScrollbarAdapter(stateVertical),
+                                Modifier.align(Alignment.CenterEnd).fillMaxHeight()
                             )
                         }
-                    )
+                    }
                 }
+                Column(Modifier.weight(1F)) { }
+//                Column(Modifier.weight(12f)) {
+//                    ListItem(
+//                        headlineText = { Text("One line list item with 24x24 icon") },
+//                        leadingContent = {
+//                            Checkbox(
+//                                checked = false, onCheckedChange = {}
+//                            )
+//                        }
+//                    )
+//                }
             }
 
-            Divider()
             Row(Modifier.fillMaxWidth().padding(end = 10.dp), horizontalArrangement = Arrangement.End) {
                 TextButton({
                     closeFloatingDialog(key)
@@ -105,7 +92,7 @@ fun FloatingDialogProvider.openMidiImportDialog(file: File, onClose: (List<Parse
     }
 }
 
-class MidiTrack() {
+class MidiTrack {
     // 元信息
     var sequenceNumber: Int? = null
     val texts: MutableList<String> = mutableListOf()
