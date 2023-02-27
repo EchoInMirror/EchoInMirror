@@ -53,7 +53,7 @@ jobs:
         run: |
           curl https://download.bell-sw.com/java/19.0.2+9/bellsoft-jre19.0.2+9-windows-amd64.zip -O -L
           unzip -d ./package bellsoft-jre19.0.2+9-windows-amd64.zip
-          mv package/jre-19.0.2 package/jbr
+          mv package/jre-19.0.2 package/jre
 
       - name: Package
         run: |
