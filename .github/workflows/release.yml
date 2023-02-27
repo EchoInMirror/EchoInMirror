@@ -21,11 +21,11 @@ jobs:
       - name: Check out git repository
         uses: actions/checkout@v3
 
-      - name: Set up JDK 17
+      - name: Set up JDK 19
         uses: actions/setup-java@v3
         with:
           distribution: liberica
-          java-version: 17
+          java-version: 19
 
       - name: Set plugin version
         run: version='${{ github.ref }}' && sed -i "s/0\.0\.0/${version:10}/" build.gradle.kts
@@ -51,8 +51,9 @@ jobs:
       - name: Download Jetbrains Runtime
         shell: bash
         run: |
-          curl https://cache-redirector.jetbrains.com/intellij-jbr/jbr-17.0.6-windows-x64-b802.4.tar.gz -O -L
-          mkdir package/jbr;tar zxvf jbr_jcef-17.0.6-windows-x64-b802.4.tar.gz --strip-components 1 -C package/jbr
+          curl https://download.bell-sw.com/java/19.0.2+9/bellsoft-jre19.0.2+9-windows-amd64.zip -O -L
+          unzip -d ./package bellsoft-jre19.0.2+9-windows-amd64.zip
+          mv package/jre-19.0.2 package/jbr
 
       - name: Package
         run: |
