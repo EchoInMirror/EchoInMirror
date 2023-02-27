@@ -5,7 +5,6 @@
 -XX:SoftRefLRUPolicyMSPerMB=50
 -XX:CICompilerCount=2
 -XX:-OmitStackTraceInFastThrow
--XX:CompileCommand=exclude,com/intellij/openapi/vfs/impl/FilePartNodeRoot,trieDescend
 -ea
 --enable-preview
 --enable-native-access=ALL-UNNAMED
