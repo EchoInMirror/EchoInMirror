@@ -379,7 +379,7 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange, pr
                     drawLine(
                         if (isFirstSelected) primaryColor else color,
                         Offset(0F, y),
-                        Offset(if (first == null) size.width else firstPointTime * noteWidthPx, y), 2F
+                        Offset(if (first == null) size.width else firstPointTime * noteWidthPx, y), stroke * density
                     )
                 }
 
@@ -436,7 +436,8 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange, pr
                     drawLine(
                         if (first == null || !selectedPoints.contains(first)) color else primaryColor,
                         Offset(0F, y),
-                        Offset(if (first == null) size.width else (first.time - start) * noteWidthPx, y)
+                        Offset(if (first == null) size.width else (first.time - start) * noteWidthPx, y),
+                        stroke * density
                     )
                 }
 
