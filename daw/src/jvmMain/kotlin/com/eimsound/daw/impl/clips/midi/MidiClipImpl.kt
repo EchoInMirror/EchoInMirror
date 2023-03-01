@@ -46,7 +46,7 @@ class MidiClipImpl(json: JsonObject?, factory: ClipFactory<MidiClip>) : Abstract
         put("id", id)
         put("factory", factory.name)
         putNotDefault("notes", Json.encodeToJsonElement<List<NoteMessage>>(notes))
-        putNotDefault("events", Json.encodeToJsonElement(events))
+        putNotDefault("events", Json.encodeToJsonElement<MidiCCEvents>(events))
     }
 
     override fun fromJson(json: JsonElement) {
