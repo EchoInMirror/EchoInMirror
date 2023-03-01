@@ -54,14 +54,14 @@ private fun getTrackHeights(list: ArrayList<TrackToHeight>, track: Track, defaul
             (if (track.height == 0) defaultHeight else track.height.toFloat())))
     track.subTracks.fastForEach { getTrackHeights(list, it, defaultHeight, density) }
 }
-internal fun getAllTrackHeights(defaultHeight: Float, density: Float): ArrayList<TrackToHeight> {
+internal fun getAllTrackHeights(defaultHeight: Float, density: Float): List<TrackToHeight> {
     val trackHeights = ArrayList<TrackToHeight>()
     EchoInMirror.bus!!.subTracks.fastForEach { getTrackHeights(trackHeights, it, defaultHeight, density) }
     return trackHeights
 }
 
 // binary search drop track by trackHeights and currentY
-internal fun binarySearchTrackByHeight(trackHeights: ArrayList<TrackToHeight>, y: Float) =
+internal fun binarySearchTrackByHeight(trackHeights: List<TrackToHeight>, y: Float) =
     trackHeights.binarySearch { it.height <= y }
 
 private suspend fun AwaitPointerEventScope.handleDrag(playlist: Playlist, track: Track, parentTrack: Track,

@@ -33,10 +33,10 @@ import com.eimsound.daw.api.window.PanelDirection
 import com.eimsound.daw.components.*
 import com.eimsound.daw.components.dragdrop.FileDropTarget
 import com.eimsound.daw.components.utils.EditAction
+import com.eimsound.daw.dawutils.openMaxValue
 import com.eimsound.daw.utils.BasicEditor
 import com.eimsound.daw.utils.fitInUnitCeil
 import com.eimsound.daw.utils.mutableStateSetOf
-import com.eimsound.daw.dawutils.openMaxValue
 import com.eimsound.daw.window.dialogs.openMidiImportDialog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -91,7 +91,7 @@ class Playlist : Panel, BasicEditor {
     internal var selectionStartY = 0F
     internal var deltaX by mutableStateOf(0)
     internal var deltaY by mutableStateOf(0)
-    internal var trackHeights = ArrayList<TrackToHeight>()
+    internal var trackHeights = emptyList<TrackToHeight>()
     internal val deletionList = mutableStateSetOf<TrackClip<*>>()
 
     companion object {

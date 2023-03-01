@@ -42,6 +42,7 @@ internal suspend fun PointerInputScope.handleMouseEvent(playlist: Playlist, scop
                             selectedClips.clear()
                             break
                         } else if (event.buttons.isForwardPressed) {
+                            selectedClips.clear()
                             action = EditAction.SELECT
                             break
                         } else if (event.buttons.isTertiaryPressed) {
@@ -65,13 +66,13 @@ internal suspend fun PointerInputScope.handleMouseEvent(playlist: Playlist, scop
             } while (drag != null && !drag.isConsumed)
             if (drag == null) return@awaitPointerEventScope
 
-            var trackHeights: ArrayList<TrackToHeight>? = null
+            var trackHeights: List<TrackToHeight>? = null
             when (action) {
                 EditAction.SELECT -> {
                     selectionStartX = downX
                     selectionStartY = dragStartY
-                    selectionX = selectionStartX
-                    selectionY = selectionStartY
+                    selectionX = downX
+                    selectionY = dragStartY
                 }
                 EditAction.DELETE -> {
                     trackHeights = getAllTrackHeights(trackHeight.toPx(), density)
@@ -79,7 +80,7 @@ internal suspend fun PointerInputScope.handleMouseEvent(playlist: Playlist, scop
                 else -> { }
             }
 
-            drag(drag.id) {
+            drag(down.id) {
                 when (action) {
                     EditAction.SELECT -> {
                         selectionX = (it.position.x.coerceAtMost(size.width.toFloat()) + horizontalScrollState.value)

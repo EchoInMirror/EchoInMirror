@@ -55,6 +55,7 @@ private suspend fun AwaitPointerEventScope.handleDragEvent(playlist: Playlist, c
                         selectedClips.clear()
                         selectedClips.add(clip)
                     }
+                    if (event.keyboardModifiers.isCtrlPressed) continue
                     break
                 } else if (event.buttons.isSecondaryPressed) {
                     selectedClips.clear()
@@ -135,7 +136,7 @@ private suspend fun AwaitPointerEventScope.handleDragEvent(playlist: Playlist, c
                             }
                         )
                     }
-                    trackHeights.clear()
+                    trackHeights = emptyList()
                 }
                 EditAction.RESIZE -> {
                     change.consume()
@@ -173,17 +174,25 @@ internal fun TrackContent(playlist: Playlist, track: Track, index: Int, density:
     playlist.apply {
         Box(Modifier.fillMaxWidth().height(trackHeight)) {
             Box(Modifier.fillMaxSize().pointerInput(track) {
-                detectTapGestures(onDoubleTap = {
-                    val len = EchoInMirror.currentPosition.oneBarPPQ
-                    val clip = ClipManager.instance.createTrackClip(
-                        ClipManager.instance.defaultMidiClipFactory.createClip(),
-                        (it.x / noteWidth.value.toPx()).fitInUnit(len),
-                        len,
-                        0,
-                        track
-                    )
-                    doClipsAmountAction(listOf(clip), false)
-                })
+                awaitPointerEventScope {
+                    var time = 0L
+                    while (true) {
+                        val event = awaitFirstDown(false)
+                        if (action != EditAction.NONE) continue
+                        time = if (event.previousUptimeMillis - time < viewConfiguration.longPressTimeoutMillis) {
+                            val len = EchoInMirror.currentPosition.oneBarPPQ
+                            val clip = ClipManager.instance.createTrackClip(
+                                ClipManager.instance.defaultMidiClipFactory.createClip(),
+                                (event.position.x / noteWidth.value.toPx()).fitInUnit(len),
+                                len,
+                                0,
+                                track
+                            )
+                            doClipsAmountAction(listOf(clip), false)
+                            0L
+                        } else event.previousUptimeMillis
+                    }
+                }
             })
             track.clips.read()
             track.clips.fastForEach {
@@ -193,6 +202,7 @@ internal fun TrackContent(playlist: Playlist, track: Track, index: Int, density:
                             val isSelected = playlist.selectedClips.contains(it)
                             val scrollXPPQ = horizontalScrollState.value / noteWidth.value.toPx()
                             val contentPPQ = contentWidth.value / noteWidth.value.value
+                            val action0 = action
                             if (it.time <= scrollXPPQ + contentPPQ && it.time + it.duration >= scrollXPPQ) {
                                 val clipStartPPQ = it.time
                                 val clipEndPPQ = clipStartPPQ + it.duration
@@ -200,12 +210,12 @@ internal fun TrackContent(playlist: Playlist, track: Track, index: Int, density:
                                 var clipEndPPQOnMove = clipEndPPQ
                                 var y = Dp.Zero
                                 if (isSelected) {
-                                    if (action == EditAction.MOVE) {
+                                    if (action0 == EditAction.MOVE) {
                                         clipStartPPQOnMove += deltaX
                                         clipEndPPQOnMove += deltaX
                                         if (deltaY != 0) y = (trackHeights[(deltaY + index).coerceAtMost(trackHeights.size - 1)]
                                             .height - trackHeights[index].height).toDp()
-                                    } else if (action == EditAction.RESIZE) {
+                                    } else if (action0 == EditAction.RESIZE) {
                                         if (resizeDirectionRight) clipEndPPQOnMove += deltaX
                                         else clipStartPPQOnMove += deltaX
                                     }
@@ -229,11 +239,13 @@ internal fun TrackContent(playlist: Playlist, track: Track, index: Int, density:
                                     }
                                 ) {
                                     if (!deletionList.contains(it)) {
-                                        val trackColor = track.color.copy(0.7F)
+                                        val trackColor = (if (isSelected && action0 == EditAction.MOVE && trackHeights.isNotEmpty())
+                                            trackHeights[(deltaY + index).coerceAtMost(trackHeights.size - 1)].track
+                                        else track).color
                                         Column(
                                             Modifier
                                                 .fillMaxSize()
-                                                .background(trackColor, MaterialTheme.shapes.extraSmall)
+                                                .background(trackColor.copy(0.7F), MaterialTheme.shapes.extraSmall)
                                                 .run {
                                                     if (isSelected) border(
                                                         2.dp, MaterialTheme.colorScheme.primary,
@@ -242,12 +254,12 @@ internal fun TrackContent(playlist: Playlist, track: Track, index: Int, density:
                                                     else this
                                                 }
                                                 .clip(MaterialTheme.shapes.extraSmall)
-                                                .pointerHoverIcon(action.toPointerIcon(PointerIconDefaults.Hand))
+                                                .pointerHoverIcon(action0.toPointerIcon(PointerIconDefaults.Hand))
                                         ) {
                                             val contentColor = trackColor.toOnSurfaceColor()
                                             Text(
                                                 it.clip.name.ifEmpty { track.name },
-                                                Modifier.fillMaxWidth().background(track.color).padding(horizontal = 4.dp),
+                                                Modifier.fillMaxWidth().background(trackColor).padding(horizontal = 4.dp),
                                                 contentColor, style = MaterialTheme.typography.labelMedium,
                                                 maxLines = 1, overflow = TextOverflow.Ellipsis
                                             )
@@ -257,7 +269,7 @@ internal fun TrackContent(playlist: Playlist, track: Track, index: Int, density:
                                                 contentColor.copy(animateFloatAsState(if (isSelected) 1F else 0.8F).value),
                                                 noteWidth,
                                                 (scrollXPPQ - clipStartPPQOnMove).coerceAtLeast(0F) +
-                                                        (it.start + if (isSelected && action == EditAction.RESIZE &&
+                                                        (it.start + if (isSelected && action0 == EditAction.RESIZE &&
                                                             !resizeDirectionRight) deltaX else 0),
                                                 widthInPPQ
                                             )
