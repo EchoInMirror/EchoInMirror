@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.zIndex
 import com.eimsound.audioprocessor.data.EnvelopePointList
+import com.eimsound.audioprocessor.data.MIDI_CC_RANGE
 import com.eimsound.audioprocessor.data.midi.NoteMessage
 import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.actions.GlobalEnvelopeEditorEventHandler
@@ -49,7 +50,7 @@ interface EventType : BasicEditor {
 }
 
 class VelocityEvent(private val editor: MidiClipEditor) : EventType {
-    override val range = 0..127
+    override val range get() = MIDI_CC_RANGE
     override val name = "力度"
     override val isInteger = true
 
@@ -108,7 +109,7 @@ class VelocityEvent(private val editor: MidiClipEditor) : EventType {
 }
 
 class CCEvent(private val editor: MidiClipEditor, eventId: Int, points: EnvelopePointList) : EventType, SerializableEditor {
-    override val range = 0..127
+    override val range get() = MIDI_CC_RANGE
     override val name = "CC:${eventId}"
     override val isInteger = true
     private val envEditor = EnvelopeEditor(points, range, eventHandler = GlobalEnvelopeEditorEventHandler)

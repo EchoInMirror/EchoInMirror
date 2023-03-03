@@ -73,8 +73,11 @@ data class SerializableEnvelopePointList(val points: List<EnvelopePoint>) {
 @Serializable
 sealed interface EnvelopePointList : MutableList<EnvelopePoint>, IManualState {
     fun sort()
-    fun getValue(position: Int): Float
+    fun getValue(position: Int, defaultValue: Float = 0F): Float
 }
+
+val VOLUME_RANGE = 0..2
+val MIDI_CC_RANGE = 0..127
 
 @Serializable
 class DefaultEnvelopePointList : EnvelopePointList, ArrayList<EnvelopePoint>() {
@@ -84,8 +87,8 @@ class DefaultEnvelopePointList : EnvelopePointList, ArrayList<EnvelopePoint>() {
     private var currentIndex = -1
 
     override fun sort() = sortBy { it.time }
-    override fun getValue(position: Int): Float {
-        if (size == 0) return 0F
+    override fun getValue(position: Int, defaultValue: Float): Float {
+        if (size == 0) return defaultValue
         if (size == 1) return this[0].value
         if (position < this[0].time) return this[0].value
         if (position > this[size - 1].time) return this[size - 1].value

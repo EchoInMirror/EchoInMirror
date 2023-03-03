@@ -110,6 +110,7 @@ interface AudioClip : Clip, AutoCloseable {
     val audioSource: ResampledAudioSource
     @Transient
     val thumbnail: AudioThumbnail
+    val volumeEnvelope: EnvelopePointList
 }
 
 abstract class AbstractClip<T: Clip>(json: JsonObject?, override val factory: ClipFactory<T>) : Clip {

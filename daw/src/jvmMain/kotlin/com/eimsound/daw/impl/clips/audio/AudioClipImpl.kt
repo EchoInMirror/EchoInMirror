@@ -1,14 +1,19 @@
 package com.eimsound.daw.impl.clips.audio
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import com.eimsound.audioprocessor.*
 import com.eimsound.audioprocessor.data.AudioThumbnail
+import com.eimsound.audioprocessor.data.DefaultEnvelopePointList
+import com.eimsound.audioprocessor.data.VOLUME_RANGE
 import com.eimsound.audioprocessor.data.midi.MidiNoteRecorder
 import com.eimsound.daw.EchoInMirror
+import com.eimsound.daw.actions.GlobalEnvelopeEditorEventHandler
 import com.eimsound.daw.api.*
 import com.eimsound.daw.api.processor.Track
+import com.eimsound.daw.components.EnvelopeEditor
 import com.eimsound.daw.components.Waveform
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -47,6 +52,7 @@ class AudioClipImpl(json: JsonObject?, factory: ClipFactory<AudioClip>, target: 
     }
 
     override var thumbnail by mutableStateOf(AudioThumbnail(this.audioSource))
+    override val volumeEnvelope = DefaultEnvelopePointList()
     override val name: String
         get() {
             var source: AudioSource? = target
@@ -72,21 +78,29 @@ class AudioClipFactoryImpl: AudioClipFactory {
     override fun processBlock(clip: TrackClip<AudioClip>, buffers: Array<FloatArray>, position: CurrentPosition,
                               midiBuffer: ArrayList<Int>, noteRecorder: MidiNoteRecorder, pendingNoteOns: LongArray) {
         clip.clip.audioSource.factor = position.sampleRate.toDouble() / clip.clip.audioSource.source!!.sampleRate
+        val clipTime = clip.time - clip.start
         clip.clip.audioSource.getSamples(
-            position.timeInSamples - position.convertPPQToSamples(clip.time - clip.start),
+            position.timeInSamples - position.convertPPQToSamples(clipTime),
             buffers
         )
+        val volume = clip.clip.volumeEnvelope.getValue(position.timeInPPQ - clipTime, 1F)
+        repeat(buffers.size) { i ->
+            repeat(buffers[i].size) { j ->
+                buffers[i][j] *= volume
+            }
+        }
     }
 
     @Composable
     override fun playlistContent(clip: TrackClip<AudioClip>, track: Track, contentColor: Color,
                                  noteWidth: MutableState<Dp>, startPPQ: Float, widthPPQ: Float) {
-        val curPos = EchoInMirror.currentPosition
-
-        val startSeconds = curPos.convertPPQToSeconds(startPPQ)
-        val endSeconds = curPos.convertPPQToSeconds(startPPQ + widthPPQ)
         val isDrawMinAndMax = noteWidth.value.value < 1
-        Waveform(clip.clip.thumbnail, startSeconds, endSeconds, contentColor, isDrawMinAndMax)
+        Box {
+            Waveform(clip.clip.thumbnail, EchoInMirror.currentPosition, startPPQ, widthPPQ, clip.clip.volumeEnvelope, contentColor, isDrawMinAndMax)
+            remember(clip) {
+                EnvelopeEditor(clip.clip.volumeEnvelope, VOLUME_RANGE, 1F, true, GlobalEnvelopeEditorEventHandler)
+            }.Editor(startPPQ, contentColor, noteWidth, true, clipStartTime = clip.start, stroke = 0.5F)
+        }
     }
 
     override fun save(clip: AudioClip, path: String) { }
