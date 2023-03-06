@@ -57,7 +57,12 @@ open class DefaultNoteMessage(note: Int, override var time: Int, duration: Int =
     }
 }
 
-data class ParsedMidiMessages(val notes: List<NoteMessage>, val events: Map<Int, List<EnvelopePoint>>)
+
+data class ParsedMidiMessages(
+    val notes: List<NoteMessage>,
+    val events: Map<Int, List<EnvelopePoint>>,
+    var metaEvents: MetaEvents? = null
+)
 
 fun Collection<MidiEventWithTime>.parse(): ParsedMidiMessages {
     val noteMessages = ArrayList<NoteMessage>()
