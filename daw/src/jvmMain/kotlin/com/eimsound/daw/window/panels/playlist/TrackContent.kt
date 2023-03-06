@@ -264,7 +264,7 @@ internal fun TrackContent(playlist: Playlist, track: Track, index: Int, density:
                                                 maxLines = 1, overflow = TextOverflow.Ellipsis
                                             )
                                             @Suppress("TYPE_MISMATCH")
-                                            it.clip.factory.playlistContent(
+                                            it.clip.factory.PlaylistContent(
                                                 it, track,
                                                 contentColor.copy(animateFloatAsState(if (isSelected) 1F else 0.8F).value),
                                                 noteWidth,

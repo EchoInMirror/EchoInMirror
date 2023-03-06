@@ -1,3 +1,5 @@
+@file:Suppress("DuplicatedCode")
+
 package com.eimsound.daw.components
 
 import androidx.compose.foundation.Canvas
@@ -30,31 +32,33 @@ fun Waveform(
         val halfChannelHeight = channelHeight / 2
         val drawHalfChannelHeight = halfChannelHeight - 1
         if (isDrawMinAndMax) {
-            thumbnail.query(size.width.toDouble(), startSeconds, endSeconds, STEP_IN_PX) { x, ch, min, max ->
+            thumbnail.query(size.width.toDouble(), startSeconds, endSeconds, STEP_IN_PX) { x, ch, min0, max0 ->
                 val y = 2 + channelHeight * ch + halfChannelHeight
-                if (min == 0F && max == 0F) {
+                val max = max0.absoluteValue * drawHalfChannelHeight
+                val min = min0.absoluteValue * drawHalfChannelHeight
+                if (min + max < 0.3F) {
                     drawLine(color, Offset(x, y), Offset(x + STEP_IN_PX, y), STEP_IN_PX)
                     return@query
                 }
                 drawLine(
                     color,
-                    Offset(x, y - max.absoluteValue * drawHalfChannelHeight),
-                    Offset(x, y + min.absoluteValue * drawHalfChannelHeight),
+                    Offset(x, y - max),
+                    Offset(x, y + min),
                     0.5F
                 )
             }
         } else {
             thumbnail.query(size.width.toDouble(), startSeconds, endSeconds, STEP_IN_PX) { x, ch, min, max ->
-                val v = if (max.absoluteValue > min.absoluteValue) max else min
+                val v = (if (max.absoluteValue > min.absoluteValue) max else min) * drawHalfChannelHeight
                 val y = 2 + channelHeight * ch + halfChannelHeight
-                if (v == 0F) {
+                if (v < 0.3F) {
                     drawLine(color, Offset(x, y), Offset(x + STEP_IN_PX, y), STEP_IN_PX)
                     return@query
                 }
                 drawLine(
                     color,
                     Offset(x, y),
-                    Offset(x, y - v * drawHalfChannelHeight),
+                    Offset(x, y - v),
                     STEP_IN_PX
                 )
             }
@@ -83,32 +87,32 @@ fun Waveform(
             thumbnail.query(size.width.toDouble(), startSeconds, endSeconds, STEP_IN_PX) { x, ch, min0, max0 ->
                 val y = 2 + channelHeight * ch + halfChannelHeight
                 val volume = volumeEnvelope?.getValue((startPPQ + x * stepPPQ).toInt(), 1F) ?: 1F
-                val min = min0 * volume
-                val max = max0 * volume
-                if (min == 0F && max == 0F) {
+                val min = min0.absoluteValue * volume * drawHalfChannelHeight
+                val max = max0.absoluteValue * volume * drawHalfChannelHeight
+                if (min + max < 0.3F) {
                     drawLine(color, Offset(x, y), Offset(x + STEP_IN_PX, y), STEP_IN_PX)
                     return@query
                 }
                 drawLine(
                     color,
-                    Offset(x, y - max.absoluteValue * drawHalfChannelHeight),
-                    Offset(x, y + min.absoluteValue * drawHalfChannelHeight),
+                    Offset(x, y - max),
+                    Offset(x, y + min),
                     0.5F
                 )
             }
         } else {
             thumbnail.query(size.width.toDouble(), startSeconds, endSeconds, STEP_IN_PX) { x, ch, min, max ->
                 val v = (if (max.absoluteValue > min.absoluteValue) max else min) *
-                        (volumeEnvelope?.getValue((startPPQ + x * stepPPQ).toInt(), 1F) ?: 1F)
+                        (volumeEnvelope?.getValue((startPPQ + x * stepPPQ).toInt(), 1F) ?: 1F) * drawHalfChannelHeight
                 val y = 2 + channelHeight * ch + halfChannelHeight
-                if (v == 0F) {
+                if (v < 0.3F) {
                     drawLine(color, Offset(x, y), Offset(x + STEP_IN_PX, y), STEP_IN_PX)
                     return@query
                 }
                 drawLine(
                     color,
                     Offset(x, y),
-                    Offset(x, y - v * drawHalfChannelHeight),
+                    Offset(x, y - v),
                     STEP_IN_PX
                 )
             }

@@ -107,3 +107,5 @@ fun AudioSource.close() {
         source = source.source
     }
 }
+
+val AudioSource.timeInSeconds get() = length / sampleRate

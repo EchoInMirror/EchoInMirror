@@ -119,6 +119,7 @@ class AudioThumbnail private constructor(
         var x = startTimeSeconds * sampleRate / samplesPerThumbSample + 1
         val end = (endTimeSeconds * sampleRate / samplesPerThumbSample + 1).coerceAtMost(size.toDouble())
         val step = (end - x) / widthInPx * stepInPx
+        if (x == end || step == 0.0 || step.isNaN()) return
         var i = 0
         while (x <= end) {
             val y = x + step

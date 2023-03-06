@@ -129,7 +129,7 @@ class MidiClipFactoryImpl : MidiClipFactory {
     }
 
     @Composable
-    override fun playlistContent(clip: TrackClip<MidiClip>, track: Track, contentColor: Color,
+    override fun PlaylistContent(clip: TrackClip<MidiClip>, track: Track, contentColor: Color,
                                  noteWidth: MutableState<Dp>, startPPQ: Float, widthPPQ: Float) {
         Box {
             clip.clip.notes.read()

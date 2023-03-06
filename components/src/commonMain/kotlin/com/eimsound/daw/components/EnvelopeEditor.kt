@@ -180,7 +180,7 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange,
 
     @OptIn(ExperimentalTextApi::class)
     @Composable
-    fun Editor(start: Float, color: Color, noteWidth: MutableState<Dp>, drawDots: Boolean = true, editUnit: Int = 24,
+    fun Editor(start: Float, color: Color, noteWidth: MutableState<Dp>, showThumb: Boolean = true, editUnit: Int = 24,
                horizontalScrollState: ScrollState? = null, clipStartTime: Int = 0, stroke: Float = 2F) {
         val scope = rememberCoroutineScope()
         val measurer = rememberTextMeasurer(50)
@@ -251,6 +251,7 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange,
                                             selectedPoints.add(points[tmpId])
                                         }
                                         action = EditAction.MOVE
+                                        hoveredIndex = tmpId
                                         break
                                     }
                                     continue
@@ -351,12 +352,14 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange,
             }
         }) {
             val strokeWidth = stroke * density
+            val thumbSize = 2 * strokeWidth.coerceAtLeast(density)
             val strokeStyle = Stroke(strokeWidth)
             val noteWidthPx = noteWidth.value.toPx()
             val end = start + size.width / noteWidthPx
             // binary search for start point
             points.read()
             val range = valueRange.range
+            val hoveredId = hoveredIndex
 
             // draw points
             val tmpOffsetX = offsetX
@@ -398,7 +401,7 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange,
                     val nextPoint = next ?: cur
                     val currentY = size.height * (1 - curValue.coerceIn(valueRange) / range)
                     val curColor = if (isSelected) primaryColor else color
-                    if (drawDots && (lastTextX + 34 < startX || (lastTextY - currentY).absoluteValue > 30)) {
+                    if (showThumb && (lastTextX + 34 < startX || (lastTextY - currentY).absoluteValue > 30)) {
                         lastTextX = startX
                         lastTextY = currentY
                         drawText(
@@ -424,7 +427,7 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange,
                         lineTo(startX, size.height)
                         close()
                     }, if (isSelected) primaryFillColor else fillColor)
-                    if (drawDots) drawCircle(curColor, 2 * strokeWidth, Offset(startX, currentY))
+                    if (showThumb) drawCircle(curColor, thumbSize * (if (hoveredId == i) 2 else 1), Offset(startX, currentY))
                 }
             } else {
                 startIndex = (points.binarySearch { it.time < start } - 1).coerceAtLeast(0)
@@ -436,10 +439,9 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange,
                     val isFirstSelected = first != null && selectedPoints.contains(first)
                     val topLeft = Offset(0F, y)
                     drawRect(if (isFirstSelected) primaryFillColor else fillColor, topLeft, Size(x, size.height - y))
-                    drawLine(if (isFirstSelected) color else primaryColor, topLeft, Offset(x, y), strokeWidth)
+                    drawLine(if (isFirstSelected) primaryColor else color, topLeft, Offset(x, y), strokeWidth)
                 }
 
-                val hoveredId = hoveredIndex
                 for (i in startIndex until points.size) {
                     val cur = points[i]
                     if (cur.time > end) break
@@ -450,7 +452,7 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange,
                     val isSelected = selectedPoints.contains(cur)
                     val currentY = size.height * (1 - cur.value.coerceIn(valueRange) / range)
                     val curColor = if (isSelected) primaryColor else color
-                    if (drawDots && (lastTextX + 34 < startX || (lastTextY - currentY).absoluteValue > 30)) {
+                    if (showThumb && (lastTextX + 34 < startX || (lastTextY - currentY).absoluteValue > 30)) {
                         lastTextX = startX
                         lastTextY = currentY
                         drawText(
@@ -482,7 +484,7 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange,
                         lineTo(startX, size.height)
                         close()
                     }, if (isSelected) primaryFillColor else fillColor)
-                    if (drawDots) drawCircle(curColor, strokeWidth * (if (hoveredId == i) 4 else 2), Offset(startX, currentY))
+                    if (showThumb) drawCircle(curColor, thumbSize * (if (hoveredId == i) 2 else 1), Offset(startX, currentY))
                 }
             }
 

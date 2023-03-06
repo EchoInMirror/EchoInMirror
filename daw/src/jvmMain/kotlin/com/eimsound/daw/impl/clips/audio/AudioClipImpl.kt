@@ -7,6 +7,7 @@ import androidx.compose.ui.unit.Dp
 import com.eimsound.audioprocessor.*
 import com.eimsound.audioprocessor.data.AudioThumbnail
 import com.eimsound.audioprocessor.data.DefaultEnvelopePointList
+import com.eimsound.audioprocessor.data.EnvelopePoint
 import com.eimsound.audioprocessor.data.VOLUME_RANGE
 import com.eimsound.audioprocessor.data.midi.MidiNoteRecorder
 import com.eimsound.daw.EchoInMirror
@@ -15,10 +16,8 @@ import com.eimsound.daw.api.*
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.components.EnvelopeEditor
 import com.eimsound.daw.components.Waveform
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.put
+import com.eimsound.daw.utils.putNotDefault
+import kotlinx.serialization.json.*
 import java.nio.file.Path
 import kotlin.io.path.name
 
@@ -39,18 +38,6 @@ class AudioClipImpl(json: JsonObject?, factory: ClipFactory<AudioClip>, target: 
     }
     override val defaultDuration get() = EchoInMirror.currentPosition.convertSamplesToPPQ(audioSource.length)
     override val maxDuration get() = defaultDuration
-    override fun toJson() = buildJsonObject {
-        put("id", id)
-        put("factory", factory.name)
-        put("target", target.toJson())
-    }
-
-    override fun fromJson(json: JsonElement) {
-        super.fromJson(json)
-        json as JsonObject
-        json["target"]?.let { target = AudioSourceManager.instance.createAudioSource(it as JsonObject) }
-    }
-
     override var thumbnail by mutableStateOf(AudioThumbnail(this.audioSource))
     override val volumeEnvelope = DefaultEnvelopePointList()
     override val name: String
@@ -64,6 +51,24 @@ class AudioClipImpl(json: JsonObject?, factory: ClipFactory<AudioClip>, target: 
         }
 
     override fun close() { target.close() }
+
+    override fun toJson() = buildJsonObject {
+        put("id", id)
+        put("factory", factory.name)
+        put("target", target.toJson())
+        putNotDefault("volumeEnvelope", Json.encodeToJsonElement<List<EnvelopePoint>>(volumeEnvelope))
+    }
+
+    override fun fromJson(json: JsonElement) {
+        super.fromJson(json)
+        json as JsonObject
+        json["target"]?.let { target = AudioSourceManager.instance.createAudioSource(it as JsonObject) }
+        json["volumeEnvelope"]?.let {
+            volumeEnvelope.clear()
+            volumeEnvelope.addAll(Json.decodeFromJsonElement<List<EnvelopePoint>>(it))
+            volumeEnvelope.update()
+        }
+    }
 }
 
 class AudioClipFactoryImpl: AudioClipFactory {
@@ -73,7 +78,7 @@ class AudioClipFactoryImpl: AudioClipFactory {
 
     override fun createClip() = AudioClipImpl(null, this)
     override fun createClip(path: String, json: JsonObject) = AudioClipImpl(json, this)
-    override fun getEditor(clip: TrackClip<AudioClip>, track: Track): ClipEditor? = null
+    override fun getEditor(clip: TrackClip<AudioClip>, track: Track) = AudioClipEditor(clip, track)
 
     override fun processBlock(clip: TrackClip<AudioClip>, buffers: Array<FloatArray>, position: CurrentPosition,
                               midiBuffer: ArrayList<Int>, noteRecorder: MidiNoteRecorder, pendingNoteOns: LongArray) {
@@ -92,7 +97,7 @@ class AudioClipFactoryImpl: AudioClipFactory {
     }
 
     @Composable
-    override fun playlistContent(clip: TrackClip<AudioClip>, track: Track, contentColor: Color,
+    override fun PlaylistContent(clip: TrackClip<AudioClip>, track: Track, contentColor: Color,
                                  noteWidth: MutableState<Dp>, startPPQ: Float, widthPPQ: Float) {
         val isDrawMinAndMax = noteWidth.value.value < 1
         Box {

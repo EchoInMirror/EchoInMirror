@@ -33,7 +33,7 @@ interface CurrentPosition {
 fun CurrentPosition.convertPPQToSamples(ppq: Int) = (ppq.toDouble() / this.ppq / bpm * 60.0 * sampleRate).toLong()
 fun CurrentPosition.convertSamplesToPPQ(samples: Long) = (samples.toDouble() / sampleRate * bpm / 60.0 * this.ppq).toInt()
 fun CurrentPosition.convertPPQToSeconds(ppq: Float) = ppq.toDouble() / this.ppq / bpm * 60.0
-fun CurrentPosition.convertSecondsToPPQ(seconds: Double) = seconds * bpm * this.ppq / 60.0
+fun CurrentPosition.convertSecondsToPPQ(seconds: Float) = seconds * bpm * this.ppq / 60.0
 val CurrentPosition.projectDisplayPPQ get() = projectRange.last.coerceAtLeast(timeSigDenominator * ppq * 96) +
         timeSigDenominator * ppq * 32
 val CurrentPosition.oneBarPPQ get() = timeSigDenominator * ppq
