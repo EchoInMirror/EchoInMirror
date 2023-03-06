@@ -46,7 +46,7 @@ class JvmAudioPlayer(
 
         if (sdl == null) throw le ?: LineUnavailableException("Failed to open audio player!")
 
-        thread = Thread(this)
+        thread = Thread(this, this::class.simpleName)
         thread!!.start()
     }
 

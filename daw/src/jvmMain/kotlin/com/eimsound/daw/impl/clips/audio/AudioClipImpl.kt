@@ -39,7 +39,12 @@ class AudioClipImpl(json: JsonObject?, factory: ClipFactory<AudioClip>, target: 
     override val defaultDuration get() = EchoInMirror.currentPosition.convertSamplesToPPQ(audioSource.length)
     override val maxDuration get() = defaultDuration
     override var thumbnail by mutableStateOf(AudioThumbnail(this.audioSource))
-    override val volumeEnvelope = DefaultEnvelopePointList()
+    override val volumeEnvelope = DefaultEnvelopePointList().apply {
+        json?.get("volumeEnvelope")?.let {
+            addAll(Json.decodeFromJsonElement<List<EnvelopePoint>>(it))
+            update()
+        }
+    }
     override val name: String
         get() {
             var source: AudioSource? = target

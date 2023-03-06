@@ -31,7 +31,7 @@ object EchoInMirror {
     val pluginManager: PluginManager = EIMPluginManager()
     val windowManager: WindowManager = WindowManagerImpl()
     val undoManager: UndoManager = DefaultUndoManager()
-    val audioThumbnailCache = AudioThumbnailCache(AUDIO_THUMBNAIL_CACHE_PATH.toFile())
+    val audioThumbnailCache by lazy { AudioThumbnailCache(AUDIO_THUMBNAIL_CACHE_PATH.toFile()) }
     var quantification by mutableStateOf(defaultQuantification)
 
     private var selectedTrack_ by mutableStateOf<Track?>(null)

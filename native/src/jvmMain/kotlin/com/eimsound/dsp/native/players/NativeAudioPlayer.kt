@@ -92,7 +92,7 @@ class NativeAudioPlayer(
 
             readDeviceInfo()
 
-            thread = Thread(this)
+            thread = Thread(this, this::class.simpleName)
             thread!!.start()
         } catch (e: Throwable) {
             close()
