@@ -115,9 +115,12 @@ data class MidiTrack(
     var channelPressureEvents: MutableList<MidiEventWithTime> = mutableListOf(),
     var pitchBendEvents: MutableList<MidiEventWithTime> = mutableListOf(),
 ) {
-    val hasNoteOrCtrlrolEvents
-        get() = (noteEvents.size > 0) or (keyPressureEvents.size > 0) or
-                (controlChangeEvents.size > 0) or (programChangeEvents.size > 0) or (channelPressureEvents.size > 0) or
+    val hasMidiEvent
+        get() = (noteEvents.size > 0) or
+                (keyPressureEvents.size > 0) or
+                (controlChangeEvents.size > 0) or
+                (programChangeEvents.size > 0) or
+                (channelPressureEvents.size > 0) or
                 (pitchBendEvents.size > 0)
     val name get() = metaEvents.trackName ?: metaEvents.instrumentName
 }
@@ -227,19 +230,29 @@ fun MidiTrack.toParsedMidiMessages(): ParsedMidiMessages {
 fun MidiTrack.splitByChannel(): Collection<MidiTrack> {
     val tracks = HashMap<Int, MidiTrack>()
     val noteEventMap = this.noteEvents.groupByChannel()
-//    val keyPressureEventMap = this.keyPressureEvents.groupByChannel()
+    val keyPressureEventMap = this.keyPressureEvents.groupByChannel()
     val controlChangeEventMap = this.controlChangeEvents.groupByChannel()
-//    val programChangeEventMap = this.programChangeEvents.groupByChannel()
-//    val channelPressureEventMap = this.pitchBendEvents.groupByChannel()
+    val programChangeEventMap = this.programChangeEvents.groupByChannel()
+    val channelPressureEventMap = this.pitchBendEvents.groupByChannel()
     for (i in 0..15) {
         if (noteEventMap.contains(i) or
             controlChangeEventMap.contains(i)
         ) {
             val track = MidiTrack(metaEvents.copy())
+            if (track.metaEvents.trackName != null)
+                track.metaEvents.trackName += " 通道$i"
+            if (track.metaEvents.instrumentName != null)
+                track.metaEvents.instrumentName += " 通道$i"
             if (noteEventMap.contains(i))
                 track.noteEvents = noteEventMap[i] as MutableList<MidiEventWithTime>
+            if (keyPressureEventMap.contains(i))
+                track.keyPressureEvents = keyPressureEventMap[i] as MutableList<MidiEventWithTime>
             if (controlChangeEventMap.contains(i))
                 track.controlChangeEvents = controlChangeEventMap[i] as MutableList<MidiEventWithTime>
+            if (programChangeEventMap.contains(i))
+                track.programChangeEvents = programChangeEventMap[i] as MutableList<MidiEventWithTime>
+            if (channelPressureEventMap.contains(i))
+                track.channelPressureEvents = channelPressureEventMap[i] as MutableList<MidiEventWithTime>
             tracks[i] = track
         }
     }

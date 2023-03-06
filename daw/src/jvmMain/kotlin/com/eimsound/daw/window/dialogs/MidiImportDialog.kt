@@ -18,17 +18,11 @@ import com.eimsound.audioprocessor.data.midi.ParsedMidiMessages
 import com.eimsound.audioprocessor.data.midi.getMidiTracks
 import com.eimsound.daw.components.*
 import java.io.File
-import java.nio.charset.Charset
-import javax.sound.midi.MidiEvent
 import javax.sound.midi.MidiSystem
-import javax.sound.midi.Sequence
-import javax.sound.midi.Track
-import kotlin.experimental.and
-import kotlin.math.pow
 
 fun FloatingDialogProvider.openMidiImportDialog(file: File, onClose: (List<ParsedMidiMessages>) -> Unit) {
-    val list = MidiSystem.getSequence(file).getMidiTracks()
-
+    val midiTracks = MidiSystem.getSequence(file).getMidiTracks()
+    val midiTracksHasEvent = midiTracks.filter { it.hasMidiEvent }
     val key = Any()
     openFloatingDialog({
         closeFloatingDialog(key)
@@ -51,11 +45,13 @@ fun FloatingDialogProvider.openMidiImportDialog(file: File, onClose: (List<Parse
                     AbsoluteElevationCard {
                         Box(Modifier.fillMaxSize()) {
                             Column(Modifier.verticalScroll(stateVertical)) {
-                                list.fastForEachIndexed { index, midiTrack ->
+                                midiTracksHasEvent.fastForEachIndexed { index, midiTrack ->
                                     MenuItem {
                                         Text(midiTrack.name ?: "轨道${index + 1}", Modifier.weight(1F))
                                         Checkbox(checkboxes.contains(index), {
                                             if (!checkboxes.remove(index)) checkboxes.add(index)
+                                            println(checkboxes.toList())
+                                            println(index)
                                         })
                                     }
                                 }
