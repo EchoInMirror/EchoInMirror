@@ -67,7 +67,7 @@ class VelocityEvent(private val editor: MidiClipEditor) : EventType {
                 val offsetOfDelta = -delta / 127F * size.height
                 val offsetX = if (action == EditAction.MOVE) deltaX * noteWidthPx else 0f
                 val scrollX = horizontalScrollState.value
-                val startTime = clip.time
+                val startTime = clip.time - clip.start
                 val trackColor = track.color
                 notesInView.fastForEach {
                     val isSelected = selectedNotes.contains(it)
@@ -82,7 +82,7 @@ class VelocityEvent(private val editor: MidiClipEditor) : EventType {
                 detectDragGestures({
                     val x = it.x + horizontalScrollState.value
                     val noteWidthPx = noteWidth.value.toPx()
-                    val startTime = clip.time
+                    val startTime = clip.time - clip.start
                     for (i in startNoteIndex until clip.clip.notes.size) {
                         val note = clip.clip.notes[i]
                         if (((startTime + note.time) * noteWidthPx - x).absoluteValue <= 2) {

@@ -139,7 +139,7 @@ internal fun NotesEditorCanvas(editor: DefaultMidiClipEditor) {
                 action // read mutable state of action
 
                 // get note draw nodes - start
-                val startTime = trackClip.time
+                val startTime = trackClip.time - trackClip.start
                 val clip = trackClip.clip
                 startNoteIndex = 0
                 var flag = true

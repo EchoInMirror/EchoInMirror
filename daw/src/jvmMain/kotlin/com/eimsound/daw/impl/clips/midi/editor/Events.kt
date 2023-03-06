@@ -75,7 +75,7 @@ internal suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutin
                     PointerEventType.Move -> {
                         var cursor0 = PointerIconDefaults.Default
                         getClickedNotes(event.x, event.y, editor)?.let {
-                            val startTime = clip.time + it.time
+                            val startTime = clip.time + it.time - clip.start
                             val startX = startTime * noteWidth.value.toPx() - horizontalScrollState.value
                             val endX = (startTime + it.duration) * noteWidth.value.toPx() - horizontalScrollState.value
                             cursor0 = if ((event.x < startX + 4 && event.x > startX - 4) ||
@@ -132,7 +132,7 @@ internal suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutin
                             // check is move or resize
                             // if user click on start 4px and end -4px is resize
                             // else will move
-                            val curTrueStartTime = currentSelectNote.time + clip.time
+                            val curTrueStartTime = currentSelectNote.time + clip.time - clip.start
                             val startX = curTrueStartTime * noteWidth.value.toPx() - horizontalScrollState.value
                             val endX = (curTrueStartTime + currentSelectNote.duration) * noteWidth.value.toPx() -
                                     horizontalScrollState.value
@@ -261,7 +261,7 @@ internal suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutin
                     val minY = minOf(startY, endY)
                     val maxY = maxOf(startY, endY)
                     val list = arrayListOf<NoteMessage>()
-                    val startTime = clip.time
+                    val startTime = clip.time - clip.start
                     for (i in startNoteIndex until clip.clip.notes.size) {
                         val note = clip.clip.notes[i]
                         if (startTime + note.time > maxX) break
