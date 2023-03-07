@@ -1,27 +1,22 @@
 package com.eimsound.daw.window.dialogs
 
-import androidx.compose.foundation.VerticalScrollbar
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.rememberScrollbarAdapter
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.*
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEachIndexed
-import com.eimsound.audioprocessor.data.midi.ParsedMidiMessages
-import com.eimsound.audioprocessor.data.midi.getMidiTracks
+import com.eimsound.audioprocessor.data.midi.MidiTrack
+import com.eimsound.audioprocessor.data.midi.toMidiTracks
 import com.eimsound.daw.components.*
+import com.eimsound.daw.utils.mutableStateSetOf
 import java.io.File
 import javax.sound.midi.MidiSystem
 
-fun FloatingDialogProvider.openMidiImportDialog(file: File, onClose: (List<ParsedMidiMessages>) -> Unit) {
-    val midiTracks = MidiSystem.getSequence(file).getMidiTracks()
+fun FloatingDialogProvider.openMidiImportDialog(file: File, onClose: (List<MidiTrack>) -> Unit) {
+    val midiTracks = MidiSystem.getSequence(file).toMidiTracks()
     val midiTracksHasEvent = midiTracks.filter { it.hasMidiEvent }
     val key = Any()
     openFloatingDialog({
@@ -32,11 +27,11 @@ fun FloatingDialogProvider.openMidiImportDialog(file: File, onClose: (List<Parse
             // TODO: 添加相关的UI, 选择不同的track(可多选), 同时调用 MidiViewer 进行预览
             Row(Modifier.sizeIn(400.dp, 300.dp, 600.dp, 400.dp).padding(horizontal = 10.dp)) {
                 Column(Modifier.weight(1F)) {
-                    val checkboxes = remember { mutableSetOf<Int>() }
+                    val checkboxes = remember { mutableStateSetOf<Int>() }
                     val stateVertical = rememberScrollState(0)
-
                     Row {
-                        Text("轨道",
+                        Text(
+                            "轨道",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.padding(bottom = 4.dp),
@@ -50,8 +45,6 @@ fun FloatingDialogProvider.openMidiImportDialog(file: File, onClose: (List<Parse
                                         Text(midiTrack.name ?: "轨道${index + 1}", Modifier.weight(1F))
                                         Checkbox(checkboxes.contains(index), {
                                             if (!checkboxes.remove(index)) checkboxes.add(index)
-                                            println(checkboxes.toList())
-                                            println(index)
                                         })
                                     }
                                 }

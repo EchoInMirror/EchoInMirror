@@ -33,8 +33,7 @@ import cafe.adriel.bonsai.core.node.Node
 import cafe.adriel.bonsai.filesystem.FileSystemTree
 import com.eimsound.audioprocessor.AudioProcessorManager
 import com.eimsound.audioprocessor.AudioSourceManager
-import com.eimsound.audioprocessor.data.midi.parse
-import com.eimsound.audioprocessor.data.midi.toMidiEvents
+import com.eimsound.audioprocessor.data.midi.*
 import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.api.window.Panel
 import com.eimsound.daw.api.window.PanelDirection
@@ -88,12 +87,12 @@ object FileSystemBrowser: Panel {
                     var hasContent = false
                     try {
                         if (ext == "mid") {
-                            val list = withContext(Dispatchers.IO) {
-                                MidiSystem.getSequence(it.content.toFile()).toMidiEvents().parse()
+                            val notes = withContext(Dispatchers.IO) {
+                                MidiSystem.getSequence(it.content.toFile()).toMidiTracks().getNotes()
                             }
-                            component = { MidiView(list.notes) }
+                            component = { MidiView(notes) }
                             nodeName = it.content.name
-                            fileBrowserPreviewer.setPreviewTarget(list.notes)
+                            fileBrowserPreviewer.setPreviewTarget(notes)
                             hasContent = true
                         } else if (AudioSourceManager.instance.supportedFormats.contains(ext)) {
                             val file = it.content.toNioPath()

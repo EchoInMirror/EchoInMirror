@@ -1,7 +1,6 @@
 package com.eimsound.audioprocessor.data.midi
 
 import androidx.compose.runtime.mutableStateOf
-import com.eimsound.audioprocessor.data.EnvelopePoint
 import com.eimsound.daw.utils.IManualState
 import com.eimsound.daw.utils.mapValue
 import kotlinx.serialization.*
@@ -55,37 +54,6 @@ open class DefaultNoteMessage(note: Int, override var time: Int, duration: Int =
     override fun toString(): String {
         return "DefaultNoteMessage(note=$note, time=$time, duration=$duration, velocity=$velocity, disabled=$disabled)"
     }
-}
-
-
-data class ParsedMidiMessages(
-    val notes: List<NoteMessage>,
-    val events: Map<Int, List<EnvelopePoint>>,
-    var metaEvents: MetaEvents? = null
-)
-
-fun Collection<MidiEventWithTime>.parse(): ParsedMidiMessages {
-    val noteMessages = ArrayList<NoteMessage>()
-    val events = HashMap<Int, ArrayList<EnvelopePoint>>()
-    val allNoteOns = arrayOfNulls<NoteMessage>(128)
-    forEach { (event, time) ->
-        if (event.isController) {
-            val list = events.getOrPut(event.controller) { ArrayList() }
-            list.add(EnvelopePoint(time, event.value / 127F))
-            return@forEach
-        }
-        if (!event.isNote || event.note > 127) return@forEach
-        val prevNoteOn = allNoteOns[event.note]
-        if (prevNoteOn != null) {
-            if (event.isNoteOff) prevNoteOn.duration = time - prevNoteOn.time
-            noteMessages.add(prevNoteOn)
-            allNoteOns[event.note] = null
-        }
-        if (event.isNoteOn) allNoteOns[event.note] = defaultNoteMessage(event.note, time, velocity = event.velocity)
-    }
-    allNoteOns.forEach { if (it != null) noteMessages.add(it) }
-    noteMessages.sortBy { it.time }
-    return ParsedMidiMessages(noteMessages, events)
 }
 
 @Suppress("unused")
