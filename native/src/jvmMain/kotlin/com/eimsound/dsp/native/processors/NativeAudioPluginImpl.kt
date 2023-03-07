@@ -109,8 +109,8 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
                         val process = pb.start()
                         scanningPlugins[it] = process
                         process.outputStream.write(it.encodeToByteArray())
-                        process.outputStream.write(0)
                         process.outputStream.flush()
+                        process.outputStream.close()
                         var result = ""
                         try {
                             result = process.inputStream.readAllBytes().decodeToString()

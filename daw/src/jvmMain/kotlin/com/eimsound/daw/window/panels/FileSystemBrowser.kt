@@ -33,8 +33,7 @@ import cafe.adriel.bonsai.core.node.Node
 import cafe.adriel.bonsai.filesystem.FileSystemTree
 import com.eimsound.audioprocessor.AudioProcessorManager
 import com.eimsound.audioprocessor.AudioSourceManager
-import com.eimsound.audioprocessor.data.midi.parse
-import com.eimsound.audioprocessor.data.midi.toMidiEvents
+import com.eimsound.audioprocessor.data.midi.*
 import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.api.window.Panel
 import com.eimsound.daw.api.window.PanelDirection
@@ -46,6 +45,7 @@ import com.eimsound.daw.processor.PreviewerAudioProcessor
 import kotlinx.coroutines.*
 import okio.FileSystem
 import okio.Path
+import org.apache.commons.lang3.SystemUtils
 import java.io.File
 import javax.sound.midi.MidiSystem
 import kotlin.io.path.name
@@ -60,6 +60,12 @@ val fileBrowserPreviewer = PreviewerAudioProcessor(AudioProcessorManager.instanc
 object FileSystemBrowser: Panel {
     override val name = "文件浏览"
     override val direction = PanelDirection.Vertical
+    private val filePath = when {
+        SystemUtils.IS_OS_WINDOWS -> """C:\"""
+        SystemUtils.IS_OS_LINUX -> SystemUtils.getUserDir().toString()
+        SystemUtils.IS_OS_MAC -> SystemUtils.getUserDir().toString()
+        else -> """C:\"""
+    }
 
     @Composable
     override fun Icon() {
@@ -72,7 +78,7 @@ object FileSystemBrowser: Panel {
         Column {
             var component by remember { mutableStateOf<(@Composable BoxScope.() -> Unit)?>(null) }
             var nodeName by remember { mutableStateOf<String?>(null) }
-            Tree(FileSystemTree(File("C:\\"), true), FileSystemStyle, FileMapper, Modifier.weight(1F)) {
+            Tree(FileSystemTree(File(filePath), true), FileSystemStyle, FileMapper, Modifier.weight(1F)) {
                 if (FileSystem.SYSTEM.metadata(it.content).isDirectory) return@Tree
                 component = null
                 nodeName = null
@@ -81,12 +87,12 @@ object FileSystemBrowser: Panel {
                     var hasContent = false
                     try {
                         if (ext == "mid") {
-                            val list = withContext(Dispatchers.IO) {
-                                MidiSystem.getSequence(it.content.toFile()).toMidiEvents().parse()
+                            val notes = withContext(Dispatchers.IO) {
+                                MidiSystem.getSequence(it.content.toFile()).toMidiTracks().getNotes()
                             }
-                            component = { MidiView(list.notes) }
+                            component = { MidiView(notes) }
                             nodeName = it.content.name
-                            fileBrowserPreviewer.setPreviewTarget(list.notes)
+                            fileBrowserPreviewer.setPreviewTarget(notes)
                             hasContent = true
                         } else if (AudioSourceManager.instance.supportedFormats.contains(ext)) {
                             val file = it.content.toNioPath()

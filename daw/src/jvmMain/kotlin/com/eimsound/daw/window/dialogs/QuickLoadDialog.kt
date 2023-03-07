@@ -178,55 +178,57 @@ fun FloatingDialogProvider.openQuickLoadDialog(onClose: ((AudioProcessorDescript
                             end = SUB_PADDING
                         ), horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
-                        Column(Modifier.weight(1f).fillMaxHeight()) {
+                        AbsoluteElevation {
                             Column(Modifier.weight(1f).fillMaxHeight()) {
-                                DescList(
-                                    Modifier.weight(5f).padding(SUB_PADDING),
-                                    listOf("乐器", "效果器"),
-                                    if (selectedInstrument0 == true) "乐器" else if (selectedInstrument0 == false) "效果器" else null,
-                                    "所有类型", "类型",
-                                    countMap = instrumentCountMap,
-                                    allCount = instrumentAllCount
-                                ) { selectedInstrument = if (it == null) null else it == "乐器" }
-                                DescList(
-                                    Modifier.weight(5f).padding(SUB_PADDING),
-                                    factories,
-                                    selectedFactory0,
-                                    "所有",
-                                    countMap = factoriesCountMap
-                                ) { selectedFactory = it }
-                            }
-                        }
-                        DescList(
-                            Modifier.weight(1f).padding(SUB_PADDING), categoryList.sorted(),
-                            selectedCategory0, "所有类别", "类别",
-                            countMap = categoryCountMap,
-                            allCount = categoryAllCount
-                        ) { selectedCategory = it }
-                        DescList(
-                            Modifier.weight(1f).padding(SUB_PADDING), factoryList.sorted(),
-                            selectedManufacturer0, "所有厂商", "厂商",
-                            countMap = manufacturerCountMap,
-                            allCount = manufacturerAllCount
-                        ) { selectedManufacturer = it }
-                        DescList(
-                            Modifier.weight(1f).padding(SUB_PADDING), descList,
-                            selectedDescription, tailContent = {
-                                descriptionsToFactory[it]?.name?.let { factoryName ->
-                                    val pair = it.identifier to factoryName
-                                    IconToggleButton(favoriteAudioProcessors.contains(pair), {
-                                        if (!favoriteAudioProcessors.remove(pair)) favoriteAudioProcessors.add(pair)
-                                        saveFavoriteAudioProcessors()
-                                    }, 20.dp, colors = favoriteIconColors) {
-                                        Icon(Icons.Filled.Star, "收藏", Modifier.size(16.dp))
-                                    }
+                                Column(Modifier.weight(1f).fillMaxHeight()) {
+                                    DescList(
+                                        Modifier.weight(5f).padding(SUB_PADDING),
+                                        listOf("乐器", "效果器"),
+                                        if (selectedInstrument0 == true) "乐器" else if (selectedInstrument0 == false) "效果器" else null,
+                                        "所有类型", "类型",
+                                        countMap = instrumentCountMap,
+                                        allCount = instrumentAllCount
+                                    ) { selectedInstrument = if (it == null) null else it == "乐器" }
+                                    DescList(
+                                        Modifier.weight(5f).padding(SUB_PADDING),
+                                        factories,
+                                        selectedFactory0,
+                                        "所有",
+                                        countMap = factoriesCountMap
+                                    ) { selectedFactory = it }
                                 }
                             }
-                        ) { desc ->
-                            if (selectedDescription == desc) {
-                                closeFloatingDialog(KEY)
-                                onClose(desc, descriptionsToFactory[desc])
-                            } else selectedDescription = descList.find { it == desc }
+                            DescList(
+                                Modifier.weight(1f).padding(SUB_PADDING), categoryList.sorted(),
+                                selectedCategory0, "所有类别", "类别",
+                                countMap = categoryCountMap,
+                                allCount = categoryAllCount
+                            ) { selectedCategory = it }
+                            DescList(
+                                Modifier.weight(1f).padding(SUB_PADDING), factoryList.sorted(),
+                                selectedManufacturer0, "所有厂商", "厂商",
+                                countMap = manufacturerCountMap,
+                                allCount = manufacturerAllCount
+                            ) { selectedManufacturer = it }
+                            DescList(
+                                Modifier.weight(1f).padding(SUB_PADDING), descList,
+                                selectedDescription, tailContent = {
+                                    descriptionsToFactory[it]?.name?.let { factoryName ->
+                                        val pair = it.identifier to factoryName
+                                        IconToggleButton(favoriteAudioProcessors.contains(pair), {
+                                            if (!favoriteAudioProcessors.remove(pair)) favoriteAudioProcessors.add(pair)
+                                            saveFavoriteAudioProcessors()
+                                        }, 20.dp, colors = favoriteIconColors) {
+                                            Icon(Icons.Filled.Star, "收藏", Modifier.size(16.dp))
+                                        }
+                                    }
+                                }
+                            ) { desc ->
+                                if (selectedDescription == desc) {
+                                    closeFloatingDialog(KEY)
+                                    onClose(desc, descriptionsToFactory[desc])
+                                } else selectedDescription = descList.find { it == desc }
+                            }
                         }
                     }
                 },
