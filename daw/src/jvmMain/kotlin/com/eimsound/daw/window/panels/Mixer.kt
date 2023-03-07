@@ -118,7 +118,7 @@ private fun MixerTrack(track: Track, index: String, containerColor: Color = Mate
                         horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically
                     ) {
                         VolumeSlider(track)
-                        Gap(18)
+                        LevelHints(Modifier.height(136.dp).width(24.dp))
                         Level(track.levelMeter, Modifier.height(136.dp))
                     }
                 }

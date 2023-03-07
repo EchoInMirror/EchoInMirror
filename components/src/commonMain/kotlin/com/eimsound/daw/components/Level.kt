@@ -4,8 +4,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -13,7 +12,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.text.*
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.eimsound.daw.components.utils.warning
 import com.eimsound.daw.utils.ExperimentalEIMApi
 import com.eimsound.daw.utils.LevelMeter
@@ -46,5 +48,34 @@ fun Level(
         if (aniRight > 0.0001F) drawLine(rightColor,
             Offset(rightX, height * (1F - aniRight)),
             Offset(rightX, height), stroke, StrokeCap.Round)
+    }
+}
+
+private val levelMarks = listOf(
+    100F to "0",
+    70.79458F to "-6",
+    50.118725F to "-12"
+)
+
+@OptIn(ExperimentalTextApi::class)
+@Composable
+fun LevelHints(
+    modifier: Modifier = Modifier.height(80.dp),
+    color: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+    style: TextStyle = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+    alpha: Float = 0.8f
+) {
+    val measurer = rememberTextMeasurer()
+    Canvas(modifier) {
+        val top = size.height * 2 / 7
+        val height = size.height * 5 / 7
+        levelMarks.forEach { (value, label) ->
+            val y = height * (100F - value) / 100F + top
+            val result = measurer.measure(
+                AnnotatedString(label),
+                style,
+            )
+            drawText(result, color, Offset(size.width / 2 - result.size.width / 2 - size.width / 10, y - result.size.height / 2), alpha)
+        }
     }
 }
