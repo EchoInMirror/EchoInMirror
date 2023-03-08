@@ -14,6 +14,7 @@ import org.apache.commons.lang3.SystemUtils
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.util.*
 import java.util.jar.Manifest
 import kotlin.io.path.absolute
 import kotlin.io.path.absolutePathString
@@ -35,6 +36,8 @@ var VERSION = "0.0.0"
     private set
 var RELEASE_TIME: Long = System.currentTimeMillis()
     private set
+internal var APP_CENTER_SECRET = ""
+    private set
 
 object Configuration : JsonSerializable {
     @Suppress("MemberVisibilityCanBePrivate")
@@ -43,33 +46,42 @@ object Configuration : JsonSerializable {
     var audioDeviceFactoryName by mutableStateOf("")
     var audioDeviceName by mutableStateOf("")
     var autoCutOver0db by mutableStateOf(true)
+    var userId = UUID.randomUUID().toString()
+        private set
 
     init {
         if (!Files.exists(ROOT_PATH)) Files.createDirectory(ROOT_PATH)
         val resources = this::class.java.classLoader.getResources("META-INF/MANIFEST.MF")
-        while (resources.hasMoreElements()) {
-            try {
-                val manifest = Manifest(resources.nextElement().openStream())
-                VERSION = manifest.mainAttributes.getValue("Implementation-Version")
-                RELEASE_TIME = manifest.mainAttributes.getValue("Release-Time").toLong()
-            } catch (ignored: Throwable) { }
-        }
-        if (CONFIG_PATH.exists()) runBlocking { fromJsonFile(CONFIG_PATH.toFile()) }
+        while (resources.hasMoreElements()) try {
+            val e = resources.nextElement()
+            val m = Manifest(e.openStream()).mainAttributes
+            if (m.getValue("Name") != "EchoInMirror") continue
+            m.apply {
+                VERSION = getValue("Implementation-Version")
+                if (containsKey("Release-Time")) RELEASE_TIME = getValue("Release-Time").toLong()
+                APP_CENTER_SECRET = (if (containsKey("App-Center-Secret")) getValue("App-Center-Secret")
+                else System.getenv("APP_CENTER_SECRET")) ?: ""
+            }
+            break
+        } catch (ignored: Throwable) { }
+        if (CONFIG_PATH.exists()) fromJsonFile(CONFIG_PATH.toFile())
+        else save()
         nativeHostPath = Paths.get("D:\\Cpp\\EIMPluginScanner\\build\\EIMHost_artefacts\\MinSizeRel\\EIMHost.exe")
         if (!Files.exists(nativeHostPath)) nativeHostPath = Paths.get("EIMHost-x64.exe")
         val x86Host = nativeHostPath.absolute().parent.resolve(nativeHostPath.name.replace("x64", "x86"))
 
+        System.setProperty("com.microsoft.appcenter.crashes.uncaughtexception.autosend", "true")
+        System.setProperty("com.microsoft.appcenter.preferences", ROOT_PATH.resolve("appCenterPreferences.json").absolutePathString())
         System.setProperty("eim.dsp.nativeaudioplugins.list", ROOT_PATH.resolve("nativeAudioPlugins.json").absolutePathString())
         System.setProperty("eim.dsp.nativeaudioplugins.host", nativeHostPath.absolutePathString())
         System.setProperty("eim.dsp.nativeaudioplugins.host.x86", (if (Files.exists(x86Host)) x86Host else nativeHostPath).absolutePathString())
         System.setProperty("eim.dsp.nativeaudioplayer.file", nativeHostPath.absolutePathString())
     }
 
-    fun save() {
-        runBlocking { encodeJsonFile(CONFIG_PATH.toFile(), true) }
-    }
+    fun save() { encodeJsonFile(CONFIG_PATH.toFile(), true) }
 
     override fun toJson() = buildJsonObject {
+        put("userId", userId)
         put("stopAudioOutputOnBlur", stopAudioOutputOnBlur)
         put("audioDeviceFactoryName", audioDeviceFactoryName)
         put("audioDeviceName", audioDeviceName)
@@ -78,10 +90,12 @@ object Configuration : JsonSerializable {
 
     override fun fromJson(json: JsonElement) {
         json as JsonObject
-        json["stopAudioOutputOnBlur"]?.jsonPrimitive?.boolean?.let { stopAudioOutputOnBlur = it }
-        json["audioDeviceFactoryName"]?.jsonPrimitive?.contentOrNull?.let { audioDeviceFactoryName = it }
-        json["audioDeviceName"]?.jsonPrimitive?.contentOrNull?.let { audioDeviceName = it }
-        json["autoCutOver0db"]?.jsonPrimitive?.boolean?.let { autoCutOver0db = it }
+        json["stopAudioOutputOnBlur"]?.asBoolean()?.let { stopAudioOutputOnBlur = it }
+        json["audioDeviceFactoryName"]?.asString()?.let { audioDeviceFactoryName = it }
+        json["audioDeviceName"]?.asString()?.let { audioDeviceName = it }
+        json["autoCutOver0db"]?.asBoolean()?.let { autoCutOver0db = it }
+        val id = json["userId"]?.asString()
+        if (id == null) save() else userId = id
     }
 }
 

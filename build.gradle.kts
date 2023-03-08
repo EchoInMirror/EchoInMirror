@@ -6,7 +6,6 @@ plugins {
 }
 
 group = "com.eimsound.daw"
-version = "0.0.0"
 
 allprojects {
     repositories {

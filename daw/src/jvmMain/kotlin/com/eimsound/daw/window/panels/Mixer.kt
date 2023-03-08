@@ -180,6 +180,7 @@ object Mixer: Panel {
     override fun Content() {
         Scrollable {
             Row {
+//                Button({ throw RuntimeException("6666") }) { Text("测试报错") }
                 val bus = EchoInMirror.bus!!
                 val trackColor = if (EchoInMirror.windowManager.isDarkTheme)
                     MaterialTheme.colorScheme.surfaceColorAtElevation(20.dp) else MaterialTheme.colorScheme.surface

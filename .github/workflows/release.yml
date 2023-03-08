@@ -28,7 +28,7 @@ jobs:
           java-version: 19
 
       - name: Set plugin version
-        run: version='${{ github.ref }}' && sed -i "s/0\.0\.0/${version:10}/" build.gradle.kts
+        run: version='${{ github.ref }}' && sed -i "s/0\.0\.0/${version:10}/" gradle.properties
         shell: bash
 
       - name: Build with Gradle
@@ -39,6 +39,8 @@ jobs:
           cp daw/build/libs/daw.jar package/EchoInMirror.jar
           cp -R release-bin/. package/
           curl https://github.com/EchoInMirror/EIMHost/releases/download/1.0.6/EIMHost.exe -o package/EIMHost.exe -L
+        env:
+          APP_CENTER_SECRET: ${{ secrets.APP_CENTER_SECRET }}
 
       - name: Download ffmpeg
         shell: bash

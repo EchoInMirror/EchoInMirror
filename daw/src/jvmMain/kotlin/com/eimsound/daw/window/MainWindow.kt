@@ -26,13 +26,16 @@ import com.eimsound.daw.components.dragdrop.LocalGlobalDragAndDrop
 import com.eimsound.daw.components.dragdrop.PlatformDropTargetModifier
 import com.eimsound.daw.components.splitpane.HorizontalSplitPane
 import com.eimsound.daw.components.splitpane.VerticalSplitPane
-import com.eimsound.daw.impl.WindowManagerImpl
 import com.eimsound.daw.dawutils.Border
 import com.eimsound.daw.dawutils.CLIPBOARD_MANAGER
 import com.eimsound.daw.dawutils.Logo
 import com.eimsound.daw.dawutils.border
+import com.eimsound.daw.impl.WindowManagerImpl
 import com.eimsound.daw.window.panels.playlist.mainPlaylist
+import com.microsoft.appcenter.crashes.Crashes
+import io.github.oshai.KotlinLogging
 
+private val logger = KotlinLogging.logger("MainWindow")
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun ApplicationScope.MainWindow() {
@@ -54,7 +57,8 @@ fun ApplicationScope.MainWindow() {
         (EchoInMirror.windowManager as WindowManagerImpl).mainWindow = window
         EchoInMirror.windowManager.floatingDialogProvider = LocalFloatingDialogProvider.current
         window.exceptionHandler = WindowExceptionHandler {
-            it.printStackTrace()
+            logger.error("Uncaught compose exception", it)
+            Crashes.trackCrash(it, Thread.currentThread(), null)
         }
 
         Box {
