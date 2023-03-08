@@ -102,6 +102,7 @@ private fun MixerTrack(track: Track, index: String, containerColor: Color = Mate
                             if (track.isMute) Icon(Icons.Default.VolumeOff, null, tint = MaterialTheme.colorScheme.error)
                             else Icon(Icons.Default.VolumeUp, null)
                         }
+                        Gap(6)
                         Text(
                             track.levelMeter.cachedMaxLevelString,
                             Modifier.width(30.dp).padding(start = 2.dp),
@@ -118,7 +119,7 @@ private fun MixerTrack(track: Track, index: String, containerColor: Color = Mate
                         horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically
                     ) {
                         VolumeSlider(track)
-                        Gap(18)
+                        LevelHints(Modifier.height(136.dp).width(24.dp))
                         Level(track.levelMeter, Modifier.height(136.dp))
                     }
                 }
