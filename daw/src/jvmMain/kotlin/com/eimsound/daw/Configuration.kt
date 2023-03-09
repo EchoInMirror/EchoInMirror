@@ -7,18 +7,14 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.eimsound.daw.utils.*
-import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.*
-import org.apache.commons.io.IOUtils
 import org.apache.commons.lang3.SystemUtils
-import java.nio.charset.Charset
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.*
 import java.util.jar.Manifest
-import java.util.logging.LogManager
 import kotlin.io.path.absolute
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.exists
@@ -29,7 +25,6 @@ val WORKING_PATH: Path = Path.of(
     else System.getProperty("user.home") + "/Library/Application Support"
 )
 val ROOT_PATH: Path = WORKING_PATH.resolve("EchoInMirror")
-val LOGS_PATH: Path = ROOT_PATH.resolve("logs")
 val FAVORITE_AUDIO_PROCESSORS_PATH: Path = ROOT_PATH.resolve("favoriteAudioProcessors.json")
 @Suppress("MemberVisibilityCanBePrivate")
 val AUDIO_THUMBNAIL_CACHE_PATH: Path = ROOT_PATH.resolve("audioThumbnailCache.db")
@@ -55,11 +50,6 @@ object Configuration : JsonSerializable {
 
     init {
         if (!Files.exists(ROOT_PATH)) Files.createDirectory(ROOT_PATH)
-        LogManager.getLogManager().readConfiguration(IOUtils.toInputStream(
-            "handlers=com.eimsound.daw.dawutils.FileLogHandler, java.util.logging.ConsoleHandler\n" +
-                "java.util.logging.ConsoleHandler.formatter=com.eimsound.daw.dawutils.LogFormatter", Charset.defaultCharset()
-        ))
-        if (!Files.exists(LOGS_PATH)) Files.createDirectory(LOGS_PATH)
         val resources = this::class.java.classLoader.getResources("META-INF/MANIFEST.MF")
         while (resources.hasMoreElements()) try {
             val e = resources.nextElement()
@@ -111,7 +101,7 @@ object Configuration : JsonSerializable {
 val IS_DEBUG = System.getProperty("cn.apisium.eim.debug") == "true"
 
 val recentProjects = mutableStateListOf<String>().apply {
-    runCatching { runBlocking { RECENT_PROJECT_PATH.toFile().toJson<List<String>>() } }.onSuccess(::addAll)
+    runCatching { RECENT_PROJECT_PATH.toFile().toJson<List<String>>() }.onSuccess(::addAll)
 }
 
 @OptIn(ExperimentalSerializationApi::class)

@@ -23,6 +23,7 @@ import com.eimsound.audioprocessor.AudioProcessorFactory
 import com.eimsound.audioprocessor.AudioProcessorManager
 import com.eimsound.daw.FAVORITE_AUDIO_PROCESSORS_PATH
 import com.eimsound.daw.components.*
+import com.eimsound.daw.components.dragdrop.GlobalDraggable
 import com.eimsound.daw.components.utils.warning
 import com.eimsound.daw.utils.IDisplayName
 import com.eimsound.daw.utils.mutableStateSetOf
@@ -222,7 +223,7 @@ fun FloatingDialogProvider.openQuickLoadDialog(onClose: ((AudioProcessorDescript
                                             Icon(Icons.Filled.Star, "收藏", Modifier.size(16.dp))
                                         }
                                     }
-                                }
+                                }, draggable = true
                             ) { desc ->
                                 if (selectedDescription == desc) {
                                     closeFloatingDialog(KEY)
@@ -263,6 +264,43 @@ fun FloatingDialogProvider.openQuickLoadDialog(onClose: ((AudioProcessorDescript
 }
 
 @Composable
+private fun <T> DescListItem(
+    it: T,
+    selectedDesc: T?,
+    onClick: (it: T?) -> Unit,
+    countMap: Map<T, Int> = mapOf(),
+    tailContent: (@Composable RowScope.(T) -> Unit)? = null,
+) {
+    MenuItem(
+        { onClick(it) },
+        selectedDesc == it,
+        modifier = Modifier.fillMaxWidth().height(30.dp),
+        minHeight = 30.dp
+    ) {
+        Marquee(Modifier.weight(1F)) {
+            Text(
+                if (it is IDisplayName) it.displayName else it.toString(),
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Start,
+                maxLines = 1,
+                style = MaterialTheme.typography.labelMedium
+            )
+        }
+        if (tailContent != null) tailContent(it)
+        else {
+            val count = countMap.getOrDefault(it, 0)
+            if (count > 0) Text(
+                if (count < 100) count.toString() else "99+",
+                color = MaterialTheme.colorScheme.outline,
+                maxLines = 1,
+                textAlign = TextAlign.End,
+                style = MaterialTheme.typography.labelSmall
+            )
+        }
+    }
+}
+
+@Composable
 private fun <T> DescList(
     modifier: Modifier = Modifier,
     descList: List<T>,
@@ -271,6 +309,7 @@ private fun <T> DescList(
     title: String? = null,
     countMap: Map<T, Int> = mapOf(),
     allCount: Int = countMap.values.sum(),
+    draggable: Boolean = false,
     tailContent: (@Composable RowScope.(T) -> Unit)? = null,
     onClick: (it: T?) -> Unit
 ) {
@@ -313,33 +352,14 @@ private fun <T> DescList(
                         }
                     }
                     items(descList) {
-                        MenuItem(
-                            { onClick(it) },
-                            selectedDesc == it,
-                            modifier = Modifier.fillMaxWidth().height(30.dp),
-                            minHeight = 30.dp
-                        ) {
-                            Marquee(Modifier.weight(1F)) {
-                                Text(
-                                    if (it is IDisplayName) it.displayName else it.toString(),
-                                    overflow = TextOverflow.Ellipsis,
-                                    textAlign = TextAlign.Start,
-                                    maxLines = 1,
-                                    style = MaterialTheme.typography.labelMedium
-                                )
+                        if (draggable) {
+                            GlobalDraggable({
+                                onClick(null)
+                                it
+                            }) {
+                                DescListItem(it, selectedDesc, onClick, countMap, tailContent)
                             }
-                            if (tailContent != null) tailContent(it)
-                            else {
-                                val count = countMap.getOrDefault(it, 0)
-                                if (count > 0) Text(
-                                    if (count < 100) count.toString() else "99+",
-                                    color = MaterialTheme.colorScheme.outline,
-                                    maxLines = 1,
-                                    textAlign = TextAlign.End,
-                                    style = MaterialTheme.typography.labelSmall
-                                )
-                            }
-                        }
+                        } else DescListItem(it, selectedDesc, onClick, countMap, tailContent)
                     }
                 }
                 VerticalScrollbar(rememberScrollbarAdapter(state), Modifier.align(Alignment.CenterEnd).fillMaxHeight())

@@ -32,8 +32,8 @@ fun main() {
             VERSION
         )
         androidApplication.start()
-        System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "trace")
-        AppCenter.setLogLevel(2)
+//        System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "trace")
+//        AppCenter.setLogLevel(2)
         AppCenter.start(androidApplication, APP_CENTER_SECRET, Analytics::class.java, Crashes::class.java)
         AppCenter.setUserId(Configuration.userId)
     }

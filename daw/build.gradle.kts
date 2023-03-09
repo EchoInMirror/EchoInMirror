@@ -48,7 +48,7 @@ kotlin {
                 api("org.mapdb:mapdb:3.0.9") {
                     exclude(group = "com.google.guava")
                 }
-                implementation("org.slf4j:slf4j-jdk14:${extra["eim.dependencies.slf4j"]}")
+                implementation("org.apache.logging.log4j:log4j-slf4j2-impl:2.20.0")
                 implementation("org.jetbrains.compose.ui:ui-util:${ComposeBuildConfig.composeVersion}")
                 implementation("com.github.Apisium:appcenter-sdk-jvm:1.0.6")
             }

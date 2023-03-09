@@ -2,6 +2,7 @@
 test_project
 *.wav
 *.log
+/logs
 ffmpeg
 
 .gradle
