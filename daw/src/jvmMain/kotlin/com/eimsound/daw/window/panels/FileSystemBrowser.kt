@@ -40,114 +40,112 @@ val FileMapper = @Composable { node: Node<Path>, content: @Composable () -> Unit
 
 val fileBrowserPreviewer = PreviewerAudioProcessor(AudioProcessorManager.instance.eimAudioProcessorFactory)
 
-@Composable
-fun CommonNode(icon: ImageVector, text: String) {
-    Icon(
-        icon,
-        text,
-        modifier = Modifier.size(20.dp, 20.dp)
-    )
-    Text(text, modifier = Modifier.padding(start = 4.dp))
-}
 
 @Composable
 fun MidiNode(file: File, indent: Int) {
     var expanded by remember { mutableStateOf(false) }
-
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.padding(start = (10 * (indent + 1)).dp, top = 4.dp, bottom = 4.dp)
-    ) {
-        Icon(
-            FileExtensionIcons["mid"]!!,
-            contentDescription = null,
-            modifier = Modifier.size(20.dp, 20.dp),
-        )
-        Text(file.name, modifier = Modifier.padding(start = 4.dp))
-        EIMIconButton(
-            onClick = { expanded = !expanded },
-            modifier = Modifier.padding(end = 4.dp).size(20.dp, 20.dp)
-        ) {
-            Icon(
-                if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
-                contentDescription = null
-            )
-        }
-
-    }
+    FileTreeRow(
+        FileExtensionIcons["mid"]!!,
+        file.name,
+        hasButton = true,
+        buttonState = expanded,
+        onButtonClick = { expanded = !expanded },
+        indent = indent
+    )
     if (expanded) {
         val midiTracks = MidiSystem.getSequence(file).toMidiTracks()
         midiTracks.forEachIndexed { index, midiTrack ->
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(start = (10 * (indent + 2)).dp, top = 4.dp, bottom = 4.dp)
-            ){
-                CommonNode(FileExtensionIcons["midiTrack"]!!, midiTrack.name ?: "轨道 $index")
-            }
+            FileTreeRow(
+                FileExtensionIcons["midiTrack"]!!,
+                midiTrack.name ?: "轨道 $index",
+                indent = indent + 1
+            )
         }
     }
 }
 
-
 @Composable
-fun FileNode(file: File) {
-    Icon(
-        FileExtensionIcons.getOrDefault(file.extension, Icons.Outlined.DevicesOther),
-        file.name,
-        modifier = Modifier.size(20.dp, 20.dp)
-    )
-    Text(file.name, modifier = Modifier.padding(start = 4.dp))
-}
-
-
-@Composable
-fun FileTree(file: File, indent: Int = 0) {
+fun DictionaryNode(file: File, indent: Int) {
     var expanded by remember { mutableStateOf(false) }
-
-    when (file.extension) {
-        "mid" -> MidiNode(file, indent)
-        else -> {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(start = (10 * (indent + 1)).dp, top = 4.dp, bottom = 4.dp)
-            ) {
-                if (file.isDirectory) {
-                    Icon(
-                        Icons.Filled.Folder,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp, 20.dp),
-                    )
-                    Text(file.name, modifier = Modifier.padding(start = 4.dp))
-                    if (file.listFiles()!!.isNotEmpty()) {
-                        EIMIconButton(
-                            onClick = { expanded = !expanded },
-                            modifier = Modifier.padding(end = 4.dp).size(20.dp, 20.dp)
-                        ) {
-                            Icon(
-                                if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
-                                contentDescription = null
-                            )
-                        }
-                    }
-                } else FileNode(file)
-            }
-        }
-    }
-
-    if (file.isDirectory && expanded) {
+    FileTreeRow(
+        Icons.Filled.Folder,
+        file.name,
+        hasButton = file.listFiles()!!.isNotEmpty(),
+        buttonState = expanded,
+        onButtonClick = { expanded = !expanded },
+        indent = indent
+    )
+    if (expanded) {
         for (child in file.listFiles()!!.sorted().sortedBy { it.isFile }) {
             FileTree(child, indent + 1)
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+
+@Composable
+fun FileNode(file: File, indent: Int) {
+    FileTreeRow(
+        FileExtensionIcons.getOrDefault(file.extension, Icons.Outlined.DevicesOther),
+        file.name,
+        indent = indent
+    )
+}
+
+@Composable
+fun FileTreeRow(
+    icon: ImageVector,
+    text: String,
+    hasButton: Boolean = false,
+    buttonState: Boolean = false,
+    onButtonClick: () -> Unit = {},
+    indent: Int = 0,
+    horizontalArrangement: Arrangement.Horizontal = Arrangement.Start,
+    verticalAlignment: Alignment.Vertical = Alignment.CenterVertically,
+) {
+    Row(
+        modifier = Modifier.padding(start = (10 * (indent + 1)).dp, top = 4.dp, bottom = 4.dp),
+        horizontalArrangement = horizontalArrangement,
+        verticalAlignment = verticalAlignment,
+    ) {
+        Icon(
+            icon,
+            text,
+            modifier = Modifier.size(20.dp, 20.dp)
+        )
+        Text(text, modifier = Modifier.padding(start = 4.dp))
+        if (hasButton) {
+            EIMIconButton(
+                onClick = onButtonClick,
+                modifier = Modifier.padding(end = 4.dp).size(20.dp, 20.dp)
+            ) {
+                Icon(
+                    if (buttonState) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                    contentDescription = null
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun FileTree(file: File, indent: Int = 0) {
+    when (file.extension) {
+        "mid" -> MidiNode(file, indent)
+        else -> {
+            if (file.isFile) {
+                FileNode(file, indent)
+            } else {
+                DictionaryNode(file, indent)
+            }
+        }
+    }
+}
+
 @Composable
 fun FileTreeUI(filePath: File) {
     Column(
         modifier = Modifier
-//            .widthIn(400.dp, 1200.dp)
             .fillMaxWidth()
             .verticalScroll(rememberScrollState())
             .horizontalScroll(rememberScrollState())
