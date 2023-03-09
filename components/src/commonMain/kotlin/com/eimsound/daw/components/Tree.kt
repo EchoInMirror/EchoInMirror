@@ -48,6 +48,7 @@ val FileExtensionIcons = mapOf(
     "md" to Icons.Outlined.TextFields,
     "html" to Icons.Outlined.TextFields,
     "htm" to Icons.Outlined.TextFields,
+    "midiTrack" to Icons.Outlined.Audiotrack
 )
 
 val FileSystemStyle = BonsaiStyle<Path>(
