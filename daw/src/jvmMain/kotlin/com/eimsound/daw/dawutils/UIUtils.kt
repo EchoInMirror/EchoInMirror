@@ -10,7 +10,7 @@ import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.platform.ClipboardManager
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.eimsound.daw.EchoInMirror
+import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.window.Panel
 import org.ocpsoft.prettytime.PrettyTime
 import java.time.ZoneId

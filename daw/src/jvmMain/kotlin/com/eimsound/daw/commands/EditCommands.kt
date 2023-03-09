@@ -7,7 +7,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.text.AnnotatedString
-import com.eimsound.daw.EchoInMirror
+import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.AbstractCommand
 import com.eimsound.daw.utils.BasicEditor
 import com.eimsound.daw.dawutils.CLIPBOARD_MANAGER

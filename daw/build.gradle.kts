@@ -44,14 +44,13 @@ kotlin {
                 api(compose.material3)
 
                 api("commons-io:commons-io:2.11.0")
-                api("org.pf4j:pf4j:3.8.0")
                 api("org.ocpsoft.prettytime:prettytime:5.0.6.Final")
                 api("org.mapdb:mapdb:3.0.9") {
                     exclude(group = "com.google.guava")
                 }
-                implementation("org.slf4j:slf4j-simple:${extra["eim.dependencies.slf4j"]}")
+                implementation("org.slf4j:slf4j-jdk14:${extra["eim.dependencies.slf4j"]}")
                 implementation("org.jetbrains.compose.ui:ui-util:${ComposeBuildConfig.composeVersion}")
-                implementation("com.github.Apisium:appcenter-sdk-jvm:1.0.3")
+                implementation("com.github.Apisium:appcenter-sdk-jvm:1.0.6")
             }
         }
     }

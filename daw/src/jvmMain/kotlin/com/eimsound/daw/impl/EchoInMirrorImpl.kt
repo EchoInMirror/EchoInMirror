@@ -1,55 +1,57 @@
-package com.eimsound.daw
+package com.eimsound.daw.impl
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.eimsound.audioprocessor.*
+import com.eimsound.audioprocessor.AudioPlayer
+import com.eimsound.audioprocessor.AudioPlayerManager
+import com.eimsound.audioprocessor.AudioProcessorManager
+import com.eimsound.audioprocessor.AudioSourceManager
 import com.eimsound.audioprocessor.data.AudioThumbnailCache
 import com.eimsound.audioprocessor.data.defaultQuantification
 import com.eimsound.audioprocessor.data.getEditUnit
-import com.eimsound.daw.api.*
+import com.eimsound.daw.AUDIO_THUMBNAIL_CACHE_PATH
+import com.eimsound.daw.Configuration
+import com.eimsound.daw.api.ClipManager
+import com.eimsound.daw.api.IEchoInMirror
+import com.eimsound.daw.api.TrackClip
 import com.eimsound.daw.api.processor.Bus
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.api.processor.TrackManager
-import com.eimsound.daw.api.window.WindowManager
-import com.eimsound.daw.impl.*
 import com.eimsound.daw.plugin.EIMPluginManager
-import com.eimsound.daw.utils.UndoManager
 import com.eimsound.daw.utils.impl.DefaultUndoManager
 import com.eimsound.daw.window.dialogs.settings.settingsTabsLoader
-import org.pf4j.PluginManager
 
-object EchoInMirror {
-    @Suppress("MemberVisibilityCanBePrivate")
-    val currentPosition: CurrentPosition = CurrentPositionImpl(isMainPosition = true)
-    var bus: Bus? by mutableStateOf(null)
-    var player: AudioPlayer? by mutableStateOf(null)
+class EchoInMirrorImpl : IEchoInMirror {
+    override val currentPosition = CurrentPositionImpl(isMainPosition = true)
+    override var bus: Bus? by mutableStateOf(null)
+    override var player: AudioPlayer? by mutableStateOf(null)
 //    var player: AudioPlayer = JvmAudioPlayer(currentPosition, bus)
 
-    val commandManager: CommandManager = CommandManagerImpl()
-    @Suppress("unused")
-    val pluginManager: PluginManager = EIMPluginManager()
-    val windowManager: WindowManager = WindowManagerImpl()
-    val undoManager: UndoManager = DefaultUndoManager()
-    val audioThumbnailCache by lazy { AudioThumbnailCache(AUDIO_THUMBNAIL_CACHE_PATH.toFile()) }
-    var quantification by mutableStateOf(defaultQuantification)
+    override val commandManager = CommandManagerImpl()
+    override val pluginManager = EIMPluginManager()
+    override val windowManager = WindowManagerImpl()
+    override val undoManager = DefaultUndoManager()
+    override val audioThumbnailCache by lazy { AudioThumbnailCache(AUDIO_THUMBNAIL_CACHE_PATH.toFile()) }
+    override var quantification by mutableStateOf(defaultQuantification)
 
-    private var selectedTrack_ by mutableStateOf<Track?>(null)
-    var selectedTrack
-        get() = selectedTrack_
+    private var _selectedTrack by mutableStateOf<Track?>(null)
+    override var selectedTrack
+        get() = _selectedTrack
         set(value) {
-            if (value != selectedTrack_) {
+            if (value != _selectedTrack) {
                 selectedClip = null
-                selectedTrack_ = value
+                _selectedTrack = value
             }
         }
-    var selectedClip by mutableStateOf<TrackClip<*>?>(null)
+    override var selectedClip by mutableStateOf<TrackClip<*>?>(null)
 
-    fun createAudioPlayer(): AudioPlayer {
+    override fun createAudioPlayer(): AudioPlayer {
         var ret: AudioPlayer? = null
         if (Configuration.audioDeviceFactoryName.isNotEmpty()) {
             try {
-                ret = AudioPlayerManager.instance.create(Configuration.audioDeviceFactoryName,
+                ret = AudioPlayerManager.instance.create(
+                    Configuration.audioDeviceFactoryName,
                     Configuration.audioDeviceName, currentPosition, bus!!)
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -69,8 +71,7 @@ object EchoInMirror {
         return ret
     }
 
-    @Suppress("unused")
-    fun reloadServices() {
+    override fun reloadServices() {
         AudioPlayerManager.instance.reload()
         AudioProcessorManager.instance.reload()
         AudioSourceManager.instance.reload()
@@ -79,5 +80,5 @@ object EchoInMirror {
         settingsTabsLoader.reload()
     }
 
-    val editUnit get() = quantification.getEditUnit(currentPosition)
+    override val editUnit get() = quantification.getEditUnit(currentPosition)
 }

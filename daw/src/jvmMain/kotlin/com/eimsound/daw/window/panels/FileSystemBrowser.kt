@@ -34,7 +34,7 @@ import cafe.adriel.bonsai.filesystem.FileSystemTree
 import com.eimsound.audioprocessor.AudioProcessorManager
 import com.eimsound.audioprocessor.AudioSourceManager
 import com.eimsound.audioprocessor.data.midi.*
-import com.eimsound.daw.EchoInMirror
+import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.window.Panel
 import com.eimsound.daw.api.window.PanelDirection
 import com.eimsound.daw.components.*

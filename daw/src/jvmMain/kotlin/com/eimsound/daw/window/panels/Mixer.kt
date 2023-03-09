@@ -24,7 +24,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachIndexed
 import androidx.compose.ui.zIndex
-import com.eimsound.daw.EchoInMirror
+import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.processor.Bus
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.api.window.Panel

@@ -22,7 +22,7 @@ import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.zIndex
 import com.eimsound.audioprocessor.oneBarPPQ
 import com.eimsound.audioprocessor.projectDisplayPPQ
-import com.eimsound.daw.EchoInMirror
+import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.actions.doClipsAmountAction
 import com.eimsound.daw.api.TrackClip
 import com.eimsound.daw.api.processor.Track

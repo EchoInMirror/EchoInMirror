@@ -4,7 +4,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Tune
 import com.eimsound.audioprocessor.data.midi.NoteMessage
-import com.eimsound.daw.EchoInMirror
+import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.MidiClip
 import com.eimsound.daw.api.TrackClip
 import com.eimsound.daw.components.icons.PencilMinus

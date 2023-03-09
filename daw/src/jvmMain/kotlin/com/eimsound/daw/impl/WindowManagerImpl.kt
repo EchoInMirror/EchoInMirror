@@ -5,7 +5,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.awt.ComposeWindow
 import com.eimsound.daw.*
 import com.eimsound.daw.api.DefaultProjectInformation
+import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.processor.TrackManager
+import com.eimsound.daw.api.window.GlobalException
 import com.eimsound.daw.api.window.Panel
 import com.eimsound.daw.api.window.WindowManager
 import com.eimsound.daw.components.FloatingDialogProvider
@@ -30,6 +32,7 @@ class WindowManagerImpl: WindowManager {
     override var isDarkTheme by mutableStateOf(true)
     override var activePanel: Panel? by mutableStateOf(null)
     override var isMainWindowOpened by mutableStateOf(false)
+    override var globalException: GlobalException? by mutableStateOf(null)
     var floatingDialogProvider: FloatingDialogProvider? = null
 
     init {

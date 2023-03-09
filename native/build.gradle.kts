@@ -30,7 +30,7 @@ kotlin {
                 implementation(compose.runtime)
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${extra["eim.dependencies.kotlinx.coroutines"]}")
                 implementation("org.apache.commons:commons-lang3:${extra["eim.dependencies.commons.lang"]}")
-                implementation("org.slf4j:slf4j-simple:${extra["eim.dependencies.slf4j"]}")
+                implementation("org.slf4j:slf4j-api:${extra["eim.dependencies.slf4j"]}")
                 implementation("com.github.ShirasawaSama:JavaSharedMemory:0.0.2")
 
                 @OptIn(ExperimentalComposeLibrary::class)

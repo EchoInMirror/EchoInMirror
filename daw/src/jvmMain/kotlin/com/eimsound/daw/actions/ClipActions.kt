@@ -2,7 +2,7 @@ package com.eimsound.daw.actions
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
-import com.eimsound.daw.EchoInMirror
+import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.TrackClip
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.components.icons.PencilMinus

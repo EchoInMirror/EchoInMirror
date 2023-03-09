@@ -27,7 +27,7 @@ import androidx.compose.ui.zIndex
 import com.eimsound.audioprocessor.data.EnvelopePointList
 import com.eimsound.audioprocessor.data.MIDI_CC_RANGE
 import com.eimsound.audioprocessor.data.midi.NoteMessage
-import com.eimsound.daw.EchoInMirror
+import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.actions.GlobalEnvelopeEditorEventHandler
 import com.eimsound.daw.actions.doNoteVelocityAction
 import com.eimsound.daw.api.MidiClipEditor

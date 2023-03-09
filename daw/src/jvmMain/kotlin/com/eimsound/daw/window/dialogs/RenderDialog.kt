@@ -11,7 +11,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.zIndex
 import com.eimsound.audioprocessor.RenderFormat
 import com.eimsound.audioprocessor.convertPPQToSamples
-import com.eimsound.daw.EchoInMirror
+import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.processor.ChannelType
 import com.eimsound.daw.components.*
 import com.eimsound.daw.utils.range

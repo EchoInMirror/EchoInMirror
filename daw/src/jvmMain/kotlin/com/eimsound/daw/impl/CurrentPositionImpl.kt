@@ -5,7 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.eimsound.audioprocessor.CurrentPosition
 import com.eimsound.audioprocessor.SuddenChangeListener
-import com.eimsound.daw.EchoInMirror
+import com.eimsound.daw.api.EchoInMirror
 
 class CurrentPositionImpl(
     private val suddenChangeListener: SuddenChangeListener? = null,

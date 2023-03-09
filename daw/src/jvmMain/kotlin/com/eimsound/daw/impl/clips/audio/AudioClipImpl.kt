@@ -10,7 +10,7 @@ import com.eimsound.audioprocessor.data.DefaultEnvelopePointList
 import com.eimsound.audioprocessor.data.EnvelopePoint
 import com.eimsound.audioprocessor.data.VOLUME_RANGE
 import com.eimsound.audioprocessor.data.midi.MidiNoteRecorder
-import com.eimsound.daw.EchoInMirror
+import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.actions.GlobalEnvelopeEditorEventHandler
 import com.eimsound.daw.api.*
 import com.eimsound.daw.api.processor.Track

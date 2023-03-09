@@ -5,7 +5,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Tune
 import com.eimsound.audioprocessor.data.EnvelopePoint
 import com.eimsound.audioprocessor.data.EnvelopePointList
-import com.eimsound.daw.EchoInMirror
+import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.components.EnvelopeEditor
 import com.eimsound.daw.components.EnvelopeEditorEventHandler
 import com.eimsound.daw.components.icons.PencilMinus

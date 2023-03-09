@@ -12,7 +12,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
-import com.eimsound.daw.EchoInMirror
+import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.Command
 import com.eimsound.daw.api.sortedKeys
 import com.eimsound.daw.components.ReadonlyTextField

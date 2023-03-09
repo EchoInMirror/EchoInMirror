@@ -24,7 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.util.fastForEach
 import com.eimsound.audioprocessor.oneBarPPQ
-import com.eimsound.daw.EchoInMirror
+import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.actions.doClipsAmountAction
 import com.eimsound.daw.actions.doClipsEditActionAction
 import com.eimsound.daw.api.ClipManager
