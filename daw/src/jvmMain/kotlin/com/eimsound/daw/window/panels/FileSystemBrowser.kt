@@ -1,6 +1,10 @@
 package com.eimsound.daw.window.panels
 
 import androidx.compose.foundation.*
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.*
@@ -12,8 +16,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import cafe.adriel.bonsai.core.node.Node
@@ -23,6 +29,7 @@ import com.eimsound.daw.api.window.Panel
 import com.eimsound.daw.api.window.PanelDirection
 import com.eimsound.daw.components.*
 import com.eimsound.daw.components.dragdrop.FileDraggable
+import com.eimsound.daw.components.dragdrop.GlobalDraggable
 import com.eimsound.daw.impl.processor.eimAudioProcessorFactory
 import com.eimsound.daw.processor.PreviewerAudioProcessor
 import kotlinx.coroutines.*
@@ -41,25 +48,61 @@ val FileMapper = @Composable { node: Node<Path>, content: @Composable () -> Unit
 val fileBrowserPreviewer = PreviewerAudioProcessor(AudioProcessorManager.instance.eimAudioProcessorFactory)
 
 
+//@Composable
+//fun DraggableFile(file: File) {
+//    var isDragging by remember { mutableStateOf(false) }
+//    val shadowColor = if (isDragging) Color.LightGray else Color.Transparent
+//    Box(
+//        modifier = Modifier
+//            .fillMaxWidth()
+//            .background(shadowColor, shape = RectangleShape)
+//            .run {
+//                if (isDragging) {
+//                    this.border(1.dp, Color.Black, shape = RectangleShape)
+//                } else {
+//                    this
+//                }
+//            }
+//            .pointerInput(Unit) {
+//                detectDragGestures(
+//                    onDragStart = { isDragging = true },
+//                    onDragEnd = { isDragging = false }
+//                )
+//            }
+//    ) {
+//        Row(verticalAlignment = Alignment.CenterVertically) {
+//            Icon(imageVector = Icons.Filled.FileCopy, contentDescription = null)
+//            Text(file.name)
+//            Spacer(modifier = Modifier.weight(1f))
+//        }
+//    }
+//}
+
+
 @Composable
 fun MidiNode(file: File, indent: Int) {
     var expanded by remember { mutableStateOf(false) }
-    FileTreeRow(
-        FileExtensionIcons["mid"]!!,
-        file.name,
-        hasButton = true,
-        buttonState = expanded,
-        onButtonClick = { expanded = !expanded },
-        indent = indent
-    )
+    GlobalDraggable( { file } ) {
+        FileTreeRow(
+            FileExtensionIcons["mid"]!!,
+            file.name,
+            hasButton = true,
+            buttonState = expanded,
+            onButtonClick = { expanded = !expanded },
+            indent = indent
+        )
+    }
+
     if (expanded) {
         val midiTracks = MidiSystem.getSequence(file).toMidiTracks()
         midiTracks.forEachIndexed { index, midiTrack ->
-            FileTreeRow(
-                FileExtensionIcons["midiTrack"]!!,
-                midiTrack.name ?: "轨道 $index",
-                indent = indent + 1
-            )
+            GlobalDraggable( { midiTrack } ) {
+                FileTreeRow(
+                    FileExtensionIcons["midiTrack"]!!,
+                    midiTrack.name ?: "轨道 $index",
+                    indent = indent + 1
+                )
+            }
         }
     }
 }
@@ -85,11 +128,15 @@ fun DictionaryNode(file: File, indent: Int) {
 
 @Composable
 fun FileNode(file: File, indent: Int) {
-    FileTreeRow(
-        FileExtensionIcons.getOrDefault(file.extension, Icons.Outlined.DevicesOther),
-        file.name,
-        indent = indent
-    )
+    GlobalDraggable(
+        { file },
+    ) {
+        FileTreeRow(
+            FileExtensionIcons.getOrDefault(file.extension, Icons.Outlined.DevicesOther),
+            file.name,
+            indent = indent
+        )
+    }
 }
 
 @Composable
