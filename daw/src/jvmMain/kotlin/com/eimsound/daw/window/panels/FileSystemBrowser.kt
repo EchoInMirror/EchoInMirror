@@ -29,37 +29,6 @@ import org.apache.commons.lang3.SystemUtils
 
 val fileBrowserPreviewer = PreviewerAudioProcessor(AudioProcessorManager.instance.eimAudioProcessorFactory)
 
-
-//@Composable
-//fun DraggableFile(file: File) {
-//    var isDragging by remember { mutableStateOf(false) }
-//    val shadowColor = if (isDragging) Color.LightGray else Color.Transparent
-//    Box(
-//        modifier = Modifier
-//            .fillMaxWidth()
-//            .background(shadowColor, shape = RectangleShape)
-//            .run {
-//                if (isDragging) {
-//                    this.border(1.dp, Color.Black, shape = RectangleShape)
-//                } else {
-//                    this
-//                }
-//            }
-//            .pointerInput(Unit) {
-//                detectDragGestures(
-//                    onDragStart = { isDragging = true },
-//                    onDragEnd = { isDragging = false }
-//                )
-//            }
-//    ) {
-//        Row(verticalAlignment = Alignment.CenterVertically) {
-//            Icon(imageVector = Icons.Filled.FileCopy, contentDescription = null)
-//            Text(file.name)
-//            Spacer(modifier = Modifier.weight(1f))
-//        }
-//    }
-//}
-
 object FileSystemBrowser : Panel {
     override val name = "文件浏览"
     override val direction = PanelDirection.Vertical
