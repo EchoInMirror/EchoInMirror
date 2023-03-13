@@ -97,7 +97,7 @@ fun DictionaryNode(file: File, depth: Int = 0) {
     var expanded by remember { mutableStateOf(false) }
     val list = remember(file) {
         try {
-            file.listFiles()?.sortedBy { it.isFile }
+            file.listFiles()
         } catch (e: Exception) {
             logger.error(e) { "Failed to list files in $file" }
             null
@@ -109,10 +109,12 @@ fun DictionaryNode(file: File, depth: Int = 0) {
         if (expanded) Icons.Filled.FolderOpen else Icons.Outlined.Folder,
         if (isExpandable) expanded else null,
         depth,
-        if (isExpandable) { { expanded = !expanded } } else null
+        if (isExpandable) {
+            { expanded = !expanded }
+        } else null
     )
     if (expanded) {
-        list!!.fastForEach {
+        list!!.sortedWith(compareBy({ !it.isDirectory }, { it.name })).fastForEach {
             FileNode(it, depth + 1)
         }
     }
@@ -131,7 +133,7 @@ fun MidiNode(file: File, depth: Int) {
             }.toMidiTracks()
         }
         midiTracks?.fastForEachIndexed { index, midiTrack ->
-            GlobalDraggable( { midiTrack } ) {
+            GlobalDraggable({ midiTrack }) {
                 TreeItem(
                     midiTrack.name ?: "轨道 $index",
                     midiTrackIcon,
@@ -176,8 +178,10 @@ fun Tree(content: @Composable ColumnScope.() -> Unit) {
         val treeState = remember { TreeState() }
         CompositionLocalProvider(LocalTreeState provides treeState) {
             BoxWithConstraints {
-                Column(Modifier.horizontalScroll(horizontalScrollState).verticalScroll(verticalScrollState)
-                    .width(IntrinsicSize.Max).widthIn(min = maxWidth), content = content)
+                Column(
+                    Modifier.horizontalScroll(horizontalScrollState).verticalScroll(verticalScrollState)
+                        .width(IntrinsicSize.Max).widthIn(min = maxWidth), content = content
+                )
             }
         }
         HorizontalScrollbar(rememberScrollbarAdapter(horizontalScrollState), Modifier.align(Alignment.BottomCenter))
