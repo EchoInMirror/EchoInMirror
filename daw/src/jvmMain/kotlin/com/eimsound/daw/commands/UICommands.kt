@@ -4,7 +4,7 @@ package com.eimsound.daw.commands
 
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.input.key.Key
-import com.eimsound.daw.EchoInMirror
+import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.AbstractCommand
 import com.eimsound.daw.impl.WindowManagerImpl
 import com.eimsound.daw.window.dialogs.openQuickLoadDialog

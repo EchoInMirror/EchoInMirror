@@ -16,8 +16,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.ApplicationScope
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowExceptionHandler
-import com.eimsound.daw.EchoInMirror
 import com.eimsound.daw.VERSION
+import com.eimsound.daw.api.EchoInMirror
+import com.eimsound.daw.api.window.GlobalException
 import com.eimsound.daw.components.LocalFloatingDialogProvider
 import com.eimsound.daw.components.LocalSnackbarHost
 import com.eimsound.daw.components.LocalWindowState
@@ -26,13 +27,17 @@ import com.eimsound.daw.components.dragdrop.LocalGlobalDragAndDrop
 import com.eimsound.daw.components.dragdrop.PlatformDropTargetModifier
 import com.eimsound.daw.components.splitpane.HorizontalSplitPane
 import com.eimsound.daw.components.splitpane.VerticalSplitPane
-import com.eimsound.daw.impl.WindowManagerImpl
 import com.eimsound.daw.dawutils.Border
 import com.eimsound.daw.dawutils.CLIPBOARD_MANAGER
 import com.eimsound.daw.dawutils.Logo
 import com.eimsound.daw.dawutils.border
+import com.eimsound.daw.impl.WindowManagerImpl
 import com.eimsound.daw.window.panels.playlist.mainPlaylist
+import com.microsoft.appcenter.crashes.Crashes
+import io.github.oshai.KotlinLogging
+import java.util.*
 
+private val logger = KotlinLogging.logger("MainWindow")
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun ApplicationScope.MainWindow() {
@@ -51,10 +56,12 @@ fun ApplicationScope.MainWindow() {
     }) {
         CLIPBOARD_MANAGER = LocalClipboardManager.current
         System.setProperty("eim.window.handler", window.windowHandle.toString())
-        (EchoInMirror.windowManager as WindowManagerImpl).mainWindow = window
-        EchoInMirror.windowManager.floatingDialogProvider = LocalFloatingDialogProvider.current
+        val windowManager = EchoInMirror.windowManager as WindowManagerImpl
+        windowManager.mainWindow = window
+        windowManager.floatingDialogProvider = LocalFloatingDialogProvider.current
         window.exceptionHandler = WindowExceptionHandler {
-            it.printStackTrace()
+            logger.error("Uncaught compose exception", it)
+            windowManager.globalException = GlobalException(it, Crashes.trackCrash(it, Thread.currentThread(), null))
         }
 
         Box {
@@ -97,6 +104,6 @@ fun ApplicationScope.MainWindow() {
             LocalGlobalDragAndDrop.current.DraggingComponent()
         }
 
-        EchoInMirror.windowManager.Dialogs()
+        windowManager.Dialogs()
     }
 }

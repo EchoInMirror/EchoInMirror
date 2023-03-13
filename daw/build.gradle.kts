@@ -1,12 +1,9 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.jetbrains.compose.ComposeBuildConfig
-import org.jetbrains.compose.ExperimentalComposeLibrary
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import java.io.FileOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
-import java.text.DateFormat
-import java.util.*
 
 plugins {
     kotlin("multiplatform")
@@ -44,16 +41,16 @@ kotlin {
                     exclude("org.jetbrains.compose.material")
                 }
                 api(compose.materialIconsExtended)
-                @OptIn(ExperimentalComposeLibrary::class) api(compose.material3)
+                api(compose.material3)
 
                 api("commons-io:commons-io:2.11.0")
-                api("org.pf4j:pf4j:3.8.0")
                 api("org.ocpsoft.prettytime:prettytime:5.0.6.Final")
                 api("org.mapdb:mapdb:3.0.9") {
                     exclude(group = "com.google.guava")
                 }
-                implementation("org.slf4j:slf4j-simple:${extra["eim.dependencies.slf4j"]}")
+                implementation("org.apache.logging.log4j:log4j-slf4j2-impl:2.20.0")
                 implementation("org.jetbrains.compose.ui:ui-util:${ComposeBuildConfig.composeVersion}")
+                implementation("com.github.Apisium:appcenter-sdk-jvm:1.0.6")
             }
         }
     }
@@ -96,7 +93,8 @@ tasks.withType<Jar> {
             "Name" to "EchoInMirror",
             "Main-Class" to "com.eimsound.daw.MainKt",
             "Implementation-Version" to project.version,
-            "Release-Time" to DateFormat.getDateTimeInstance().format(Date())
+            "Release-Time" to System.currentTimeMillis(),
+            "App-Center-Secret" to (System.getenv("APP_CENTER_SECRET") ?: "")
         )
     }
 }

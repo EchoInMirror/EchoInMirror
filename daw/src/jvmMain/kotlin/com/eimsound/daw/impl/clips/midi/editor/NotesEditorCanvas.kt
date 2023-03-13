@@ -35,7 +35,7 @@ import com.eimsound.audioprocessor.data.midi.NoteMessage
 import com.eimsound.audioprocessor.data.midi.colorSaturation
 import com.eimsound.audioprocessor.data.midi.getNoteName
 import com.eimsound.audioprocessor.projectDisplayPPQ
-import com.eimsound.daw.EchoInMirror
+import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.asMidiTrackClipOrNull
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.api.window.EditorExtension

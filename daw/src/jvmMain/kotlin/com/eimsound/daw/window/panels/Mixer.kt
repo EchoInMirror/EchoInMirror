@@ -24,7 +24,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachIndexed
 import androidx.compose.ui.zIndex
-import com.eimsound.daw.EchoInMirror
+import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.processor.Bus
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.api.window.Panel
@@ -181,6 +181,7 @@ object Mixer: Panel {
     override fun Content() {
         Scrollable {
             Row {
+//                Button({ throw RuntimeException("6666") }) { Text("测试报错") }
                 val bus = EchoInMirror.bus!!
                 val trackColor = if (EchoInMirror.windowManager.isDarkTheme)
                     MaterialTheme.colorScheme.surfaceColorAtElevation(20.dp) else MaterialTheme.colorScheme.surface

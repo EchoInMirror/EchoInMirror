@@ -6,7 +6,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.input.key.*
 import com.eimsound.audioprocessor.AudioProcessorManager
 import com.eimsound.audioprocessor.oneBarPPQ
-import com.eimsound.daw.EchoInMirror
+import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.ROOT_PATH
 import com.eimsound.daw.api.*
 import com.eimsound.daw.api.processor.TrackManager

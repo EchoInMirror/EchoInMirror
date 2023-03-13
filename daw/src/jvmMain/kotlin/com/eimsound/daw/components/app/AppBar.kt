@@ -19,7 +19,7 @@ import androidx.compose.ui.unit.sp
 import com.eimsound.audioprocessor.data.defaultScale
 import com.eimsound.audioprocessor.data.midi.KEY_NAMES
 import com.eimsound.audioprocessor.data.quantificationUnits
-import com.eimsound.daw.EchoInMirror
+import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.components.FloatingDialog
 import com.eimsound.daw.components.MenuItem
 

@@ -21,7 +21,7 @@ import com.eimsound.audioprocessor.convertSecondsToPPQ
 import com.eimsound.audioprocessor.data.VOLUME_RANGE
 import com.eimsound.audioprocessor.oneBarPPQ
 import com.eimsound.audioprocessor.timeInSeconds
-import com.eimsound.daw.EchoInMirror
+import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.actions.GlobalEnvelopeEditorEventHandler
 import com.eimsound.daw.api.AudioClip
 import com.eimsound.daw.api.ClipEditor

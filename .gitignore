@@ -2,11 +2,13 @@
 test_project
 *.wav
 *.log
+/logs
 ffmpeg
 
 .gradle
 wix311
 build/
+/error
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/

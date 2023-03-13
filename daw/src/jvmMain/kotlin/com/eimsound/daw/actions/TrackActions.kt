@@ -3,7 +3,7 @@ package com.eimsound.daw.actions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlaylistAdd
 import androidx.compose.material.icons.filled.Reorder
-import com.eimsound.daw.EchoInMirror
+import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.utils.ReversibleAction
 import com.eimsound.daw.utils.UndoableAction

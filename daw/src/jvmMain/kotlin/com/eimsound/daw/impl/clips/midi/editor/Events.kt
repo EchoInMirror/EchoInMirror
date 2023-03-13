@@ -11,7 +11,7 @@ import com.eimsound.audioprocessor.data.midi.NoteMessage
 import com.eimsound.audioprocessor.data.midi.defaultNoteMessage
 import com.eimsound.audioprocessor.data.midi.toNoteOffEvent
 import com.eimsound.audioprocessor.data.midi.toNoteOnEvent
-import com.eimsound.daw.EchoInMirror
+import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.actions.doNoteAmountAction
 import com.eimsound.daw.actions.doNoteMessageEditAction
 import com.eimsound.daw.components.FloatingDialogProvider

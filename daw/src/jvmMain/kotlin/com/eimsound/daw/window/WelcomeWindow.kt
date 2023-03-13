@@ -12,7 +12,8 @@ import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.window.ApplicationScope
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.rememberWindowState
-import com.eimsound.daw.EchoInMirror
+import com.eimsound.daw.api.EchoInMirror
+import com.eimsound.daw.VERSION
 import com.eimsound.daw.components.*
 import com.eimsound.daw.components.utils.clickableWithIcon
 import com.eimsound.daw.dawutils.Logo
@@ -110,7 +111,7 @@ val welcomeWindowTabs = mutableStateListOf<Tab>(Projects())
 @Composable
 fun ApplicationScope.ProjectWindow() {
     val windowState = rememberWindowState()
-    Window(::exitApplication, windowState, icon = Logo, title = "Echo In Mirror") {
+    Window(::exitApplication, windowState, icon = Logo, title = "Echo In Mirror (v$VERSION)") {
         window.minimumSize = Dimension(860, 700)
         val floatingDialogProvider = remember { FloatingDialogProvider() }
         CompositionLocalProvider(
