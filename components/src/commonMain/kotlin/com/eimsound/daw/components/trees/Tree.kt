@@ -74,13 +74,18 @@ private val iconModifier = Modifier.size(18.dp)
 @Composable
 fun TreeItem(
     text: String,
+    key: Any,
     icon: ImageVector? = null,
     expanded: Boolean? = null,
     depth: Int = 0,
     onClick: (() -> Unit)? = null,
 ) {
+    val treeState = LocalTreeState.current
     Box(Modifier.fillMaxWidth().let {
-        if (onClick == null) it else it.clickable(onClick = onClick)
+        if (treeState.selectedNode == key) it.background(MaterialTheme.colorScheme.secondary.copy(0.16F)) else it
+    }.clickable {
+        treeState.selectedNode = key
+        onClick?.invoke()
     }) {
         Row(Modifier.padding(start = 8.dp * depth, top = 1.dp, bottom = 1.dp), verticalAlignment = Alignment.CenterVertically) {
             if (expanded != null) Icon(
@@ -99,7 +104,7 @@ fun DictionaryNode(file: File, depth: Int = 0) {
     var expanded by remember { mutableStateOf(false) }
     val list = remember(file) {
         try {
-            file.listFiles()
+            file.listFiles().sortedWith(compareBy({ !it.isDirectory }, { it.name }))
         } catch (e: Exception) {
             logger.error(e) { "Failed to list files in $file" }
             null
@@ -108,6 +113,7 @@ fun DictionaryNode(file: File, depth: Int = 0) {
     val isExpandable = !list.isNullOrEmpty()
     TreeItem(
         file.name,
+        file,
         if (expanded) Icons.Filled.FolderOpen else Icons.Outlined.Folder,
         if (isExpandable) expanded else null,
         depth,
@@ -116,7 +122,7 @@ fun DictionaryNode(file: File, depth: Int = 0) {
         } else null
     )
     if (expanded) {
-        list!!.sortedWith(compareBy({ !it.isDirectory }, { it.name })).fastForEach {
+        list!!.fastForEach {
             FileNode(it, depth + 1)
         }
     }
@@ -155,7 +161,7 @@ fun DefaultFileNode(
     onClick: (() -> Unit)? = null,
 ) {
     FileDraggable(file) {
-        TreeItem(file.name, icon, expanded, depth, onClick)
+        TreeItem(file.name, file, icon, expanded, depth, onClick)
     }
 }
 
@@ -168,7 +174,9 @@ fun FileNode(file: File, depth: Int = 0) {
     }
 }
 
-class TreeState
+class TreeState {
+    var selectedNode by mutableStateOf<Any?>(null)
+}
 
 val LocalTreeState = staticCompositionLocalOf<TreeState> { error("No TreeState provided") }
 
