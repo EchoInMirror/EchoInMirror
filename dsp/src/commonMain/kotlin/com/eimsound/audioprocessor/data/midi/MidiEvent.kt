@@ -126,7 +126,7 @@ data class MidiTrack(
     val name get() = metaEvents.trackName ?: metaEvents.instrumentName
 }
 
-fun Track.toMidiTracks(scale: Double = 1.0, splitByChannel: Boolean = false): Collection<MidiTrack> {
+fun Collection<JMidiEvent>.toMidiTrack(scale: Double = 1.0): MidiTrack {
     val metaEvents = MetaEvents()
     val noteEvents = mutableListOf<MidiEventWithTime>()
     val keyPressureEvents = mutableListOf<MidiEventWithTime>()
@@ -134,9 +134,9 @@ fun Track.toMidiTracks(scale: Double = 1.0, splitByChannel: Boolean = false): Co
     val programChangeEvents = mutableListOf<MidiEventWithTime>()
     val channelPressureEvents = mutableListOf<MidiEventWithTime>()
     val pitchBendEvents = mutableListOf<MidiEventWithTime>()
-    for (i in 0 until this.size()) {
-        val midiEvent = this[i]
+    this.forEach { midiEvent ->
         when {
+            // http://www33146ue.sakura.ne.jp/staff/iz/formats/midi-event.html
             // NOTE_ON
             midiEvent.isNoteOn() -> noteEvents.add(midiEvent.toMidiEventWithTime(scale))
             // NOTE_OFF
@@ -202,53 +202,26 @@ fun Track.toMidiTracks(scale: Double = 1.0, splitByChannel: Boolean = false): Co
             }
         }
     }
-    if (splitByChannel) {
-        val tracks = HashMap<Int, MidiTrack>()
-        val noteEventMap = noteEvents.groupByChannel()
-        val keyPressureEventMap = keyPressureEvents.groupByChannel()
-        val controlChangeEventMap = controlChangeEvents.groupByChannel()
-        val programChangeEventMap = programChangeEvents.groupByChannel()
-        val channelPressureEventMap = pitchBendEvents.groupByChannel()
-        for (i in 0..15) {
-            if (noteEventMap.contains(i) or
-                keyPressureEventMap.contains(i) or
-                controlChangeEventMap.contains(i) or
-                programChangeEventMap.contains(i) or
-                channelPressureEventMap.contains(i)
-            ) {
-                val track = MidiTrack(metaEvents.copy())
-                if (track.metaEvents.trackName != null)
-                    track.metaEvents.trackName += " 通道$i"
-                if (track.metaEvents.instrumentName != null)
-                    track.metaEvents.instrumentName += " 通道$i"
-                if (noteEventMap.contains(i))
-                    track.noteEvents = noteEventMap[i]!!.toNoteMessages()
-                if (keyPressureEventMap.contains(i))
-                    track.keyPressureEvents = keyPressureEventMap[i]!!.toEnvelopePoints()
-                if (controlChangeEventMap.contains(i))
-                    track.controlChangeEvents = controlChangeEventMap[i]!!.toControlEvents()
-                if (programChangeEventMap.contains(i))
-                    track.programChangeEvents = programChangeEventMap[i]!!.toEnvelopePoints()
-                if (channelPressureEventMap.contains(i))
-                    track.channelPressureEvents = channelPressureEventMap[i]!!.toEnvelopePoints()
-                tracks[i] = track
-            }
-        }
-        return tracks.values
-    } else {
-        return listOf(
-            MidiTrack(
-                metaEvents = metaEvents,
-                noteEvents = noteEvents.toNoteMessages(),
-                keyPressureEvents = keyPressureEvents.toEnvelopePoints(),
-                controlChangeEvents = controlChangeEvents.toControlEvents(),
-                programChangeEvents = programChangeEvents.toEnvelopePoints(),
-                channelPressureEvents = channelPressureEvents.toEnvelopePoints(),
-                pitchBendEvents = pitchBendEvents.toEnvelopePoints()
-            )
-        )
-    }
+    return MidiTrack(
+        metaEvents = metaEvents,
+        noteEvents = noteEvents.toNoteMessages(),
+        keyPressureEvents = keyPressureEvents.toEnvelopePoints(),
+        controlChangeEvents = controlChangeEvents.toControlEvents(),
+        programChangeEvents = programChangeEvents.toEnvelopePoints(),
+        channelPressureEvents = channelPressureEvents.toEnvelopePoints(),
+        pitchBendEvents = pitchBendEvents.toEnvelopePoints()
+    )
 }
+
+fun Track.toMidiEventList(): List<JMidiEvent> {
+    val list: MutableList<JMidiEvent> = mutableListOf()
+    for (i in 0 until this.size()) {
+        list.add(this[i])
+    }
+    return list
+}
+
+fun Track.toMidiTrack(scale: Double = 1.0) = this.toMidiEventList().toMidiTrack(scale)
 
 fun Track.getMidiEvents(scale: Double = 1.0, sorted: Boolean = true): List<MidiEventWithTime> {
     val list = ArrayList<MidiEventWithTime>()
@@ -269,8 +242,11 @@ fun Sequence.toMidiEvents(track: Int? = null, destPPQ: Int? = null): List<MidiEv
     } else tracks[track].getMidiEvents(scale)
 }
 
-fun Sequence.toMidiTracks(scale: Double = 1.0, splitByChannel: Boolean = false): List<MidiTrack> =
-    tracks.flatMap { it.toMidiTracks(scale, splitByChannel) }
+fun Sequence.toMidiTracks(scale: Double = 1.0): List<MidiTrack> =
+    tracks.map { it.toMidiEventList().toMidiTrack(scale) }
+
+fun Sequence.getAllEvent(): List<JMidiEvent> = tracks.flatMap { it.toMidiEventList() }
+fun Sequence.toOneMidiTrack(): MidiTrack = this.getAllEvent().toMidiTrack()
 
 fun Collection<MidiTrack>.getNotes(): List<NoteMessage> =
     this.flatMap { it.noteEvents }.sortedBy { it.time }
@@ -280,6 +256,7 @@ fun Collection<MidiTrack>.getNotes(): List<NoteMessage> =
 data class MidiEventWithTime(val event: MidiEvent, val time: Int)
 
 fun Collection<MidiEventWithTime>.groupByChannel() = this.groupBy { it.event.channel }
+fun Collection<MidiEventWithTime>.groupByChannelToList() = this.groupBy { it.event.channel }.map { it.value }
 fun Collection<MidiEventWithTime>.toNoteMessages(): List<NoteMessage> {
     val noteMessages = ArrayList<NoteMessage>()
     val allNoteOns = arrayOfNulls<NoteMessage>(128)
@@ -303,12 +280,12 @@ fun Collection<MidiEventWithTime>.toControlEvents(): Map<Int, List<EnvelopePoint
     forEach { (event, time) ->
         val list = events.getOrPut(event.controller) { ArrayList() }
         list.add(EnvelopePoint(time, event.value / 127F))
-        return@forEach
     }
-    return events
+    return events.mapValues { it.value.distinctBy { envPoint -> envPoint.time } }
 }
 
-fun Collection<MidiEventWithTime>.toEnvelopePoints() = this.map { EnvelopePoint(it.time, it.event.value / 127F) }
+fun Collection<MidiEventWithTime>.toEnvelopePoints() =
+    this.distinctBy { it.time }.map { EnvelopePoint(it.time, it.event.value / 127F) }
 
 fun Int.toMidiEvent() = MidiEvent(this)
 

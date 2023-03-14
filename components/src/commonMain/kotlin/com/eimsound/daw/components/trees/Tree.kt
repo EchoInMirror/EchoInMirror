@@ -21,6 +21,7 @@ import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachIndexed
 import com.eimsound.audioprocessor.data.midi.MidiTrack
 import com.eimsound.audioprocessor.data.midi.toMidiTracks
+import com.eimsound.audioprocessor.data.midi.toOneMidiTrack
 import com.eimsound.daw.components.dragdrop.FileDraggable
 import com.eimsound.daw.components.dragdrop.GlobalDraggable
 import io.github.oshai.KotlinLogging
@@ -94,7 +95,7 @@ fun DictionaryNode(file: File, depth: Int = 0) {
     var expanded by remember { mutableStateOf(false) }
     val list = remember(file) {
         try {
-            file.listFiles().sortedWith(compareBy({ !it.isDirectory }, { it.name }))
+            file.listFiles()!!.sortedWith(compareBy({ !it.isDirectory }, { it.name }))
         } catch (e: Exception) {
             logger.error(e) { "Failed to list files in $file" }
             null
@@ -118,7 +119,7 @@ fun DictionaryNode(file: File, depth: Int = 0) {
 fun MidiNode(file: File, depth: Int) {
     var expanded by remember { mutableStateOf(false) }
     GlobalDraggable({
-        withContext(Dispatchers.IO) { MidiSystem.getSequence(file) }.toMidiTracks() // TODO: 合并轨道
+        withContext(Dispatchers.IO) { MidiSystem.getSequence(file) }.toOneMidiTrack()
     }) {
         TreeItem(file.name, file, midiFileIcon, expanded, depth) { expanded = !expanded }
     }
