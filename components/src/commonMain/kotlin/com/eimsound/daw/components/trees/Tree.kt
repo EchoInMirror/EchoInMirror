@@ -79,16 +79,18 @@ fun TreeItem(
     depth: Int = 0,
     onClick: (() -> Unit)? = null,
 ) {
-    Row(Modifier.fillMaxWidth().padding(start = 8.dp * depth, top = 1.dp, bottom = 1.dp).let {
+    Box(Modifier.fillMaxWidth().let {
         if (onClick == null) it else it.clickable(onClick = onClick)
-    }, verticalAlignment = Alignment.CenterVertically) {
-        if (expanded != null) Icon(
-            if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
-            if (expanded) "收起" else "展开",
-            expandIconModifier
-        ) else Spacer(expandIconModifier)
-        if (icon != null) Icon(icon, text, iconModifier)
-        Text(text, Modifier.padding(start = 4.dp), style = MaterialTheme.typography.labelLarge, maxLines = 1)
+    }) {
+        Row(Modifier.padding(start = 8.dp * depth, top = 1.dp, bottom = 1.dp), verticalAlignment = Alignment.CenterVertically) {
+            if (expanded != null) Icon(
+                if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                if (expanded) "收起" else "展开",
+                expandIconModifier
+            ) else Spacer(expandIconModifier)
+            if (icon != null) Icon(icon, text, iconModifier)
+            Text(text, Modifier.padding(start = 4.dp), style = MaterialTheme.typography.labelLarge, maxLines = 1)
+        }
     }
 }
 
@@ -171,8 +173,8 @@ class TreeState
 val LocalTreeState = staticCompositionLocalOf<TreeState> { error("No TreeState provided") }
 
 @Composable
-fun Tree(content: @Composable ColumnScope.() -> Unit) {
-    Box(Modifier.fillMaxSize()) {
+fun Tree(modifier: Modifier = Modifier.fillMaxSize(), content: @Composable ColumnScope.() -> Unit) {
+    Box(modifier) {
         val horizontalScrollState = rememberScrollState()
         val verticalScrollState = rememberScrollState()
         val treeState = remember { TreeState() }
