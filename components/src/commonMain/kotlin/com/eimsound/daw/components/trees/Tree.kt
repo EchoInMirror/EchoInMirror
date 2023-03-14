@@ -57,17 +57,6 @@ val FileExtensionIcons = mapOf(
     "htm" to Icons.Outlined.TextFields,
 )
 
-//val FileSystemStyle = BonsaiStyle<Path>(
-//    nodeNameStartPadding = 4.dp,
-//    nodeCollapsedIcon = { node ->
-//        rememberVectorPainter(
-//            if (node is BranchNode) Icons.Outlined.Folder
-//            else FileExtensionIcons[node.content.toNioPath().extension.lowercase()] ?: Icons.Outlined.InsertDriveFile
-//        )
-//    },
-//    nodeExpandedIcon = { rememberVectorPainter(Icons.Outlined.FolderOpen) }
-//)
-
 private val expandIconModifier = Modifier.size(16.dp)
 private val iconModifier = Modifier.size(18.dp)
 
@@ -82,9 +71,9 @@ fun TreeItem(
 ) {
     val treeState = LocalTreeState.current
     Box(Modifier.fillMaxWidth().let {
-        if (treeState.selectedNode == key) it.background(MaterialTheme.colorScheme.secondary.copy(0.16F)) else it
+        if (treeState?.selectedNode == key) it.background(MaterialTheme.colorScheme.secondary.copy(0.16F)) else it
     }.clickable {
-        treeState.selectedNode = key
+        treeState?.selectedNode = key
         onClick?.invoke()
     }) {
         Row(Modifier.padding(start = 8.dp * depth, top = 1.dp, bottom = 1.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -144,6 +133,7 @@ fun MidiNode(file: File, depth: Int) {
             GlobalDraggable({ midiTrack }) {
                 TreeItem(
                     midiTrack.name ?: "轨道 $index",
+                    midiTrack,
                     midiTrackIcon,
                     depth = depth + 1
                 )
@@ -178,7 +168,7 @@ class TreeState {
     var selectedNode by mutableStateOf<Any?>(null)
 }
 
-val LocalTreeState = staticCompositionLocalOf<TreeState> { error("No TreeState provided") }
+val LocalTreeState = staticCompositionLocalOf<TreeState?> { null }
 
 @Composable
 fun Tree(modifier: Modifier = Modifier.fillMaxSize(), content: @Composable ColumnScope.() -> Unit) {
