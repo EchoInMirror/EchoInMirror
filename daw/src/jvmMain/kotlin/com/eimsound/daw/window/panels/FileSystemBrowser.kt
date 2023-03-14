@@ -64,7 +64,7 @@ object FileSystemBrowser : Panel {
     @Composable
     override fun Content() {
         Column {
-            Tree(Modifier.weight(1F)) {
+            Tree(Modifier.weight(1F), { if (it is File) createPreviewerComponent(it) }) {
                 FileNode(filePath)
             }
             Previewer()

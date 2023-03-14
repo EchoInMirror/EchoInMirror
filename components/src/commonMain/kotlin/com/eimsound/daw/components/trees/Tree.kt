@@ -74,6 +74,7 @@ fun TreeItem(
         if (treeState?.selectedNode == key) it.background(MaterialTheme.colorScheme.secondary.copy(0.16F)) else it
     }.clickable {
         treeState?.selectedNode = key
+        treeState?.onClick?.invoke(key)
         onClick?.invoke()
     }) {
         Row(Modifier.padding(start = 8.dp * depth, top = 1.dp, bottom = 1.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -166,16 +167,23 @@ fun FileNode(file: File, depth: Int = 0) {
 
 class TreeState {
     var selectedNode by mutableStateOf<Any?>(null)
+    var onClick: ((Any) -> Unit)? = null
+        internal set
 }
 
 val LocalTreeState = staticCompositionLocalOf<TreeState?> { null }
 
 @Composable
-fun Tree(modifier: Modifier = Modifier.fillMaxSize(), content: @Composable ColumnScope.() -> Unit) {
+fun Tree(
+    modifier: Modifier = Modifier.fillMaxSize(),
+    onClick: ((Any) -> Unit)? = null,
+    content: @Composable ColumnScope.() -> Unit
+) {
     Box(modifier) {
         val horizontalScrollState = rememberScrollState()
         val verticalScrollState = rememberScrollState()
         val treeState = remember { TreeState() }
+        treeState.onClick = onClick
         CompositionLocalProvider(LocalTreeState provides treeState) {
             BoxWithConstraints {
                 Column(
