@@ -111,17 +111,17 @@ fun DictionaryNode(file: File, depth: Int = 0) {
             { expanded = !expanded }
         } else null
     )
-    if (expanded) {
-        list!!.fastForEach {
-            FileNode(it, depth + 1)
-        }
-    }
+    if (expanded) list!!.fastForEach { FileNode(it, depth + 1) }
 }
 
 @Composable
 fun MidiNode(file: File, depth: Int) {
     var expanded by remember { mutableStateOf(false) }
-    DefaultFileNode(file, midiFileIcon, expanded, depth + 1) { expanded = !expanded }
+    GlobalDraggable({
+        withContext(Dispatchers.IO) { MidiSystem.getSequence(file) }.toMidiTracks() // TODO: 合并轨道
+    }) {
+        TreeItem(file.name, file, midiFileIcon, expanded, depth) { expanded = !expanded }
+    }
 
     if (expanded) {
         var midiTracks by remember { mutableStateOf<List<MidiTrack>?>(null) }
