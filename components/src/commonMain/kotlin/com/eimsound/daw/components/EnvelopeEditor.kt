@@ -3,8 +3,8 @@ package com.eimsound.daw.components
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.gestures.*
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -15,17 +15,22 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.*
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAll
+import androidx.compose.ui.util.fastForEach
 import com.eimsound.audioprocessor.data.EnvelopePoint
 import com.eimsound.audioprocessor.data.EnvelopePointList
 import com.eimsound.audioprocessor.data.EnvelopeType
 import com.eimsound.audioprocessor.data.SerializableEnvelopePointList
+import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.components.utils.EditAction
 import com.eimsound.daw.utils.*
 import kotlinx.coroutines.launch
@@ -121,6 +126,7 @@ interface EnvelopeEditorEventHandler {
     fun onRemovePoints(editor: EnvelopeEditor, points: List<EnvelopePoint>)
     fun onMovePoints(editor: EnvelopeEditor, points: List<EnvelopePoint>, offsetTime: Int, offsetValue: Float)
     fun onTensionChanged(editor: EnvelopeEditor, points: List<EnvelopePoint>, tension: Float)
+    fun onTypeChanged(editor: EnvelopeEditor, points: List<EnvelopePoint>, type: EnvelopeType)
 }
 
 class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange,
@@ -140,7 +146,8 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange,
     private var clipStartTimeValue = 0
     private var editUnitValue = 0
     private var tempPoints: MutableList<EnvelopePoint>? = null
-    private var currentAdjustingPoint: Int = -1
+    private var currentAdjustingPoint = -1
+    private var positionInRoot = Offset.Zero
 
     companion object {
         var copiedPoints: List<EnvelopePoint>? = null
@@ -164,12 +171,14 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange,
         selectedPoints.addAll(result)
     }
     override fun copyAsString() = if (selectedPoints.isEmpty()) "" else JsonIgnoreDefaults.encodeToString(
-        SerializableEnvelopePointList(copyAsObject()))
+        SerializableEnvelopePointList(EchoInMirror.currentPosition.ppq, copyAsObject()))
 
     override fun pasteFromString(value: String) {
         try {
-            val result = eventHandler?.onPastePoints(this,
-                JsonIgnoreDefaults.decodeFromString<SerializableEnvelopePointList>(value).points) ?: return
+            val paste = JsonIgnoreDefaults.decodeFromString<SerializableEnvelopePointList>(value)
+            val factor = EchoInMirror.currentPosition.ppq.toDouble() / paste.ppq
+            paste.points.fastForEach { it.time = (it.time * factor).roundToInt() }
+            val result = eventHandler?.onPastePoints(this, paste.points) ?: return
             selectedPoints.clear()
             selectedPoints.addAll(result)
         } catch (ignored: Throwable) { }
@@ -178,12 +187,14 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange,
     override fun delete() { eventHandler?.onRemovePoints(this, selectedPoints.toList()) }
     override fun selectAll() { selectedPoints.addAll(points) }
 
+    @Suppress("DuplicatedCode")
     @OptIn(ExperimentalTextApi::class)
     @Composable
     fun Editor(start: Float, color: Color, noteWidth: MutableState<Dp>, showThumb: Boolean = true, editUnit: Int = 24,
                horizontalScrollState: ScrollState? = null, clipStartTime: Int = 0, stroke: Float = 2F) {
         val scope = rememberCoroutineScope()
         val measurer = rememberTextMeasurer(50)
+        val floatingDialogProvider = LocalFloatingDialogProvider.current
         val primaryColor = MaterialTheme.colorScheme.primary
         val textStyle = MaterialTheme.typography.labelMedium
         val fillColor = verticalGradient(
@@ -200,7 +211,7 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange,
 
 //        if (hoveredIndex == -1 && action == EditAction.RESIZE) modifier = modifier.pointerHoverIcon(PointerIconDefaults.VerticalResize)
 
-        Canvas(Modifier.fillMaxSize().graphicsLayer { }.run {
+        Canvas(Modifier.fillMaxSize().graphicsLayer { }.onGloballyPositioned { positionInRoot = it.positionInRoot() }.run {
             if (eventHandler == null) this else pointerInput(Unit) {
                 detectTapGestures(onDoubleTap = {
                     if (getSelectedPoint(it, points, startValue, valueRange, noteWidth).second != -1) return@detectTapGestures
@@ -238,8 +249,17 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange,
                                     // find the selected point
                                     val (pointId, tmpId) = getSelectedPoint(event.changes[0].position, points,
                                         startValue, valueRange, noteWidth)
+                                    val isPointExists = pointId >= 0 && pointId < points.size - 1
                                     if (tmpId == -1) {
-                                        if (pointId >= 0 && pointId < points.size - 1) {
+                                        if (event.buttons.isSecondaryPressed) {
+                                            if (isPointExists && selectedPoints.isEmpty()) selectedPoints.add(points[pointId])
+                                            floatingDialogProvider.openMenu(
+                                                event.changes[0].position,
+                                                if (isPointExists) points[pointId] else null,
+                                            )
+                                            continue
+                                        }
+                                        if (isPointExists) {
                                             if (!selectedPoints.contains(points[pointId])) selectedPoints.clear()
                                             currentAdjustingPoint = pointId
                                             action = EditAction.RESIZE
@@ -250,8 +270,12 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange,
                                             selectedPoints.clear()
                                             selectedPoints.add(points[tmpId])
                                         }
-                                        action = EditAction.MOVE
                                         hoveredIndex = tmpId
+                                        if (event.buttons.isSecondaryPressed) {
+                                            floatingDialogProvider.openMenu(event.changes[0].position, points[tmpId])
+                                            continue
+                                        }
+                                        action = EditAction.MOVE
                                         break
                                     }
                                     continue
@@ -499,6 +523,44 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange,
                 drawRect(primaryColor.copy(0.1F), pos, size)
                 drawRect(primaryColor, pos, size, style = Stroke(density))
             }
+        }
+    }
+
+    private fun FloatingDialogProvider.openMenu(offset: Offset, point: EnvelopePoint?) {
+        openEditorMenu(offset + positionInRoot, this@EnvelopeEditor) { close ->
+            points.read()
+            val currentPoint = (if (selectedPoints.contains(point)) point else selectedPoints.firstOrNull()) ?: return@openEditorMenu
+            MenuItem(padding = PaddingValues(12.dp, 12.dp, 12.dp, 0.dp)) {
+                Text("值:")
+                Filled()
+                CustomTextField(if (isFloat) "%.2F".format(currentPoint.value) else currentPoint.value.toInt().toString(), {
+                    val value = it.toFloatOrNull()?.coerceIn(valueRange) ?: return@CustomTextField
+                    eventHandler?.onMovePoints(this@EnvelopeEditor, selectedPoints.toList(), 0,
+                        (if (isFloat) value else round(value)) - currentPoint.value)
+                })
+            }
+            MenuItem(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                EnvelopeType.values().forEach {
+                    EnvelopeTypeToggleButton(it, currentPoint.type == it) { checked ->
+                        close()
+                        if (checked) eventHandler?.onTypeChanged(this@EnvelopeEditor, selectedPoints.toList(), it)
+                    }
+                }
+            }
+            Divider()
+        }
+    }
+}
+
+@Composable
+private fun EnvelopeTypeToggleButton(type: EnvelopeType, selected: Boolean, onClick: (Boolean) -> Unit) {
+    FilledIconToggleButton(selected, Modifier.size(30.dp), onClick) {
+        val color = LocalContentColor.current
+        Canvas(Modifier.size(14.dp)) {
+            drawPath(
+                type.toPath(size.height, 0.5F, 0F, size.width, 0F, 1F),
+                color, style = Stroke(density * 2)
+            )
         }
     }
 }

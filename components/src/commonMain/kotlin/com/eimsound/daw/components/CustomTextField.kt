@@ -1,3 +1,5 @@
+@file:Suppress("PrivatePropertyName")
+
 package com.eimsound.daw.components
 
 import androidx.compose.foundation.interaction.MutableInteractionSource

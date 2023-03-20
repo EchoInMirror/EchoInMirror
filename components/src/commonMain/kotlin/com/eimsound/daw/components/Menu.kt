@@ -25,12 +25,12 @@ fun MenuItem(
     modifier: Modifier = Modifier,
     minHeight: Dp = 38.dp,
     padding: PaddingValues = PaddingValues(horizontal = 12.dp),
+    horizontalArrangement: Arrangement.Horizontal = Arrangement.Start,
     content: @Composable RowScope.() -> Unit
 ) {
     val color = LocalContentColor.current
     CompositionLocalProvider(LocalContentColor.provides(if (enabled) color else color.copy(0.38F))) {
-        Row(
-            modifier = (if (onClick == null) modifier else modifier
+        Row((if (onClick == null) modifier else modifier
                 .combinedClickable(
                     enabled,
                     onDoubleClick = onDoubleClick,
@@ -44,8 +44,9 @@ fun MenuItem(
                 )
                 .pointerHoverIcon(if (enabled && onClick != null) PointerIconDefaults.Hand else PointerIconDefaults.Default)
                 .padding(padding),
-            verticalAlignment = Alignment.CenterVertically,
-            content = content
+            horizontalArrangement,
+            Alignment.CenterVertically,
+            content
         )
     }
 }

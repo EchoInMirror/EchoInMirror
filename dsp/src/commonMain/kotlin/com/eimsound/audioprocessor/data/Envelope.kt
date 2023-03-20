@@ -63,7 +63,7 @@ data class EnvelopePoint(
 )
 
 @Serializable
-data class SerializableEnvelopePointList(val points: List<EnvelopePoint>) {
+data class SerializableEnvelopePointList(val ppq: Int, val points: List<EnvelopePoint>) {
     @OptIn(ExperimentalSerializationApi::class)
     @Suppress("unused")
     @EncodeDefault

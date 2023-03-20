@@ -4,13 +4,13 @@
         <Console name="Console" target="SYSTEM_OUT">
             <PatternLayout pattern="[%d{HH:mm:ss} %level]: [%logger] %msg%n%xEx{full}" />
         </Console>
-        <RollingRandomAccessFile name="File" fileName="logs/latest.log" filePattern="logs/%d{yyyy-MM-dd}-%i.log.gz">
+        <RollingRandomAccessFile name="File" fileName="logs/latest.log" filePattern="logs/%d{yyyy-MM-dd}-%i.log">
             <PatternLayout pattern="[%d{HH:mm:ss}] [%t/%level]: [%logger] %msg{strip}%n%xEx{full}" />
             <Policies>
                 <TimeBasedTriggeringPolicy />
                 <OnStartupTriggeringPolicy />
             </Policies>
-            <DefaultRolloverStrategy max="1000" />
+            <DefaultRolloverStrategy max="100" />
         </RollingRandomAccessFile>
         <Async name="Async">
             <AppenderRef ref="rewrite"/>

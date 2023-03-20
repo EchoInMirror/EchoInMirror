@@ -26,6 +26,7 @@ import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.unit.*
 import androidx.compose.ui.window.WindowState
 import com.eimsound.daw.components.utils.Zero
+import com.eimsound.daw.utils.BasicEditor
 
 private data class FloatingDialog(val onClose: ((Any) -> Unit)?, val position: Offset?,
                                   val hasOverlay: Boolean, val overflow: Boolean, val content: @Composable () -> Unit) {
@@ -175,5 +176,21 @@ fun Dialog(draggable: Boolean = false, modifier: Modifier = Modifier.width(Intri
         MaterialTheme.shapes.extraSmall, tonalElevation = 5.dp, shadowElevation = 5.dp
     ) {
         Column(columnModifier, content = content)
+    }
+}
+
+/**
+ * @see com.eimsound.daw.components.initEditorMenuItems
+ */
+internal var editorMenuComposable: @Composable (BasicEditor, () -> Unit) -> Unit = { _, _ -> }
+fun FloatingDialogProvider.openEditorMenu(position: Offset, editor: BasicEditor, content: @Composable ((() -> Unit) -> Unit)? = null) {
+    val key = Any()
+    val close = { closeFloatingDialog(key) }
+
+    openFloatingDialog({ close() }, position, key, overflow = true) {
+        Dialog {
+            content?.invoke(close)
+            editorMenuComposable(editor, close)
+        }
     }
 }

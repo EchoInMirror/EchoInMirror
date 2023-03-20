@@ -6,11 +6,11 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.input.key.*
 import com.eimsound.audioprocessor.AudioProcessorManager
 import com.eimsound.audioprocessor.oneBarPPQ
-import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.ROOT_PATH
 import com.eimsound.daw.api.*
 import com.eimsound.daw.api.processor.TrackManager
 import com.eimsound.daw.commands.*
+import com.eimsound.daw.components.initEditorMenuItems
 import com.eimsound.daw.utils.*
 import kotlinx.coroutines.*
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -100,6 +100,8 @@ class CommandManagerImpl : CommandManager {
         if (customShortcutKeyPath.exists()) {
             customCommands.putAll(customShortcutKeyPath.toFile().toJson<Map<String, String>>())
         }
+
+        initEditorMenuItems()
     }
 
     @OptIn(ExperimentalSerializationApi::class)

@@ -5,6 +5,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Tune
 import com.eimsound.audioprocessor.data.EnvelopePoint
 import com.eimsound.audioprocessor.data.EnvelopePointList
+import com.eimsound.audioprocessor.data.EnvelopeType
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.components.EnvelopeEditor
 import com.eimsound.daw.components.EnvelopeEditorEventHandler
@@ -100,6 +101,34 @@ class EnvelopePointsTensionAction(
     }
 }
 
+fun EnvelopePointList.doEnvelopePointsTypeAction(points: Collection<EnvelopePoint>, type: EnvelopeType) {
+    runBlocking {
+        EchoInMirror.undoManager.execute(
+            EnvelopePointsTypeAction(this@doEnvelopePointsTypeAction, points.toList(), type)
+        )
+    }
+}
+
+class EnvelopePointsTypeAction(
+    private val list: EnvelopePointList, private val points: Collection<EnvelopePoint>,
+    private val type: EnvelopeType
+) : UndoableAction {
+    private val oldTypes = points.map { it.type }
+    override val name = "包络节点类型编辑 (${points.size}个)"
+    override val icon = Icons.Default.Tune
+    override suspend fun undo(): Boolean {
+        points.forEachIndexed { index, p -> p.type = oldTypes[index] }
+        list.update()
+        return true
+    }
+
+    override suspend fun execute(): Boolean {
+        points.forEach { it.type = type }
+        list.update()
+        return true
+    }
+}
+
 object GlobalEnvelopeEditorEventHandler : EnvelopeEditorEventHandler {
     override fun onAddPoints(editor: EnvelopeEditor, points: List<EnvelopePoint>) {
         editor.points.doEnvelopePointsAmountAction(points)
@@ -122,5 +151,9 @@ object GlobalEnvelopeEditorEventHandler : EnvelopeEditorEventHandler {
 
     override fun onTensionChanged(editor: EnvelopeEditor, points: List<EnvelopePoint>, tension: Float) {
         editor.points.doEnvelopePointsTensionAction(points, tension)
+    }
+
+    override fun onTypeChanged(editor: EnvelopeEditor, points: List<EnvelopePoint>, type: EnvelopeType) {
+        editor.points.doEnvelopePointsTypeAction(points, type)
     }
 }
