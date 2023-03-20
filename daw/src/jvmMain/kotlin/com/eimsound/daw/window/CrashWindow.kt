@@ -21,6 +21,7 @@ import com.eimsound.daw.components.ClickableText
 import com.eimsound.daw.components.Gap
 import com.eimsound.daw.components.Scrollable
 import com.eimsound.daw.dawutils.Logo
+import com.eimsound.daw.impl.WindowManagerImpl
 import java.awt.Dimension
 
 @Composable
@@ -30,6 +31,7 @@ fun ApplicationScope.CrashWindow() {
         EchoInMirror.windowManager.closeMainWindow(true)
         exitApplication()
     }, windowState, icon = Logo, title = "Echo In Mirror (v$VERSION)") {
+        (EchoInMirror.windowManager as WindowManagerImpl).mainWindow = window
         window.minimumSize = Dimension(600, 400)
         val exception = EchoInMirror.windowManager.globalException ?: return@Window
         Surface(tonalElevation = 1.dp) {

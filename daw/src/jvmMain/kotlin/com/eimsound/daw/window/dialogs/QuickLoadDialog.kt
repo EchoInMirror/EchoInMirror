@@ -319,11 +319,7 @@ private fun <T> DescList(
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(bottom = 4.dp),
         )
-        Card(
-            Modifier.weight(1F), MaterialTheme.shapes.extraSmall,
-            CardDefaults.elevatedCardColors(MaterialTheme.colorScheme.surface),
-            CardDefaults.cardElevation((-4).dp),
-        ) {
+        AbsoluteElevationCard(Modifier.weight(1F)) {
             Box(Modifier.fillMaxSize()) {
                 val state = rememberLazyListState()
                 LazyColumn(state = state) {

@@ -38,22 +38,23 @@ fun main() {
         AppCenter.setUserId(Configuration.userId)
     }
     UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
+    val windowManager = EchoInMirror.windowManager
     Runtime.getRuntime().addShutdownHook(thread(false) {
         androidApplication?.close()
-        EchoInMirror.windowManager.closeMainWindow()
+        windowManager.closeMainWindow(true)
     })
 
     if (!File("test_project").exists()) File("test_project").mkdir()
-    EchoInMirror.windowManager.openProject(Paths.get("test_project"))
+    windowManager.openProject(Paths.get("test_project"))
     application {
-        MaterialTheme(if (EchoInMirror.windowManager.isDarkTheme) darkColorScheme() else lightColorScheme()) {
+        MaterialTheme(if (windowManager.isDarkTheme) darkColorScheme() else lightColorScheme()) {
             val color = MaterialTheme.colorScheme.onSurface
             CompositionLocalProvider(
                 LocalScrollbarStyle provides ScrollbarStyle(16.dp, 8.dp, RoundedCornerShape(4.dp),
                     300, color.copy(0.26f), color.copy(0.60f))
             ) {
-                if (EchoInMirror.windowManager.globalException != null) CrashWindow()
-                else if (EchoInMirror.windowManager.isMainWindowOpened) MainWindow()
+                if (windowManager.globalException != null) CrashWindow()
+                else if (windowManager.isMainWindowOpened) MainWindow()
                 else ProjectWindow()
             }
         }

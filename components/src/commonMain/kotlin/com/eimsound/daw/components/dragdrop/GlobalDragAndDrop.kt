@@ -3,14 +3,19 @@ package com.eimsound.daw.components.dragdrop
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.onDrag
 import androidx.compose.foundation.layout.Box
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import java.awt.datatransfer.DataFlavor
 import java.io.File
 
@@ -21,25 +26,27 @@ class GlobalDragAndDrop {
     internal var currentPosition by mutableStateOf(Offset.Zero)
     internal var dropCallback: ((Any, Offset) -> Unit)? = null
     internal var draggingComponent: (@Composable () -> Unit)? by mutableStateOf(null)
+    internal var contentColor: Color? = null
 
     @Composable
     fun DraggingComponent() {
         draggingComponent?.let {
-            Box(Modifier.graphicsLayer(
-                alpha = 0.9F,
+            Box(Modifier.graphicsLayer(alpha = 0.9F,
                 translationX = currentPosition.x - clickPosition.x,
                 translationY = currentPosition.y - clickPosition.y
-            )) { it() }
+            )) {
+                CompositionLocalProvider(LocalContentColor provides (contentColor ?: LocalContentColor.current), content = it)
+            }
         }
     }
 }
 
 val LocalGlobalDragAndDrop = staticCompositionLocalOf { GlobalDragAndDrop() }
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, DelicateCoroutinesApi::class)
 @Composable
 fun GlobalDraggable(
-    onDragStart: () -> Any?,
+    onDragStart: suspend () -> Any?,
     onDragEnd: () -> Unit = { },
     onDrag: () -> Unit = { },
     modifier: Modifier = Modifier,
@@ -63,14 +70,18 @@ fun GlobalDraggable(
             }
         }
     }
+    val contentColor = LocalContentColor.current
     Box(modifier.onGloballyPositioned { currentPos[0] = it.positionInRoot() }.onDrag(onDragStart = {
-        val data = onDragStart() ?: return@onDrag
-        isCurrent = true
-        globalDragAndDrop.dataTransfer = data
-        globalDragAndDrop.draggingComponent = draggingComponent ?: content
-        globalDragAndDrop.clickPosition = it
-        globalDragAndDrop.rootPosition = currentPos[0] + it
-        globalDragAndDrop.currentPosition = globalDragAndDrop.rootPosition
+        GlobalScope.launch {
+            val data = onDragStart() ?: return@launch
+            isCurrent = true
+            globalDragAndDrop.dataTransfer = data
+            globalDragAndDrop.clickPosition = it
+            globalDragAndDrop.draggingComponent = draggingComponent ?: content
+            globalDragAndDrop.contentColor = contentColor
+            globalDragAndDrop.rootPosition = currentPos[0] + it
+            globalDragAndDrop.currentPosition = globalDragAndDrop.rootPosition
+        }
     }, onDragEnd = dragEnd, onDragCancel = dragEnd) {
         globalDragAndDrop.currentPosition += it
         onDrag()

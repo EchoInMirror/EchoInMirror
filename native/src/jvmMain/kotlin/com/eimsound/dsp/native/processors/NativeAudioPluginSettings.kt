@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.eimsound.audioprocessor.NativeAudioPluginFactory
+import com.eimsound.daw.components.AbsoluteElevation
 import com.eimsound.daw.components.Gap
 import com.eimsound.daw.components.SettingTab
 import com.eimsound.daw.components.utils.clickableWithIcon
@@ -67,10 +68,7 @@ class NativeAudioPluginSettings: SettingTab {
     @Composable
     override fun content() {
         Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-            CompositionLocalProvider(
-                LocalContentColor provides MaterialTheme.colorScheme.surface,
-                LocalAbsoluteTonalElevation provides 0.dp
-            ) {
+            AbsoluteElevation {
                 val window = CurrentWindow.current
                 val apm = NativeAudioPluginFactoryImpl.instance!!
                 Column(Modifier.width(300.dp)) {
