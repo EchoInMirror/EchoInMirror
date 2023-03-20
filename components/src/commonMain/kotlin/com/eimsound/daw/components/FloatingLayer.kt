@@ -28,56 +28,55 @@ import androidx.compose.ui.window.WindowState
 import com.eimsound.daw.components.utils.Zero
 import com.eimsound.daw.utils.BasicEditor
 
-private data class FloatingDialog(val onClose: ((Any) -> Unit)?, val position: Offset?,
-                                  val hasOverlay: Boolean, val overflow: Boolean, val content: @Composable () -> Unit) {
+private data class FloatingLayer(val onClose: ((Any) -> Unit)?, val position: Offset?,
+                                 val hasOverlay: Boolean, val overflow: Boolean, val content: @Composable () -> Unit) {
     var isClosed by mutableStateOf(false)
 }
 
-class FloatingDialogProvider {
-    private val floatingDialogs = mutableStateMapOf<Any, FloatingDialog>()
-    fun openFloatingDialog(onClose: ((Any) -> Unit)? = null, position: Offset? = null, key: Any? = null,
-                           hasOverlay: Boolean = false, overflow: Boolean = false, content: @Composable () -> Unit): Any {
+class FloatingLayerProvider {
+    private val floatingLayers = mutableStateMapOf<Any, FloatingLayer>()
+    fun openFloatingLayer(onClose: ((Any) -> Unit)? = null, position: Offset? = null, key: Any? = null,
+                          hasOverlay: Boolean = false, overflow: Boolean = false, content: @Composable () -> Unit): Any {
         val k = key ?: Any()
-        floatingDialogs[k] = FloatingDialog(onClose, position, hasOverlay, overflow, content)
+        floatingLayers[k] = FloatingLayer(onClose, position, hasOverlay, overflow, content)
         return k
     }
-    fun closeFloatingDialog(key: Any) {
-        val dialog = floatingDialogs[key] ?: return
-        dialog.isClosed = true
+    fun closeFloatingLayer(key: Any) {
+        (floatingLayers[key] ?: return).isClosed = true
     }
 
     @OptIn(ExperimentalComposeUiApi::class)
     @Composable
-    fun FloatingDialogs() {
-        floatingDialogs.forEach { (key, dialog) ->
+    fun FloatingLayers() {
+        floatingLayers.forEach { (key, layer) ->
             Box {
                 var isOpened by remember { mutableStateOf(false) }
-                val alpha by animateFloatAsState(if (dialog.isClosed || !isOpened) 0F else 1F, tween(300)) {
-                    if (dialog.isClosed) floatingDialogs.remove(key)
+                val alpha by animateFloatAsState(if (layer.isClosed || !isOpened) 0F else 1F, tween(300)) {
+                    if (layer.isClosed) floatingLayers.remove(key)
                 }
-                var modifier = if (dialog.hasOverlay) Modifier.fillMaxSize().background(Color.Black.copy(alpha * 0.26F))
+                var modifier = if (layer.hasOverlay) Modifier.fillMaxSize().background(Color.Black.copy(alpha * 0.26F))
                 else Modifier
-                if (dialog.onClose != null) modifier = modifier.fillMaxSize()
-                    .onPointerEvent(PointerEventType.Press) { dialog.onClose.invoke(key) }
+                if (layer.onClose != null) modifier = modifier.fillMaxSize()
+                    .onPointerEvent(PointerEventType.Press) { layer.onClose.invoke(key) }
                 Box(modifier)
-                if (dialog.position == null)
-                    Box(Modifier.fillMaxSize().graphicsLayer(alpha = alpha), contentAlignment = Alignment.Center) { dialog.content() }
+                if (layer.position == null)
+                    Box(Modifier.fillMaxSize().graphicsLayer(alpha = alpha), contentAlignment = Alignment.Center) { layer.content() }
                 else Layout({
-                    Box(Modifier.graphicsLayer(alpha = alpha, shadowElevation = if (alpha == 1F) 0F else 5F)) { dialog.content() }
+                    Box(Modifier.graphicsLayer(alpha = alpha, shadowElevation = if (alpha == 1F) 0F else 5F)) { layer.content() }
                 }) { measurables, constraints ->
-                    if (dialog.overflow) {
+                    if (layer.overflow) {
                         val width = constraints.maxWidth - 12
                         val height = constraints.maxHeight - 25
                         val placeable = measurables.firstOrNull()?.measure(Constraints(0, width, 0, height))
                         val pw = placeable?.width ?: 0
                         val ph = placeable?.height ?: 0
                         layout(pw, ph) {
-                            placeable?.place(if (dialog.position.x + pw > width) width - pw else dialog.position.x.toInt(),
-                                if (dialog.position.y + ph > height) height - ph else dialog.position.y.toInt(), 5F)
+                            placeable?.place(if (layer.position.x + pw > width) width - pw else layer.position.x.toInt(),
+                                if (layer.position.y + ph > height) height - ph else layer.position.y.toInt(), 5F)
                         }
                     } else {
-                        var height = constraints.maxHeight - dialog.position.y.toInt() - 25
-                        var width = constraints.maxWidth - dialog.position.x.toInt() - 12
+                        var height = constraints.maxHeight - layer.position.y.toInt() - 25
+                        var width = constraints.maxWidth - layer.position.x.toInt() - 12
                         val isTooSmall = height < 40
                         val isTooRight = width < 100
                         if (isTooSmall) height = constraints.maxHeight - 50
@@ -85,8 +84,8 @@ class FloatingDialogProvider {
                         val c = Constraints(0, width, 0, height)
                         val placeable = measurables.firstOrNull()?.measure(c)
                         layout(c.maxWidth, c.maxHeight) {
-                            placeable?.place(dialog.position.x.toInt() - (if (isTooRight) placeable.width else 0),
-                                dialog.position.y.toInt() - (if (isTooSmall) placeable.height + 25 else 0), 5F)
+                            placeable?.place(layer.position.x.toInt() - (if (isTooRight) placeable.width else 0),
+                                layer.position.y.toInt() - (if (isTooSmall) placeable.height + 25 else 0), 5F)
                         }
                     }
                 }
@@ -96,27 +95,27 @@ class FloatingDialogProvider {
     }
 }
 
-val LocalFloatingDialogProvider = staticCompositionLocalOf { FloatingDialogProvider() }
+val LocalFloatingLayerProvider = staticCompositionLocalOf { FloatingLayerProvider() }
 
 @Composable
-fun FloatingDialog(dialogContent: @Composable (size: Size, closeDialog: () -> Unit) -> Unit,
-                   modifier: Modifier = Modifier, enabled: Boolean = true,
-                   hasOverlay: Boolean = false, isCentral: Boolean = false,
-                   content: @Composable BoxScope.() -> Unit) {
+fun FloatingLayer(layerContent: @Composable (Size, () -> Unit) -> Unit,
+                  modifier: Modifier = Modifier, enabled: Boolean = true,
+                  hasOverlay: Boolean = false, isCentral: Boolean = false,
+                  content: @Composable BoxScope.() -> Unit) {
     @OptIn(ExperimentalFoundationApi::class)
-    FloatingDialog(dialogContent, modifier, enabled, hasOverlay, isCentral, PointerMatcher.Primary, content)
+    FloatingLayer(layerContent, modifier, enabled, hasOverlay, isCentral, PointerMatcher.Primary, content)
 }
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
 @Composable
-fun FloatingDialog(dialogContent: @Composable (size: Size, closeDialog: () -> Unit) -> Unit,
-                   modifier: Modifier = Modifier, enabled: Boolean = true,
-                   hasOverlay: Boolean = false, isCentral: Boolean = false,
-                   matcher: PointerMatcher = PointerMatcher.Primary,
-                   content: @Composable BoxScope.() -> Unit) {
+fun FloatingLayer(layerContent: @Composable (Size, () -> Unit) -> Unit,
+                  modifier: Modifier = Modifier, enabled: Boolean = true,
+                  hasOverlay: Boolean = false, isCentral: Boolean = false,
+                  matcher: PointerMatcher = PointerMatcher.Primary,
+                  content: @Composable BoxScope.() -> Unit) {
     val id = remember { Any() }
-    val localFloatingDialogProvider = LocalFloatingDialogProvider.current
-    val closeDialog = remember { { localFloatingDialogProvider.closeFloatingDialog(id) } }
+    val localFloatingLayerProvider = LocalFloatingLayerProvider.current
+    val closeLayer = remember { { localFloatingLayerProvider.closeFloatingLayer(id) } }
     val offset = remember { arrayOf(Offset.Zero) }
     val size = remember { arrayOf(Size.Zero) }
     Box((if (isCentral) modifier else modifier.onGloballyPositioned {
@@ -124,10 +123,10 @@ fun FloatingDialog(dialogContent: @Composable (size: Size, closeDialog: () -> Un
         size[0] = it.size.toSize()
     }).let { if (enabled) it.pointerHoverIcon(PointerIconDefaults.Hand) else it }
         .onClick(matcher = matcher) {
-            localFloatingDialogProvider.openFloatingDialog({ closeDialog() },
+            localFloatingLayerProvider.openFloatingLayer({ closeLayer() },
                 if (isCentral) null else offset[0] + Offset(0f, size[0].height),
                 id, hasOverlay
-            ) { dialogContent(size[0], closeDialog) }
+            ) { layerContent(size[0], closeLayer) }
         }
     ) { content() }
 }
@@ -150,7 +149,7 @@ fun Dialog(onOk: (() -> Unit)? = null,
 }
 
 @Composable
-fun MenuTitle(text: String, modifier: Modifier = Modifier) {
+fun DialogTitle(text: String, modifier: Modifier = Modifier) {
     Text(text, modifier.padding(16.dp, 8.dp, 16.dp, 8.dp), style = MaterialTheme.typography.titleMedium)
 }
 
@@ -183,11 +182,11 @@ fun Dialog(draggable: Boolean = false, modifier: Modifier = Modifier.width(Intri
  * @see com.eimsound.daw.components.initEditorMenuItems
  */
 internal var editorMenuComposable: @Composable (BasicEditor, () -> Unit) -> Unit = { _, _ -> }
-fun FloatingDialogProvider.openEditorMenu(position: Offset, editor: BasicEditor, content: @Composable ((() -> Unit) -> Unit)? = null) {
+fun FloatingLayerProvider.openEditorMenu(position: Offset, editor: BasicEditor, content: @Composable ((() -> Unit) -> Unit)? = null) {
     val key = Any()
-    val close = { closeFloatingDialog(key) }
+    val close = { closeFloatingLayer(key) }
 
-    openFloatingDialog({ close() }, position, key, overflow = true) {
+    openFloatingLayer({ close() }, position, key, overflow = true) {
         Dialog {
             content?.invoke(close)
             editorMenuComposable(editor, close)

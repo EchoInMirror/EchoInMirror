@@ -14,7 +14,7 @@ import androidx.compose.ui.util.fastForEach
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.window.Panel
 import com.eimsound.daw.api.window.PanelDirection
-import com.eimsound.daw.components.LocalFloatingDialogProvider
+import com.eimsound.daw.components.LocalFloatingLayerProvider
 import com.eimsound.daw.components.icons.EIMLogo
 import com.eimsound.daw.components.splitpane.SplitPaneState
 import com.eimsound.daw.impl.WindowManagerImpl
@@ -94,12 +94,12 @@ internal fun SideBar() {
         drawLine(lineColor, Offset(size.width - 0.3f, 0F), Offset(size.width - 0.3f, size.height), 0.6f)
     }, tonalElevation = 2.dp) {
         NavigationRail {
-            val floatingDialogProvider = LocalFloatingDialogProvider.current
+            val floatingLayerProvider = LocalFloatingLayerProvider.current
             NavigationRailItem(
                 icon = { Icon(EIMLogo, "QuickLand") },
                 label = { Text("快速加载") },
                 selected = false,
-                onClick = { floatingDialogProvider.openQuickLoadDialog() }
+                onClick = { floatingLayerProvider.openQuickLoadDialog() }
             )
             (EchoInMirror.windowManager as WindowManagerImpl).panels.filter { it.direction != PanelDirection.Horizontal }.fastForEach {
                 key(it) {

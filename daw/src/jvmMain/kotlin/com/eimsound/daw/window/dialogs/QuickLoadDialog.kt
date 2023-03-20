@@ -83,10 +83,10 @@ private fun saveFavoriteAudioProcessors() {
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
-fun FloatingDialogProvider.openQuickLoadDialog(onClose: ((AudioProcessorDescription?, AudioProcessorFactory<*>?) -> Unit) = { _, _ -> }) {
+fun FloatingLayerProvider.openQuickLoadDialog(onClose: ((AudioProcessorDescription?, AudioProcessorFactory<*>?) -> Unit) = { _, _ -> }) {
     loadFavoriteAudioProcessors()
-    openFloatingDialog({
-        closeFloatingDialog(KEY)
+    openFloatingLayer({
+        closeFloatingLayer(KEY)
         onClose(null, null)
     }, key = KEY) {
         val favoriteIconColors = IconButtonDefaults.iconToggleButtonColors(
@@ -226,7 +226,7 @@ fun FloatingDialogProvider.openQuickLoadDialog(onClose: ((AudioProcessorDescript
                                 }, draggable = true
                             ) { desc ->
                                 if (selectedDescription == desc) {
-                                    closeFloatingDialog(KEY)
+                                    closeFloatingLayer(KEY)
                                     onClose(desc, descriptionsToFactory[desc])
                                 } else selectedDescription = descList.find { it == desc }
                             }
@@ -245,13 +245,13 @@ fun FloatingDialogProvider.openQuickLoadDialog(onClose: ((AudioProcessorDescript
                             maxLines = 1, overflow = TextOverflow.Ellipsis
                         )
                         TextButton({
-                            closeFloatingDialog(KEY)
+                            closeFloatingLayer(KEY)
                             onClose(null, null)
                         }) {
                             Text("取消")
                         }
                         Button({
-                            closeFloatingDialog(KEY)
+                            closeFloatingLayer(KEY)
                             onClose(selectedDescription, descriptionsToFactory[selectedDescription])
                         }, Modifier.padding(horizontal = 5.dp), selectedDescription != null) {
                             Text("确定")

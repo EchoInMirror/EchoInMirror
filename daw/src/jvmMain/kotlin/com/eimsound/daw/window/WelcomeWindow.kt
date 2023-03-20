@@ -51,15 +51,15 @@ private class Projects: Tab {
             Row {
                 val window = CurrentWindow.current
                 val id = remember { Any() }
-                val localFloatingDialogProvider = LocalFloatingDialogProvider.current
+                val localFloatingLayerProvider = LocalFloatingLayerProvider.current
                 ExtendedFloatingActionButton({
                     openFolderBrowser(window)?.let {
                         if (!it.isDirectory) return@let
                         if (Files.list(it.toPath()).findFirst().isPresent && !File(it, "eim.json").exists()) {
-                            localFloatingDialogProvider.openFloatingDialog({
-                                localFloatingDialogProvider.closeFloatingDialog(id)
+                            localFloatingLayerProvider.openFloatingLayer({
+                                localFloatingLayerProvider.closeFloatingLayer(id)
                             }, hasOverlay = true, key = id) {
-                                Dialog({ localFloatingDialogProvider.closeFloatingDialog(id) }) {
+                                Dialog({ localFloatingLayerProvider.closeFloatingLayer(id) }) {
                                     Text("无法打开该文件夹, 因为它不是一个有效的项目文件夹 (不为空或不存在 eim.json 文件)")
                                 }
                             }
@@ -113,13 +113,13 @@ fun ApplicationScope.ProjectWindow() {
     val windowState = rememberWindowState()
     Window(::exitApplication, windowState, icon = Logo, title = "Echo In Mirror (v$VERSION)") {
         window.minimumSize = Dimension(860, 700)
-        val floatingDialogProvider = remember { FloatingDialogProvider() }
+        val floatingLayerProvider = remember { FloatingLayerProvider() }
         CompositionLocalProvider(
-            LocalFloatingDialogProvider.provides(floatingDialogProvider),
+            LocalFloatingLayerProvider.provides(floatingLayerProvider),
             LocalWindowState.provides(windowState)
         ) {
             Tabs(welcomeWindowTabs)
         }
-        floatingDialogProvider.FloatingDialogs()
+        floatingLayerProvider.FloatingLayers()
     }
 }

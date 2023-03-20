@@ -14,7 +14,7 @@ import com.eimsound.audioprocessor.data.midi.toNoteOnEvent
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.actions.doNoteAmountAction
 import com.eimsound.daw.actions.doNoteMessageEditAction
-import com.eimsound.daw.components.FloatingDialogProvider
+import com.eimsound.daw.components.FloatingLayerProvider
 import com.eimsound.daw.components.KEYBOARD_KEYS
 import com.eimsound.daw.components.openEditorMenu
 import com.eimsound.daw.components.utils.*
@@ -61,7 +61,7 @@ private fun stopAllNotes(editor: DefaultMidiClipEditor) {
 @Suppress("DuplicatedCode")
 internal suspend fun PointerInputScope.handleMouseEvent(coroutineScope: CoroutineScope,
                                                         editor: DefaultMidiClipEditor,
-                                                        floatingDialogProvider: FloatingDialogProvider) {
+                                                        floatingLayerProvider: FloatingLayerProvider) {
     forEachGesture { editor.apply {
         awaitPointerEventScope {
             var event: PointerEvent
@@ -165,7 +165,7 @@ internal suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutin
                             break
                         } else if (event.buttons.isSecondaryPressed) {
                             action = EditAction.NONE
-                            floatingDialogProvider.openEditorMenu(event.changes[0].position + offsetOfRoot, editor)
+                            floatingLayerProvider.openEditorMenu(event.changes[0].position + offsetOfRoot, editor)
                             continue
                         }
                     }

@@ -20,7 +20,7 @@ import com.eimsound.daw.actions.doNoteDisabledAction
 import com.eimsound.daw.actions.doNoteVelocityAction
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.components.CustomTextField
-import com.eimsound.daw.components.FloatingDialog
+import com.eimsound.daw.components.FloatingLayer
 import com.eimsound.daw.components.MenuItem
 import com.eimsound.daw.components.TIMELINE_HEIGHT
 import com.eimsound.daw.components.silder.Slider
@@ -59,7 +59,7 @@ private fun TrackItem(track: Track, backingTracks: IManualStateValue<WeakHashMap
 @Composable
 internal fun EditorControls(editor: DefaultMidiClipEditor) {
     val track = EchoInMirror.selectedTrack
-    FloatingDialog({ size, _ ->
+    FloatingLayer({ size, _ ->
         Surface(Modifier.width(IntrinsicSize.Max).widthIn(min = size.width.dp), shape = MaterialTheme.shapes.extraSmall,
             tonalElevation = 5.dp, shadowElevation = 5.dp) {
             val stateVertical = rememberScrollState(0)

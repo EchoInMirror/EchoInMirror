@@ -11,7 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.eimsound.daw.components.ColorPicker
-import com.eimsound.daw.components.FloatingDialogProvider
+import com.eimsound.daw.components.FloatingLayerProvider
 import com.eimsound.daw.components.Dialog
 import com.eimsound.daw.components.utils.HsvColor
 import com.eimsound.daw.components.utils.randomColor
@@ -19,10 +19,10 @@ import com.eimsound.daw.components.utils.randomColor
 @Suppress("PrivatePropertyName")
 private val KEY = Any()
 
-fun FloatingDialogProvider.openColorPicker(initialColor: Color = randomColor(),
-                                           onCancel: (() -> Unit)? = null, onClose: (Color) -> Unit) {
-    openFloatingDialog({
-        closeFloatingDialog(KEY)
+fun FloatingLayerProvider.openColorPicker(initialColor: Color = randomColor(),
+                                          onCancel: (() -> Unit)? = null, onClose: (Color) -> Unit) {
+    openFloatingLayer({
+        closeFloatingLayer(KEY)
         onCancel?.invoke()
     }, key = KEY, hasOverlay = true) {
         Dialog {
@@ -31,11 +31,11 @@ fun FloatingDialogProvider.openColorPicker(initialColor: Color = randomColor(),
             Row(Modifier.fillMaxWidth().padding(end = 10.dp),
                 horizontalArrangement = Arrangement.End) {
                 TextButton({
-                    closeFloatingDialog(KEY)
+                    closeFloatingLayer(KEY)
                     onCancel?.invoke()
                 }) { Text("取消") }
                 TextButton({
-                    closeFloatingDialog(KEY)
+                    closeFloatingLayer(KEY)
                     onClose(currentColor.toColor())
                 }) { Text("确认") }
             }

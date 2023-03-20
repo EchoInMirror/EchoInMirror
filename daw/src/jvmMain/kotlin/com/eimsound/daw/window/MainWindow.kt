@@ -19,7 +19,7 @@ import androidx.compose.ui.window.WindowExceptionHandler
 import com.eimsound.daw.VERSION
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.window.GlobalException
-import com.eimsound.daw.components.LocalFloatingDialogProvider
+import com.eimsound.daw.components.LocalFloatingLayerProvider
 import com.eimsound.daw.components.LocalSnackbarHost
 import com.eimsound.daw.components.LocalWindowState
 import com.eimsound.daw.components.app.*
@@ -58,7 +58,7 @@ fun ApplicationScope.MainWindow() {
         System.setProperty("eim.window.handler", window.windowHandle.toString())
         val windowManager = EchoInMirror.windowManager as WindowManagerImpl
         windowManager.mainWindow = window
-        windowManager.floatingDialogProvider = LocalFloatingDialogProvider.current
+        windowManager.floatingLayerProvider = LocalFloatingLayerProvider.current
         window.exceptionHandler = WindowExceptionHandler {
             logger.error("Uncaught compose exception", it)
             windowManager.globalException = GlobalException(it, Crashes.trackCrash(it, Thread.currentThread(), null))
@@ -100,7 +100,7 @@ fun ApplicationScope.MainWindow() {
                 )
             }
 
-            LocalFloatingDialogProvider.current.FloatingDialogs()
+            LocalFloatingLayerProvider.current.FloatingLayers()
             LocalGlobalDragAndDrop.current.DraggingComponent()
         }
 

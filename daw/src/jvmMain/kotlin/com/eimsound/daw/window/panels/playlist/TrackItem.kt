@@ -148,9 +148,9 @@ private fun TrackItem(playlist: Playlist, track: Track, parentTrack: Track, inde
             }
             .alpha(animateFloatAsState(if (isDragging.value) 0.3F else 1F).value)
         ) {
-            val localFloatingDialogProvider = LocalFloatingDialogProvider.current
+            val localFloatingLayerProvider = LocalFloatingLayerProvider.current
             Spacer(Modifier.fillMaxHeight().width(8.dp).background(track.color).clickableWithIcon {
-                localFloatingDialogProvider.openColorPicker(track.color) { track.color = it }
+                localFloatingLayerProvider.openColorPicker(track.color) { track.color = it }
             })
             Row(Modifier.weight(1F).padding(8.dp, 4.dp)) {
                 Text(index.toString(),

@@ -10,7 +10,7 @@ import com.eimsound.daw.api.processor.TrackManager
 import com.eimsound.daw.api.window.GlobalException
 import com.eimsound.daw.api.window.Panel
 import com.eimsound.daw.api.window.WindowManager
-import com.eimsound.daw.components.FloatingDialogProvider
+import com.eimsound.daw.components.FloatingLayerProvider
 import com.eimsound.daw.window.dialogs.ExportDialog
 import com.eimsound.daw.window.dialogs.settings.SettingsWindow
 import com.eimsound.daw.window.panels.Editor
@@ -33,7 +33,7 @@ class WindowManagerImpl: WindowManager {
     override var activePanel: Panel? by mutableStateOf(null)
     override var isMainWindowOpened by mutableStateOf(false)
     override var globalException: GlobalException? by mutableStateOf(null)
-    var floatingDialogProvider: FloatingDialogProvider? = null
+    var floatingLayerProvider: FloatingLayerProvider? = null
 
     init {
         dialogs[SettingsWindow] = false
@@ -57,7 +57,7 @@ class WindowManagerImpl: WindowManager {
 
     override fun closeMainWindow(isExit: Boolean) {
         isMainWindowOpened = false
-        floatingDialogProvider = null
+        floatingLayerProvider = null
         try {
             mainWindow?.dispose()
         } catch (ignored: Throwable) { }

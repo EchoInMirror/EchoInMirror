@@ -35,7 +35,7 @@ private fun formatSecondTime(timeInSecond: Float): String {
     }"//:${((timeInSecond * 1000) % 1000).toInt().toString().padStart(3, '0')}
 }
 
-private val floatingDialogProvider = FloatingDialogProvider()
+private val floatingLayerProvider = FloatingLayerProvider()
 
 @OptIn(DelicateCoroutinesApi::class, ExperimentalMaterial3Api::class)
 val ExportDialog = @Composable {
@@ -43,7 +43,7 @@ val ExportDialog = @Composable {
         remember { EchoInMirror.currentPosition.isPlaying = false }
         window.minimumSize = Dimension(300, 500)
 
-        CompositionLocalProvider(LocalFloatingDialogProvider.provides(floatingDialogProvider)) {
+        CompositionLocalProvider(LocalFloatingLayerProvider.provides(floatingLayerProvider)) {
             Surface(Modifier.fillMaxSize(), tonalElevation = 4.dp) {
                 Box(Modifier.padding(10.dp)) {
                     Column {
@@ -276,6 +276,6 @@ val ExportDialog = @Composable {
                 }
             }
         }
-        floatingDialogProvider.FloatingDialogs()
+        floatingLayerProvider.FloatingLayers()
     }
 }

@@ -20,7 +20,7 @@ import com.eimsound.audioprocessor.data.defaultScale
 import com.eimsound.audioprocessor.data.midi.KEY_NAMES
 import com.eimsound.audioprocessor.data.quantificationUnits
 import com.eimsound.daw.api.EchoInMirror
-import com.eimsound.daw.components.FloatingDialog
+import com.eimsound.daw.components.FloatingLayer
 import com.eimsound.daw.components.MenuItem
 
 @Composable
@@ -121,7 +121,7 @@ private fun PPQText() {
 
 @Composable
 private fun Quantification() {
-    FloatingDialog({ _, close ->
+    FloatingLayer({ _, close ->
         Surface(Modifier.width(IntrinsicSize.Min), MaterialTheme.shapes.extraSmall,
             shadowElevation = 6.dp, tonalElevation = 1.dp) {
             Column {
@@ -143,7 +143,7 @@ private fun Quantification() {
 
 @Composable
 fun RootNote() {
-    FloatingDialog({ _, close ->
+    FloatingLayer({ _, close ->
         Surface(Modifier.width(IntrinsicSize.Min), MaterialTheme.shapes.extraSmall,
             shadowElevation = 6.dp, tonalElevation = 1.dp) {
             Column {
@@ -168,7 +168,7 @@ private fun TimeSignature() {
                 EchoInMirror.currentPosition.timeSigNumerator = it.toIntOrNull()?.coerceIn(1, 32) ?: return@BasicTextField
             }, Modifier.width(IntrinsicSize.Min), textStyle = getAppBarFont(), singleLine = true)
             AppBarTitle("/")
-            FloatingDialog({ _, close ->
+            FloatingLayer({ _, close ->
                 Surface(shape = MaterialTheme.shapes.extraSmall,
                     shadowElevation = 6.dp, tonalElevation = 1.dp) {
                     Column {

@@ -54,13 +54,13 @@ fun MenuItem(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun DropdownMenu(
-    menuItems: @Composable (closeDialog: () -> Unit) -> Unit,
+    menuItems: @Composable (() -> Unit) -> Unit,
     boxModifier: Modifier = Modifier,
     enabled: Boolean = true,
     matcher: PointerMatcher = PointerMatcher.Primary,
     content: @Composable BoxScope.() -> Unit,
 ) {
-    FloatingDialog({ size, close ->
+    FloatingLayer({ size, close ->
         Surface(
             Modifier.widthIn(size.width.dp).width(IntrinsicSize.Min), MaterialTheme.shapes.extraSmall,
             shadowElevation = 5.dp, tonalElevation = 5.dp
@@ -77,7 +77,7 @@ fun DropdownMenu(
 
 @Composable
 fun Menu(
-    menuItems: @Composable (closeDialog: () -> Unit) -> Unit,
+    menuItems: @Composable (() -> Unit) -> Unit,
     modifier: Modifier = Modifier,
     boxModifier: Modifier = Modifier,
     content: @Composable () -> Unit,

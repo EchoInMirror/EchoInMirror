@@ -194,7 +194,7 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange,
                horizontalScrollState: ScrollState? = null, clipStartTime: Int = 0, stroke: Float = 2F) {
         val scope = rememberCoroutineScope()
         val measurer = rememberTextMeasurer(50)
-        val floatingDialogProvider = LocalFloatingDialogProvider.current
+        val floatingLayerProvider = LocalFloatingLayerProvider.current
         val primaryColor = MaterialTheme.colorScheme.primary
         val textStyle = MaterialTheme.typography.labelMedium
         val fillColor = verticalGradient(
@@ -253,7 +253,7 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange,
                                     if (tmpId == -1) {
                                         if (event.buttons.isSecondaryPressed) {
                                             if (isPointExists && selectedPoints.isEmpty()) selectedPoints.add(points[pointId])
-                                            floatingDialogProvider.openMenu(
+                                            floatingLayerProvider.openMenu(
                                                 event.changes[0].position,
                                                 if (isPointExists) points[pointId] else null,
                                             )
@@ -272,7 +272,7 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange,
                                         }
                                         hoveredIndex = tmpId
                                         if (event.buttons.isSecondaryPressed) {
-                                            floatingDialogProvider.openMenu(event.changes[0].position, points[tmpId])
+                                            floatingLayerProvider.openMenu(event.changes[0].position, points[tmpId])
                                             continue
                                         }
                                         action = EditAction.MOVE
@@ -526,7 +526,7 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange,
         }
     }
 
-    private fun FloatingDialogProvider.openMenu(offset: Offset, point: EnvelopePoint?) {
+    private fun FloatingLayerProvider.openMenu(offset: Offset, point: EnvelopePoint?) {
         openEditorMenu(offset + positionInRoot, this@EnvelopeEditor) { close ->
             points.read()
             val currentPoint = (if (selectedPoints.contains(point)) point else selectedPoints.firstOrNull()) ?: return@openEditorMenu

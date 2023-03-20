@@ -42,7 +42,7 @@ import com.eimsound.daw.api.window.EditorExtension
 import com.eimsound.daw.api.window.EditorExtensions
 import com.eimsound.daw.components.EditorGrid
 import com.eimsound.daw.components.KEYBOARD_KEYS
-import com.eimsound.daw.components.LocalFloatingDialogProvider
+import com.eimsound.daw.components.LocalFloatingLayerProvider
 import com.eimsound.daw.components.dragdrop.dropTarget
 import com.eimsound.daw.components.utils.*
 import com.eimsound.daw.dawutils.openMaxValue
@@ -97,14 +97,14 @@ private fun DefaultMidiClipEditor.EditorHorizontalGrid() {
 @Composable
 internal fun NotesEditorCanvas(editor: DefaultMidiClipEditor) {
     val coroutineScope = rememberCoroutineScope()
-    val floatingDialogProvider = LocalFloatingDialogProvider.current
+    val floatingLayerProvider = LocalFloatingLayerProvider.current
     editor.apply {
         Box(
             Modifier.fillMaxSize().clipToBounds().background(MaterialTheme.colorScheme.background)
                 .scrollable(verticalScrollState, Orientation.Vertical, reverseDirection = true)
                 .onGloballyPositioned { offsetOfRoot = it.positionInRoot() }
                 .pointerInput(coroutineScope, editor) {
-                    handleMouseEvent(coroutineScope, editor, floatingDialogProvider)
+                    handleMouseEvent(coroutineScope, editor, floatingLayerProvider)
                 }
                 .dropTarget({ _, _ -> true }) { _, pos ->
                     println(pos)

@@ -25,13 +25,13 @@ private fun closeSettingWindow() {
     EchoInMirror.windowManager.dialogs[SettingsWindow] = false
 }
 
-private val floatingDialogProvider = FloatingDialogProvider()
+private val floatingLayerProvider = FloatingLayerProvider()
 
 val SettingsWindow: @Composable () -> Unit = @Composable {
     Dialog(::closeSettingWindow, title = "设置") {
         window.minimumSize = Dimension(860, 700)
         window.isModal = false
-        CompositionLocalProvider(LocalFloatingDialogProvider.provides(floatingDialogProvider)) {
+        CompositionLocalProvider(LocalFloatingLayerProvider.provides(floatingLayerProvider)) {
             Tabs(settingsTabs) {
                 Row(Modifier.padding(14.dp, 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Filled()
@@ -40,6 +40,6 @@ val SettingsWindow: @Composable () -> Unit = @Composable {
                 }
             }
         }
-        floatingDialogProvider.FloatingDialogs()
+        floatingLayerProvider.FloatingLayers()
     }
 }

@@ -14,7 +14,7 @@ import androidx.compose.ui.unit.dp
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.processor.ChannelType
 import com.eimsound.daw.components.Filled
-import com.eimsound.daw.components.FloatingDialog
+import com.eimsound.daw.components.FloatingLayer
 import com.eimsound.daw.components.MenuItem
 import com.eimsound.daw.components.icons.*
 import com.eimsound.daw.components.utils.clickableWithIcon
@@ -54,7 +54,7 @@ fun getChannelTypeIcon(type: ChannelType) = when (type) {
 
 @Composable
 private fun BusChannelType() {
-    FloatingDialog({ _, close ->
+    FloatingLayer({ _, close ->
         Surface(Modifier.width(IntrinsicSize.Min), shape = MaterialTheme.shapes.extraSmall,
             tonalElevation = 5.dp, shadowElevation = 5.dp) {
             Column {

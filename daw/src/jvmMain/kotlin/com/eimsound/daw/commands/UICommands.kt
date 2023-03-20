@@ -19,7 +19,7 @@ object OpenSettingsCommand : AbstractCommand("EIM:Open Settings", "打开设置"
 object OpenQuickLoadDialogCommand : AbstractCommand("EIM:Open Quick Load Dialog", "打开快速加载窗口",
     arrayOf(Key.CtrlLeft, Key.Q)) {
     override fun execute() {
-        (EchoInMirror.windowManager as WindowManagerImpl).floatingDialogProvider?.openQuickLoadDialog()
+        (EchoInMirror.windowManager as WindowManagerImpl).floatingLayerProvider?.openQuickLoadDialog()
     }
 }
 

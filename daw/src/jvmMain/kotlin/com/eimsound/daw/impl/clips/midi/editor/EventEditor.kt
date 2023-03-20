@@ -4,9 +4,9 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -27,13 +27,11 @@ import androidx.compose.ui.zIndex
 import com.eimsound.audioprocessor.data.EnvelopePointList
 import com.eimsound.audioprocessor.data.MIDI_CC_RANGE
 import com.eimsound.audioprocessor.data.midi.NoteMessage
-import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.actions.GlobalEnvelopeEditorEventHandler
 import com.eimsound.daw.actions.doNoteVelocityAction
+import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.MidiClipEditor
-import com.eimsound.daw.components.EditorGrid
-import com.eimsound.daw.components.EnvelopeEditor
-import com.eimsound.daw.components.KEYBOARD_DEFAULT_WIDTH
+import com.eimsound.daw.components.*
 import com.eimsound.daw.components.utils.EditAction
 import com.eimsound.daw.components.utils.clickableWithIcon
 import com.eimsound.daw.utils.BasicEditor
@@ -135,6 +133,22 @@ class CCEvent(private val editor: MidiClipEditor, eventId: Int, points: Envelope
     override fun selectAll() { envEditor.selectAll() }
 }
 
+private val eventSelectorHeight = 26.dp
+
+@OptIn(ExperimentalMaterial3Api::class)
+private fun FloatingLayerProvider.openEventSelectorDialog() {
+    val key = Any()
+    val close = { closeFloatingLayer(key) }
+    openFloatingLayer({ close() }, hasOverlay = true) {
+        // TODO: 添加事件
+        InputChip(true,
+            onClick = { },
+            label = { Text("Input Chip") },
+        )
+        Divider()
+    }
+}
+
 @OptIn(ExperimentalTextApi::class, ExperimentalComposeUiApi::class)
 @Composable
 internal fun EventEditor(editor: DefaultMidiClipEditor) {
@@ -142,21 +156,26 @@ internal fun EventEditor(editor: DefaultMidiClipEditor) {
         Column(Modifier.fillMaxSize().onPointerEvent(PointerEventType.Press, PointerEventPass.Initial) {
             isEventPanelActive = true
         }) {
-            Surface(Modifier.fillMaxWidth().zIndex(2f), shadowElevation = 5.dp) {
+            Surface(Modifier.fillMaxWidth().height(eventSelectorHeight).zIndex(2f), shadowElevation = 5.dp) {
                 Row {
                     Text("力度", (
                             if (selectedEvent is VelocityEvent) Modifier.background(MaterialTheme.colorScheme.primary.copy(0.2F))
                             else Modifier)
+                        .height(eventSelectorHeight)
                         .clickableWithIcon {
                             selectedEvent = VelocityEvent(editor)
                         }.padding(4.dp, 2.dp), style = MaterialTheme.typography.labelLarge)
                     clip.clip.events.forEach { (id, points) ->
                         Text("CC:${id}", (
                                 if (selectedEvent?.name == "CC:${id}") Modifier.background(MaterialTheme.colorScheme.primary.copy(0.2F))
-                                else Modifier).clickableWithIcon {
+                                else Modifier).height(eventSelectorHeight).clickableWithIcon {
                             selectedEvent = CCEvent(editor, id, points)
                         }.padding(4.dp, 2.dp), style = MaterialTheme.typography.labelLarge)
                     }
+                    val floatingLayerProvider = LocalFloatingLayerProvider.current
+                    Icon(Icons.Default.Add, "添加", Modifier.size(eventSelectorHeight).clickableWithIcon {
+                        floatingLayerProvider.openEventSelectorDialog()
+                    })
                 }
             }
 
