@@ -4,6 +4,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.gestures.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -20,6 +21,7 @@ import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
@@ -526,6 +528,7 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange,
         }
     }
 
+    @OptIn(ExperimentalMaterial3Api::class)
     private fun FloatingLayerProvider.openMenu(offset: Offset, point: EnvelopePoint?) {
         openEditorMenu(offset + positionInRoot, this@EnvelopeEditor) { close ->
             points.read()
@@ -533,11 +536,11 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange,
             MenuItem(padding = PaddingValues(12.dp, 12.dp, 12.dp, 0.dp)) {
                 Text("值:")
                 Filled()
-                CustomTextField(if (isFloat) "%.2F".format(currentPoint.value) else currentPoint.value.toInt().toString(), {
+                CustomTextField(if (isFloat) "%.2f".format(currentPoint.value) else currentPoint.value.toInt().toString(), {
                     val value = it.toFloatOrNull()?.coerceIn(valueRange) ?: return@CustomTextField
                     eventHandler?.onMovePoints(this@EnvelopeEditor, selectedPoints.toList(), 0,
                         (if (isFloat) value else round(value)) - currentPoint.value)
-                })
+                }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
             }
             MenuItem(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                 EnvelopeType.values().forEach {

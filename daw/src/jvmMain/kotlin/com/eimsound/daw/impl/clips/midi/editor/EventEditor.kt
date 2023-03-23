@@ -4,8 +4,10 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -20,22 +22,27 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.zIndex
+import com.eimsound.audioprocessor.data.DefaultEnvelopePointList
 import com.eimsound.audioprocessor.data.EnvelopePointList
 import com.eimsound.audioprocessor.data.MIDI_CC_RANGE
 import com.eimsound.audioprocessor.data.midi.NoteMessage
 import com.eimsound.daw.actions.GlobalEnvelopeEditorEventHandler
+import com.eimsound.daw.actions.doMidiCCEventAddOrRemoveAction
 import com.eimsound.daw.actions.doNoteVelocityAction
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.MidiClipEditor
+import com.eimsound.daw.api.MutableMidiCCEvents
 import com.eimsound.daw.components.*
 import com.eimsound.daw.components.utils.EditAction
 import com.eimsound.daw.components.utils.clickableWithIcon
 import com.eimsound.daw.utils.BasicEditor
 import com.eimsound.daw.utils.SerializableEditor
+import com.google.accompanist.flowlayout.FlowRow
 import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
 
@@ -133,21 +140,62 @@ class CCEvent(private val editor: MidiClipEditor, eventId: Int, points: Envelope
     override fun selectAll() { envEditor.selectAll() }
 }
 
-private val eventSelectorHeight = 26.dp
+private val defaultCCEvents = sortedMapOf(
+    1 to "调制",
+    7 to "音量",
+    10 to "声相",
+    11 to "表情",
+    64 to "延音踏板",
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
-private fun FloatingLayerProvider.openEventSelectorDialog() {
+private fun FloatingLayerProvider.openEventSelectorDialog(events: MutableMidiCCEvents) {
     val key = Any()
     val close = { closeFloatingLayer(key) }
-    openFloatingLayer({ close() }, hasOverlay = true) {
-        // TODO: 添加事件
-        InputChip(true,
-            onClick = { },
-            label = { Text("Input Chip") },
-        )
-        Divider()
+    openFloatingLayer({ close() }, key = key, hasOverlay = true) {
+        Dialog(close, modifier = Modifier.widthIn(max = 460.dp)) {
+            Text("选择 CC 事件", style = MaterialTheme.typography.titleMedium)
+            val keys = events.keys
+            FlowRow(mainAxisSpacing = 8.dp) {
+                keys.sorted().forEach {
+                    val name = defaultCCEvents[it]
+                    InputChip(true, {
+                        events.doMidiCCEventAddOrRemoveAction(it)
+                    }, { Text(if (name == null) "CC $it" else "CC $it ($name)") },
+                        trailingIcon = { Icon(Icons.Filled.Close, contentDescription = "删除") },
+                    )
+                }
+            }
+            Divider(Modifier.padding(vertical = 8.dp))
+            FlowRow(mainAxisSpacing = 8.dp) {
+                defaultCCEvents.forEach { (id, name) ->
+                    if (id in keys) return@forEach
+                    InputChip(false, {
+                        events.doMidiCCEventAddOrRemoveAction(id, DefaultEnvelopePointList())
+                    }, { Text("CC $id ($name)") },
+                        trailingIcon = { Icon(Icons.Filled.Add, contentDescription = "添加") },
+                    )
+                }
+                Box {
+                    var cc by remember { mutableStateOf(1) }
+                    TextField(cc.toString(), { cc = it.toIntOrNull()?.coerceIn(1, 127) ?: 1 }, Modifier.width(140.dp),
+                        leadingIcon = { Text("CC") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        trailingIcon = {
+                            com.eimsound.daw.components.IconButton({
+                                events.doMidiCCEventAddOrRemoveAction(cc, DefaultEnvelopePointList())
+                            }, enabled = cc !in keys) {
+                                Icon(Icons.Filled.Add, contentDescription = "添加")
+                            }
+                        }
+                    )
+                }
+            }
+        }
     }
 }
+
+internal val eventSelectorHeight = 26.dp
 
 @OptIn(ExperimentalTextApi::class, ExperimentalComposeUiApi::class)
 @Composable
@@ -174,7 +222,7 @@ internal fun EventEditor(editor: DefaultMidiClipEditor) {
                     }
                     val floatingLayerProvider = LocalFloatingLayerProvider.current
                     Icon(Icons.Default.Add, "添加", Modifier.size(eventSelectorHeight).clickableWithIcon {
-                        floatingLayerProvider.openEventSelectorDialog()
+                        floatingLayerProvider.openEventSelectorDialog(clip.clip.events)
                     })
                 }
             }

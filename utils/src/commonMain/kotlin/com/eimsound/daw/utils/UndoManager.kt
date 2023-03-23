@@ -16,10 +16,13 @@ abstract class ReversibleAction(private val reversed: Boolean = false) : Undoabl
     protected abstract suspend fun perform(isForward: Boolean): Boolean
 }
 
+class UndoableActionExecuteException(message: String, cause: Throwable? = null) : Exception(message, cause)
+
 interface UndoManager {
     val actions: List<UndoableAction>
     val limit: Int
     val cursor: Int
+    val errorHandlers: MutableSet<(UndoableActionExecuteException) -> Unit>
     suspend fun undo(steps: Int = 1): Boolean
     suspend fun redo(steps: Int = 1): Boolean
     suspend fun execute(action: UndoableAction): Boolean

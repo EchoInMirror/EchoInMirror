@@ -6,7 +6,10 @@ import androidx.compose.runtime.setValue
 import com.eimsound.daw.utils.ManualState
 import com.eimsound.daw.utils.UndoManager
 import com.eimsound.daw.utils.UndoableAction
+import com.eimsound.daw.utils.UndoableActionExecuteException
+import io.github.oshai.KotlinLogging
 
+private val logger = KotlinLogging.logger { }
 class DefaultUndoManager: UndoManager {
     private val _actions = ArrayDeque<UndoableAction>()
     private val manualState = ManualState()
@@ -18,11 +21,21 @@ class DefaultUndoManager: UndoManager {
 
     override val limit = 100
     override var cursor by mutableStateOf(0)
+    override val errorHandlers = mutableSetOf<(UndoableActionExecuteException) -> Unit>()
+
+    private suspend fun tryRun(block: suspend () -> Boolean) = try {
+        block()
+    } catch (e: Throwable) {
+        val err = UndoableActionExecuteException("Failed to execute action", e)
+        logger.error(err) { }
+        errorHandlers.forEach { it(err) }
+        false
+    }
 
     override suspend fun undo(steps: Int): Boolean {
         if (steps <= 0) return true
         for (i in 0 until steps.coerceAtMost(cursor)) {
-            if (!actions[cursor - 1].undo()) return false
+            if (!tryRun(actions[cursor - 1]::undo)) return false
             cursor--
         }
         manualState.update()
@@ -32,7 +45,7 @@ class DefaultUndoManager: UndoManager {
     override suspend fun redo(steps: Int): Boolean {
         if (steps <= 0) return true
         for (i in 0 until steps.coerceAtMost(actions.size - cursor)) {
-            if (!actions[cursor].execute()) return false
+            if (!tryRun(actions[cursor]::execute)) return false
             cursor++
         }
         manualState.update()
@@ -47,13 +60,13 @@ class DefaultUndoManager: UndoManager {
             val last = actions.last()
             val merged = last.merge(action)
             if (merged != null) {
-                if (!merged.execute()) return false
+                if (!tryRun(merged::execute)) return false
                 _actions[cursor - 1] = merged
                 manualState.update()
                 return true
             }
         }
-        if (!action.execute()) return false
+        if (!tryRun(action::execute)) return false
         _actions.add(action)
         if (actions.size > limit) {
             _actions.removeFirst()
@@ -67,7 +80,7 @@ class DefaultUndoManager: UndoManager {
     override suspend fun reset(): Boolean {
         if (cursor == 0) return true
         for (i in 0 until cursor) {
-            if (!actions[cursor - 1].undo()) return false
+            if (!tryRun(actions[cursor - 1]::undo)) return false
             cursor--
         }
         manualState.update()

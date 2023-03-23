@@ -148,11 +148,6 @@ fun Dialog(onOk: (() -> Unit)? = null,
     }
 }
 
-@Composable
-fun DialogTitle(text: String, modifier: Modifier = Modifier) {
-    Text(text, modifier.padding(16.dp, 8.dp, 16.dp, 8.dp), style = MaterialTheme.typography.titleMedium)
-}
-
 val LocalWindowState = staticCompositionLocalOf { WindowState() }
 
 @Composable

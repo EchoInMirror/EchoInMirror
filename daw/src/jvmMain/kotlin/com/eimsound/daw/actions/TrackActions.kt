@@ -26,8 +26,8 @@ class AddOrRemoveTrackAction(private val track: Track, private val target: Mutab
         return true
     }
 
-    override val name = "添加或删除轨道"
-    override val icon = Icons.Filled.PlaylistAdd
+    override val name = if (isDelete) "删除轨道" else "添加轨道"
+    override val icon = if (isDelete) Icons.Filled.PlaylistAdd else Icons.Filled.Reorder
 }
 
 fun Track.doAddOrRemoveTrackAction(target: MutableList<Track>, isDelete: Boolean = false) {

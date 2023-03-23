@@ -15,8 +15,8 @@ import androidx.compose.ui.zIndex
 import com.eimsound.audioprocessor.data.midi.*
 import com.eimsound.audioprocessor.oneBarPPQ
 import com.eimsound.audioprocessor.projectDisplayPPQ
-import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.actions.doNoteAmountAction
+import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.MidiClip
 import com.eimsound.daw.api.MidiClipEditor
 import com.eimsound.daw.api.TrackClip
@@ -76,7 +76,7 @@ private fun EditorContent(editor: DefaultMidiClipEditor) {
                     }
                 }
             }
-            second(20.dp) { EventEditor(editor) }
+            second(eventSelectorHeight) { EventEditor(editor) }
 
             splitter { visiblePart { Divider() } }
         }
