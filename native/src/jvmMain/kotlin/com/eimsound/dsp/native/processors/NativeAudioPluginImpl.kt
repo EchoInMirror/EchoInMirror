@@ -192,14 +192,14 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
 
     private fun getNativeHostPath(isX86: Boolean) = Paths.get(System.getProperty("eim.dsp.nativeaudioplugins.host" +
             (if (isX86) ".x86" else ""))).absolutePathString()
-    private fun getNativeHostPath(description: NativeAudioPluginDescription) =
+    fun getNativeHostPath(description: NativeAudioPluginDescription) =
         getNativeHostPath(SystemUtils.IS_OS_WINDOWS && description.isX86)
     private fun getNativeHostPath(path: String) = getNativeHostPath(SystemUtils.IS_OS_WINDOWS && File(path).isX86PEFile())
 }
 
 class NativeAudioPluginImpl(
     override val description: NativeAudioPluginDescription,
-    factory: AudioProcessorFactory<*>,
+    override val factory: NativeAudioPluginFactoryImpl,
 ) : NativeAudioPlugin, ProcessAudioProcessorImpl(description, factory) {
     override var name = description.name
 
@@ -212,6 +212,12 @@ class NativeAudioPluginImpl(
                 writeString("$path.bin")
                 flush()
             }
+        }
+    }
+
+    override fun recover(path: String) {
+        runBlocking {
+            launch(factory.getNativeHostPath(description), "$path/$id.bin")
         }
     }
 }

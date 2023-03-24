@@ -21,7 +21,6 @@ import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.window.GlobalException
 import com.eimsound.daw.components.LocalFloatingLayerProvider
 import com.eimsound.daw.components.LocalSnackbarHost
-import com.eimsound.daw.components.LocalWindowState
 import com.eimsound.daw.components.app.*
 import com.eimsound.daw.components.dragdrop.LocalGlobalDragAndDrop
 import com.eimsound.daw.components.dragdrop.PlatformDropTargetModifier
@@ -44,7 +43,7 @@ fun ApplicationScope.MainWindow() {
     Window({
         EchoInMirror.windowManager.closeMainWindow(true)
         exitApplication()
-    }, LocalWindowState.current, icon = Logo, title = "Echo In Mirror (v$VERSION)", onKeyEvent = {
+    }, icon = Logo, title = "Echo In Mirror (v$VERSION)", onKeyEvent = {
         if (it.type != KeyEventType.KeyUp) return@Window false
         var keys = it.key.keyCode.toString()
         if (it.isCtrlPressed) keys = "${Key.CtrlLeft.keyCode} $keys"

@@ -3,6 +3,7 @@ package com.eimsound.audioprocessor
 import com.eimsound.daw.utils.IDisplayName
 import com.eimsound.daw.utils.NoSuchFactoryException
 import com.eimsound.daw.utils.Reloadable
+import io.github.oshai.KotlinLogging
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.serializer
@@ -31,6 +32,12 @@ interface AudioProcessorManager : Reloadable {
     suspend fun createAudioProcessor(path: String, json: JsonObject): AudioProcessor
 }
 
+private val audioProcessorFactoryLogger = KotlinLogging.logger("AudioProcessorFactory")
+
+/**
+ * @see com.eimsound.daw.impl.processor.EIMAudioProcessorFactory
+ * @see com.eimsound.dsp.native.processors.NativeAudioPluginFactoryImpl
+ */
 @Serializable(with = AudioProcessorFactoryNameSerializer::class)
 interface AudioProcessorFactory<T: AudioProcessor> : IDisplayName {
     val name: String
@@ -38,6 +45,15 @@ interface AudioProcessorFactory<T: AudioProcessor> : IDisplayName {
     suspend fun createAudioProcessor(description: AudioProcessorDescription): T
     suspend fun createAudioProcessor(path: String, json: JsonObject): T
 }
+
+suspend fun <T: AudioProcessor> AudioProcessorFactory<T>.createAudioProcessorOrNull(description: AudioProcessorDescription) = try {
+    createAudioProcessor(description)
+} catch (e: Throwable) {
+    audioProcessorFactoryLogger.error(e) { "Failed to create audio processor ($description)" }
+    null
+}
+
+data class AudioProcessorDescriptionAndFactory(val description: AudioProcessorDescription, val factory: AudioProcessorFactory<*>)
 
 object AudioProcessorFactoryNameSerializer : KSerializer<AudioProcessorFactory<*>> {
     override val descriptor = String.serializer().descriptor

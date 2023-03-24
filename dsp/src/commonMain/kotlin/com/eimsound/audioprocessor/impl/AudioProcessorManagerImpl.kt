@@ -13,7 +13,7 @@ import kotlinx.serialization.json.JsonObject
 import java.io.File
 import java.util.*
 
-private val logger = KotlinLogging.logger {  }
+private val audioProcessorManagerLogger = KotlinLogging.logger {  }
 class AudioProcessorManagerImpl: AudioProcessorManager {
     override val factories = mutableStateMapOf<String, AudioProcessorFactory<*>>()
 
@@ -25,7 +25,7 @@ class AudioProcessorManagerImpl: AudioProcessorManager {
     }
 
     override suspend fun createAudioProcessor(factory: String, description: AudioProcessorDescription): AudioProcessor {
-        logger.info("Creating audio processor ${description.name} with factory $factory")
+        audioProcessorManagerLogger.info("Creating audio processor ${description.name} with factory \"$factory\"")
         return factories[factory]?.createAudioProcessor(description) ?: throw NoSuchFactoryException(factory)
     }
 
@@ -34,7 +34,7 @@ class AudioProcessorManagerImpl: AudioProcessorManager {
 
     override suspend fun createAudioProcessor(path: String, json: JsonObject): AudioProcessor {
         val factory = json["factory"]?.asString()
-        logger.info("Creating audio processor ${json["id"]} in $path with factory $factory")
+        audioProcessorManagerLogger.info("Creating audio processor ${json["id"]} in \"$path\" with factory \"$factory\"")
         return factories[factory]?.createAudioProcessor(path, json)
             ?: throw NoSuchFactoryException(factory ?: "Null")
     }

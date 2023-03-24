@@ -19,7 +19,7 @@ import java.util.*
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.readText
 
-private val logger = KotlinLogging.logger {  }
+private val trackManagerLogger = KotlinLogging.logger {  }
 class TrackManagerImpl : TrackManager {
     override val factories = mutableStateMapOf<String, TrackFactory<*>>()
 
@@ -31,7 +31,7 @@ class TrackManagerImpl : TrackManager {
 
     override suspend fun createTrack(path: String, json: JsonObject): Track {
         val factory = json["factory"]?.asString()
-        logger.info("Creating clip ${json["id"]} in $path with factory $factory")
+        trackManagerLogger.info("Creating track ${json["id"]} in \"$path\" with factory \"$factory\"")
         return factories[factory]?.createAudioProcessor(path, json)
             ?: throw NoSuchFactoryException(factory ?: "Null")
     }
@@ -59,16 +59,22 @@ class TrackManagerImpl : TrackManager {
     }
 }
 
+private val defaultTrackLogger = KotlinLogging.logger {  }
 class DefaultTrackFactory : TrackFactory<Track> {
     override val canCreateBus = true
     override val name = "DefaultTrackFactory"
     override val displayName = "默认"
     override val descriptions = setOf(DefaultTrackDescription)
 
-    override suspend fun createAudioProcessor(description: AudioProcessorDescription) = TrackImpl(description, this)
+    override suspend fun createAudioProcessor(description: AudioProcessorDescription): TrackImpl {
+        defaultTrackLogger.info("Creating track ${description.identifier}")
+        return TrackImpl(description, this)
+    }
 
-    override suspend fun createAudioProcessor(path: String, json: JsonObject) =
-        TrackImpl(DefaultTrackDescription, this).apply { load(path, json) }
+    override suspend fun createAudioProcessor(path: String, json: JsonObject): TrackImpl {
+        defaultTrackLogger.info("Creating track ${json["id"]} in \"$path\"")
+        return TrackImpl(DefaultTrackDescription, this).apply { load(path, json) }
+    }
 
     override suspend fun createBus(project: ProjectInformation) = BusImpl(project, DefaultTrackDescription, this)
 }

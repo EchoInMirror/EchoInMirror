@@ -10,9 +10,9 @@ import com.eimsound.audioprocessor.data.midi.noteOff
 import com.eimsound.audioprocessor.dsp.calcPanLeftChannel
 import com.eimsound.audioprocessor.dsp.calcPanRightChannel
 import com.eimsound.daw.Configuration
-import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.ClipManager
 import com.eimsound.daw.api.DefaultTrackClipList
+import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.ProjectInformation
 import com.eimsound.daw.api.processor.*
 import com.eimsound.daw.components.utils.randomColor
@@ -178,16 +178,32 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
 
     override fun close() {
         if (EchoInMirror.selectedTrack == this) EchoInMirror.selectedTrack = null
-        preProcessorsChain.fastForEach { it.close() }
-        preProcessorsChain.clear()
-        subTracks.fastForEach { it.close() }
-        subTracks.clear()
-        postProcessorsChain.fastForEach { it.close() }
-        postProcessorsChain.clear()
-        internalProcessorsChain.fastForEach { it.close() }
-        internalProcessorsChain.clear()
+        preProcessorsChain.fastForEach(AutoCloseable::close)
+        subTracks.fastForEach(AutoCloseable::close)
+        postProcessorsChain.fastForEach(AutoCloseable::close)
+        internalProcessorsChain.fastForEach(AutoCloseable::close)
         clips.fastForEach { (it.clip as? AutoCloseable)?.close() }
-        clips.clear()
+    }
+
+    override fun recover(path: String) {
+        runBlocking {
+            val dir = Paths.get(path)
+            val processorsDir = dir.resolve("processors").absolutePathString()
+            preProcessorsChain.fastForEach { launch { it.recover(processorsDir) } }
+            if (subTracks.isNotEmpty()) {
+                val tracksDir = dir.resolve("tracks")
+                subTracks.fastForEach { launch { it.recover(tracksDir.resolve(it.id).absolutePathString()) } }
+            }
+            postProcessorsChain.fastForEach { launch { it.recover(processorsDir) } }
+            if (clips.isNotEmpty()) {
+                val clipsDir = dir.resolve("clips").absolutePathString()
+                clips.fastForEach {
+                    val clip = it.clip
+                    if (clip is Recoverable) launch { clip.recover(clipsDir) }
+                }
+            }
+            internalProcessorsChain.fastForEach { launch { it.recover(processorsDir) } }
+        }
     }
 
     override fun playMidiEvent(midiEvent: MidiEvent, time: Int) {
@@ -286,7 +302,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
     }
 
     override suspend fun load(path: String, json: JsonObject) {
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             try {
                 fromJson(json)
                 val dir = Paths.get(path)
@@ -308,34 +324,29 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
                         async {
                             tryOrNull(logger, "Failed to load track: $it") {
                                 val trackID = it.asString()
-                                val trackPath = tracksDir.resolve(trackID)
-                                TrackManager.instance.createTrack(trackPath.absolutePathString(), trackID)
+                                TrackManager.instance.createTrack(tracksDir.resolve(trackID).absolutePathString(), trackID)
                             }
                         }
                     }.awaitAll().filterNotNull())
                 }
                 val processorsDir = dir.resolve("processors").absolutePathString()
-                json["preProcessorsChain"]?.let { json ->
-                    preProcessorsChain.addAll(json.jsonArray.map {
-                        async {
-                            tryOrNull(logger, "Failed to load audio processor: $it") {
-                                if (it is JsonObject) AudioProcessorManager.instance.createAudioProcessor(processorsDir, it)
-                                else AudioProcessorManager.instance.createAudioProcessor(processorsDir, it.asString())
-                            }
-                        }
-                    }.awaitAll().filterNotNull())
-                }
-                json["postProcessorsChain"]?.let { json ->
-                    postProcessorsChain.addAll(json.jsonArray.map {
-                        async {
-                            tryOrNull(logger, "Failed to load audio processor: $it") {
-                                if (it is JsonObject) AudioProcessorManager.instance.createAudioProcessor(processorsDir, it)
-                                else AudioProcessorManager.instance.createAudioProcessor(processorsDir, it.asString())
-                            }
-                        }
-                    }.awaitAll().filterNotNull())
-                }
+                loadAudioProcessors(preProcessorsChain, json["preProcessorsChain"], processorsDir)
+                loadAudioProcessors(postProcessorsChain, json["postProcessorsChain"], processorsDir)
             } catch (_: FileNotFoundException) { }
+        }
+    }
+
+    private suspend fun loadAudioProcessors(list: MutableList<AudioProcessor>, json: JsonElement?, processorsDir: String) {
+        if (json == null) return
+        withContext(Dispatchers.Default) {
+            list.addAll(json.jsonArray.map {
+                async {
+                    tryOrNull(logger, "Failed to load audio processor: $it") {
+                        if (it is JsonObject) AudioProcessorManager.instance.createAudioProcessor(processorsDir, it)
+                        else AudioProcessorManager.instance.createAudioProcessor(processorsDir, it.asString())
+                    }
+                }
+            }.awaitAll().filterNotNull())
         }
     }
 

@@ -10,13 +10,13 @@ import com.eimsound.audioprocessor.data.DefaultEnvelopePointList
 import com.eimsound.audioprocessor.data.EnvelopePoint
 import com.eimsound.audioprocessor.data.VOLUME_RANGE
 import com.eimsound.audioprocessor.data.midi.MidiNoteRecorder
-import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.actions.GlobalEnvelopeEditorEventHandler
 import com.eimsound.daw.api.*
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.components.EnvelopeEditor
 import com.eimsound.daw.components.Waveform
 import com.eimsound.daw.utils.putNotDefault
+import io.github.oshai.KotlinLogging
 import kotlinx.serialization.json.*
 import java.nio.file.Path
 import kotlin.io.path.name
@@ -76,13 +76,19 @@ class AudioClipImpl(json: JsonObject?, factory: ClipFactory<AudioClip>, target: 
     }
 }
 
+private val logger = KotlinLogging.logger { }
 class AudioClipFactoryImpl: AudioClipFactory {
     override val name = "AudioClip"
     override fun createClip(path: Path) = AudioClipImpl(null, this,
         AudioSourceManager.instance.createAudioSource(path))
 
-    override fun createClip() = AudioClipImpl(null, this)
-    override fun createClip(path: String, json: JsonObject) = AudioClipImpl(json, this)
+    override fun createClip() = AudioClipImpl(null, this).apply {
+        logger.info("Creating clip \"${this.id}\"")
+    }
+    override fun createClip(path: String, json: JsonObject): AudioClipImpl {
+        logger.info("Creating clip ${json["id"]} in $path")
+        return AudioClipImpl(json, this)
+    }
     override fun getEditor(clip: TrackClip<AudioClip>, track: Track) = AudioClipEditor(clip, track)
 
     override fun processBlock(clip: TrackClip<AudioClip>, buffers: Array<FloatArray>, position: CurrentPosition,

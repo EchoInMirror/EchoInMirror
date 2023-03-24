@@ -8,8 +8,7 @@ import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.VolumeOff
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.key
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -21,28 +20,75 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachIndexed
 import androidx.compose.ui.zIndex
+import com.eimsound.audioprocessor.AudioProcessor
+import com.eimsound.audioprocessor.AudioProcessorDescriptionAndFactory
+import com.eimsound.audioprocessor.createAudioProcessorOrNull
+import com.eimsound.daw.actions.doAddOrRemoveAudioProcessorAction
+import com.eimsound.daw.actions.doReplaceAudioProcessorAction
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.processor.Bus
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.api.window.Panel
 import com.eimsound.daw.api.window.PanelDirection
 import com.eimsound.daw.components.*
+import com.eimsound.daw.components.dragdrop.GlobalDropTarget
 import com.eimsound.daw.components.silder.DefaultTrack
 import com.eimsound.daw.components.silder.Slider
 import com.eimsound.daw.components.utils.clickableWithIcon
 import com.eimsound.daw.components.utils.toOnSurfaceColor
+import com.eimsound.daw.window.dialogs.openQuickLoadDialog
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 
+@OptIn(DelicateCoroutinesApi::class)
 @Composable
-fun MixerProcessorButton(title: String, useMarquee: Boolean = false, fontStyle: FontStyle? = null,
+private fun MixerProcessorButton(isLoading: MutableState<Boolean>, list: MutableList<AudioProcessor>, index: Int = -1,
+                         audioProcessor: AudioProcessor? = null, fontStyle: FontStyle? = null,
                          fontWeight: FontWeight? = null, onClick: () -> Unit) {
-    TextButton(onClick, Modifier.height(30.dp).fillMaxWidth()) {
-        if (useMarquee) Marquee { Text(title, Modifier.fillMaxWidth(), fontSize = MaterialTheme.typography.labelMedium.fontSize,
-            maxLines = 1, lineHeight = 7.sp, textAlign = TextAlign.Center, fontStyle = fontStyle, fontWeight = fontWeight) }
-        else Text(title, fontSize = MaterialTheme.typography.labelMedium.fontSize, maxLines = 1, lineHeight = 7.sp,
-            fontStyle = fontStyle, fontWeight = fontWeight)
+    val indexObj = remember { arrayOf(index) }
+    indexObj[0] = index
+    GlobalDropTarget({ data, _ ->
+        if (isLoading.value || data !is AudioProcessorDescriptionAndFactory) return@GlobalDropTarget
+        GlobalScope.launch {
+            val ap = data.factory.createAudioProcessorOrNull(data.description) ?: return@launch
+            isLoading.value = true
+            if (audioProcessor == null) list.doAddOrRemoveAudioProcessorAction(ap)
+            else list.doReplaceAudioProcessorAction(ap, indexObj[0])
+            isLoading.value = false
+        }
+    }) {
+        TextButton(onClick, Modifier.height(30.dp).fillMaxWidth()) {
+            if (audioProcessor == null) Text("...", fontSize = MaterialTheme.typography.labelMedium.fontSize,
+                maxLines = 1, lineHeight = 7.sp, fontStyle = fontStyle, fontWeight = fontWeight)
+            else Marquee { Text(audioProcessor.name, Modifier.fillMaxWidth(), fontSize = MaterialTheme.typography.labelMedium.fontSize,
+                maxLines = 1, lineHeight = 7.sp, textAlign = TextAlign.Center, fontStyle = fontStyle, fontWeight = fontWeight) }
+        }
+    }
+}
+
+@OptIn(DelicateCoroutinesApi::class)
+@Composable
+private fun MixerProcessorButtons(isLoading: MutableState<Boolean>, list: MutableList<AudioProcessor>) {
+    Divider(Modifier.padding(horizontal = 6.dp), 2.dp, MaterialTheme.colorScheme.primary)
+    list.fastForEachIndexed { i, it ->
+        MixerProcessorButton(isLoading, list, i, it, onClick = it::onClick)
+        Divider(Modifier.padding(horizontal = 8.dp))
+    }
+    val floatingLayerProvider = LocalFloatingLayerProvider.current
+    MixerProcessorButton(isLoading, list, fontWeight = FontWeight.Bold) {
+        if (!isLoading.value) floatingLayerProvider.openQuickLoadDialog {
+            if (it == null) return@openQuickLoadDialog
+            isLoading.value = true
+            GlobalScope.launch {
+                it.factory.createAudioProcessorOrNull(it.description)?.let { ap ->
+                    list.doAddOrRemoveAudioProcessorAction(ap)
+                }
+                isLoading.value = false
+            }
+        }
     }
 }
 
@@ -125,18 +171,10 @@ private fun MixerTrack(track: Track, index: String, containerColor: Color = Mate
                 }
 
                 Column {
+                    val loading = remember { mutableStateOf(false) }
+                    MixerProcessorButtons(loading, track.preProcessorsChain)
                     Divider(Modifier.padding(horizontal = 8.dp))
-                    track.preProcessorsChain.fastForEach {
-                        MixerProcessorButton(it.name, true, onClick = it::onClick)
-                        Divider(Modifier.padding(horizontal = 8.dp))
-                    }
-                    MixerProcessorButton("...", fontWeight = FontWeight.Bold) { }
-                    Divider(Modifier.padding(horizontal = 6.dp), 2.dp, MaterialTheme.colorScheme.primary)
-                    track.postProcessorsChain.fastForEach {
-                        MixerProcessorButton(it.name, true, onClick = it::onClick)
-                        Divider(Modifier.padding(horizontal = 8.dp))
-                    }
-                    MixerProcessorButton("...", fontWeight = FontWeight.Bold) { }
+                    MixerProcessorButtons(loading, track.postProcessorsChain)
                 }
             }
             if (renderChildren && track.subTracks.isNotEmpty()) {

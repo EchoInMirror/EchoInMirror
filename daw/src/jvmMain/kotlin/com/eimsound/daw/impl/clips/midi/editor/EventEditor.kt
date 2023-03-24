@@ -32,12 +32,13 @@ import com.eimsound.audioprocessor.data.EnvelopePointList
 import com.eimsound.audioprocessor.data.MIDI_CC_RANGE
 import com.eimsound.audioprocessor.data.midi.NoteMessage
 import com.eimsound.daw.actions.GlobalEnvelopeEditorEventHandler
-import com.eimsound.daw.actions.doMidiCCEventAddOrRemoveAction
+import com.eimsound.daw.actions.doAddOrRemoveMidiCCEventAction
 import com.eimsound.daw.actions.doNoteVelocityAction
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.MidiClipEditor
 import com.eimsound.daw.api.MutableMidiCCEvents
 import com.eimsound.daw.components.*
+import com.eimsound.daw.components.IconButton
 import com.eimsound.daw.components.utils.EditAction
 import com.eimsound.daw.components.utils.clickableWithIcon
 import com.eimsound.daw.utils.BasicEditor
@@ -160,7 +161,7 @@ private fun FloatingLayerProvider.openEventSelectorDialog(events: MutableMidiCCE
                 keys.sorted().forEach {
                     val name = defaultCCEvents[it]
                     InputChip(true, {
-                        events.doMidiCCEventAddOrRemoveAction(it)
+                        events.doAddOrRemoveMidiCCEventAction(it)
                     }, { Text(if (name == null) "CC $it" else "CC $it ($name)") },
                         trailingIcon = { Icon(Icons.Filled.Close, contentDescription = "删除") },
                     )
@@ -171,7 +172,7 @@ private fun FloatingLayerProvider.openEventSelectorDialog(events: MutableMidiCCE
                 defaultCCEvents.forEach { (id, name) ->
                     if (id in keys) return@forEach
                     InputChip(false, {
-                        events.doMidiCCEventAddOrRemoveAction(id, DefaultEnvelopePointList())
+                        events.doAddOrRemoveMidiCCEventAction(id, DefaultEnvelopePointList())
                     }, { Text("CC $id ($name)") },
                         trailingIcon = { Icon(Icons.Filled.Add, contentDescription = "添加") },
                     )
@@ -182,8 +183,8 @@ private fun FloatingLayerProvider.openEventSelectorDialog(events: MutableMidiCCE
                         leadingIcon = { Text("CC") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         trailingIcon = {
-                            com.eimsound.daw.components.IconButton({
-                                events.doMidiCCEventAddOrRemoveAction(cc, DefaultEnvelopePointList())
+                            IconButton({
+                                events.doAddOrRemoveMidiCCEventAction(cc, DefaultEnvelopePointList())
                             }, enabled = cc !in keys) {
                                 Icon(Icons.Filled.Add, contentDescription = "添加")
                             }

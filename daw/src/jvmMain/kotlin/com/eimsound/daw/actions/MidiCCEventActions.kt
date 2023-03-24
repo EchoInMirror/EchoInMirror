@@ -9,10 +9,10 @@ import com.eimsound.daw.api.MutableMidiCCEvents
 import com.eimsound.daw.utils.ReversibleAction
 import kotlinx.coroutines.runBlocking
 
-fun MutableMidiCCEvents.doMidiCCEventAddOrRemoveAction(id: Int, points: EnvelopePointList? = null) {
+fun MutableMidiCCEvents.doAddOrRemoveMidiCCEventAction(id: Int, points: EnvelopePointList? = null) {
     runBlocking {
         EchoInMirror.undoManager.execute(
-            MidiCCEventAddOrRemoveAction(this@doMidiCCEventAddOrRemoveAction, id, points)
+            MidiCCEventAddOrRemoveAction(this@doAddOrRemoveMidiCCEventAction, id, points)
         )
     }
 }

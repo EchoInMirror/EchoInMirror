@@ -24,6 +24,7 @@ import com.eimsound.daw.components.EnvelopeEditor
 import com.eimsound.daw.impl.clips.midi.editor.DefaultMidiClipEditor
 import com.eimsound.daw.utils.binarySearch
 import com.eimsound.daw.utils.putNotDefault
+import io.github.oshai.KotlinLogging
 import kotlinx.serialization.json.*
 
 class MidiClipImpl(json: JsonObject?, factory: ClipFactory<MidiClip>) : AbstractClip<MidiClip>(json, factory), MidiClip {
@@ -72,10 +73,16 @@ class MidiClipImpl(json: JsonObject?, factory: ClipFactory<MidiClip>) : Abstract
     }
 }
 
+private val logger = KotlinLogging.logger { }
 class MidiClipFactoryImpl : MidiClipFactory {
     override val name = "MIDIClip"
-    override fun createClip() = MidiClipImpl(null, this)
-    override fun createClip(path: String, json: JsonObject) = MidiClipImpl(json, this)
+    override fun createClip() = MidiClipImpl(null, this).apply {
+        logger.info("Creating clip \"${this.id}\"")
+    }
+    override fun createClip(path: String, json: JsonObject): MidiClipImpl {
+        logger.info("Creating clip ${json["id"]} in $path")
+        return MidiClipImpl(json, this)
+    }
     override fun getEditor(clip: TrackClip<MidiClip>, track: Track) = DefaultMidiClipEditor(clip, track)
 
     override fun processBlock(clip: TrackClip<MidiClip>, buffers: Array<FloatArray>, position: CurrentPosition,

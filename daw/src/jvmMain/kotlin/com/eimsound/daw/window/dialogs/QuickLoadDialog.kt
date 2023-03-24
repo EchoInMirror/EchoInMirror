@@ -19,6 +19,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.eimsound.audioprocessor.AudioProcessorDescription
+import com.eimsound.audioprocessor.AudioProcessorDescriptionAndFactory
 import com.eimsound.audioprocessor.AudioProcessorFactory
 import com.eimsound.audioprocessor.AudioProcessorManager
 import com.eimsound.daw.FAVORITE_AUDIO_PROCESSORS_PATH
@@ -83,17 +84,17 @@ private fun saveFavoriteAudioProcessors() {
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
-fun FloatingLayerProvider.openQuickLoadDialog(onClose: ((AudioProcessorDescription?, AudioProcessorFactory<*>?) -> Unit) = { _, _ -> }) {
+fun FloatingLayerProvider.openQuickLoadDialog(onClose: ((AudioProcessorDescriptionAndFactory?) -> Unit) = { }) {
     loadFavoriteAudioProcessors()
     openFloatingLayer({
         closeFloatingLayer(KEY)
-        onClose(null, null)
+        onClose(null)
     }, key = KEY) {
         val favoriteIconColors = IconButtonDefaults.iconToggleButtonColors(
             contentColor = MaterialTheme.colorScheme.outline,
             checkedContentColor = MaterialTheme.colorScheme.warning
         )
-        Dialog(true, Modifier.size(700.dp, 450.dp)) {
+        Dialog(Modifier.size(700.dp, 450.dp)) {
             // 所有插件
             val descriptions = arrayListOf<AudioProcessorDescription>()
             val descriptionsToFactory = hashMapOf<AudioProcessorDescription, AudioProcessorFactory<*>>()
@@ -223,20 +224,23 @@ fun FloatingLayerProvider.openQuickLoadDialog(onClose: ((AudioProcessorDescripti
                                             Icon(Icons.Filled.Star, "收藏", Modifier.size(16.dp))
                                         }
                                     }
-                                }, draggable = true
+                                }, onDragStart = {
+                                    val factory = descriptionsToFactory[it] ?: return@DescList null
+                                    setFloatingLayerShow(KEY, false)
+                                    AudioProcessorDescriptionAndFactory(it, factory)
+                                }, onDragEnd = { closeFloatingLayer(KEY) }
                             ) { desc ->
+                                if (desc == null) return@DescList
                                 if (selectedDescription == desc) {
                                     closeFloatingLayer(KEY)
-                                    onClose(desc, descriptionsToFactory[desc])
+                                    onClose(AudioProcessorDescriptionAndFactory(desc, descriptionsToFactory[desc] ?: return@DescList))
                                 } else selectedDescription = descList.find { it == desc }
                             }
                         }
                     }
                 },
                 bottomBar = {
-                    Row(
-                        Modifier.fillMaxWidth().height(BOTTOM_TEXTFIELD_HEIGHT).padding(10.dp, 0.dp, 10.dp, 10.dp)
-                    ) {
+                    Row(Modifier.fillMaxWidth().height(BOTTOM_TEXTFIELD_HEIGHT).padding(10.dp, 0.dp, 10.dp, 10.dp)) {
                         var descriptiveName = selectedDescription?.descriptiveName ?: ""
                         if (descriptiveName.isNotEmpty()) descriptiveName = ": $descriptiveName"
                         Text(
@@ -246,13 +250,16 @@ fun FloatingLayerProvider.openQuickLoadDialog(onClose: ((AudioProcessorDescripti
                         )
                         TextButton({
                             closeFloatingLayer(KEY)
-                            onClose(null, null)
+                            onClose(null)
                         }) {
                             Text("取消")
                         }
                         Button({
                             closeFloatingLayer(KEY)
-                            onClose(selectedDescription, descriptionsToFactory[selectedDescription])
+                            val desc = selectedDescription
+                            val factory = descriptionsToFactory[desc]
+                            onClose(if (desc == null || factory == null) null
+                                    else AudioProcessorDescriptionAndFactory(desc, factory))
                         }, Modifier.padding(horizontal = 5.dp), selectedDescription != null) {
                             Text("确定")
                         }
@@ -309,9 +316,10 @@ private fun <T> DescList(
     title: String? = null,
     countMap: Map<T, Int> = mapOf(),
     allCount: Int = countMap.values.sum(),
-    draggable: Boolean = false,
     tailContent: (@Composable RowScope.(T) -> Unit)? = null,
-    onClick: (it: T?) -> Unit
+    onDragStart: ((T) -> Any?)? = null,
+    onDragEnd: (() -> Unit)? = null,
+    onClick: (T?) -> Unit
 ) {
     Column(modifier) {
         if (title != null) Text(title,
@@ -348,14 +356,12 @@ private fun <T> DescList(
                         }
                     }
                     items(descList) {
-                        if (draggable) {
-                            GlobalDraggable({
-                                onClick(null)
-                                it
-                            }) {
-                                DescListItem(it, selectedDesc, onClick, countMap, tailContent)
-                            }
-                        } else DescListItem(it, selectedDesc, onClick, countMap, tailContent)
+                        if (onDragEnd == null || onDragStart == null) DescListItem(it, selectedDesc, onClick, countMap, tailContent)
+                        else GlobalDraggable({ onDragStart(it) }, onDragEnd, draggingComponent = {
+                            Text(if (it is IDisplayName) it.displayName else it.toString())
+                        }) {
+                            DescListItem(it, selectedDesc, onClick, countMap, tailContent)
+                        }
                     }
                 }
                 VerticalScrollbar(rememberScrollbarAdapter(state), Modifier.align(Alignment.CenterEnd).fillMaxHeight())

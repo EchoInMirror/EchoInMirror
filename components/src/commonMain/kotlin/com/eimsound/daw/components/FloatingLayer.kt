@@ -14,44 +14,47 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.layout.Layout
-import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.unit.*
-import androidx.compose.ui.window.WindowState
 import com.eimsound.daw.components.utils.Zero
 import com.eimsound.daw.utils.BasicEditor
 
 private data class FloatingLayer(val onClose: ((Any) -> Unit)?, val position: Offset?,
                                  val hasOverlay: Boolean, val overflow: Boolean, val content: @Composable () -> Unit) {
     var isClosed by mutableStateOf(false)
+    var isShow by mutableStateOf(false)
 }
 
 class FloatingLayerProvider {
     private val floatingLayers = mutableStateMapOf<Any, FloatingLayer>()
+
     fun openFloatingLayer(onClose: ((Any) -> Unit)? = null, position: Offset? = null, key: Any? = null,
                           hasOverlay: Boolean = false, overflow: Boolean = false, content: @Composable () -> Unit): Any {
         val k = key ?: Any()
         floatingLayers[k] = FloatingLayer(onClose, position, hasOverlay, overflow, content)
         return k
     }
+
     fun closeFloatingLayer(key: Any) {
-        (floatingLayers[key] ?: return).isClosed = true
+        val layer = floatingLayers[key] ?: return
+        layer.isClosed = true
+        if (!layer.isShow) floatingLayers.remove(key)
     }
+
+    fun setFloatingLayerShow(key: Any, show: Boolean) { (floatingLayers[key] ?: return).isShow = show }
 
     @OptIn(ExperimentalComposeUiApi::class)
     @Composable
     fun FloatingLayers() {
         floatingLayers.forEach { (key, layer) ->
             Box {
-                var isOpened by remember { mutableStateOf(false) }
-                val alpha by animateFloatAsState(if (layer.isClosed || !isOpened) 0F else 1F, tween(300)) {
+                val alpha by animateFloatAsState(if (layer.isClosed || !layer.isShow) 0F else 1F, tween(300)) {
                     if (layer.isClosed) floatingLayers.remove(key)
                 }
                 var modifier = if (layer.hasOverlay) Modifier.fillMaxSize().background(Color.Black.copy(alpha * 0.26F))
@@ -89,7 +92,7 @@ class FloatingLayerProvider {
                         }
                     }
                 }
-                remember { isOpened = true }
+                remember { layer.isShow = true }
             }
         }
     }
@@ -132,12 +135,11 @@ fun FloatingLayer(layerContent: @Composable (Size, () -> Unit) -> Unit,
 }
 
 @Composable
-fun Dialog(onOk: (() -> Unit)? = null,
-           onCancel: (() -> Unit)? = null, draggable: Boolean = false,
+fun Dialog(onOk: (() -> Unit)? = null, onCancel: (() -> Unit)? = null,
            hasPadding: Boolean = true, minWidth: Dp = 250.dp,
            modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     val flag = onOk != null || onCancel != null
-    Dialog(draggable, modifier.widthIn(min = minWidth).width(IntrinsicSize.Max),
+    Dialog(modifier.widthIn(min = minWidth).width(IntrinsicSize.Max),
         if (hasPadding) Modifier.padding(16.dp, 16.dp, 16.dp, if (flag) Dp.Zero else 16.dp) else Modifier) {
         content()
         if (flag) Row {
@@ -148,27 +150,10 @@ fun Dialog(onOk: (() -> Unit)? = null,
     }
 }
 
-val LocalWindowState = staticCompositionLocalOf { WindowState() }
-
 @Composable
-fun Dialog(draggable: Boolean = false, modifier: Modifier = Modifier.width(IntrinsicSize.Min),
+fun Dialog(modifier: Modifier = Modifier.width(IntrinsicSize.Min),
            columnModifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
-    var offset by remember { mutableStateOf(Offset.Zero) }
-    var bounds by remember { mutableStateOf(Rect.Zero) }
-    val windowState = LocalWindowState.current
-    Surface(if (draggable) modifier.onGloballyPositioned { bounds = it.boundsInRoot() }
-        .graphicsLayer(translationX = offset.x, translationY = offset.y)
-        .pointerInput(Unit) {
-            detectDragGestures { change, dragAmount ->
-                change.consume()
-                val newOffset = offset + dragAmount
-                val newBounds = bounds.translate(newOffset)
-                if (newBounds.left >= 0 && newBounds.right <= windowState.size.width.toPx() &&
-                    newBounds.top >= 0 && newBounds.bottom <= windowState.size.height.toPx()) offset = newOffset
-            }
-        } else modifier,
-        MaterialTheme.shapes.extraSmall, tonalElevation = 5.dp, shadowElevation = 5.dp
-    ) {
+    Surface(modifier, MaterialTheme.shapes.extraSmall, tonalElevation = 5.dp, shadowElevation = 5.dp) {
         Column(columnModifier, content = content)
     }
 }

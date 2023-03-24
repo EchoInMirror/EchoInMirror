@@ -39,7 +39,7 @@ interface SuddenChangeListener {
     fun onSuddenChange()
 }
 
-interface AudioProcessor: AutoCloseable, SuddenChangeListener {
+interface AudioProcessor: Recoverable, AutoCloseable, SuddenChangeListener {
     var name: String
     @Transient
     val description: AudioProcessorDescription
@@ -95,6 +95,7 @@ abstract class AbstractAudioProcessor(
 
     override fun close() { }
     override fun onSuddenChange() { }
+    override fun recover(path: String) { }
 }
 
 open class DefaultAudioProcessorDescription(
@@ -108,6 +109,12 @@ open class DefaultAudioProcessorDescription(
     override val isDeprecated: Boolean? = false,
 ): AudioProcessorDescription {
     override val displayName get() = name
+
+    override fun toString(): String {
+        return "DefaultAudioProcessorDescription(name='$name', category=$category, manufacturerName=$manufacturerName, " +
+                "version=$version, isInstrument=$isInstrument, identifier='$identifier', " +
+                "descriptiveName=$descriptiveName, isDeprecated=$isDeprecated)"
+    }
 }
 
 // kotlin AudioProcessorIDSerializer
