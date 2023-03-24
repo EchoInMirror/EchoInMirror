@@ -10,12 +10,17 @@ import com.eimsound.daw.components.silder.Slider
 import kotlin.math.pow
 import kotlin.math.sqrt
 
+val levelSliderRange = 0f..140f
+val levelMarksPercentage = levelMarks.map { it.first / levelSliderRange.endInclusive }
+
 @Composable
 fun VolumeSlider(volume: Volume, modifier: Modifier = Modifier.height(150.dp), isVertical: Boolean = true) {
     Slider(
-        (sqrt(volume.volume) * 100F).let { if (isVertical) 140 - it else it },
-        { volume.volume = ((if (isVertical) 140 - it else it) / 100F).pow(2) },
-        valueRange = 0f..140f,
+        (sqrt(volume.volume) * 100F).let { if (isVertical) levelSliderRange.endInclusive - it else it },
+        { volume.volume = ((if (isVertical) levelSliderRange.endInclusive - it else it) / 100F).pow(2) },
+        tickFractions = levelMarksPercentage,
+        valueRange = levelSliderRange,
+        useTickFractions = false,
         modifier = modifier,
         isVertical = isVertical,
         track = { m, progress, interactionSource, tickFractions, enabled, i ->

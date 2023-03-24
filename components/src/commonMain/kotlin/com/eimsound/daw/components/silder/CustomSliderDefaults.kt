@@ -3,7 +3,6 @@ package com.eimsound.daw.components.silder
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.SpringSpec
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.DragInteraction
 import androidx.compose.foundation.interaction.Interaction
@@ -16,12 +15,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.center
 import androidx.compose.ui.geometry.lerp
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.PointMode
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.*
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -41,49 +39,54 @@ fun DefaultTrack(
     stroke: Dp = 4.dp,
     startPoint: Float = 0f
 ) {
-    Canvas(
-        if (isVertical) Modifier.then(modifier).width(stroke) else Modifier.then(modifier).height(stroke)
-    ) {
+    Spacer(
+        (if (isVertical) Modifier.then(modifier).width(stroke) else Modifier.then(modifier).height(stroke)).drawWithCache {
+            val center = size.center
+            val sliderLeft = if (isVertical) Offset(center.x, size.height) else Offset(0f, center.y)
+            val sliderRight = if (isVertical) Offset(center.x, 0f) else Offset(size.width, center.y)
+            val stroke0 = if (isVertical) size.width else size.height
 
-        val sliderLeft = if (isVertical) Offset(center.x, 0f) else Offset(0f, center.y)
-        val sliderRight = if (isVertical) Offset(center.x, size.height) else Offset(size.width, center.y)
-        val stroke0 = if (isVertical) size.width else size.height
+            val sliderValueEnd = if (isVertical) Offset(center.x, (sliderLeft.y - sliderRight.y) * progress)
+            else Offset(sliderLeft.x + (sliderRight.x - sliderLeft.x) * progress, center.y)
 
-        drawLine(
-            colorTrack,
-            sliderLeft,
-            sliderRight,
-            stroke0,
-            StrokeCap.Round,
-            alpha = if (enabled) 1f else ALPHA_WHEN_DISABLED
-        )
-        val sliderValueEnd = if (isVertical) Offset(center.x, sliderLeft.y + (sliderRight.y - sliderLeft.y) * progress)
-        else Offset(sliderLeft.x + (sliderRight.x - sliderLeft.x) * progress, center.y)
+            val sliderValueStart = if (isVertical) Offset(center.x, startPoint * size.height) else Offset(startPoint * size.width, center.y)
 
-        val sliderValueStart = if (isVertical) Offset(center.x, startPoint * size.height) else Offset(startPoint * size.width, center.y)
-        drawLine(
-            colorProgress,
-            sliderValueStart,
-            sliderValueEnd,
-            stroke0,
-            StrokeCap.Round,
-            alpha = if (enabled) 1f else ALPHA_WHEN_DISABLED
-        )
+            val afterFractions = mutableListOf<Offset>()
+            val beforeFractions = mutableListOf<Offset>()
+            val progress0 = if (isVertical) 1 - progress else progress
+            tickFractions.forEach {
+                (if (it > progress0) afterFractions else beforeFractions).add(
+                    if (isVertical) Offset(center.x, lerp(sliderLeft, sliderRight, it).y)
+                    else Offset(lerp(sliderLeft, sliderRight, it).x, center.y)
+                )
+            }
 
-        if (tickFractions.isNotEmpty()) {
-            tickFractions.groupBy { it > progress }.forEach { (afterFraction, list) ->
-                drawPoints(
-                    if (isVertical) list.map { Offset(center.x, lerp(sliderLeft, sliderRight, it).x) }
-                    else list.map { Offset(lerp(sliderLeft, sliderRight, it).x, center.y) },
-                    PointMode.Points,
-                    if (afterFraction) colorTickTrack else colorTickProgress,
+            onDrawBehind {
+                drawLine(
+                    colorTrack,
+                    sliderLeft,
+                    sliderRight,
                     stroke0,
                     StrokeCap.Round,
                     alpha = if (enabled) 1f else ALPHA_WHEN_DISABLED
                 )
+
+                drawLine(
+                    colorProgress,
+                    sliderValueStart,
+                    sliderValueEnd,
+                    stroke0,
+                    StrokeCap.Round,
+                    alpha = if (enabled) 1f else ALPHA_WHEN_DISABLED
+                )
+
+                if (afterFractions.isNotEmpty()) drawPoints(afterFractions, PointMode.Points, colorTickTrack,
+                    stroke0, StrokeCap.Round, alpha = if (enabled) 1f else ALPHA_WHEN_DISABLED)
+                if (beforeFractions.isNotEmpty()) drawPoints(beforeFractions, PointMode.Points, colorTickProgress,
+                    stroke0, StrokeCap.Round, alpha = if (enabled) 1f else ALPHA_WHEN_DISABLED)
             }
         }
-    }
+    )
 }
 
 @Composable

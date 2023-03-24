@@ -1,3 +1,5 @@
+@file:Suppress("PrivatePropertyName")
+
 package com.eimsound.daw.components.silder
 
 import androidx.compose.animation.core.Animatable
@@ -58,6 +60,7 @@ fun Slider(
     // but at the same time don't make parent bigger
     thumbHeightMax: Boolean = false,
     isVertical: Boolean = false,
+    useTickFractions: Boolean = true,
 
     // TODO: use reference for default value when update kotlin
     track: @Composable (
@@ -148,13 +151,18 @@ fun Slider(
         // TODO: it might be a good idea to check if value is placed on a tick or not
         // because value is controlled by a user and it can be somewhere on a wrong place
         val gestureEndAction = rememberUpdatedState<(Float) -> Unit> { velocity: Float ->
-            val current = rawOffset.value
+            var current = if (isVertical) maxPx - rawOffset.value else rawOffset.value
 
             // tick value in px
-            val target = snapValueToTick(current, tickFractions, maxPx)
+            var target = if (useTickFractions) snapValueToTick(current, tickFractions, maxPx) else current
             if (current != target) {
+                if (isVertical) {
+                    target = maxPx - target
+                    current = maxPx - current
+                }
                 scope.launch {
-                    animateToTarget(draggableState, current, target, velocity)
+                    if (isVertical) animateToTarget(draggableState, current, target, velocity)
+                    else animateToTarget(draggableState, current, target, velocity)
                     onValueChangeFinished?.invoke()
                 }
             } else if (!draggableState.isDragging) {

@@ -13,7 +13,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.*
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.eimsound.daw.components.utils.warning
@@ -51,7 +50,7 @@ fun Level(
     }
 }
 
-private val levelMarks = listOf(
+val levelMarks = listOf(
     100F to "0",
     70.79458F to "-6",
     50.118725F to "-12"
