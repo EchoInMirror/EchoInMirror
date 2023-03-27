@@ -22,7 +22,7 @@ interface ProjectInformation {
     var description: String
     var timeCost: Int
 
-    fun save()
+    fun save(file: Path? = null)
 }
 
 class DefaultProjectInformation(override val root: Path): ProjectInformation, JsonSerializable {
@@ -47,7 +47,7 @@ class DefaultProjectInformation(override val root: Path): ProjectInformation, Js
         if (!flag) save()
     }
 
-    override fun save() { encodeJsonFile(jsonFile, true) }
+    override fun save(file: Path?) { encodeJsonFile(file?.resolve("eim.json")?.toFile() ?: jsonFile, true) }
 
     override fun toJson() = buildJsonObject {
         putNotDefault("name", name)
@@ -62,5 +62,9 @@ class DefaultProjectInformation(override val root: Path): ProjectInformation, Js
         author = json["author"]?.asString() ?: ""
         description = json["description"]?.asString() ?: ""
         timeCost = json["timeCost"]?.asInt() ?: 0
+    }
+
+    override fun toString(): String {
+        return "DefaultProjectInformation(root=$root, name='$name', author='$author', description='$description', timeCost=$timeCost)"
     }
 }

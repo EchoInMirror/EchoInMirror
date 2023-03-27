@@ -24,12 +24,16 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.*
 import java.io.FileNotFoundException
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.Paths
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.*
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.pathString
+import kotlin.system.measureTimeMillis
 
-private val logger = KotlinLogging.logger { }
+private val trackLogger = KotlinLogging.logger("TrackImpl")
 open class TrackImpl(description: AudioProcessorDescription, factory: TrackFactory<*>) :
     Track, AbstractAudioProcessor(description, factory) {
     override var name by mutableStateOf("NewTrack")
@@ -311,7 +315,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
                     val clipsDir = dir.resolve("clips").absolutePathString()
                     clips.addAll(json.jsonArray.map {
                         async {
-                            tryOrNull(logger, "Failed to load clip: $it") {
+                            tryOrNull(trackLogger, "Failed to load clip: $it") {
                                 ClipManager.instance.createTrackClip(clipsDir, it as JsonObject)
                             }
                         }
@@ -322,7 +326,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
                     val tracksDir = dir.resolve("tracks")
                     subTracks.addAll(json.jsonArray.map {
                         async {
-                            tryOrNull(logger, "Failed to load track: $it") {
+                            tryOrNull(trackLogger, "Failed to load track: $it") {
                                 val trackID = it.asString()
                                 TrackManager.instance.createTrack(tracksDir.resolve(trackID).absolutePathString(), trackID)
                             }
@@ -341,7 +345,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         withContext(Dispatchers.Default) {
             list.addAll(json.jsonArray.map {
                 async {
-                    tryOrNull(logger, "Failed to load audio processor: $it") {
+                    tryOrNull(trackLogger, "Failed to load audio processor: $it") {
                         if (it is JsonObject) AudioProcessorManager.instance.createAudioProcessor(processorsDir, it)
                         else AudioProcessorManager.instance.createAudioProcessor(processorsDir, it.asString())
                     }
@@ -356,6 +360,9 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
     }
 }
 
+private val backupFileTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss")
+
+private val busLogger = KotlinLogging.logger("BusImpl")
 class BusImpl(
     override val project: ProjectInformation,
     description: AudioProcessorDescription, factory: TrackFactory<Track>
@@ -367,6 +374,14 @@ class BusImpl(
     override var color
         get() = Color.Transparent
         set(_) { }
+
+    @OptIn(DelicateCoroutinesApi::class)
+    private val autoSaveJob = GlobalScope.launch {
+        while (true) {
+            delay(10 * 60 * 1000L) // 10 minutes
+            save()
+        }
+    }
 
     init {
         internalProcessorsChain.add(fileBrowserPreviewer)
@@ -383,12 +398,55 @@ class BusImpl(
         json["channelType"]?.asInt()?.let { channelType = ChannelType.values()[it] }
     }
 
+    private suspend fun backup() {
+        withContext(Dispatchers.IO) {
+            val backupDir = project.root.resolve("backup")
+            if (!Files.exists(backupDir)) Files.createDirectory(backupDir)
+            var backupRoot: Path
+            var i = 0
+            do {
+                val time = LocalDateTime.now().format(backupFileTimeFormatter)
+                backupRoot = backupDir.resolve(if (i == 0) time else "$time-$i")
+                i++
+            } while (Files.exists(backupRoot))
+            Files.createDirectory(backupRoot)
+            for (it in Files.walk(project.root)) {
+                val relativePath = project.root.relativize(it)
+                if (it == project.root || relativePath.startsWith("backup")) continue
+                val target = backupRoot.resolve(relativePath)
+                launch {
+                    withContext(Dispatchers.IO) {
+                        if (Files.isDirectory(it)) Files.createDirectory(target)
+                        else Files.copy(it, target)
+                    }
+                }
+            }
+        }
+    }
+
     override suspend fun save() {
-        val time = System.currentTimeMillis()
-        project.timeCost += (time - lastSaveTime).toInt()
-        lastSaveTime = time
-        project.save()
-        save(project.root.pathString)
+        busLogger.info("Saving project: $project to ${project.root.pathString}")
+        val cost = measureTimeMillis {
+            val time = System.currentTimeMillis()
+            project.timeCost += (time - lastSaveTime).toInt()
+            lastSaveTime = time
+            project.save()
+            super.save(project.root.pathString)
+            backup()
+        }
+        busLogger.info("Saved project by cost ${cost}ms")
+    }
+
+    override suspend fun save(path: String) {
+        busLogger.info("Saving project: $project to $path")
+        val cost = measureTimeMillis {
+            val time = System.currentTimeMillis()
+            project.timeCost += (time - lastSaveTime).toInt()
+            lastSaveTime = time
+            project.save(Paths.get(path))
+            super.save(path)
+        }
+        busLogger.info("Saved project by cost ${cost}ms")
     }
 
     override suspend fun processBlock(
@@ -426,4 +484,11 @@ class BusImpl(
             }
         }
     }
+
+    override fun close() {
+        autoSaveJob.cancel()
+        super.close()
+    }
+
+    override fun recover(path: String) = throw UnsupportedOperationException("Bus cannot be recovered")
 }
