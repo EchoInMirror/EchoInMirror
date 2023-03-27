@@ -4,6 +4,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.util.fastForEach
 import com.eimsound.audioprocessor.*
+import com.eimsound.audioprocessor.data.PAN_RANGE
+import com.eimsound.audioprocessor.data.VOLUME_RANGE
 import com.eimsound.audioprocessor.data.midi.MidiEvent
 import com.eimsound.audioprocessor.data.midi.MidiNoteRecorder
 import com.eimsound.audioprocessor.data.midi.noteOff
@@ -38,8 +40,6 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
     Track, AbstractAudioProcessor(description, factory) {
     override var name by mutableStateOf("NewTrack")
     override var color by mutableStateOf(randomColor(true))
-    override var pan by mutableStateOf(0F)
-    override var volume by mutableStateOf(1F)
     override var height by mutableStateOf(0)
 
     override val levelMeter = LevelMeterImpl()
@@ -54,33 +54,18 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
     private val noteRecorder = MidiNoteRecorder()
     private var lastUpdateTime = 0L
 
-    private var _isMute by mutableStateOf(false)
-    private var _isSolo by mutableStateOf(false)
-    private var _isDisabled by mutableStateOf(false)
     private var tempBuffer = arrayOf(FloatArray(1024), FloatArray(1024))
     private var tempBuffer2 = arrayOf(FloatArray(1024), FloatArray(1024))
-    override var isRendering: Boolean by mutableStateOf(false)
-    override var isMute
-        get() = _isMute
-        set(value) {
-            if (_isMute == value) return
-            _isMute = value
-            stateChange()
-        }
-    override var isSolo
-        get() = _isSolo
-        set(value) {
-            if (_isSolo == value) return
-            _isSolo = value
-            stateChange()
-        }
-    override var isDisabled
-        get() = _isDisabled
-        set(value) {
-            if (_isDisabled == value) return
-            _isDisabled = value
-            stateChange()
-        }
+    override var isRendering by mutableStateOf(false)
+    override var isMute by observableMutableStateOf(false, ::stateChange)
+    override var isSolo by observableMutableStateOf(false, ::stateChange)
+    override var isDisabled by observableMutableStateOf(false, ::stateChange)
+
+    private val panParameter = audioProcessorParameterOf("声相", PAN_RANGE, 0F)
+    private val volumeParameter = audioProcessorParameterOf("电平", VOLUME_RANGE, 1F)
+    override var pan by panParameter
+    override var volume by volumeParameter
+    override val parameters = listOf(panParameter, volumeParameter)
 
     @Suppress("LeakingThis")
     override val clips = DefaultTrackClipList(this)
@@ -91,7 +76,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         position: CurrentPosition,
         midiBuffer: ArrayList<Int>
     ) {
-        if (_isMute || _isDisabled) return
+        if (isMute || isDisabled) return
         if (pendingMidiBuffer.isNotEmpty()) {
             midiBuffer.addAll(pendingMidiBuffer)
             pendingMidiBuffer.clear()
@@ -231,6 +216,9 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         levelMeter.reset()
         subTracks.fastForEach(Track::stateChange)
     }
+
+    @Suppress("UNUSED_PARAMETER")
+    private fun stateChange(unused: Boolean) { stateChange() }
 
     override fun onRenderStart() {
         isRendering = true

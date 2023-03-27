@@ -110,7 +110,7 @@ fun EnvelopeType.toPath(height: Float, tension: Float, x0: Float, x1: Float,
 }
 
 private fun PointerInputScope.getSelectedPoint(position: Offset, points: EnvelopePointList, start: Float,
-                                               valueRange: IntRange, noteWidth: MutableState<Dp>): Pair<Int, Int> {
+                                               valueRange: FloatRange, noteWidth: MutableState<Dp>): Pair<Int, Int> {
     if (points.isEmpty()) return -1 to -1
     val noteWidthPx = noteWidth.value.toPx()
     val targetX = start + position.x / noteWidthPx
@@ -131,8 +131,8 @@ interface EnvelopeEditorEventHandler {
     fun onTypeChanged(editor: EnvelopeEditor, points: List<EnvelopePoint>, type: EnvelopeType)
 }
 
-class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange,
-                     private val defaultValue: Float = valueRange.first.toFloat(), private val isFloat: Boolean = false,
+class EnvelopeEditor(val points: EnvelopePointList, val valueRange: FloatRange,
+                     private val defaultValue: Float = valueRange.start, private val isFloat: Boolean = false,
                      private val eventHandler: EnvelopeEditorEventHandler? = null): SerializableEditor {
     @Suppress("MemberVisibilityCanBePrivate")
     val selectedPoints = mutableStateSetOf<EnvelopePoint>()
@@ -217,7 +217,7 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange,
             if (eventHandler == null) this else pointerInput(Unit) {
                 detectTapGestures(onDoubleTap = {
                     if (getSelectedPoint(it, points, startValue, valueRange, noteWidth).second != -1) return@detectTapGestures
-                    var newValue = (1 - it.y / size.height) * valueRange.range + valueRange.first
+                    var newValue = (1 - it.y / size.height) * valueRange.range + valueRange.start
                     if (!isFloat) newValue = round(newValue)
                     val targetX = startValue + it.x / noteWidth.value.toPx()
                     val newPoint = EnvelopePoint(targetX.fitInUnit(editUnitValue), newValue.coerceIn(valueRange), defaultTension)
@@ -302,8 +302,8 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange,
                         }
                         var selectedPointsLeft = Int.MAX_VALUE
 //                    var selectedPointsRight = Int.MIN_VALUE
-                        var selectedPointsTop = valueRange.first.toFloat()
-                        var selectedPointsBottom = valueRange.last.toFloat()
+                        var selectedPointsTop = valueRange.start
+                        var selectedPointsBottom = valueRange.endInclusive
                         if (action == EditAction.MOVE) {
                             selectedPoints.forEach {
                                 if (it.time < selectedPointsLeft) selectedPointsLeft = it.time
@@ -327,8 +327,8 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange,
                                     x = (((x + (horizontalScrollState?.value?.toFloat() ?: 0F)).coerceAtLeast(0F) - downX) /
                                             noteWidth.value.toPx()).fitInUnit(editUnitValue).toFloat()
                                     if (selectedPointsLeft + x + clipStartTimeValue < 0) x = -(selectedPointsLeft.toFloat() + clipStartTimeValue)
-                                    if (selectedPointsTop + y > valueRange.last) y = valueRange.last - selectedPointsTop
-                                    if (selectedPointsBottom + y < valueRange.first) y = valueRange.first - selectedPointsBottom
+                                    if (selectedPointsTop + y > valueRange.endInclusive) y = valueRange.endInclusive - selectedPointsTop
+                                    if (selectedPointsBottom + y < valueRange.start) y = valueRange.start - selectedPointsBottom
                                     if (x != offsetX) {
                                         offsetX = x
                                         tempPoints?.sortBy { p -> p.time + (if (selectedPoints.contains(p)) x else 0F) }
@@ -528,7 +528,6 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: IntRange,
         }
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     private fun FloatingLayerProvider.openMenu(offset: Offset, point: EnvelopePoint?) {
         openEditorMenu(offset + positionInRoot, this@EnvelopeEditor) { close ->
             points.read()

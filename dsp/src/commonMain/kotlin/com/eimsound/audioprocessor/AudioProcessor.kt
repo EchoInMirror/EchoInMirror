@@ -1,5 +1,8 @@
 package com.eimsound.audioprocessor
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import com.eimsound.daw.utils.*
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
@@ -9,6 +12,7 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
 import java.util.*
+import kotlin.reflect.KProperty
 
 /**
  * @see com.eimsound.daw.impl.processor.EIMAudioProcessorDescription
@@ -41,6 +45,61 @@ interface SuddenChangeListener {
     fun onSuddenChange()
 }
 
+interface IAudioProcessorParameter: Comparable<AudioProcessorParameter> {
+    val name: String
+    val isSuggestion: Boolean
+    val isFloat: Boolean
+    var value: Float
+    val range: FloatRange
+}
+
+open class AudioProcessorParameter(
+    override val name: String,
+    final override val range: FloatRange = 0F..1F,
+    initialValue: Float = range.start,
+    override val isFloat: Boolean = true,
+    override val isSuggestion: Boolean = false,
+    private val onChange: (() -> Unit)? = null
+): IAudioProcessorParameter {
+    override fun compareTo(other: AudioProcessorParameter) = name.compareTo(other.name)
+
+    private var _value by mutableStateOf(initialValue.coerceIn(range))
+    override var value get() = _value
+        set(value) {
+            val newVal = value.coerceIn(range)
+            if (newVal != _value) {
+                _value = newVal
+                onChange?.invoke()
+            }
+        }
+
+    override fun toString(): String {
+        return "AbstractAudioProcessorParameter(name='$name', isSuggestion=$isSuggestion, isFloat=$isFloat, value=$value, range=$range)"
+    }
+
+    operator fun getValue(thisRef: Any?, property: KProperty<*>) = value
+
+    operator fun setValue(thisRef: Any?, property: KProperty<*>, value: Float) { this.value = value }
+}
+
+@Suppress("NOTHING_TO_INLINE")
+inline fun audioProcessorParameterOf(name: String, range: FloatRange = 0F..1F,
+                                     initialValue: Float = range.start, isFloat: Boolean = true,
+                                     isSuggestion: Boolean = false, noinline onChange: (() -> Unit)? = null) =
+    AudioProcessorParameter(name, range, initialValue, isFloat, isSuggestion, onChange)
+
+class AudioProcessorBooleanParameter(name: String, initialValue: Boolean = false, isSuggestion: Boolean = false,
+                                     onChange: (() -> Unit)? = null):
+    AudioProcessorParameter(name, 0F..1F, if (initialValue) 1F else 0F, false, isSuggestion, onChange) {
+        var booleanValue get() = super.value == 1F
+            set(value) { super.value = if (value) 1F else 0F }
+    }
+
+@Suppress("NOTHING_TO_INLINE")
+inline fun audioProcessorParameterOf(name: String, initialValue: Boolean, isSuggestion: Boolean = false,
+                                            noinline onChange: (() -> Unit)? = null) =
+    AudioProcessorBooleanParameter(name, initialValue, isSuggestion, onChange)
+
 interface AudioProcessor: Recoverable, AutoCloseable, SuddenChangeListener {
     var name: String
     @Transient
@@ -51,6 +110,7 @@ interface AudioProcessor: Recoverable, AutoCloseable, SuddenChangeListener {
     val outputChannelsCount: Int
     val factory: AudioProcessorFactory<*>
     val id: String
+    val parameters: List<IAudioProcessorParameter>
     suspend fun processBlock(buffers: Array<FloatArray>, position: CurrentPosition, midiBuffer: ArrayList<Int>) { }
     fun prepareToPlay(sampleRate: Int, bufferSize: Int) { }
     fun onClick() { }
@@ -71,6 +131,7 @@ abstract class AbstractAudioProcessor(
     @Suppress("CanBePrimaryConstructorProperty")
     override val description = description
     override var name = description.name
+    override val parameters = listOf<IAudioProcessorParameter>()
     private val _listeners = WeakHashMap<AudioProcessorListener, Unit>()
     protected val listeners: Set<AudioProcessorListener> get() = _listeners.keys
 
@@ -80,6 +141,7 @@ abstract class AbstractAudioProcessor(
         put("name", name)
         put("id", id)
         put("identifier", description.name)
+        put("parameters", JsonArray(parameters.map { JsonPrimitive(it.value) }))
     }
     override fun toJson() = buildJsonObject { buildBaseJson() }
 
@@ -87,6 +149,11 @@ abstract class AbstractAudioProcessor(
         json as JsonObject
         name = json["name"]?.asString() ?: ""
         json["id"]?.asString()?.let { if (it.isNotEmpty()) id = it }
+        json["parameters"]?.jsonArray?.let {
+            repeat(minOf(it.size, parameters.size)) { i ->
+                parameters[i].value = it[i].jsonPrimitive.float.coerceIn(parameters[i].range)
+            }
+        }
     }
 
     override suspend fun save(path: String) { }
@@ -124,17 +191,3 @@ object AudioProcessorIDSerializer : KSerializer<AudioProcessor> {
     override fun serialize(encoder: Encoder, value: AudioProcessor) { encoder.encodeString(value.id) }
     override fun deserialize(decoder: Decoder) = throw UnsupportedOperationException()
 }
-
-//class AudioProcessorIDSerializer @JvmOverloads constructor(t: Class<AudioProcessor>? = null) : StdSerializer<AudioProcessor>(t) {
-//    override fun serialize(value: AudioProcessor, jgen: JsonGenerator, provider: SerializerProvider?) {
-//        jgen.writeString(value.id)
-//    }
-//}
-//class AudioProcessorCollectionIDSerializer @JvmOverloads constructor(t: Class<Collection<AudioProcessor>>? = null) :
-//    StdSerializer<Collection<AudioProcessor>>(t) {
-//    override fun serialize(value: Collection<AudioProcessor>, jgen: JsonGenerator, provider: SerializerProvider?) {
-//        jgen.writeStartArray()
-//        value.forEach { jgen.writeString(it.id) }
-//        jgen.writeEndArray()
-//    }
-//}

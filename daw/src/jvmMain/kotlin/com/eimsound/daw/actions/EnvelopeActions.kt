@@ -33,7 +33,7 @@ class EnvelopePointsAmountAction(private val list: EnvelopePointList, private va
     }
 }
 
-fun EnvelopePointList.doEnvelopePointsEditAction(points: List<EnvelopePoint>, deltaX: Int, deltaY: Float, valueRange: IntRange? = null) {
+fun EnvelopePointList.doEnvelopePointsEditAction(points: List<EnvelopePoint>, deltaX: Int, deltaY: Float, valueRange: FloatRange? = null) {
     if (deltaX == 0 && deltaY == 0F) return
     runBlocking {
         EchoInMirror.undoManager.execute(
@@ -44,7 +44,7 @@ fun EnvelopePointList.doEnvelopePointsEditAction(points: List<EnvelopePoint>, de
 
 class EnvelopePointsEditAction(
     private val list: EnvelopePointList, private val points: Collection<EnvelopePoint>,
-    private val deltaX: Int, private val deltaY: Float, private val valueRange: IntRange? = null
+    private val deltaX: Int, private val deltaY: Float, private val valueRange: FloatRange? = null
 ) : UndoableAction {
     private val oldValues = points.map { it.value }
     override val name = "包络节点编辑 (${points.size}个)"
@@ -136,7 +136,7 @@ object GlobalEnvelopeEditorEventHandler : EnvelopeEditorEventHandler {
 
     override fun onPastePoints(editor: EnvelopeEditor, points: List<EnvelopePoint>): List<EnvelopePoint> {
         val startTime = EchoInMirror.currentPosition.timeInPPQ.fitInUnitCeil(EchoInMirror.editUnit)
-        val notes = points.map { it.copy(it.time + startTime, it.value * editor.valueRange.range + editor.valueRange.first) }
+        val notes = points.map { it.copy(it.time + startTime, it.value * editor.valueRange.range + editor.valueRange.start) }
         editor.points.doEnvelopePointsAmountAction(notes)
         return notes
     }

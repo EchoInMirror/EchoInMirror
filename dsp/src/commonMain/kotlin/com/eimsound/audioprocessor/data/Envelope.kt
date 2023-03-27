@@ -76,8 +76,9 @@ sealed interface EnvelopePointList : MutableList<EnvelopePoint>, IManualState {
     fun getValue(position: Int, defaultValue: Float = 0F): Float
 }
 
-val VOLUME_RANGE = 0..2
-val MIDI_CC_RANGE = 0..127
+val PAN_RANGE = -1F..1F
+val VOLUME_RANGE = 0F..1.96F
+val MIDI_CC_RANGE = 0F..127F
 
 @Serializable
 class DefaultEnvelopePointList : EnvelopePointList, ArrayList<EnvelopePoint>() {

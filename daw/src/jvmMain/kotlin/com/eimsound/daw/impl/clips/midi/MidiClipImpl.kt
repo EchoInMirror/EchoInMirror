@@ -17,6 +17,7 @@ import com.eimsound.audioprocessor.convertPPQToSamples
 import com.eimsound.audioprocessor.convertSamplesToPPQ
 import com.eimsound.audioprocessor.data.DefaultEnvelopePointList
 import com.eimsound.audioprocessor.data.EnvelopePoint
+import com.eimsound.audioprocessor.data.MIDI_CC_RANGE
 import com.eimsound.audioprocessor.data.midi.*
 import com.eimsound.daw.api.*
 import com.eimsound.daw.api.processor.Track
@@ -160,7 +161,7 @@ class MidiClipFactoryImpl : MidiClipFactory {
             clip.clip.events.forEach { (_, points) ->
                 points.read()
                 remember(points) {
-                    EnvelopeEditor(points, 0..127)
+                    EnvelopeEditor(points, MIDI_CC_RANGE)
                 }.Editor(startPPQ, contentColor, noteWidth, false, clipStartTime = clip.start, stroke = 0.5F)
             }
         }

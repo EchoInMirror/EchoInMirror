@@ -42,13 +42,14 @@ import com.eimsound.daw.components.IconButton
 import com.eimsound.daw.components.utils.EditAction
 import com.eimsound.daw.components.utils.clickableWithIcon
 import com.eimsound.daw.utils.BasicEditor
+import com.eimsound.daw.utils.FloatRange
 import com.eimsound.daw.utils.SerializableEditor
 import com.google.accompanist.flowlayout.FlowRow
 import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
 
 interface EventType : BasicEditor {
-    val range: IntRange
+    val range: FloatRange
     val name: String
     val isInteger: Boolean
     @Composable
@@ -237,8 +238,7 @@ internal fun EventEditor(editor: DefaultMidiClipEditor) {
                         val lines = (size.height / 50).toInt().coerceAtMost(5)
                         val lineSize = size.height / lines
                         val isInteger = selectedEvent?.isInteger ?: false
-                        val last = selectedEvent?.range?.last ?: 127
-                        val lastF = last.toFloat()
+                        val last = selectedEvent?.range?.endInclusive ?: 127F
                         for (i in 1..lines) {
                             drawLine(
                                 lineColor,
@@ -246,7 +246,7 @@ internal fun EventEditor(editor: DefaultMidiClipEditor) {
                                 Offset(size.width, lineSize * i),
                                 1F
                             )
-                            val value = (lastF / lines) * (lines - i)
+                            val value = (last / lines) * (lines - i)
                             val result = measurer.measure(AnnotatedString(if (isInteger) value.roundToInt().toString() else "%.2F".format(value)), style)
                             drawText(result, lineColor,
                                 Offset(size.width - 14 - result.size.width, (lineSize * i - result.size.height / 2)
