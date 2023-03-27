@@ -47,16 +47,17 @@ fun Track.doReorderAction(sourceTracks: MutableList<Track>, destTracks: MutableL
         sourceTracks, destTracks, destIndex)) }
 }
 
-fun MutableList<AudioProcessor>.doAddOrRemoveAudioProcessorAction(audioProcessor: AudioProcessor, isDelete: Boolean = false) {
+fun MutableList<AudioProcessor>.doAddOrRemoveAudioProcessorAction(audioProcessor: AudioProcessor,
+                                                                  isDelete: Boolean = false, index: Int = -1) {
     runBlocking {
         EchoInMirror.undoManager.execute(
-            AudioProcessorAddOrRemoveAction(audioProcessor, this@doAddOrRemoveAudioProcessorAction, isDelete)
+            AudioProcessorAddOrRemoveAction(audioProcessor, this@doAddOrRemoveAudioProcessorAction, isDelete, index)
         )
     }
 }
 
-class AudioProcessorAddOrRemoveAction(track: AudioProcessor, target: MutableList<AudioProcessor>,
-                              isDelete: Boolean): ListAddOrRemoveAction<AudioProcessor>(track, target, isDelete) {
+class AudioProcessorAddOrRemoveAction(track: AudioProcessor, target: MutableList<AudioProcessor>, isDelete: Boolean,
+                                      index: Int = -1): ListAddOrRemoveAction<AudioProcessor>(track, target, isDelete, index) {
     override val name = if (isDelete) "删除音频处理器" else "添加音频处理器"
     override val icon = if (isDelete) Icons.Filled.Add else Icons.Filled.Close
 }

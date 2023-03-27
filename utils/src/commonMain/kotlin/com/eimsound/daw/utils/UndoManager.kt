@@ -21,16 +21,14 @@ abstract class ReversibleAction(private val reversed: Boolean = false) : Undoabl
 }
 
 abstract class ListAddOrRemoveAction<T>(private val target: T, private val list: MutableList<T>,
-                             private val isDelete: Boolean): ReversibleAction(isDelete) {
-    private var index = -1
-
+                             private val isDelete: Boolean, private var index: Int = -1): ReversibleAction(isDelete) {
     override suspend fun perform(isForward: Boolean): Boolean {
         if (isForward) {
             if (isDelete) {
                 index = list.indexOf(target)
                 list.remove(target)
                 if (target is AutoCloseable) target.close()
-            } else list.add(target)
+            } else if (index == -1) list.add(target) else list.add(index, target)
         } else {
             if (isDelete) {
                 list.add(index, target)

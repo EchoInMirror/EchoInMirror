@@ -93,9 +93,7 @@ fun GlobalDropTarget(onDrop: ((Any, Offset) -> Unit)?, modifier: Modifier = Modi
     var currentPos by remember { mutableStateOf(Rect.Zero) }
     Box(modifier.onGloballyPositioned { currentPos = it.boundsInRoot() }) {
         val globalDragAndDrop = LocalGlobalDragAndDrop.current
-        val data = globalDragAndDrop.dataTransfer
-        val isInBounds = data != null && currentPos.contains(globalDragAndDrop.currentPosition)
-        if (isInBounds) {
+        if (globalDragAndDrop.dataTransfer != null && currentPos.contains(globalDragAndDrop.currentPosition)) {
             globalDragAndDrop.dropCallback = onDrop
             content(globalDragAndDrop.currentPosition - currentPos.topLeft)
         } else content(null)

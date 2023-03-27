@@ -4,6 +4,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.VolumeOff
@@ -45,22 +46,10 @@ import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
-@Composable
-private fun MixerProcessorButtonDropLayer(isReplacing: Boolean) {
-    val isActive = LocalGlobalDragAndDrop.current.dataTransfer is AudioProcessorDescriptionAndFactory
-    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.primary.copy(animateFloatAsState(if (isActive) 0.4f else 0f).value))) {
-        if (isActive) Text(if (isReplacing) "替换" else "添加", Modifier.align(Alignment.Center),
-             style = MaterialTheme.typography.labelMedium)
-    }
-}
-
 @OptIn(DelicateCoroutinesApi::class)
 @Composable
-private fun MixerProcessorButton(isLoading: MutableState<Boolean>, list: MutableList<AudioProcessor>, index: Int = -1,
-                         audioProcessor: AudioProcessor? = null, fontStyle: FontStyle? = null,
-                         fontWeight: FontWeight? = null, onClick: () -> Unit) {
-    val indexObj = remember { arrayOf(index) }
-    indexObj[0] = index
+private fun MixerProcessorDropTarget(isLoading: MutableState<Boolean>, onDrop: (AudioProcessor) -> Unit,
+                               modifier: Modifier = Modifier, content: @Composable BoxScope.(Boolean) -> Unit) {
     val snackbarProvider = LocalSnackbarProvider.current
     GlobalDropTarget({ data, _ ->
         if (isLoading.value || data !is AudioProcessorDescriptionAndFactory) return@GlobalDropTarget
@@ -72,28 +61,55 @@ private fun MixerProcessorButton(isLoading: MutableState<Boolean>, list: Mutable
             }
             if (ap == null) return@launch
             isLoading.value = true
-            if (audioProcessor == null) list.doAddOrRemoveAudioProcessorAction(ap)
-            else list.doReplaceAudioProcessorAction(ap, indexObj[0])
+            onDrop(ap)
             isLoading.value = false
         }
-    }, Modifier.height(30.dp).fillMaxWidth()) {
-        TextButton(onClick, Modifier.fillMaxSize()) {
+    }, modifier) {
+        val isActive = it != null && LocalGlobalDragAndDrop.current.dataTransfer is AudioProcessorDescriptionAndFactory
+        Box(
+            Modifier.fillMaxSize().background(
+                MaterialTheme.colorScheme.primary.copy(animateFloatAsState(if (isActive) 0.3f else 0f).value),
+                CircleShape
+            )
+        ) {
+            content(it == null)
+        }
+    }
+}
+
+@Composable
+private fun MixerProcessorButton(isLoading: MutableState<Boolean>, list: MutableList<AudioProcessor>,
+                                 audioProcessor: AudioProcessor? = null, index: Int = -1, fontStyle: FontStyle? = null,
+                                 fontWeight: FontWeight? = null, onClick: () -> Unit) {
+    MixerProcessorDropTarget(isLoading, {
+        if (audioProcessor == null) list.doAddOrRemoveAudioProcessorAction(it)
+        else list.doReplaceAudioProcessorAction(it, index)
+    }, Modifier.height(28.dp).fillMaxWidth()) {
+        if (it) TextButton(onClick, Modifier.fillMaxSize()) {
             if (audioProcessor == null) Text("...", fontSize = MaterialTheme.typography.labelMedium.fontSize,
                 maxLines = 1, lineHeight = 7.sp, fontStyle = fontStyle, fontWeight = fontWeight)
-            else Marquee { Text(audioProcessor.name, Modifier.fillMaxWidth(), fontSize = MaterialTheme.typography.labelMedium.fontSize,
-                maxLines = 1, lineHeight = 7.sp, textAlign = TextAlign.Center, fontStyle = fontStyle, fontWeight = fontWeight) }
-        }
-        MixerProcessorButtonDropLayer(audioProcessor != null)
+            else Marquee {
+                Text(audioProcessor.name, Modifier.fillMaxWidth(), fontSize = MaterialTheme.typography.labelMedium.fontSize,
+                    maxLines = 1, lineHeight = 7.sp, textAlign = TextAlign.Center, fontStyle = fontStyle, fontWeight = fontWeight)
+            }
+        } else Text(if (audioProcessor == null) "添加" else "替换", Modifier.align(Alignment.Center),
+            style = MaterialTheme.typography.labelMedium)
     }
 }
 
 @OptIn(DelicateCoroutinesApi::class)
 @Composable
 private fun MixerProcessorButtons(isLoading: MutableState<Boolean>, list: MutableList<AudioProcessor>) {
-    Divider(Modifier.padding(horizontal = 6.dp), 2.dp, MaterialTheme.colorScheme.primary)
+    MixerProcessorDropTarget(isLoading, { list.doAddOrRemoveAudioProcessorAction(it, index = 0) }) {
+        Divider(Modifier.padding(6.dp, 2.dp), 2.dp, MaterialTheme.colorScheme.primary)
+    }
     list.fastForEachIndexed { i, it ->
-        MixerProcessorButton(isLoading, list, i, it, onClick = it::onClick)
-        Divider(Modifier.padding(horizontal = 8.dp))
+        key(it) {
+            MixerProcessorButton(isLoading, list, it, i, onClick = it::onClick)
+            MixerProcessorDropTarget(isLoading, { list.doAddOrRemoveAudioProcessorAction(it, index = i + 1) }) {
+                Divider(Modifier.padding(8.dp, 2.dp))
+            }
+        }
     }
     val floatingLayerProvider = LocalFloatingLayerProvider.current
     val snackbarProvider = LocalSnackbarProvider.current
@@ -196,7 +212,6 @@ private fun MixerTrack(track: Track, index: String, containerColor: Color = Mate
                 Column {
                     val loading = remember { mutableStateOf(false) }
                     MixerProcessorButtons(loading, track.preProcessorsChain)
-                    Divider(Modifier.padding(horizontal = 8.dp))
                     MixerProcessorButtons(loading, track.postProcessorsChain)
                 }
             }
@@ -242,7 +257,6 @@ object Mixer: Panel {
     override fun Content() {
         Scrollable {
             Row {
-//                Button({ throw RuntimeException("6666") }) { Text("测试报错") }
                 val bus = EchoInMirror.bus!!
                 val trackColor = if (EchoInMirror.windowManager.isDarkTheme)
                     MaterialTheme.colorScheme.surfaceColorAtElevation(20.dp) else MaterialTheme.colorScheme.surface
