@@ -13,10 +13,7 @@ import com.eimsound.daw.api.window.WindowManager
 import com.eimsound.daw.components.FloatingLayerProvider
 import com.eimsound.daw.window.dialogs.ExportDialog
 import com.eimsound.daw.window.dialogs.settings.SettingsWindow
-import com.eimsound.daw.window.panels.Editor
-import com.eimsound.daw.window.panels.FileSystemBrowser
-import com.eimsound.daw.window.panels.Mixer
-import com.eimsound.daw.window.panels.UndoList
+import com.eimsound.daw.window.panels.*
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
@@ -27,7 +24,7 @@ import kotlin.io.path.absolutePathString
 
 class WindowManagerImpl: WindowManager {
     override val dialogs = mutableStateMapOf<@Composable () -> Unit, Boolean>()
-    override val panels = mutableStateListOf(Mixer, Editor, FileSystemBrowser, UndoList)
+    override val panels = mutableStateListOf(Mixer, Editor, FileSystemBrowser, UndoList, TrackView)
     override var mainWindow: ComposeWindow? = null
     override var isDarkTheme by mutableStateOf(true)
     override var activePanel: Panel? by mutableStateOf(null)

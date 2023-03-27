@@ -1,5 +1,6 @@
 package com.eimsound.audioprocessor
 
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -118,6 +119,11 @@ interface AudioProcessor: Recoverable, AutoCloseable, SuddenChangeListener {
     fun removeListener(listener: AudioProcessorListener)
     suspend fun save(path: String)
     suspend fun load(path: String, json: JsonObject)
+}
+
+interface AudioProcessorEditor : AudioProcessor {
+    @Composable
+    fun Editor()
 }
 
 abstract class AbstractAudioProcessor(
