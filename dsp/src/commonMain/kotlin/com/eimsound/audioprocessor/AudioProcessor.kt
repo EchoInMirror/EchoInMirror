@@ -2,6 +2,7 @@ package com.eimsound.audioprocessor
 
 import com.eimsound.daw.utils.*
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.encoding.Decoder
@@ -13,7 +14,8 @@ import java.util.*
  * @see com.eimsound.daw.impl.processor.EIMAudioProcessorDescription
  * @see com.eimsound.audioprocessor.NativeAudioPluginDescription
  */
-interface AudioProcessorDescription : Comparable<AudioProcessorDescription>, IDisplayName {
+@Serializable
+sealed interface AudioProcessorDescription : Comparable<AudioProcessorDescription>, IDisplayName {
     val name: String
     val category: String?
     val manufacturerName: String?
