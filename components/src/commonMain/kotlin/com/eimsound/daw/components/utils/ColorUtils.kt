@@ -19,11 +19,11 @@ val colors = listOf(0xFFEBEE,0xFFCDD2,0xEF9A9A,0xE57373,0xEF5350,0xF44336,0xE539
 }
 
 @Suppress("UnusedReceiverParameter")
-val ColorScheme.warning: Color
-    get() = Color(230, 160, 58)
-@Suppress("UnusedReceiverParameter", "unused")
-val ColorScheme.success: Color
-    get() = Color(69, 155, 100)
+val ColorScheme.warning get() = Color(230, 160, 58)
+@Suppress("UnusedReceiverParameter")
+val ColorScheme.success get() = Color(69, 155, 100)
+@Suppress("UnusedReceiverParameter")
+val ColorScheme.absoluteError get() = Color(179, 38, 30)
 
 fun randomColor(isDarkColor: Boolean? = null) =
     (if (isDarkColor == null) colors else if (isDarkColor) darkColors else lightColors).random()

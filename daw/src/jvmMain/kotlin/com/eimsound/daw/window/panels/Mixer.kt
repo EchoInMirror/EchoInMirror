@@ -1,5 +1,6 @@
 package com.eimsound.daw.window.panels
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -34,6 +35,7 @@ import com.eimsound.daw.api.window.Panel
 import com.eimsound.daw.api.window.PanelDirection
 import com.eimsound.daw.components.*
 import com.eimsound.daw.components.dragdrop.GlobalDropTarget
+import com.eimsound.daw.components.dragdrop.LocalGlobalDragAndDrop
 import com.eimsound.daw.components.silder.DefaultTrack
 import com.eimsound.daw.components.silder.Slider
 import com.eimsound.daw.components.utils.clickableWithIcon
@@ -43,6 +45,15 @@ import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
+@Composable
+private fun MixerProcessorButtonDropLayer(isReplacing: Boolean) {
+    val isActive = LocalGlobalDragAndDrop.current.dataTransfer is AudioProcessorDescriptionAndFactory
+    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.primary.copy(animateFloatAsState(if (isActive) 0.4f else 0f).value))) {
+        if (isActive) Text(if (isReplacing) "替换" else "添加", Modifier.align(Alignment.Center),
+             style = MaterialTheme.typography.labelMedium)
+    }
+}
+
 @OptIn(DelicateCoroutinesApi::class)
 @Composable
 private fun MixerProcessorButton(isLoading: MutableState<Boolean>, list: MutableList<AudioProcessor>, index: Int = -1,
@@ -50,22 +61,29 @@ private fun MixerProcessorButton(isLoading: MutableState<Boolean>, list: Mutable
                          fontWeight: FontWeight? = null, onClick: () -> Unit) {
     val indexObj = remember { arrayOf(index) }
     indexObj[0] = index
+    val snackbarProvider = LocalSnackbarProvider.current
     GlobalDropTarget({ data, _ ->
         if (isLoading.value || data !is AudioProcessorDescriptionAndFactory) return@GlobalDropTarget
         GlobalScope.launch {
-            val ap = data.factory.createAudioProcessorOrNull(data.description) ?: return@launch
+            val (ap, err) = data.factory.createAudioProcessorOrNull(data.description)
+            if (err != null) {
+                snackbarProvider.enqueueSnackbar(err)
+                return@launch
+            }
+            if (ap == null) return@launch
             isLoading.value = true
             if (audioProcessor == null) list.doAddOrRemoveAudioProcessorAction(ap)
             else list.doReplaceAudioProcessorAction(ap, indexObj[0])
             isLoading.value = false
         }
-    }) {
-        TextButton(onClick, Modifier.height(30.dp).fillMaxWidth()) {
+    }, Modifier.height(30.dp).fillMaxWidth()) {
+        TextButton(onClick, Modifier.fillMaxSize()) {
             if (audioProcessor == null) Text("...", fontSize = MaterialTheme.typography.labelMedium.fontSize,
                 maxLines = 1, lineHeight = 7.sp, fontStyle = fontStyle, fontWeight = fontWeight)
             else Marquee { Text(audioProcessor.name, Modifier.fillMaxWidth(), fontSize = MaterialTheme.typography.labelMedium.fontSize,
                 maxLines = 1, lineHeight = 7.sp, textAlign = TextAlign.Center, fontStyle = fontStyle, fontWeight = fontWeight) }
         }
+        MixerProcessorButtonDropLayer(audioProcessor != null)
     }
 }
 
@@ -78,14 +96,19 @@ private fun MixerProcessorButtons(isLoading: MutableState<Boolean>, list: Mutabl
         Divider(Modifier.padding(horizontal = 8.dp))
     }
     val floatingLayerProvider = LocalFloatingLayerProvider.current
+    val snackbarProvider = LocalSnackbarProvider.current
     MixerProcessorButton(isLoading, list, fontWeight = FontWeight.Bold) {
         if (!isLoading.value) floatingLayerProvider.openQuickLoadDialog {
             if (it == null) return@openQuickLoadDialog
             isLoading.value = true
             GlobalScope.launch {
-                it.factory.createAudioProcessorOrNull(it.description)?.let { ap ->
-                    list.doAddOrRemoveAudioProcessorAction(ap)
+                val (ap, err) = it.factory.createAudioProcessorOrNull(it.description)
+                if (err != null) {
+                    snackbarProvider.enqueueSnackbar(err)
+                    return@launch
                 }
+                if (ap == null) return@launch
+                list.doAddOrRemoveAudioProcessorAction(ap)
                 isLoading.value = false
             }
         }

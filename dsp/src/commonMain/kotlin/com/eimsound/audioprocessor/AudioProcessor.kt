@@ -119,7 +119,6 @@ open class DefaultAudioProcessorDescription(
     }
 }
 
-// kotlin AudioProcessorIDSerializer
 object AudioProcessorIDSerializer : KSerializer<AudioProcessor> {
     override val descriptor = String.serializer().descriptor
     override fun serialize(encoder: Encoder, value: AudioProcessor) { encoder.encodeString(value.id) }

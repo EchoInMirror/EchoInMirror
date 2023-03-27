@@ -18,6 +18,7 @@ import com.eimsound.daw.api.TrackClip
 import com.eimsound.daw.api.processor.Bus
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.api.processor.TrackManager
+import com.eimsound.daw.components.GlobalSnackbarProvider
 import com.eimsound.daw.plugin.EIMPluginManager
 import com.eimsound.daw.utils.impl.DefaultUndoManager
 import com.eimsound.daw.window.dialogs.settings.settingsTabsLoader
@@ -32,9 +33,12 @@ class EchoInMirrorImpl : IEchoInMirror {
     override val commandManager = CommandManagerImpl()
     override val pluginManager = EIMPluginManager()
     override val windowManager = WindowManagerImpl()
-    override val undoManager = DefaultUndoManager().apply { errorHandlers.add(Crashes::trackError) }
     override val audioThumbnailCache by lazy { AudioThumbnailCache(AUDIO_THUMBNAIL_CACHE_PATH.toFile()) }
     override var quantification by mutableStateOf(defaultQuantification)
+    override val undoManager = DefaultUndoManager().apply {
+        errorHandlers.add(Crashes::trackError)
+        errorHandlers.add { GlobalSnackbarProvider.enqueueSnackbar(it) }
+    }
 
     private var _selectedTrack by mutableStateOf<Track?>(null)
     override var selectedTrack

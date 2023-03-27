@@ -46,11 +46,12 @@ interface AudioProcessorFactory<T: AudioProcessor> : IDisplayName {
     suspend fun createAudioProcessor(path: String, json: JsonObject): T
 }
 
-suspend fun <T: AudioProcessor> AudioProcessorFactory<T>.createAudioProcessorOrNull(description: AudioProcessorDescription) = try {
-    createAudioProcessor(description)
+suspend fun <T: AudioProcessor> AudioProcessorFactory<T>.createAudioProcessorOrNull(
+    description: AudioProcessorDescription): Pair<T?, Throwable?> = try {
+    createAudioProcessor(description) to null
 } catch (e: Throwable) {
     audioProcessorFactoryLogger.error(e) { "Failed to create audio processor ($description)" }
-    null
+    null to e
 }
 
 data class AudioProcessorDescriptionAndFactory(val description: AudioProcessorDescription, val factory: AudioProcessorFactory<*>)

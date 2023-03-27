@@ -80,6 +80,14 @@ private fun BusChannelType() {
 }
 
 @Composable
+fun ThemeSwitch() {
+    StatusBarItem("Theme",
+        if (EchoInMirror.windowManager.isDarkTheme) Icons.Default.DarkMode else Icons.Default.LightMode,
+        onClick = { EchoInMirror.windowManager.isDarkTheme = !EchoInMirror.windowManager.isDarkTheme }
+    )
+}
+
+@Composable
 internal fun StatusBar() {
     Surface(tonalElevation = 4.dp) {
         val border = Border(0.6.dp, MaterialTheme.colorScheme.onSurfaceVariant.copy(0.2F))
@@ -88,6 +96,7 @@ internal fun StatusBar() {
             ProvideTextStyle(MaterialTheme.typography.labelSmall) {
                 CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurfaceVariant) {
                     StatusBarItem("Settings", Icons.Default.Settings, onClick = { EchoInMirror.windowManager.dialogs[SettingsWindow] = true })
+                    ThemeSwitch()
                     StatusBarItem("Export", Icons.Default.IosShare, onClick = { EchoInMirror.windowManager.dialogs[ExportDialog] = true })
                     StatusBarItem("Project", Icons.Default.Folder,
                         onClick = { openInExplorer(EchoInMirror.bus!!.project.root.toFile()) },

@@ -7,6 +7,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.*
@@ -21,6 +22,7 @@ import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.window.GlobalException
 import com.eimsound.daw.components.LocalFloatingLayerProvider
 import com.eimsound.daw.components.LocalSnackbarHost
+import com.eimsound.daw.components.LocalSnackbarProvider
 import com.eimsound.daw.components.app.*
 import com.eimsound.daw.components.dragdrop.LocalGlobalDragAndDrop
 import com.eimsound.daw.components.dragdrop.PlatformDropTargetModifier
@@ -101,6 +103,7 @@ fun ApplicationScope.MainWindow() {
 
             LocalFloatingLayerProvider.current.FloatingLayers()
             LocalGlobalDragAndDrop.current.DraggingComponent()
+            LocalSnackbarProvider.current.SnackbarsContainer(Modifier.align(Alignment.BottomEnd).padding(bottom = 24.dp))
         }
 
         windowManager.Dialogs()
