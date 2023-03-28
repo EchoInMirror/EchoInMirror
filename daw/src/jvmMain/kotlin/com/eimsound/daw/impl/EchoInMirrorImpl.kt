@@ -3,15 +3,13 @@ package com.eimsound.daw.impl
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.eimsound.audioprocessor.AudioPlayer
-import com.eimsound.audioprocessor.AudioPlayerManager
-import com.eimsound.audioprocessor.AudioProcessorManager
-import com.eimsound.audioprocessor.AudioSourceManager
+import com.eimsound.audioprocessor.*
 import com.eimsound.audioprocessor.data.AudioThumbnailCache
 import com.eimsound.audioprocessor.data.defaultQuantification
 import com.eimsound.audioprocessor.data.getEditUnit
 import com.eimsound.daw.AUDIO_THUMBNAIL_CACHE_PATH
 import com.eimsound.daw.Configuration
+import com.eimsound.daw.actions.AudioProcessorParameterChangeAction
 import com.eimsound.daw.api.ClipManager
 import com.eimsound.daw.api.IEchoInMirror
 import com.eimsound.daw.api.TrackClip
@@ -20,9 +18,11 @@ import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.api.processor.TrackManager
 import com.eimsound.daw.components.GlobalSnackbarProvider
 import com.eimsound.daw.plugin.EIMPluginManager
+import com.eimsound.daw.utils.ExperimentalEIMApi
 import com.eimsound.daw.utils.impl.DefaultUndoManager
 import com.eimsound.daw.window.dialogs.settings.settingsTabsLoader
 import com.microsoft.appcenter.crashes.Crashes
+import kotlinx.coroutines.runBlocking
 
 class EchoInMirrorImpl : IEchoInMirror {
     override val currentPosition = CurrentPositionImpl(isMainPosition = true)
@@ -38,6 +38,8 @@ class EchoInMirrorImpl : IEchoInMirror {
     override val undoManager = DefaultUndoManager().apply {
         errorHandlers.add(Crashes::trackError)
         errorHandlers.add { GlobalSnackbarProvider.enqueueSnackbar(it) }
+        @OptIn(ExperimentalEIMApi::class)
+        globalChangeHandler = { p, v -> runBlocking { execute(AudioProcessorParameterChangeAction(p, v)) } }
     }
 
     private var _selectedTrack by mutableStateOf<Track?>(null)

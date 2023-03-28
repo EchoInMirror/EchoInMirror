@@ -186,15 +186,15 @@ class NativeAudioPlayer(
 
     private fun readDeviceInfo() {
         name = inputStream.readString()
-        inputLatency = inputStream.readInt()
-        outputLatency = inputStream.readInt()
-        val sampleRate = inputStream.readInt()
-        val bufferSize = inputStream.readInt()
+        inputLatency = inputStream.readVarInt()
+        outputLatency = inputStream.readVarInt()
+        val sampleRate = inputStream.readVarInt()
+        val bufferSize = inputStream.readVarInt()
         if (sampleRate != currentPosition.sampleRate || bufferSize != currentPosition.bufferSize) {
             currentPosition.setSampleRateAndBufferSize(sampleRate, bufferSize)
         }
-        availableSampleRates = IntArray(inputStream.readInt()) { inputStream.readInt() }
-        availableBufferSizes = IntArray(inputStream.readInt()) { inputStream.readInt() }
+        availableSampleRates = IntArray(inputStream.readVarInt()) { inputStream.readVarInt() }
+        availableBufferSizes = IntArray(inputStream.readVarInt()) { inputStream.readVarInt() }
         hasControls = inputStream.readBoolean()
 
         var outBufferSize = 0

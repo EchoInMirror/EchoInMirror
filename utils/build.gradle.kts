@@ -23,6 +23,11 @@ kotlin {
                 compileOnly(compose.ui)
             }
         }
+        named("commonTest") {
+            dependencies {
+                implementation(kotlin("test-junit"))
+            }
+        }
         named("jvmMain") {
 
         }

@@ -15,6 +15,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -162,8 +163,7 @@ fun FloatingLayerProvider.openQuickLoadDialog(onClose: ((AudioProcessorDescripti
             }
 
             var selectedDescription by mutableStateOf<AudioProcessorDescription?>(null)
-            Scaffold(
-                modifier = Modifier.fillMaxSize(),
+            Scaffold(Modifier.fillMaxSize(),
                 topBar = {
                     Surface(Modifier.fillMaxWidth().height(TOP_TEXTFIELD_HEIGHT).padding(10.dp, 10.dp, 10.dp, 0.dp)) {
                         TextField(searchText, { searchText = it }, Modifier.fillMaxSize(),
@@ -271,7 +271,7 @@ fun FloatingLayerProvider.openQuickLoadDialog(onClose: ((AudioProcessorDescripti
 }
 
 @Composable
-private fun <T> DescListItem(
+private fun <T: Any> DescListItem(
     it: T,
     selectedDesc: T?,
     onClick: (it: T?) -> Unit,
@@ -285,12 +285,16 @@ private fun <T> DescListItem(
         minHeight = 30.dp
     ) {
         Marquee(Modifier.weight(1F)) {
+            val isDeprecated = it is AudioProcessorDescription && it.isDeprecated == true
+            val color = LocalContentColor.current
             Text(
                 if (it is IDisplayName) it.displayName else it.toString(),
                 overflow = TextOverflow.Ellipsis,
                 textAlign = TextAlign.Start,
                 maxLines = 1,
-                style = MaterialTheme.typography.labelMedium
+                style = MaterialTheme.typography.labelMedium,
+                fontStyle = if (isDeprecated) FontStyle.Italic else null,
+                color = if (isDeprecated) color.copy(0.7F) else color
             )
         }
         if (tailContent != null) tailContent(it)
@@ -308,7 +312,7 @@ private fun <T> DescListItem(
 }
 
 @Composable
-private fun <T> DescList(
+private fun <T: Any> DescList(
     modifier: Modifier = Modifier,
     descList: List<T>,
     selectedDesc: T?,
@@ -355,7 +359,7 @@ private fun <T> DescList(
                             )
                         }
                     }
-                    items(descList) {
+                    items(descList, { it }) {
                         if (onDragEnd == null || onDragStart == null) DescListItem(it, selectedDesc, onClick, countMap, tailContent)
                         else GlobalDraggable({ onDragStart(it) }, onDragEnd, draggingComponent = {
                             Text(if (it is IDisplayName) it.displayName else it.toString())

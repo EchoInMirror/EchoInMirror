@@ -16,13 +16,22 @@ import java.util.*
 //val ProcessAudioProcessorDescription = DefaultAudioProcessorDescription("ProcessAudioProcessor",
 //    "ProcessAudioProcessor", null, "EIMSound", "0.0.0", true)
 
+
+private const val PARAMETER_IS_AUTOMATABLE = 0b00001
+private const val PARAMETER_IS_DISCRETE = 0b00010
+private const val PARAMETER_IS_BOOLEAN = 0b00100
+@Suppress("unused")
+private const val PARAMETER_IS_META = 0b01000
+@Suppress("unused")
+private const val PARAMETER_IS_ORIENTATION_INVERTED = 0b10000
+
 @Suppress("MemberVisibilityCanBePrivate")
 open class ProcessAudioProcessorImpl(
     description: AudioProcessorDescription,
     factory: AudioProcessorFactory<*>,
     private var enabledSharedMemory: Boolean = IS_SHM_SUPPORTED &&
             System.getProperty("eim.dsp.nativeaudioplugins.sharedmemory", "1") != "false",
-) : ProcessAudioProcessor, AbstractAudioProcessor(description, factory) {
+) : ProcessAudioProcessor, AbstractAudioProcessor(description, factory, false) {
     override var inputChannelsCount = 0
         protected set
     override var outputChannelsCount = 0
@@ -30,6 +39,8 @@ open class ProcessAudioProcessorImpl(
     override var isLaunched = false
         protected set
     override var name = "ProcessAudioProcessor"
+    final override var parameters: Array<IAudioProcessorParameter> = emptyArray()
+        private set
     private var process: Process? = null
     private var prepared = false
     private var sharedMemory: SharedMemory? = null
@@ -48,14 +59,15 @@ open class ProcessAudioProcessorImpl(
             output.write(1)
             output.write(position.toFlags())
             output.writeDouble(position.bpm)
-            output.writeLong(position.timeInSamples)
+            output.writeShort((midiBuffer.size / 2).toShort()) // midi event count
+            output.writeShort(0) // parameter count
+            output.writeVarLong(position.timeInSamples)
             val inputChannels = inputChannelsCount.coerceAtMost(buffers.size)
             val outputChannels = outputChannelsCount.coerceAtMost(buffers.size)
-            output.write(inputChannels)
-            output.write(outputChannels)
-            output.writeShort((midiBuffer.size / 2).toShort())
             val bf = byteBuffer
             if (bf == null) {
+                output.write(inputChannels)
+                output.write(outputChannels)
                 repeat(inputChannels) { i ->
                     repeat(bufferSize) { j -> output.writeFloat(buffers[i][j]) }
                 }
@@ -75,7 +87,8 @@ open class ProcessAudioProcessorImpl(
             val input = inputStream!!
             do {
                 val id = input.read()
-                handleInput(id)
+                println(id)
+                handleInput(id, position)
             } while (id != 1)
             if (bf == null) {
                 repeat(outputChannels) { i ->
@@ -179,8 +192,7 @@ open class ProcessAudioProcessorImpl(
             }
 
             try {
-                inputChannelsCount = input.readInt()
-                outputChannelsCount = input.readInt()
+                readInitInformation(input)
 
                 process = p
                 inputStream = input
@@ -192,6 +204,34 @@ open class ProcessAudioProcessorImpl(
                 throw e
             }
             true
+        }
+    }
+
+    private suspend fun readInitInformation(input: ByteBufInputStream) {
+        withContext(Dispatchers.IO) {
+            inputChannelsCount = input.read()
+            outputChannelsCount = input.read()
+            val len = input.readVarInt()
+
+            parameters = Array(len) {
+                val flags = input.read()
+                val initialValue = input.readFloat()
+                input.readInt() // category
+                val name = input.readString()
+                val label = input.readString()
+                val valueStrings = input.readStringArray()
+
+                val isAutomatable = flags and PARAMETER_IS_AUTOMATABLE != 0
+                val id = it.toString()
+
+                if (flags and PARAMETER_IS_BOOLEAN != 0) {
+                    audioProcessorParameterOf(id, name, initialValue != 0F, isAutomatable = isAutomatable)
+                } else if (flags and PARAMETER_IS_DISCRETE != 0) {
+                    audioProcessorParameterOf(id, name, valueStrings, label = label, isAutomatable = isAutomatable)
+                } else {
+                    audioProcessorParameterOf(id, name, initialValue = initialValue, label = label, isAutomatable = isAutomatable)
+                }
+            }
         }
     }
 
@@ -213,14 +253,15 @@ open class ProcessAudioProcessorImpl(
         super.close()
     }
 
-    private fun handleInput(id: Int) {
+    private fun handleInput(id: Int, position: CurrentPosition) {
         val input = inputStream!!
         when (id) {
-            2 -> println(input.read()) // transport play
-            3 -> {
-                val index = input.readInt()
+            2 -> position.isPlaying = input.readBoolean() // transport play
+            3 -> { // parameter change
+                val index = input.readVarInt()
                 val value = input.readFloat()
-                println("$index $value")
+                print(index)
+                if (index > 0 && index < parameters.size) parameters[index].doChangeAction(value)
             }
         }
     }

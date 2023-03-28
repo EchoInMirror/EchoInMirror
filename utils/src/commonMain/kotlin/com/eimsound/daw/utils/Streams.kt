@@ -10,11 +10,33 @@ class ByteBufInputStream(private val isBigEndian: Boolean, stream: InputStream):
         else read() or (read() shl 8) or (read() shl 16) or (read() shl 24)
     fun readFloat() = Float.fromBits(readInt())
     fun readString(): String {
-        val arr = ByteArray(readInt())
+        val len = readVarInt()
+        if (len == 0) return ""
+        val arr = ByteArray(len)
         read(arr)
         return arr.toString(Charsets.UTF_8)
     }
     fun readBoolean() = read() != 0
+    fun readShort() = if (isBigEndian) (read() shl 8) or read() else read() or (read() shl 8)
+    fun readVarInt(): Int {
+        var result = 0
+        for (shift in 0..28 step 7) {
+            val b = read()
+            result = result or ((b and 0x7F) shl shift)
+            if (b and 0x80 == 0) return result
+        }
+        throw IOException("Invalid var int")
+    }
+    fun readVarLong(): Long {
+        var result = 0L
+        for (shift in 0..63 step 7) {
+            val b = read()
+            result = result or ((b and 0x7F).toLong() shl shift)
+            if (b and 0x80 == 0) return result
+        }
+        throw IOException("Invalid var long")
+    }
+    fun readStringArray() = Array(readVarInt()) { readString() }
 }
 
 class ByteBufOutputStream(private val isBigEndian: Boolean, stream: OutputStream): BufferedOutputStream(stream) {
@@ -69,9 +91,29 @@ class ByteBufOutputStream(private val isBigEndian: Boolean, stream: OutputStream
     fun writeDouble(value: Double) = writeLong(java.lang.Double.doubleToLongBits(value))
     fun writeBoolean(value: Boolean) = write(if (value) 1 else 0)
     fun writeString(value: String) {
+        if (value.isEmpty()) {
+            writeVarInt(0)
+            return
+        }
         val arr = value.toByteArray(Charsets.UTF_8)
-        writeInt(arr.size)
+        writeVarInt(arr.size)
         write(arr)
+    }
+    fun writeVarInt(value: Int) {
+        var v = value
+        while (v >= 0x80) {
+            write(v and 0x7F or 0x80)
+            v = v ushr 7
+        }
+        write(v)
+    }
+    fun writeVarLong(value: Long) {
+        var v = value
+        while (v >= 0x80) {
+            write((v and 0x7F or 0x80).toInt())
+            v = v ushr 7
+        }
+        write(v.toInt())
     }
 }
 

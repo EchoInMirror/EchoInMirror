@@ -6,6 +6,7 @@ import androidx.compose.runtime.setValue
 import com.eimsound.audioprocessor.CurrentPosition
 import com.eimsound.audioprocessor.SuddenChangeListener
 import com.eimsound.daw.api.EchoInMirror
+import com.eimsound.daw.utils.observableMutableStateOf
 
 class CurrentPositionImpl(
     private val suddenChangeListener: SuddenChangeListener? = null,
@@ -30,14 +31,9 @@ class CurrentPositionImpl(
     override val isRealtime = true
     override var isProjectLooping by mutableStateOf(true)
 
-    private var _isPlaying by mutableStateOf(false)
-    override var isPlaying
-        get() = _isPlaying
-        set(value) {
-            val flag = _isPlaying != value
-            _isPlaying = value
-            if (flag) (if (isMainPosition) EchoInMirror.bus else suddenChangeListener)?.onSuddenChange()
-        }
+    override var isPlaying by observableMutableStateOf(false) {
+        (if (isMainPosition) EchoInMirror.bus else suddenChangeListener)?.onSuddenChange()
+    }
 
     override fun update(timeInSamples: Long) {
         this.timeInSamples = timeInSamples.coerceAtLeast(0)

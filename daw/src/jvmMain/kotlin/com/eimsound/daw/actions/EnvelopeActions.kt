@@ -3,6 +3,7 @@ package com.eimsound.daw.actions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Tune
+import com.eimsound.audioprocessor.IAudioProcessorParameter
 import com.eimsound.audioprocessor.data.EnvelopePoint
 import com.eimsound.audioprocessor.data.EnvelopePointList
 import com.eimsound.audioprocessor.data.EnvelopeType
@@ -155,5 +156,22 @@ object GlobalEnvelopeEditorEventHandler : EnvelopeEditorEventHandler {
 
     override fun onTypeChanged(editor: EnvelopeEditor, points: List<EnvelopePoint>, type: EnvelopeType) {
         editor.points.doEnvelopePointsTypeAction(points, type)
+    }
+}
+
+class AudioProcessorParameterChangeAction(
+    private val parameter: IAudioProcessorParameter, private val value: Float
+): UndoableAction {
+    private val oldValue = parameter.value
+    override val name = "参数修改 (${parameter.name})"
+    override val icon = Icons.Default.Tune
+    override suspend fun undo(): Boolean {
+        parameter.value = oldValue
+        return true
+    }
+
+    override suspend fun execute(): Boolean {
+        parameter.value = value
+        return true
     }
 }

@@ -1,5 +1,6 @@
 package com.eimsound.audioprocessor
 
+import io.github.oshai.KotlinLogging
 import java.io.File
 
 interface Renderable {
@@ -33,6 +34,7 @@ interface Renderer {
     )
 }
 
+private val logger = KotlinLogging.logger("RenderPosition")
 class RenderPosition(override var ppq: Int, override val sampleRate: Int, range: IntRange) : CurrentPosition {
     override var bpm = 140.0
     override var timeInSeconds = 0.0
@@ -41,17 +43,11 @@ class RenderPosition(override var ppq: Int, override val sampleRate: Int, range:
     override var timeSigNumerator = 4
     override var timeSigDenominator = 4
     override var projectRange = range
-        set(_) {
-            throw UnsupportedOperationException()
-        }
+        set(_) = logger.warn("Modify projectRange is not supported in RenderPosition")
     override var loopingRange = range
-        set(_) {
-            throw UnsupportedOperationException()
-        }
+        set(_) = logger.warn("Modify loopingRange is not supported in RenderPosition")
     override var isPlaying = true
-        set(_) {
-            throw UnsupportedOperationException()
-        }
+        set(_) = logger.warn("Modify isPlaying is not supported in RenderPosition")
     override var isLooping = false
     override var isRecording = false
     override val isRealtime = false
@@ -63,18 +59,18 @@ class RenderPosition(override var ppq: Int, override val sampleRate: Int, range:
         get() = (bufferSize / sampleRate / 60.0 * bpm * ppq).toInt()
 
     override fun setCurrentTime(timeInPPQ: Int) {
-        throw UnsupportedOperationException()
+        logger.warn("Call setCurrentTime is not supported in RenderPosition")
     }
 
     override fun setPPQPosition(ppqPosition: Double) {
-        throw UnsupportedOperationException()
+        logger.warn("Call setPPQPosition is not supported in RenderPosition")
     }
 
     override fun update(timeInSamples: Long) {
-        throw UnsupportedOperationException()
+        logger.warn("Call update is not supported in RenderPosition")
     }
 
     override fun setSampleRateAndBufferSize(sampleRate: Int, bufferSize: Int) {
-        throw UnsupportedOperationException()
+        logger.warn("Call setSampleRateAndBufferSize is not supported in RenderPosition")
     }
 }

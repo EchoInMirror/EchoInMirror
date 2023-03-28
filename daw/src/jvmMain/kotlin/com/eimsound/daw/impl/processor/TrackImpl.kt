@@ -61,11 +61,11 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
     override var isSolo by observableMutableStateOf(false, ::stateChange)
     override var isDisabled by observableMutableStateOf(false, ::stateChange)
 
-    private val panParameter = audioProcessorParameterOf("声相", PAN_RANGE, 0F)
-    private val volumeParameter = audioProcessorParameterOf("电平", VOLUME_RANGE, 1F)
+    private val panParameter = audioProcessorParameterOf("pan", "声相", PAN_RANGE, 0F)
+    private val volumeParameter = audioProcessorParameterOf("volume", "电平", VOLUME_RANGE, 1F)
     override var pan by panParameter
     override var volume by volumeParameter
-    override val parameters = listOf(panParameter, volumeParameter)
+    override val parameters: Array<IAudioProcessorParameter> = arrayOf(panParameter, volumeParameter)
 
     @Suppress("LeakingThis")
     override val clips = DefaultTrackClipList(this)
@@ -233,8 +233,6 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         put("id", id)
         putNotDefault("name", name)
         put("color", color.value.toLong())
-        putNotDefault("pan", pan)
-        putNotDefault("volume", volume, 1F)
         putNotDefault("height", height)
         putNotDefault("isMute", isMute)
         putNotDefault("isSolo", isSolo)
@@ -285,8 +283,6 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         id = json["id"]!!.asString()
         json["name"]?.asString()?.let { name = it }
         json["color"]?.asLong()?.let { color = Color(it.toULong()) }
-        json["pan"]?.asFloat()?.let { pan = it }
-        json["volume"]?.asFloat()?.let { volume = it }
         json["height"]?.asInt()?.let { height = it }
         json["isMute"]?.asBoolean()?.let { isMute = it }
         json["isSolo"]?.asBoolean()?.let { isSolo = it }
