@@ -218,7 +218,7 @@ class NativeAudioPlayerFactory : AudioPlayerFactory {
     private val execFile get() = System.getProperty("eim.dsp.nativeaudioplayer.file")
     override val name = "Native"
     override suspend fun getPlayers() = withContext(Dispatchers.IO) {
-        ProcessBuilder(execFile, "-O", "-A").start().inputStream
+        ProcessBuilder(execFile, "-O", "-A").start().errorStream
             .readAllBytes().decodeToString().split("\$EIM\$").filter { it.isNotEmpty() }
     }
     override fun create(name: String, currentPosition: CurrentPosition, processor: AudioProcessor) = try {

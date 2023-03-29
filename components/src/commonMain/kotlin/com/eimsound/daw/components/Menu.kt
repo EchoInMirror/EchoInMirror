@@ -62,7 +62,7 @@ fun DropdownMenu(
 ) {
     FloatingLayer({ size, close ->
         Surface(
-            Modifier.widthIn(size.width.dp).width(IntrinsicSize.Min), MaterialTheme.shapes.extraSmall,
+            Modifier.widthIn(size.width.dp).width(IntrinsicSize.Min).heightIn(8.dp), MaterialTheme.shapes.extraSmall,
             shadowElevation = 5.dp, tonalElevation = 5.dp
         ) {
             Box {

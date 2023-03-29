@@ -87,7 +87,6 @@ open class ProcessAudioProcessorImpl(
             val input = inputStream!!
             do {
                 val id = input.read()
-                println(id)
                 handleInput(id, position)
             } while (id != 1)
             if (bf == null) {

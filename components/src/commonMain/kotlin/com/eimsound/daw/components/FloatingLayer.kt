@@ -153,7 +153,7 @@ fun Dialog(onOk: (() -> Unit)? = null, onCancel: (() -> Unit)? = null,
 @Composable
 fun Dialog(modifier: Modifier = Modifier.width(IntrinsicSize.Min),
            columnModifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
-    Surface(modifier, MaterialTheme.shapes.extraSmall, tonalElevation = 5.dp, shadowElevation = 5.dp) {
+    Surface(modifier.heightIn(8.dp), MaterialTheme.shapes.extraSmall, tonalElevation = 5.dp, shadowElevation = 5.dp) {
         Column(columnModifier, content = content)
     }
 }
