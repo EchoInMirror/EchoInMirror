@@ -32,6 +32,7 @@ import com.eimsound.daw.actions.doReplaceAudioProcessorAction
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.processor.Bus
 import com.eimsound.daw.api.processor.Track
+import com.eimsound.daw.api.processor.TrackAudioProcessorWrapper
 import com.eimsound.daw.api.window.Panel
 import com.eimsound.daw.api.window.PanelDirection
 import com.eimsound.daw.components.*
@@ -78,34 +79,34 @@ private fun MixerProcessorDropTarget(isLoading: MutableState<Boolean>, onDrop: (
 }
 
 @Composable
-private fun MixerProcessorButton(isLoading: MutableState<Boolean>, list: MutableList<AudioProcessor>,
-                                 audioProcessor: AudioProcessor? = null, index: Int = -1, fontStyle: FontStyle? = null,
+private fun MixerProcessorButton(isLoading: MutableState<Boolean>, list: MutableList<TrackAudioProcessorWrapper>,
+                                 wrapper: TrackAudioProcessorWrapper? = null, index: Int = -1, fontStyle: FontStyle? = null,
                                  fontWeight: FontWeight? = null, onClick: () -> Unit) {
     MixerProcessorDropTarget(isLoading, {
-        if (audioProcessor == null) list.doAddOrRemoveAudioProcessorAction(it)
+        if (wrapper == null) list.doAddOrRemoveAudioProcessorAction(it)
         else list.doReplaceAudioProcessorAction(it, index)
     }, Modifier.height(28.dp).fillMaxWidth()) {
         if (it) TextButton(onClick, Modifier.fillMaxSize()) {
-            if (audioProcessor == null) Text("...", fontSize = MaterialTheme.typography.labelMedium.fontSize,
+            if (wrapper == null) Text("...", fontSize = MaterialTheme.typography.labelMedium.fontSize,
                 maxLines = 1, lineHeight = 7.sp, fontStyle = fontStyle, fontWeight = fontWeight)
             else Marquee {
-                Text(audioProcessor.name, Modifier.fillMaxWidth(), fontSize = MaterialTheme.typography.labelMedium.fontSize,
+                Text(wrapper.processor.name, Modifier.fillMaxWidth(), fontSize = MaterialTheme.typography.labelMedium.fontSize,
                     maxLines = 1, lineHeight = 7.sp, textAlign = TextAlign.Center, fontStyle = fontStyle, fontWeight = fontWeight)
             }
-        } else Text(if (audioProcessor == null) "添加" else "替换", Modifier.align(Alignment.Center),
+        } else Text(if (wrapper == null) "添加" else "替换", Modifier.align(Alignment.Center),
             style = MaterialTheme.typography.labelMedium)
     }
 }
 
 @OptIn(DelicateCoroutinesApi::class)
 @Composable
-private fun MixerProcessorButtons(isLoading: MutableState<Boolean>, list: MutableList<AudioProcessor>) {
+private fun MixerProcessorButtons(isLoading: MutableState<Boolean>, list: MutableList<TrackAudioProcessorWrapper>) {
     MixerProcessorDropTarget(isLoading, { list.doAddOrRemoveAudioProcessorAction(it, index = 0) }) {
         Divider(Modifier.padding(6.dp, 2.dp), 2.dp, MaterialTheme.colorScheme.primary)
     }
     list.fastForEachIndexed { i, it ->
         key(it) {
-            MixerProcessorButton(isLoading, list, it, i, onClick = it::onClick)
+            MixerProcessorButton(isLoading, list, it, i, onClick = it.processor::onClick)
             MixerProcessorDropTarget(isLoading, { list.doAddOrRemoveAudioProcessorAction(it, index = i + 1) }) {
                 Divider(Modifier.padding(8.dp, 2.dp))
             }
@@ -183,8 +184,8 @@ private fun MixerTrack(track: Track, index: String, containerColor: Color = Mate
                         Modifier.fillMaxWidth().padding(vertical = 4.dp),
                         horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically
                     ) {
-                        IconButton({ track.isMute = !track.isMute }, 20.dp) {
-                            if (track.isMute) Icon(Icons.Default.VolumeOff, null, tint = MaterialTheme.colorScheme.error)
+                        IconButton({ track.isBypass = !track.isBypass }, 20.dp) {
+                            if (track.isBypass) Icon(Icons.Default.VolumeOff, null, tint = MaterialTheme.colorScheme.error)
                             else Icon(Icons.Default.VolumeUp, null)
                         }
                         Gap(6)

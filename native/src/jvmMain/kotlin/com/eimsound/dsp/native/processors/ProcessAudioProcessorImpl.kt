@@ -39,7 +39,7 @@ open class ProcessAudioProcessorImpl(
     override var isLaunched = false
         protected set
     override var name = "ProcessAudioProcessor"
-    final override var parameters: Array<IAudioProcessorParameter> = emptyArray()
+    final override var parameters = emptyList<AudioProcessorParameter>()
         private set
     private var process: Process? = null
     private var prepared = false
@@ -122,6 +122,7 @@ open class ProcessAudioProcessorImpl(
         output.writeInt(sampleRate)
         output.writeInt(bufferSize)
         var newSize = 0
+        println(enabledSharedMemory && IS_SHM_SUPPORTED)
         if (enabledSharedMemory && IS_SHM_SUPPORTED) {
             val size = bufferSize * inputChannelsCount.coerceAtLeast(outputChannelsCount) * 4
             sharedMemory?.let {
@@ -212,7 +213,7 @@ open class ProcessAudioProcessorImpl(
             outputChannelsCount = input.read()
             val len = input.readVarInt()
 
-            parameters = Array(len) {
+            parameters = List(len) {
                 val flags = input.read()
                 val initialValue = input.readFloat()
                 input.readInt() // category

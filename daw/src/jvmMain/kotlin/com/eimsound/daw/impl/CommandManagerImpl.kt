@@ -5,18 +5,20 @@ package com.eimsound.daw.impl
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.input.key.*
 import com.eimsound.audioprocessor.AudioProcessorManager
+import com.eimsound.audioprocessor.NativeAudioPluginDescription
 import com.eimsound.audioprocessor.oneBarPPQ
 import com.eimsound.daw.ROOT_PATH
 import com.eimsound.daw.api.*
+import com.eimsound.daw.api.processor.DefaultTrackAudioProcessorWrapper
 import com.eimsound.daw.api.processor.TrackManager
 import com.eimsound.daw.commands.*
 import com.eimsound.daw.components.initEditorMenuItems
 import com.eimsound.daw.utils.*
+import com.eimsound.dsp.native.processors.nativeAudioPluginFactory
 import kotlinx.coroutines.*
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.encodeToStream
-import java.nio.file.Paths
 import kotlin.io.path.exists
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -55,12 +57,13 @@ class CommandManagerImpl : CommandManager {
                     subTrack2.name = "SubTrack 2"
                     val factory = AudioProcessorManager.instance.factories["EIMAudioProcessorFactory"]!!
                     val desc = factory.descriptions.find { it.name == "KarplusStrongSynthesizer" }!!
-                    subTrack1.preProcessorsChain.add(factory.createAudioProcessor(desc))
+                    subTrack1.preProcessorsChain.add(DefaultTrackAudioProcessorWrapper(factory.createAudioProcessor(desc)))
                     val time = EchoInMirror.currentPosition.oneBarPPQ
-                    val clip1 = ClipManager.instance.defaultAudioClipFactory.createClip(Paths.get("C:\\Python311\\op.wav"))
-                    subTrack2.clips.add(ClipManager.instance.createTrackClip(clip1))
+//                    val clip1 = ClipManager.instance.defaultAudioClipFactory.createClip(Paths.get("C:\\Python311\\op.wav"))
+//                    subTrack2.clips.add(ClipManager.instance.createTrackClip(clip1))
                     val clip2 = ClipManager.instance.defaultMidiClipFactory.createClip()
                     subTrack1.clips.add(ClipManager.instance.createTrackClip(clip2, time, time))
+//                    val clip = ClipManager.instance.defaultMidiClipFactory.createClip()
 //                    if (IS_DEBUG) {
 //                        val midi = withContext(Dispatchers.IO) {
 //                            MidiSystem.getSequence(File("E:\\Midis\\UTMR&C VOL 1-14 [MIDI FILES] for other DAWs FINAL by Hunter UT\\VOL 13\\13.Darren Porter - To Feel Again LD.mid"))
@@ -78,13 +81,13 @@ class CommandManagerImpl : CommandManager {
 //                        subTrack2.clips.add(EchoInMirror.clipManager.createTrackClip(audioClip))
 
 //                        var proQ: NativeAudioPluginDescription? = null
-//                        var spire: NativeAudioPluginDescription? = null
-//                        val napm = AudioProcessorManager.instance.nativeAudioPluginManager
-//                        napm.descriptions.forEach {
+                        var spire: NativeAudioPluginDescription? = null
+                        val napm = AudioProcessorManager.instance.nativeAudioPluginFactory
+                        napm.descriptions.forEach {
 //                            if (it.name == "FabFilter Pro-Q 3") proQ = it
-//                            if (it.name == "Spire-1.5") spire = it
-//                        }
-//                        subTrack2.preProcessorsChain.add(napm.createAudioProcessor(spire!!))
+                            if (it.name == "Spire-1.5") spire = it
+                        }
+                        subTrack2.preProcessorsChain.add(DefaultTrackAudioProcessorWrapper(napm.createAudioProcessor(spire!!)))
 //                        track.postProcessorsChain.add(napm.createAudioProcessor(proQ!!))
 //                    }
 

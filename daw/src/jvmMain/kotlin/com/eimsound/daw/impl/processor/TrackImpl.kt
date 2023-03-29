@@ -45,8 +45,8 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
     override val levelMeter = LevelMeterImpl()
 
     override val internalProcessorsChain = ArrayList<AudioProcessor>()
-    override val preProcessorsChain: MutableList<AudioProcessor> = mutableStateListOf()
-    override val postProcessorsChain: MutableList<AudioProcessor> = mutableStateListOf()
+    override val preProcessorsChain: MutableList<TrackAudioProcessorWrapper> = mutableStateListOf()
+    override val postProcessorsChain: MutableList<TrackAudioProcessorWrapper> = mutableStateListOf()
     override val subTracks: MutableList<Track> = mutableStateListOf()
 
     private val pendingMidiBuffer = Collections.synchronizedList(ArrayList<Int>())
@@ -57,7 +57,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
     private var tempBuffer = arrayOf(FloatArray(1024), FloatArray(1024))
     private var tempBuffer2 = arrayOf(FloatArray(1024), FloatArray(1024))
     override var isRendering by mutableStateOf(false)
-    override var isMute by observableMutableStateOf(false, ::stateChange)
+    override var isBypass by observableMutableStateOf(false, ::stateChange)
     override var isSolo by observableMutableStateOf(false, ::stateChange)
     override var isDisabled by observableMutableStateOf(false, ::stateChange)
 
@@ -65,7 +65,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
     private val volumeParameter = audioProcessorParameterOf("volume", "电平", VOLUME_RANGE, 1F)
     override var pan by panParameter
     override var volume by volumeParameter
-    override val parameters: Array<IAudioProcessorParameter> = arrayOf(panParameter, volumeParameter)
+    override val parameters = listOf(panParameter, volumeParameter)
 
     @Suppress("LeakingThis")
     override val clips = DefaultTrackClipList(this)
@@ -76,7 +76,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         position: CurrentPosition,
         midiBuffer: ArrayList<Int>
     ) {
-        if (isMute || isDisabled) return
+        if (isBypass || isDisabled) return
         if (pendingMidiBuffer.isNotEmpty()) {
             midiBuffer.addAll(pendingMidiBuffer)
             pendingMidiBuffer.clear()
@@ -106,14 +106,14 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
                 clip.clip.factory.processBlock(clip, buffers, position, midiBuffer, noteRecorder, pendingNoteOns)
             }
         }
-        preProcessorsChain.fastForEach { it.processBlock(buffers, position, midiBuffer) }
+        preProcessorsChain.fastForEach { if (!it.isBypassed) it.processor.processBlock(buffers, position, midiBuffer) }
         if (subTracks.isNotEmpty()) {
             tempBuffer[0].fill(0F)
             tempBuffer[1].fill(0F)
             runBlocking {
                 val bus = EchoInMirror.bus
                 subTracks.fastForEach {
-                    if (it.isMute || it.isDisabled || it.isRendering) return@fastForEach
+                    if (it.isBypass || it.isDisabled || it.isRendering) return@fastForEach
                     launch {
                         val buffer = if (it is TrackImpl) it.tempBuffer2.apply {
                             this[0].fill(0F)
@@ -131,7 +131,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         }
 
         if (position.isRealtime) internalProcessorsChain.fastForEach { it.processBlock(buffers, position, midiBuffer) }
-        postProcessorsChain.fastForEach { it.processBlock(buffers, position, midiBuffer) }
+        postProcessorsChain.fastForEach { if (!it.isBypassed) it.processor.processBlock(buffers, position, midiBuffer) }
 
         var leftPeak = 0F
         var rightPeak = 0F
@@ -159,17 +159,17 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
     override fun prepareToPlay(sampleRate: Int, bufferSize: Int) {
         tempBuffer = arrayOf(FloatArray(bufferSize), FloatArray(bufferSize))
         tempBuffer2 = arrayOf(FloatArray(bufferSize), FloatArray(bufferSize))
-        preProcessorsChain.fastForEach { it.prepareToPlay(sampleRate, bufferSize) }
+        preProcessorsChain.fastForEach { it.processor.prepareToPlay(sampleRate, bufferSize) }
         subTracks.fastForEach { it.prepareToPlay(sampleRate, bufferSize) }
-        postProcessorsChain.fastForEach { it.prepareToPlay(sampleRate, bufferSize) }
+        postProcessorsChain.fastForEach { it.processor.prepareToPlay(sampleRate, bufferSize) }
         internalProcessorsChain.fastForEach { it.prepareToPlay(sampleRate, bufferSize) }
     }
 
     override fun close() {
         if (EchoInMirror.selectedTrack == this) EchoInMirror.selectedTrack = null
-        preProcessorsChain.fastForEach(AutoCloseable::close)
+        preProcessorsChain.fastForEach { it.processor.close() }
         subTracks.fastForEach(AutoCloseable::close)
-        postProcessorsChain.fastForEach(AutoCloseable::close)
+        postProcessorsChain.fastForEach { it.processor.close() }
         internalProcessorsChain.fastForEach(AutoCloseable::close)
         clips.fastForEach { (it.clip as? AutoCloseable)?.close() }
     }
@@ -178,12 +178,12 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         runBlocking {
             val dir = Paths.get(path)
             val processorsDir = dir.resolve("processors").absolutePathString()
-            preProcessorsChain.fastForEach { launch { it.recover(processorsDir) } }
+            preProcessorsChain.fastForEach { launch { it.processor.recover(processorsDir) } }
             if (subTracks.isNotEmpty()) {
                 val tracksDir = dir.resolve("tracks")
                 subTracks.fastForEach { launch { it.recover(tracksDir.resolve(it.id).absolutePathString()) } }
             }
-            postProcessorsChain.fastForEach { launch { it.recover(processorsDir) } }
+            postProcessorsChain.fastForEach { launch { it.processor.recover(processorsDir) } }
             if (clips.isNotEmpty()) {
                 val clipsDir = dir.resolve("clips").absolutePathString()
                 clips.fastForEach {
@@ -206,19 +206,19 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         pendingNoteOns.fill(0L)
         noteRecorder.reset()
         clips.fastForEach { it.reset() }
-        preProcessorsChain.fastForEach(AudioProcessor::onSuddenChange)
+        preProcessorsChain.fastForEach { it.processor.onSuddenChange() }
         subTracks.fastForEach(Track::onSuddenChange)
-        postProcessorsChain.fastForEach(AudioProcessor::onSuddenChange)
+        postProcessorsChain.fastForEach { it.processor.onSuddenChange() }
         internalProcessorsChain.fastForEach(AudioProcessor::onSuddenChange)
     }
 
-    override fun stateChange() {
-        levelMeter.reset()
-        subTracks.fastForEach(Track::stateChange)
-    }
+//    override fun stateChange() {
+//        levelMeter.reset()
+//        subTracks.fastForEach(Track::stateChange)
+//    }
 
     @Suppress("UNUSED_PARAMETER")
-    private fun stateChange(unused: Boolean) { stateChange() }
+    private fun stateChange(unused: Boolean) { levelMeter.reset() }
 
     override fun onRenderStart() {
         isRendering = true
@@ -234,12 +234,12 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         putNotDefault("name", name)
         put("color", color.value.toLong())
         putNotDefault("height", height)
-        putNotDefault("isMute", isMute)
+        putNotDefault("isBypass", isBypass)
         putNotDefault("isSolo", isSolo)
         putNotDefault("isDisabled", isDisabled)
         putNotDefault("subTracks", subTracks.map { it.id })
-        putNotDefault("preProcessorsChain", preProcessorsChain.map { if (it is JsonSerializable) it.toJson() else JsonPrimitive(it.id) })
-        putNotDefault("postProcessorsChain", postProcessorsChain.map { if (it is JsonSerializable) it.toJson() else JsonPrimitive(it.id) })
+        putNotDefault("preProcessorsChain", preProcessorsChain)
+        putNotDefault("postProcessorsChain", postProcessorsChain)
         putNotDefault("clips", clips)
     }
     override fun toJson() = buildJsonObject { buildJson() }
@@ -272,8 +272,12 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
             if (preProcessorsChain.isNotEmpty() || postProcessorsChain.isNotEmpty()) {
                 val processorsDir = dir.resolve("processors")
                 if (!Files.exists(processorsDir)) Files.createDirectory(processorsDir)
-                preProcessorsChain.fastForEach { launch { it.save(processorsDir.resolve(it.id).absolutePathString()) } }
-                postProcessorsChain.fastForEach { launch { it.save(processorsDir.resolve(it.id).absolutePathString()) } }
+                preProcessorsChain.fastForEach {
+                    launch { it.processor.save(processorsDir.resolve(it.processor.id).absolutePathString()) }
+                }
+                postProcessorsChain.fastForEach {
+                    launch { it.processor.save(processorsDir.resolve(it.processor.id).absolutePathString()) }
+                }
             }
         }
     }
@@ -284,7 +288,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         json["name"]?.asString()?.let { name = it }
         json["color"]?.asLong()?.let { color = Color(it.toULong()) }
         json["height"]?.asInt()?.let { height = it }
-        json["isMute"]?.asBoolean()?.let { isMute = it }
+        json["isBypass"]?.asBoolean()?.let { isBypass = it }
         json["isSolo"]?.asBoolean()?.let { isSolo = it }
         json["isDisabled"]?.asBoolean()?.let { isDisabled = it }
     }
@@ -324,14 +328,17 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         }
     }
 
-    private suspend fun loadAudioProcessors(list: MutableList<AudioProcessor>, json: JsonElement?, processorsDir: String) {
+    private suspend fun loadAudioProcessors(list: MutableList<TrackAudioProcessorWrapper>, json: JsonElement?, processorsDir: String) {
         if (json == null) return
         withContext(Dispatchers.Default) {
             list.addAll(json.jsonArray.map {
                 async {
                     tryOrNull(trackLogger, "Failed to load audio processor: $it") {
-                        if (it is JsonObject) AudioProcessorManager.instance.createAudioProcessor(processorsDir, it)
-                        else AudioProcessorManager.instance.createAudioProcessor(processorsDir, it.asString())
+                        val processor = (it as JsonObject)["processor"]!!
+                        DefaultTrackAudioProcessorWrapper(
+                            if (processor is JsonObject) AudioProcessorManager.instance.createAudioProcessor(processorsDir, processor)
+                            else AudioProcessorManager.instance.createAudioProcessor(processorsDir, processor.asString())
+                        ).apply { fromJson(it) }
                     }
                 }
             }.awaitAll().filterNotNull())

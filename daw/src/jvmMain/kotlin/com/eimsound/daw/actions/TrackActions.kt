@@ -4,7 +4,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import com.eimsound.audioprocessor.AudioProcessor
 import com.eimsound.daw.api.EchoInMirror
+import com.eimsound.daw.api.processor.DefaultTrackAudioProcessorWrapper
 import com.eimsound.daw.api.processor.Track
+import com.eimsound.daw.api.processor.TrackAudioProcessorWrapper
 import com.eimsound.daw.utils.ListAddOrRemoveAction
 import com.eimsound.daw.utils.ListReplaceAction
 import com.eimsound.daw.utils.UndoableAction
@@ -47,7 +49,11 @@ fun Track.doReorderAction(sourceTracks: MutableList<Track>, destTracks: MutableL
         sourceTracks, destTracks, destIndex)) }
 }
 
-fun MutableList<AudioProcessor>.doAddOrRemoveAudioProcessorAction(audioProcessor: AudioProcessor,
+fun MutableList<TrackAudioProcessorWrapper>.doAddOrRemoveAudioProcessorAction(audioProcessor: AudioProcessor,
+                                                                              isDelete: Boolean = false, index: Int = -1) {
+    doAddOrRemoveAudioProcessorAction(DefaultTrackAudioProcessorWrapper(audioProcessor), isDelete, index)
+}
+fun MutableList<TrackAudioProcessorWrapper>.doAddOrRemoveAudioProcessorAction(audioProcessor: TrackAudioProcessorWrapper,
                                                                   isDelete: Boolean = false, index: Int = -1) {
     runBlocking {
         EchoInMirror.undoManager.execute(
@@ -56,13 +62,16 @@ fun MutableList<AudioProcessor>.doAddOrRemoveAudioProcessorAction(audioProcessor
     }
 }
 
-class AudioProcessorAddOrRemoveAction(track: AudioProcessor, target: MutableList<AudioProcessor>, isDelete: Boolean,
-                                      index: Int = -1): ListAddOrRemoveAction<AudioProcessor>(track, target, isDelete, index) {
+class AudioProcessorAddOrRemoveAction(target: TrackAudioProcessorWrapper, source: MutableList<TrackAudioProcessorWrapper>, isDelete: Boolean,
+                                      index: Int = -1): ListAddOrRemoveAction<TrackAudioProcessorWrapper>(target, source, isDelete, index) {
     override val name = if (isDelete) "删除音频处理器" else "添加音频处理器"
     override val icon = if (isDelete) Icons.Filled.Add else Icons.Filled.Close
 }
 
-fun MutableList<AudioProcessor>.doReplaceAudioProcessorAction(target: AudioProcessor, index: Int) {
+fun MutableList<TrackAudioProcessorWrapper>.doReplaceAudioProcessorAction(target: AudioProcessor, index: Int) {
+    doReplaceAudioProcessorAction(DefaultTrackAudioProcessorWrapper(target), index)
+}
+fun MutableList<TrackAudioProcessorWrapper>.doReplaceAudioProcessorAction(target: TrackAudioProcessorWrapper, index: Int) {
     runBlocking {
         EchoInMirror.undoManager.execute(
             AudioProcessorReplaceAction(target, this@doReplaceAudioProcessorAction, index)
@@ -70,8 +79,8 @@ fun MutableList<AudioProcessor>.doReplaceAudioProcessorAction(target: AudioProce
     }
 }
 
-class AudioProcessorReplaceAction(target: AudioProcessor, list: MutableList<AudioProcessor>,
-                                  index: Int): ListReplaceAction<AudioProcessor>(target, list, index) {
+class AudioProcessorReplaceAction(target: TrackAudioProcessorWrapper, list: MutableList<TrackAudioProcessorWrapper>,
+                                  index: Int): ListReplaceAction<TrackAudioProcessorWrapper>(target, list, index) {
     override val name = "音频处理器替换"
     override val icon = Icons.Filled.Autorenew
 }

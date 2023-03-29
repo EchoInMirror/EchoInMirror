@@ -21,6 +21,9 @@ import java.nio.file.Files
 import java.nio.file.Paths
 import kotlin.io.path.*
 
+val AudioProcessorManager.nativeAudioPluginFactory: NativeAudioPluginFactory
+    get() = factories.values.firstOrNull { it is NativeAudioPluginFactory } as NativeAudioPluginFactory
+
 private val logger = KotlinLogging.logger {  }
 class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
     private val configFile get() = Paths.get(System.getProperty("eim.dsp.nativeaudioplugins.list", "nativeAudioPlugins.json"))
@@ -135,6 +138,7 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
     override suspend fun createAudioProcessor(description: AudioProcessorDescription): NativeAudioPlugin {
         if (description !is NativeAudioPluginDescription)
             throw NoSuchAudioProcessorException(description.identifier, name)
+        logger.info("Creating native audio plugin: {}", description)
         return NativeAudioPluginImpl(description, this).apply {
             launch(getNativeHostPath(description), null)
         }
@@ -143,6 +147,7 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
     override suspend fun createAudioProcessor(path: String, json: JsonObject): NativeAudioPlugin {
         val description = descriptions.find { it.identifier == json["identifier"]!!.asString() }
             ?: throw NoSuchAudioProcessorException(path, name)
+        logger.info("Creating native audio plugin: {} in {}", description, path)
         return NativeAudioPluginImpl(description, this).apply {
             launch(getNativeHostPath(description), "$path/${json["id"]}.bin")
         }

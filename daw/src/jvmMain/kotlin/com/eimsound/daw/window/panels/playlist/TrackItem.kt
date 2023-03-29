@@ -25,9 +25,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachIndexed
-import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.actions.doAddOrRemoveTrackAction
 import com.eimsound.daw.actions.doReorderAction
+import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.api.processor.TrackManager
 import com.eimsound.daw.components.*
@@ -162,8 +162,8 @@ private fun TrackItem(playlist: Playlist, track: Track, parentTrack: Track, inde
                 Column(Modifier.fillMaxHeight(), Arrangement.SpaceBetween) {
                     Text(track.name, style = MaterialTheme.typography.labelLarge, overflow = TextOverflow.Ellipsis, maxLines = 1)
                     if (trackHeight.value > 54) SegmentedButtons {
-                        SegmentedButton({ track.isMute = !track.isMute }, track.isMute, false) {
-                            Icon(if (track.isMute) Icons.Filled.VolumeOff else Icons.Filled.VolumeUp, null, TRACK_ITEM_ICON_SIZE)
+                        SegmentedButton({ track.isBypass = !track.isBypass }, track.isBypass, false) {
+                            Icon(if (track.isBypass) Icons.Filled.VolumeOff else Icons.Filled.VolumeUp, null, TRACK_ITEM_ICON_SIZE)
                         }
                         SegmentedDivider()
                         SegmentedButton({ track.isSolo = !track.isSolo }, track.isSolo, false) {

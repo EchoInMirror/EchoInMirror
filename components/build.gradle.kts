@@ -21,6 +21,7 @@ kotlin {
                 compileOnly(project(":dsp"))
                 compileOnly(project(":api"))
                 compileOnly(compose.runtime)
+                compileOnly(compose.preview)
                 compileOnly(compose.ui)
                 compileOnly(compose.foundation)
                 compileOnly(compose.materialIconsExtended)
