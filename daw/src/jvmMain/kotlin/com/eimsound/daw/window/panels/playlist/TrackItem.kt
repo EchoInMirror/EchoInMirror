@@ -23,8 +23,6 @@ import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.fastForEach
-import androidx.compose.ui.util.fastForEachIndexed
 import com.eimsound.daw.actions.doAddOrRemoveTrackAction
 import com.eimsound.daw.actions.doReorderAction
 import com.eimsound.daw.api.EchoInMirror
@@ -52,11 +50,11 @@ internal data class TrackToHeight(val track: Track, val height: Float)
 private fun getTrackHeights(list: ArrayList<TrackToHeight>, track: Track, defaultHeight: Float, density: Float) {
     list.add(TrackToHeight(track, density + (list.lastOrNull()?.height ?: 0F) +
             (if (track.height == 0) defaultHeight else track.height.toFloat())))
-    track.subTracks.fastForEach { getTrackHeights(list, it, defaultHeight, density) }
+    track.subTracks.forEach { getTrackHeights(list, it, defaultHeight, density) }
 }
 internal fun getAllTrackHeights(defaultHeight: Float, density: Float): List<TrackToHeight> {
     val trackHeights = ArrayList<TrackToHeight>()
-    EchoInMirror.bus!!.subTracks.fastForEach { getTrackHeights(trackHeights, it, defaultHeight, density) }
+    EchoInMirror.bus!!.subTracks.forEach { getTrackHeights(trackHeights, it, defaultHeight, density) }
     return trackHeights
 }
 
@@ -185,7 +183,7 @@ private fun TrackItem(playlist: Playlist, track: Track, parentTrack: Track, inde
                 // drawLine(outlineColor, Offset.Zero, Offset(0F, size.height), 0.5F)
             }
         }
-        track.subTracks.fastForEachIndexed { i, it -> key(it.id) {
+        track.subTracks.forEachIndexed { i, it -> key(it.id) {
             Divider(Modifier.offset(8.dp * (depth + 1)))
             TrackItem(playlist, it, track, i + 1, depth + 1)
         } }
@@ -204,7 +202,7 @@ internal fun TrackItems(playlist: Playlist) {
         }.verticalScroll(verticalScrollState)) {
             Divider()
             val bus = EchoInMirror.bus!!
-            bus.subTracks.fastForEachIndexed { i, it ->
+            bus.subTracks.forEachIndexed { i, it ->
                 key(it.id) {
                     TrackItem(playlist, it, bus, i + 1)
                     Divider()

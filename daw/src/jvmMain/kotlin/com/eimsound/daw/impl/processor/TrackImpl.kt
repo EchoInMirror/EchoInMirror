@@ -106,14 +106,14 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
                 clip.clip.factory.processBlock(clip, buffers, position, midiBuffer, noteRecorder, pendingNoteOns)
             }
         }
-        preProcessorsChain.fastForEach { if (!it.isBypassed) it.processor.processBlock(buffers, position, midiBuffer) }
+        preProcessorsChain.forEach { if (!it.isBypassed) it.processor.processBlock(buffers, position, midiBuffer) }
         if (subTracks.isNotEmpty()) {
             tempBuffer[0].fill(0F)
             tempBuffer[1].fill(0F)
             runBlocking {
                 val bus = EchoInMirror.bus
-                subTracks.fastForEach {
-                    if (it.isBypass || it.isDisabled || it.isRendering) return@fastForEach
+                subTracks.forEach {
+                    if (it.isBypass || it.isDisabled || it.isRendering) return@forEach
                     launch {
                         val buffer = if (it is TrackImpl) it.tempBuffer2.apply {
                             this[0].fill(0F)
@@ -131,7 +131,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         }
 
         if (position.isRealtime) internalProcessorsChain.fastForEach { it.processBlock(buffers, position, midiBuffer) }
-        postProcessorsChain.fastForEach { if (!it.isBypassed) it.processor.processBlock(buffers, position, midiBuffer) }
+        postProcessorsChain.forEach { if (!it.isBypassed) it.processor.processBlock(buffers, position, midiBuffer) }
 
         var leftPeak = 0F
         var rightPeak = 0F
@@ -159,17 +159,17 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
     override fun prepareToPlay(sampleRate: Int, bufferSize: Int) {
         tempBuffer = arrayOf(FloatArray(bufferSize), FloatArray(bufferSize))
         tempBuffer2 = arrayOf(FloatArray(bufferSize), FloatArray(bufferSize))
-        preProcessorsChain.fastForEach { it.processor.prepareToPlay(sampleRate, bufferSize) }
-        subTracks.fastForEach { it.prepareToPlay(sampleRate, bufferSize) }
-        postProcessorsChain.fastForEach { it.processor.prepareToPlay(sampleRate, bufferSize) }
+        preProcessorsChain.forEach { it.processor.prepareToPlay(sampleRate, bufferSize) }
+        subTracks.forEach { it.prepareToPlay(sampleRate, bufferSize) }
+        postProcessorsChain.forEach { it.processor.prepareToPlay(sampleRate, bufferSize) }
         internalProcessorsChain.fastForEach { it.prepareToPlay(sampleRate, bufferSize) }
     }
 
     override fun close() {
         if (EchoInMirror.selectedTrack == this) EchoInMirror.selectedTrack = null
-        preProcessorsChain.fastForEach { it.processor.close() }
-        subTracks.fastForEach(AutoCloseable::close)
-        postProcessorsChain.fastForEach { it.processor.close() }
+        preProcessorsChain.forEach { it.processor.close() }
+        subTracks.forEach(AutoCloseable::close)
+        postProcessorsChain.forEach { it.processor.close() }
         internalProcessorsChain.fastForEach(AutoCloseable::close)
         clips.fastForEach { (it.clip as? AutoCloseable)?.close() }
     }
@@ -178,12 +178,12 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         runBlocking {
             val dir = Paths.get(path)
             val processorsDir = dir.resolve("processors").absolutePathString()
-            preProcessorsChain.fastForEach { launch { it.processor.recover(processorsDir) } }
+            preProcessorsChain.forEach { launch { it.processor.recover(processorsDir) } }
             if (subTracks.isNotEmpty()) {
                 val tracksDir = dir.resolve("tracks")
-                subTracks.fastForEach { launch { it.recover(tracksDir.resolve(it.id).absolutePathString()) } }
+                subTracks.forEach { launch { it.recover(tracksDir.resolve(it.id).absolutePathString()) } }
             }
-            postProcessorsChain.fastForEach { launch { it.processor.recover(processorsDir) } }
+            postProcessorsChain.forEach { launch { it.processor.recover(processorsDir) } }
             if (clips.isNotEmpty()) {
                 val clipsDir = dir.resolve("clips").absolutePathString()
                 clips.fastForEach {
@@ -206,9 +206,9 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         pendingNoteOns.fill(0L)
         noteRecorder.reset()
         clips.fastForEach { it.reset() }
-        preProcessorsChain.fastForEach { it.processor.onSuddenChange() }
-        subTracks.fastForEach(Track::onSuddenChange)
-        postProcessorsChain.fastForEach { it.processor.onSuddenChange() }
+        preProcessorsChain.forEach { it.processor.onSuddenChange() }
+        subTracks.forEach(Track::onSuddenChange)
+        postProcessorsChain.forEach { it.processor.onSuddenChange() }
         internalProcessorsChain.fastForEach(AudioProcessor::onSuddenChange)
     }
 
@@ -266,16 +266,16 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
             if (subTracks.isNotEmpty()) {
                 val tracksDir = dir.resolve("tracks")
                 if (!Files.exists(tracksDir)) Files.createDirectory(tracksDir)
-                subTracks.fastForEach { launch { it.save(tracksDir.resolve(it.id).absolutePathString()) } }
+                subTracks.forEach { launch { it.save(tracksDir.resolve(it.id).absolutePathString()) } }
             }
 
             if (preProcessorsChain.isNotEmpty() || postProcessorsChain.isNotEmpty()) {
                 val processorsDir = dir.resolve("processors")
                 if (!Files.exists(processorsDir)) Files.createDirectory(processorsDir)
-                preProcessorsChain.fastForEach {
+                preProcessorsChain.forEach {
                     launch { it.processor.save(processorsDir.resolve(it.processor.id).absolutePathString()) }
                 }
-                postProcessorsChain.fastForEach {
+                postProcessorsChain.forEach {
                     launch { it.processor.save(processorsDir.resolve(it.processor.id).absolutePathString()) }
                 }
             }

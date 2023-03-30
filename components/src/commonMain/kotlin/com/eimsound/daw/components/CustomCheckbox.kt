@@ -4,6 +4,7 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.selection.triStateToggleable
@@ -141,7 +142,7 @@ fun TriStateCheckbox(
         enabled = enabled,
         value = state,
         size,
-        modifier = modifier.then(toggleableModifier),
+        modifier = modifier.then(toggleableModifier).padding(10.dp),
         colors = colors
     )
 }

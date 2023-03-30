@@ -18,7 +18,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.zIndex
 import com.eimsound.audioprocessor.oneBarPPQ
 import com.eimsound.audioprocessor.projectDisplayPPQ
@@ -155,7 +154,7 @@ class Playlist : Panel, BasicEditor {
                         Column(Modifier.verticalScroll(verticalScrollState).fillMaxSize()) {
                             Divider()
                             var i = 0
-                            EchoInMirror.bus!!.subTracks.fastForEach {
+                            EchoInMirror.bus!!.subTracks.forEach {
                                 key(it.id) { i += TrackContent(this@Playlist, it, i, localDensity) }
                             }
                         }

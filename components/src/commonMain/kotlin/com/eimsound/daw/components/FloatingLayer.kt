@@ -7,7 +7,6 @@ import androidx.compose.foundation.PointerMatcher
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.onClick
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,45 +21,51 @@ import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.unit.*
+import androidx.compose.ui.util.fastForEach
 import com.eimsound.daw.components.utils.Zero
 import com.eimsound.daw.utils.BasicEditor
 
-private data class FloatingLayer(val onClose: ((Any) -> Unit)?, val position: Offset?,
+private data class FloatingLayer(val key: Any, val onClose: ((Any) -> Unit)?, val position: Offset?,
                                  val hasOverlay: Boolean, val overflow: Boolean, val content: @Composable () -> Unit) {
     var isClosed by mutableStateOf(false)
     var isShow by mutableStateOf(false)
 }
 
 class FloatingLayerProvider {
-    private val floatingLayers = mutableStateMapOf<Any, FloatingLayer>()
+    private var floatingLayers by mutableStateOf(listOf<FloatingLayer>())
 
     fun openFloatingLayer(onClose: ((Any) -> Unit)? = null, position: Offset? = null, key: Any? = null,
                           hasOverlay: Boolean = false, overflow: Boolean = false, content: @Composable () -> Unit): Any {
         val k = key ?: Any()
-        floatingLayers[k] = FloatingLayer(onClose, position, hasOverlay, overflow, content)
+        floatingLayers += FloatingLayer(k, onClose, position, hasOverlay, overflow, content)
         return k
     }
 
     fun closeFloatingLayer(key: Any) {
-        val layer = floatingLayers[key] ?: return
-        layer.isClosed = true
-        if (!layer.isShow) floatingLayers.remove(key)
+        floatingLayers = floatingLayers.filter {
+            if (it.key == key) {
+                it.isClosed = true
+                false
+            } else true
+        }
     }
 
-    fun setFloatingLayerShow(key: Any, show: Boolean) { (floatingLayers[key] ?: return).isShow = show }
+    fun setFloatingLayerShow(key: Any, show: Boolean) {
+        floatingLayers.fastForEach { if (it.key == key) it.isShow = show }
+    }
 
     @OptIn(ExperimentalComposeUiApi::class)
     @Composable
     fun FloatingLayers() {
-        floatingLayers.forEach { (key, layer) ->
-            Box {
+        floatingLayers.fastForEach { layer ->
+            key(layer) { Box {
                 val alpha by animateFloatAsState(if (layer.isClosed || !layer.isShow) 0F else 1F, tween(300)) {
-                    if (layer.isClosed) floatingLayers.remove(key)
+                    if (layer.isClosed) floatingLayers = floatingLayers.filter { it.key != layer.key }
                 }
                 var modifier = if (layer.hasOverlay) Modifier.fillMaxSize().background(Color.Black.copy(alpha * 0.26F))
                 else Modifier
                 if (layer.onClose != null) modifier = modifier.fillMaxSize()
-                    .onPointerEvent(PointerEventType.Press) { layer.onClose.invoke(key) }
+                    .onPointerEvent(PointerEventType.Press) { layer.onClose.invoke(layer.key) }
                 Box(modifier)
                 if (layer.position == null)
                     Box(Modifier.fillMaxSize().graphicsLayer(alpha = alpha), contentAlignment = Alignment.Center) { layer.content() }
@@ -94,7 +99,7 @@ class FloatingLayerProvider {
                 }
                 remember { layer.isShow = true }
             }
-        }
+        } }
     }
 }
 
@@ -106,7 +111,7 @@ fun FloatingLayer(layerContent: @Composable (Size, () -> Unit) -> Unit,
                   hasOverlay: Boolean = false, isCentral: Boolean = false,
                   content: @Composable BoxScope.() -> Unit) {
     @OptIn(ExperimentalFoundationApi::class)
-    FloatingLayer(layerContent, modifier, enabled, hasOverlay, isCentral, PointerMatcher.Primary, content)
+    FloatingLayer(layerContent, modifier, enabled, hasOverlay, isCentral, PointerMatcher.Primary, content = content)
 }
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
@@ -115,6 +120,7 @@ fun FloatingLayer(layerContent: @Composable (Size, () -> Unit) -> Unit,
                   modifier: Modifier = Modifier, enabled: Boolean = true,
                   hasOverlay: Boolean = false, isCentral: Boolean = false,
                   matcher: PointerMatcher = PointerMatcher.Primary,
+                  pass: PointerEventPass = PointerEventPass.Main,
                   content: @Composable BoxScope.() -> Unit) {
     val id = remember { Any() }
     val localFloatingLayerProvider = LocalFloatingLayerProvider.current
@@ -125,11 +131,16 @@ fun FloatingLayer(layerContent: @Composable (Size, () -> Unit) -> Unit,
         offset[0] = it.positionInRoot()
         size[0] = it.size.toSize()
     }).let { if (enabled) it.pointerHoverIcon(PointerIconDefaults.Hand) else it }
-        .onClick(matcher = matcher) {
-            localFloatingLayerProvider.openFloatingLayer({ closeLayer() },
-                if (isCentral) null else offset[0] + Offset(0f, size[0].height),
-                id, hasOverlay
-            ) { layerContent(size[0], closeLayer) }
+        .pointerInput(pass) {
+            awaitPointerEventScope {
+                while (true) {
+                    val event = awaitPointerEvent(pass)
+                    if (event.type != PointerEventType.Press || !matcher.matches(event)) continue
+                    localFloatingLayerProvider.openFloatingLayer({ closeLayer() },
+                        if (isCentral) null else offset[0] + Offset(0f, size[0].height), id, hasOverlay
+                    ) { layerContent(size[0], closeLayer) }
+                }
+            }
         }
     ) { content() }
 }

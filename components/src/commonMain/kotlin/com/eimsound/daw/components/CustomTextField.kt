@@ -21,7 +21,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
-private val DEFAULT_PADDING = TextFieldDefaults.textFieldWithLabelPadding(6.dp, 6.dp, 6.dp, 4.dp)
+private val DEFAULT_PADDING = TextFieldDefaults.textFieldWithLabelPadding(8.dp, 8.dp, 6.dp, 4.dp)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

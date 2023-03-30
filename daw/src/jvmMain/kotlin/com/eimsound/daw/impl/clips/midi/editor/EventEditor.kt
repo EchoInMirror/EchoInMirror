@@ -154,7 +154,7 @@ private val defaultCCEvents = sortedMapOf(
 private fun FloatingLayerProvider.openEventSelectorDialog(events: MutableMidiCCEvents) {
     val key = Any()
     val close = { closeFloatingLayer(key) }
-    openFloatingLayer({ close() }, key = key, hasOverlay = true) {
+    openFloatingLayer(::closeFloatingLayer, key = key, hasOverlay = true) {
         Dialog(close, modifier = Modifier.widthIn(max = 460.dp)) {
             Text("选择 CC 事件", style = MaterialTheme.typography.titleMedium)
             val keys = events.keys

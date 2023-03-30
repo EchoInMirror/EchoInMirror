@@ -14,10 +14,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.fastForEachIndexed
-import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.actions.doNoteDisabledAction
 import com.eimsound.daw.actions.doNoteVelocityAction
+import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.components.CustomTextField
 import com.eimsound.daw.components.FloatingLayer
@@ -32,7 +31,7 @@ import kotlin.math.roundToInt
 
 private fun dfsTrackIndex(track: Track, target: Track, index: String): String? {
     if (track == target) return index
-    track.subTracks.fastForEachIndexed { i, child ->
+    track.subTracks.forEachIndexed { i, child ->
         val res = dfsTrackIndex(child, target, "$index.${i + 1}")
         if (res != null) return res
     }
@@ -53,7 +52,7 @@ private fun TrackItem(track: Track, backingTracks: IManualStateValue<WeakHashMap
         Text(index + " " + track.name, Modifier.fillMaxWidth().padding(start = 6.dp, end = 12.dp), maxLines = 1,
             style = MaterialTheme.typography.labelLarge, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal)
     }
-    track.subTracks.fastForEachIndexed { i, it -> TrackItem(it, backingTracks, index + "." + (i + 1), depth + 1) }
+    track.subTracks.forEachIndexed { i, it -> TrackItem(it, backingTracks, index + "." + (i + 1), depth + 1) }
 }
 
 @Composable
@@ -64,7 +63,7 @@ internal fun EditorControls(editor: DefaultMidiClipEditor) {
             tonalElevation = 5.dp, shadowElevation = 5.dp) {
             val stateVertical = rememberScrollState(0)
             Column(Modifier.verticalScroll(stateVertical).padding(vertical = 4.dp)) {
-                EchoInMirror.bus!!.subTracks.fastForEachIndexed { index, it -> TrackItem(it, editor.backingTracks, (index + 1).toString()) }
+                EchoInMirror.bus!!.subTracks.forEachIndexed { index, it -> TrackItem(it, editor.backingTracks, (index + 1).toString()) }
             }
         }
     }) {

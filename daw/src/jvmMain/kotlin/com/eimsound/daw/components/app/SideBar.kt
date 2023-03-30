@@ -10,16 +10,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.fastForEach
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.window.Panel
 import com.eimsound.daw.api.window.PanelDirection
 import com.eimsound.daw.components.LocalFloatingLayerProvider
 import com.eimsound.daw.components.icons.EIMLogo
 import com.eimsound.daw.components.splitpane.SplitPaneState
-import com.eimsound.daw.impl.WindowManagerImpl
 import com.eimsound.daw.dawutils.Border
 import com.eimsound.daw.dawutils.border
+import com.eimsound.daw.impl.WindowManagerImpl
 import com.eimsound.daw.window.dialogs.openQuickLoadDialog
 
 //    SideBarItem("Favorite", "收藏") { Icon(Icons.Default.Favorite, "Favorite") },
@@ -101,7 +100,7 @@ internal fun SideBar() {
                 selected = false,
                 onClick = { floatingLayerProvider.openQuickLoadDialog() }
             )
-            (EchoInMirror.windowManager as WindowManagerImpl).panels.filter { it.direction != PanelDirection.Horizontal }.fastForEach {
+            (EchoInMirror.windowManager as WindowManagerImpl).panels.filter { it.direction != PanelDirection.Horizontal }.forEach {
                 key(it) {
                     NavigationRailItem(
                         icon = { it.Icon() },
@@ -121,7 +120,7 @@ internal fun SideBar() {
                 }
             }
             Box(Modifier.weight(2F)) {}
-            EchoInMirror.windowManager.panels.filter { it.direction == PanelDirection.Horizontal }.fastForEach {
+            EchoInMirror.windowManager.panels.filter { it.direction == PanelDirection.Horizontal }.forEach {
                 key(it) {
                     NavigationRailItem(
                         icon = { it.Icon() },

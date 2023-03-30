@@ -22,7 +22,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.util.fastForEachIndexed
 import androidx.compose.ui.zIndex
 import com.eimsound.audioprocessor.AudioProcessor
 import com.eimsound.audioprocessor.AudioProcessorDescriptionAndFactory
@@ -104,7 +103,7 @@ private fun MixerProcessorButtons(isLoading: MutableState<Boolean>, list: Mutabl
     MixerProcessorDropTarget(isLoading, { list.doAddOrRemoveAudioProcessorAction(it, index = 0) }) {
         Divider(Modifier.padding(6.dp, 2.dp), 2.dp, MaterialTheme.colorScheme.primary)
     }
-    list.fastForEachIndexed { i, it ->
+    list.forEachIndexed { i, it ->
         key(it) {
             MixerProcessorButton(isLoading, list, it, i, onClick = it.processor::onClick)
             MixerProcessorDropTarget(isLoading, { list.doAddOrRemoveAudioProcessorAction(it, index = i + 1) }) {
@@ -218,7 +217,7 @@ private fun MixerTrack(track: Track, index: String, containerColor: Color = Mate
             }
             if (renderChildren && track.subTracks.isNotEmpty()) {
                 Row(Modifier.padding(horizontal = 7.dp)) {
-                    track.subTracks.fastForEachIndexed { i, it ->
+                    track.subTracks.forEachIndexed { i, it ->
                         key(it) {
                             MixerTrack(it, "$index.${i + 1}", containerColor, depth + 1)
                         }
@@ -262,7 +261,7 @@ object Mixer: Panel {
                 val trackColor = if (EchoInMirror.windowManager.isDarkTheme)
                     MaterialTheme.colorScheme.surfaceColorAtElevation(20.dp) else MaterialTheme.colorScheme.surface
                 MixerTrack(bus, "0", trackColor, renderChildren = false)
-                bus.subTracks.fastForEachIndexed { i, it ->
+                bus.subTracks.forEachIndexed { i, it ->
                     key(it) {
                         MixerTrack(it, (i + 1).toString(), trackColor)
                     }

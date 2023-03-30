@@ -287,7 +287,7 @@ internal fun TrackContent(playlist: Playlist, track: Track, index: Int, density:
     }
     Divider()
     var i = index + 1
-    track.subTracks.fastForEach { i += TrackContent(playlist, it, i, density) }
+    track.subTracks.forEach { i += TrackContent(playlist, it, i, density) }
     return i - index
 }
 

@@ -122,7 +122,6 @@ open class ProcessAudioProcessorImpl(
         output.writeInt(sampleRate)
         output.writeInt(bufferSize)
         var newSize = 0
-        println(enabledSharedMemory && IS_SHM_SUPPORTED)
         if (enabledSharedMemory && IS_SHM_SUPPORTED) {
             val size = bufferSize * inputChannelsCount.coerceAtLeast(outputChannelsCount) * 4
             sharedMemory?.let {

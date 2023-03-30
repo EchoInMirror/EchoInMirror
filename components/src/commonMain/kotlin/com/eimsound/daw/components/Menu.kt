@@ -2,16 +2,18 @@ package com.eimsound.daw.components
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.LocalContentColor
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.PointerIconDefaults
-import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -70,6 +72,7 @@ fun DropdownMenu(
                 Column(Modifier.verticalScroll(stateVertical)) {
                     menuItems(close)
                 }
+                VerticalScrollbar(rememberScrollbarAdapter(stateVertical), Modifier.align(Alignment.CenterEnd).fillMaxHeight())
             }
         }
     }, modifier = boxModifier, enabled = enabled, matcher = matcher, content = content)
@@ -85,5 +88,46 @@ fun Menu(
     @OptIn(ExperimentalFoundationApi::class)
     DropdownMenu(menuItems, boxModifier) {
         ReadonlyTextField(content = content, modifier = modifier)
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
+@Composable
+fun Selector(
+    items: List<String>,
+    selected: String,
+    boxModifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    matcher: PointerMatcher = PointerMatcher.Primary,
+    onSelected: (String) -> Unit,
+) {
+    val filter = remember { mutableStateOf<String?>(null) }
+    FloatingLayer({ size, close ->
+        Surface(
+            Modifier.width(size.width.dp).heightIn(max = 300.dp), MaterialTheme.shapes.extraSmall,
+            shadowElevation = 5.dp, tonalElevation = 5.dp
+        ) {
+            Box {
+                val state = rememberLazyListState()
+                val currentValue = filter.value
+                val items0 = remember(items, currentValue) { (if (currentValue == null) items else items
+                    .filter { it.contains(currentValue, true) }).distinct() }
+                LazyColumn(state = state) {
+                    items(items0) {
+                        MenuItem({
+                            close()
+                            filter.value = null
+                            onSelected(it)
+                        }, selected == it, modifier = Modifier.fillMaxWidth()) {
+                            Text(it)
+                        }
+                    }
+                }
+            }
+        }
+    }, modifier = boxModifier, enabled = enabled, matcher = matcher, pass = PointerEventPass.Initial) {
+        CustomTextField(filter.value ?: selected, {
+            filter.value = it.ifEmpty { null }
+        }, Modifier.fillMaxWidth().pointerHoverIcon(PointerIconDefaults.Hand))
     }
 }
