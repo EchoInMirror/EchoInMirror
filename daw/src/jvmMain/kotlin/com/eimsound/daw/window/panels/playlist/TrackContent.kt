@@ -6,39 +6,41 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.gestures.*
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.awaitPointerSlopOrCancellation
+import androidx.compose.foundation.gestures.drag
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Divider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.util.fastForEach
 import com.eimsound.audioprocessor.oneBarPPQ
-import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.actions.doClipsAmountAction
 import com.eimsound.daw.actions.doClipsEditActionAction
 import com.eimsound.daw.api.ClipManager
+import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.TrackClip
 import com.eimsound.daw.api.defaultMidiClipFactory
 import com.eimsound.daw.api.processor.Track
-import com.eimsound.daw.components.utils.*
-import com.eimsound.daw.utils.*
+import com.eimsound.daw.components.utils.EditAction
+import com.eimsound.daw.components.utils.HorizontalResize
+import com.eimsound.daw.components.utils.toOnSurfaceColor
+import com.eimsound.daw.utils.fitInUnit
 import kotlin.math.absoluteValue
 
-@Suppress("PrivatePropertyName")
-@OptIn(ExperimentalComposeUiApi::class)
 private val RESIZE_HAND_MODIFIER = Modifier.width(4.dp).fillMaxHeight()
-    .pointerHoverIcon(PointerIconDefaults.HorizontalResize)
+    .pointerHoverIcon(PointerIcon.HorizontalResize)
 
 internal var resizeDirectionRight = false
 
@@ -167,8 +169,6 @@ private suspend fun AwaitPointerEventScope.handleDragEvent(playlist: Playlist, c
     }
 }
 
-@Suppress("DuplicatedCode")
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 internal fun TrackContent(playlist: Playlist, track: Track, index: Int, density: Density): Int {
     playlist.apply {
@@ -208,7 +208,7 @@ internal fun TrackContent(playlist: Playlist, track: Track, index: Int, density:
                                 val clipEndPPQ = clipStartPPQ + it.duration
                                 var clipStartPPQOnMove = clipStartPPQ
                                 var clipEndPPQOnMove = clipEndPPQ
-                                var y = Dp.Zero
+                                var y = 0.dp
                                 if (isSelected) {
                                     if (action0 == EditAction.MOVE) {
                                         clipStartPPQOnMove += deltaX
@@ -225,7 +225,7 @@ internal fun TrackContent(playlist: Playlist, track: Track, index: Int, density:
                                 Box(Modifier
                                     .absoluteOffset(noteWidth.value * (clipStartPPQ - scrollXPPQ).coerceAtLeast(0F))
                                     .pointerInput(it, track, index) {
-                                        forEachGesture { awaitPointerEventScope { handleDragEvent(playlist, it, index, track) } }
+                                        awaitEachGesture { handleDragEvent(playlist, it, index, track) }
                                     }
                                     .size(noteWidth.value * widthInPPQ, trackHeight)
                                     .run {
@@ -234,7 +234,7 @@ internal fun TrackContent(playlist: Playlist, track: Track, index: Int, density:
                                                     if (clipStartPPQOnMove < scrollXPPQ) {
                                                         if (deltaX < 0) -(clipStartPPQ - scrollXPPQ).coerceAtLeast(0F) else 0F
                                                     } else clipStartPPQOnMove - clipStartPPQ.toFloat().coerceAtLeast(scrollXPPQ)), y)
-                                        } else if (y.value != 0F) absoluteOffset(Dp.Zero, y)
+                                        } else if (y.value != 0F) absoluteOffset(0.dp, y)
                                         else this
                                     }
                                 ) {
@@ -254,7 +254,7 @@ internal fun TrackContent(playlist: Playlist, track: Track, index: Int, density:
                                                     else this
                                                 }
                                                 .clip(MaterialTheme.shapes.extraSmall)
-                                                .pointerHoverIcon(action0.toPointerIcon(PointerIconDefaults.Hand))
+                                                .pointerHoverIcon(action0.toPointerIcon(PointerIcon.Hand))
                                         ) {
                                             val contentColor = trackColor.toOnSurfaceColor()
                                             Text(

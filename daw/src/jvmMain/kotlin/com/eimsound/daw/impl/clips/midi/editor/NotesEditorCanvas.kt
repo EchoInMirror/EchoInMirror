@@ -1,15 +1,14 @@
-@file:OptIn(ExperimentalComposeUiApi::class)
-
 package com.eimsound.daw.impl.clips.midi.editor
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.scrollable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawWithCache
@@ -19,7 +18,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.PointerIconDefaults
+import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -28,7 +27,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.util.fastForEach
 import com.eimsound.audioprocessor.data.defaultScale
 import com.eimsound.audioprocessor.data.midi.NoteMessage
@@ -44,9 +42,11 @@ import com.eimsound.daw.components.EditorGrid
 import com.eimsound.daw.components.KEYBOARD_KEYS
 import com.eimsound.daw.components.LocalFloatingLayerProvider
 import com.eimsound.daw.components.dragdrop.dropTarget
-import com.eimsound.daw.components.utils.*
+import com.eimsound.daw.components.utils.EditAction
+import com.eimsound.daw.components.utils.saturate
+import com.eimsound.daw.components.utils.toOnSurfaceColor
 import com.eimsound.daw.dawutils.openMaxValue
-import com.eimsound.daw.utils.*
+import com.eimsound.daw.utils.mapValue
 import kotlin.math.absoluteValue
 
 internal var selectionStartX = 0F
@@ -57,13 +57,11 @@ internal var deltaX by mutableStateOf(0)
 internal var deltaY by mutableStateOf(0)
 internal var action by mutableStateOf(EditAction.NONE)
 internal var resizeDirectionRight = false
-@OptIn(ExperimentalComposeUiApi::class)
-internal var cursor by mutableStateOf(PointerIconDefaults.Default)
+internal var cursor by mutableStateOf(PointerIcon.Default)
 internal var currentNote = 0
 
 private const val MIN_NOTE_WIDTH_WITH_KEY_NAME = 30
-@Suppress("PrivatePropertyName")
-private val MAX_KEY_NAME_SIZE = IntSize(40, 18)
+private val MAX_KEY_NAME_SIZE = Size(40F, 18F)
 
 private data class NoteDrawObject(val note: NoteMessage, val offset: Offset, val size: Size, val color: Color,
                                   val keyNameOffset: Offset?)
@@ -93,7 +91,6 @@ private fun DefaultMidiClipEditor.EditorHorizontalGrid() {
 }
 
 @OptIn(ExperimentalTextApi::class)
-@Suppress("DuplicatedCode")
 @Composable
 internal fun NotesEditorCanvas(editor: DefaultMidiClipEditor) {
     val coroutineScope = rememberCoroutineScope()
@@ -213,7 +210,7 @@ internal fun NotesEditorCanvas(editor: DefaultMidiClipEditor) {
                         drawRoundRect(it.color, it.offset, it.size, borderCornerRadius2PX)
                         if (it.keyNameOffset != null)
                             drawText(measurer, getNoteName(it.note.note), it.keyNameOffset,
-                                keyNameTextStyle, maxSize = MAX_KEY_NAME_SIZE)
+                                keyNameTextStyle, size = MAX_KEY_NAME_SIZE)
                     }
                     selectedNotes.forEach {
                         var y = (KEYBOARD_KEYS - 1 - it.note) * noteHeightPx - verticalScrollValue
@@ -245,7 +242,7 @@ internal fun NotesEditorCanvas(editor: DefaultMidiClipEditor) {
                         drawRoundRect(primaryColor, offset, size, borderCornerRadius2PX, Stroke(1.5f * density))
                         if (shouldDrawNoteName && size.width > MIN_NOTE_WIDTH_WITH_KEY_NAME)
                             drawText(measurer, getNoteName(it.note - offsetNote),
-                                Offset(offset.x + 2, y), keyNameTextStyle, maxSize = MAX_KEY_NAME_SIZE)
+                                Offset(offset.x + 2, y), keyNameTextStyle, size = MAX_KEY_NAME_SIZE)
                     }
                 }
             })

@@ -14,8 +14,8 @@ internal var dragStartY = 0F
 
 @Suppress("DuplicatedCode")
 internal suspend fun PointerInputScope.handleMouseEvent(playlist: Playlist, scope: CoroutineScope) {
-    forEachGesture {
-        awaitPointerEventScope { playlist.apply {
+    awaitEachGesture {
+        playlist.apply {
             var event: PointerEvent
             do {
                 event = awaitPointerEvent(PointerEventPass.Initial)
@@ -64,7 +64,7 @@ internal suspend fun PointerInputScope.handleMouseEvent(playlist: Playlist, scop
                 drag = awaitPointerSlopOrCancellation(down.id, down.type,
                     triggerOnMainAxisSlop = false) { change, _ -> change.consume() }
             } while (drag != null && !drag.isConsumed)
-            if (drag == null) return@awaitPointerEventScope
+            if (drag == null) return@awaitEachGesture
 
             var trackHeights: List<TrackToHeight>? = null
             when (action) {
@@ -146,5 +146,5 @@ internal suspend fun PointerInputScope.handleMouseEvent(playlist: Playlist, scop
             }
             action = EditAction.NONE
         }
-    } }
+    }
 }

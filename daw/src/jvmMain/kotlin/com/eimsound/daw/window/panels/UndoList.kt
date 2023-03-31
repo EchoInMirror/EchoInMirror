@@ -28,7 +28,6 @@ import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
-@Suppress("PrivatePropertyName")
 private val ICON_SIZE = Modifier.scale(0.8f).padding(4.dp, end = 2.dp)
 
 @OptIn(DelicateCoroutinesApi::class)

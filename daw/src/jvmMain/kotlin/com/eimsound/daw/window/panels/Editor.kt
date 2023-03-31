@@ -17,7 +17,6 @@ import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.ClipEditor
 import com.eimsound.daw.api.window.Panel
 import com.eimsound.daw.api.window.PanelDirection
-import com.eimsound.daw.commands.*
 import com.eimsound.daw.components.Gap
 import com.eimsound.daw.utils.BasicEditor
 

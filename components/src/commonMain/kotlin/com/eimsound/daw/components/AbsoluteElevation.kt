@@ -8,10 +8,10 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Dp
-import com.eimsound.daw.components.utils.Zero
+import androidx.compose.ui.unit.dp
 
 @Composable
-fun AbsoluteElevation(elevation: Dp = Dp.Zero, content: @Composable () -> Unit) {
+fun AbsoluteElevation(elevation: Dp = 0.dp, content: @Composable () -> Unit) {
     CompositionLocalProvider(
         LocalContentColor provides MaterialTheme.colorScheme.surface,
         LocalAbsoluteTonalElevation provides elevation,

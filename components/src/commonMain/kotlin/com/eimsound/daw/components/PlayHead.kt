@@ -1,13 +1,22 @@
+@file:Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER")
+
 package com.eimsound.daw.components
 
-import androidx.compose.foundation.*
-import androidx.compose.foundation.gestures.*
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitPointerSlopOrCancellation
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.drag
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material3.*
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
@@ -27,7 +36,6 @@ import com.eimsound.daw.components.utils.x
 import com.eimsound.daw.utils.fitInUnit
 import com.eimsound.daw.utils.range
 
-@Suppress("PrivatePropertyName")
 private val BOTTOM = ParagraphStyle(lineHeight = 16.sp,
     lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Bottom, LineHeightStyle.Trim.FirstLineTop))
 
@@ -47,8 +55,7 @@ fun calcDrag(x0: Float, noteWidth: Float, editUnit: Int, range: IntRange?, onRan
 
 val TIMELINE_HEIGHT = 40.dp
 
-@Suppress("DuplicatedCode")
-@OptIn(ExperimentalTextApi::class, ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalTextApi::class)
 @Composable
 fun Timeline(modifier: Modifier = Modifier, noteWidth: MutableState<Dp>, scrollState: ScrollState,
              range: IntRange? = null, offsetX: Dp = 0.dp, editUnit: Int = 96, barPPQ: Int = 96 * 4,
@@ -56,7 +63,7 @@ fun Timeline(modifier: Modifier = Modifier, noteWidth: MutableState<Dp>, scrollS
     val tmpArr = remember { intArrayOf(editUnit, barPPQ) }
     tmpArr[0] = editUnit
     tmpArr[1] = barPPQ
-    Surface(modifier.height(TIMELINE_HEIGHT).fillMaxWidth().zIndex(2F).pointerHoverIcon(PointerIconDefaults.HorizontalResize),
+    Surface(modifier.height(TIMELINE_HEIGHT).fillMaxWidth().zIndex(2F).pointerHoverIcon(PointerIcon.HorizontalResize),
         shadowElevation = 5.dp, tonalElevation = 4.dp) {
         val outlineColor = MaterialTheme.colorScheme.outlineVariant
         val primaryColor = MaterialTheme.colorScheme.primary
@@ -70,43 +77,49 @@ fun Timeline(modifier: Modifier = Modifier, noteWidth: MutableState<Dp>, scrollS
         obj[0] = range
 
         Canvas(Modifier.fillMaxSize().pointerInput(Unit) {
-            forEachGesture {
-                awaitPointerEventScope {
-                    var event: PointerEvent
-                    do {
-                        event = awaitPointerEvent(PointerEventPass.Main)
-                        val range0 = obj[0]
-                        if (range0 != null) when (event.type) {
-                            PointerEventType.Enter, PointerEventType.Move -> {
-                                val x = event.x + scrollState.value - offsetX.toPx()
-                                val noteWidthPx = noteWidth.value.toPx()
-                                val start = range0.first * noteWidthPx
-                                val end = range0.last * noteWidthPx
-                                isInRange = x in (start - 2)..(start + 2) || x in (end - 2)..(end + 2)
-                            }
-                            PointerEventType.Exit -> isInRange = false
+            awaitEachGesture {
+                var event: PointerEvent
+                do {
+                    event = awaitPointerEvent(PointerEventPass.Main)
+                    val range0 = obj[0]
+                    if (range0 != null) when (event.type) {
+                        PointerEventType.Enter, PointerEventType.Move -> {
+                            val x = event.x + scrollState.value - offsetX.toPx()
+                            val noteWidthPx = noteWidth.value.toPx()
+                            val start = range0.first * noteWidthPx
+                            val end = range0.last * noteWidthPx
+                            isInRange = x in (start - 2)..(start + 2) || x in (end - 2)..(end + 2)
                         }
-                        if (event.buttons.isPrimaryPressed || (range0 != null && event.buttons.isSecondaryPressed)) break
-                    } while (!event.changes.fastAll(PointerInputChange::changedToDownIgnoreConsumed))
-                    val down = event.changes[0]
-                    var drag: PointerInputChange?
-                    do {
-                        @Suppress("INVISIBLE_MEMBER")
-                        drag = awaitPointerSlopOrCancellation(down.id, down.type, triggerOnMainAxisSlop = false)
-                            { change, _ -> change.consume() }
-                    } while (drag != null && !drag.isConsumed)
-                    if (obj[0] != null && event.buttons.isSecondaryPressed) isInRange = true
-                    calcDrag(down.position.x + scrollState.value - offsetX.toPx(), noteWidth.value.toPx(),
-                        tmpArr[0], if (isInRange) obj[0] else null, onRangeChange, onTimeChange)
-                    if (drag != null) {
-                        !drag(drag.id) {
-                            calcDrag(it.position.x + scrollState.value - offsetX.toPx(), noteWidth.value.toPx(),
-                                tmpArr[0], if (isInRange) obj[0] else null, onRangeChange, onTimeChange)
-                            it.consume()
-                        }
+
+                        PointerEventType.Exit -> isInRange = false
                     }
-                    isInRange = false
+                    if (event.buttons.isPrimaryPressed || (range0 != null && event.buttons.isSecondaryPressed)) break
+                } while (!event.changes.fastAll(PointerInputChange::changedToDownIgnoreConsumed))
+                val down = event.changes[0]
+                var drag: PointerInputChange?
+                do {
+                    drag = awaitPointerSlopOrCancellation(
+                        down.id,
+                        down.type,
+                        triggerOnMainAxisSlop = false
+                    )
+                    { change, _ -> change.consume() }
+                } while (drag != null && !drag.isConsumed)
+                if (obj[0] != null && event.buttons.isSecondaryPressed) isInRange = true
+                calcDrag(
+                    down.position.x + scrollState.value - offsetX.toPx(), noteWidth.value.toPx(),
+                    tmpArr[0], if (isInRange) obj[0] else null, onRangeChange, onTimeChange
+                )
+                if (drag != null) {
+                    !drag(drag.id) {
+                        calcDrag(
+                            it.position.x + scrollState.value - offsetX.toPx(), noteWidth.value.toPx(),
+                            tmpArr[0], if (isInRange) obj[0] else null, onRangeChange, onTimeChange
+                        )
+                        it.consume()
+                    }
                 }
+                isInRange = false
             }
             detectDragGestures { change, _ ->
                 change.consume()

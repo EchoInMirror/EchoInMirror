@@ -1,5 +1,3 @@
-@file:Suppress("PrivatePropertyName")
-
 package com.eimsound.daw.components.silder
 
 import androidx.compose.animation.core.Animatable

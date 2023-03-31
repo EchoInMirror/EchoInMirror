@@ -10,10 +10,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.PointerIconDefaults
+import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
@@ -25,7 +24,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ClickableText(
     text: String,
@@ -47,7 +46,7 @@ fun ClickableText(
     onClick: () -> Unit
 ) {
     val source = remember { MutableInteractionSource() }
-    Text(text, modifier.pointerHoverIcon(PointerIconDefaults.Hand).hoverable(source)
+    Text(text, modifier.pointerHoverIcon(PointerIcon.Hand).hoverable(source)
         .onClick(interactionSource = source, onClick = onClick),
         color, fontSize, fontStyle, fontWeight, fontFamily, letterSpacing,
         if (source.collectIsHoveredAsState().value) TextDecoration.Underline else textDecoration,

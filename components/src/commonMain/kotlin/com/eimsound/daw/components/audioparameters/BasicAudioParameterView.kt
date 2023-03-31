@@ -18,12 +18,10 @@ import com.eimsound.daw.api.processor.TrackAudioProcessorWrapper
 import com.eimsound.daw.components.*
 import com.eimsound.daw.components.silder.Slider
 import com.eimsound.daw.utils.range
-import com.google.accompanist.flowlayout.FlowRow
-import com.google.accompanist.flowlayout.MainAxisAlignment
 
 @Composable
 private fun ParameterSlider(p: IAudioProcessorParameter) {
-    Column(Modifier.width(64.dp)) {
+    Column(Modifier.width(64.dp).padding(vertical = 4.dp)) {
         if (p.isFloat) Slider(p.value, { p.value = it }, valueRange = p.range)
         else Slider(p.value, { p.value = it }, valueRange = p.range, steps = p.range.range.toInt())
         Text(p.name, Modifier.fillMaxWidth(),
@@ -33,10 +31,10 @@ private fun ParameterSlider(p: IAudioProcessorParameter) {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun BasicAudioParameterView(parameters: List<IAudioProcessorParameter>, content: @Composable (() -> Unit)? = null) {
-    FlowRow(Modifier.fillMaxWidth().padding(8.dp), mainAxisAlignment = MainAxisAlignment.SpaceEvenly,
-        crossAxisSpacing = 8.dp) {
+    FlowRow(Modifier.fillMaxWidth().padding(8.dp, 4.dp), Arrangement.SpaceEvenly) {
         parameters.fastForEach { p ->
             key(p) { ParameterSlider(p) }
         }
@@ -44,14 +42,14 @@ fun BasicAudioParameterView(parameters: List<IAudioProcessorParameter>, content:
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
 private fun FloatingLayerProvider.openParameterSelector(processor: TrackAudioProcessorWrapper) {
     val key = Any()
     val close = { closeFloatingLayer(key) }
     openFloatingLayer(::closeFloatingLayer, key = key, hasOverlay = true) {
         Dialog(close, modifier = Modifier.widthIn(max = 460.dp)) {
             Text("选择参数", style = MaterialTheme.typography.titleMedium)
-            FlowRow(mainAxisSpacing = 8.dp) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 processor.handledParameters.fastForEach {
                     key(it.parameter) {
                         InputChip(true, {

@@ -1,5 +1,3 @@
-@file:Suppress("PrivatePropertyName")
-
 package com.eimsound.daw.components
 
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -43,13 +41,14 @@ fun CustomOutlinedTextField(
     keyboardActions: KeyboardActions = KeyboardActions.Default,
     singleLine: Boolean = false,
     maxLines: Int = Int.MAX_VALUE,
+    minLines: Int = 1,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     shape: Shape = TextFieldDefaults.outlinedShape,
     colors: TextFieldColors = TextFieldDefaults.outlinedTextFieldColors(),
     paddingValues: PaddingValues = DEFAULT_PADDING
 ) {
     BasicTextField(value, onValueChange, modifier, enabled, readOnly, textStyle, keyboardOptions, keyboardActions,
-        singleLine, maxLines, visualTransformation, {}, interactionSource) {
+        singleLine, maxLines, minLines, visualTransformation, {}, interactionSource) {
         TextFieldDefaults.OutlinedTextFieldDecorationBox(value, it, enabled, singleLine, visualTransformation,
             interactionSource, isError, label, placeholder, leadingIcon, trailingIcon, supportingText, colors, paddingValues) {
             TextFieldDefaults.OutlinedBorderContainerBox(
@@ -83,13 +82,14 @@ fun CustomTextField(
     keyboardActions: KeyboardActions = KeyboardActions.Default,
     singleLine: Boolean = false,
     maxLines: Int = Int.MAX_VALUE,
+    minLines: Int = 1,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     shape: Shape = TextFieldDefaults.filledShape,
     colors: TextFieldColors = TextFieldDefaults.textFieldColors(),
     paddingValues: PaddingValues = DEFAULT_PADDING
 ) {
     BasicTextField(value, onValueChange, modifier, enabled, readOnly, textStyle, keyboardOptions, keyboardActions,
-        singleLine, maxLines, visualTransformation, {}, interactionSource) {
+        singleLine, maxLines, minLines, visualTransformation, {}, interactionSource) {
         TextFieldDefaults.TextFieldDecorationBox(value, it, enabled, singleLine, visualTransformation,
             interactionSource, isError, label, placeholder, leadingIcon, trailingIcon, supportingText, shape, colors, paddingValues)
         }

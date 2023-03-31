@@ -44,7 +44,6 @@ import com.eimsound.daw.components.utils.clickableWithIcon
 import com.eimsound.daw.utils.BasicEditor
 import com.eimsound.daw.utils.FloatRange
 import com.eimsound.daw.utils.SerializableEditor
-import com.google.accompanist.flowlayout.FlowRow
 import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
 
@@ -150,7 +149,7 @@ private val defaultCCEvents = sortedMapOf(
     64 to "延音踏板",
 )
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 private fun FloatingLayerProvider.openEventSelectorDialog(events: MutableMidiCCEvents) {
     val key = Any()
     val close = { closeFloatingLayer(key) }
@@ -158,7 +157,7 @@ private fun FloatingLayerProvider.openEventSelectorDialog(events: MutableMidiCCE
         Dialog(close, modifier = Modifier.widthIn(max = 460.dp)) {
             Text("选择 CC 事件", style = MaterialTheme.typography.titleMedium)
             val keys = events.keys
-            FlowRow(mainAxisSpacing = 8.dp) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 keys.sorted().forEach {
                     val name = defaultCCEvents[it]
                     InputChip(true, {
@@ -169,7 +168,7 @@ private fun FloatingLayerProvider.openEventSelectorDialog(events: MutableMidiCCE
                 }
             }
             Divider(Modifier.padding(vertical = 8.dp))
-            FlowRow(mainAxisSpacing = 8.dp) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 defaultCCEvents.forEach { (id, name) ->
                     if (id in keys) return@forEach
                     InputChip(false, {

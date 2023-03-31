@@ -5,19 +5,23 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.*
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.*
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
-@OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun MenuItem(
     onClick: (() -> Unit)? = null,
@@ -44,7 +48,7 @@ fun MenuItem(
                     maxWidth = 280.dp,
                     minHeight = minHeight
                 )
-                .pointerHoverIcon(if (enabled && onClick != null) PointerIconDefaults.Hand else PointerIconDefaults.Default)
+                .pointerHoverIcon(if (enabled && onClick != null) PointerIcon.Hand else PointerIcon.Default)
                 .padding(padding),
             horizontalArrangement,
             Alignment.CenterVertically,
@@ -91,7 +95,7 @@ fun Menu(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun Selector(
     items: List<String>,
@@ -128,6 +132,6 @@ fun Selector(
     }, modifier = boxModifier, enabled = enabled, matcher = matcher, pass = PointerEventPass.Initial) {
         CustomTextField(filter.value ?: selected, {
             filter.value = it.ifEmpty { null }
-        }, Modifier.fillMaxWidth().pointerHoverIcon(PointerIconDefaults.Hand))
+        }, Modifier.fillMaxWidth().pointerHoverIcon(PointerIcon.Hand))
     }
 }

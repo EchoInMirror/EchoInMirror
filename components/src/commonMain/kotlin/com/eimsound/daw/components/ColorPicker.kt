@@ -5,9 +5,9 @@ package com.eimsound.daw.components
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.drag
-import androidx.compose.foundation.gestures.forEachGesture
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
@@ -119,17 +119,15 @@ private fun HarmonyColorPickerWithMagnifiers(
         }
 
         val inputModifier = Modifier.pointerInput(diameterPx) {
-            forEachGesture {
-                awaitPointerEventScope {
-                    val down = awaitFirstDown(false)
-                    currentlyChangingInput = true
-                    updateColorWheel(down.position, animate = true)
-                    drag(down.id) { change ->
-                        updateColorWheel(change.position, animate = false)
-                        if (change.positionChange() != Offset.Zero) change.consume()
-                    }
-                    currentlyChangingInput = false
+            awaitEachGesture {
+                val down = awaitFirstDown(false)
+                currentlyChangingInput = true
+                updateColorWheel(down.position, animate = true)
+                drag(down.id) { change ->
+                    updateColorWheel(change.position, animate = false)
+                    if (change.positionChange() != Offset.Zero) change.consume()
                 }
+                currentlyChangingInput = false
             }
         }
 
@@ -176,9 +174,7 @@ private fun BrightnessBar(
     Slider(
         modifier = modifier,
         value = currentColor.value,
-        onValueChange = {
-            onValueChange(it)
-        },
+        onValueChange = onValueChange,
         colors = SliderDefaults.colors(
             activeTrackColor = MaterialTheme.colorScheme.primary,
             thumbColor = MaterialTheme.colorScheme.primary

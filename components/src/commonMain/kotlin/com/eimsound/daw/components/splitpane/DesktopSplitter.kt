@@ -3,14 +3,14 @@ package com.eimsound.daw.components.splitpane
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.*
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import com.eimsound.daw.components.utils.HorizontalResize
 import com.eimsound.daw.components.utils.VerticalResize
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun DefaultHandle(
     isHorizontal: Boolean,
@@ -25,7 +25,7 @@ fun DefaultHandle(
                 )
             }
         }
-        .pointerHoverIcon(if (isHorizontal) PointerIconDefaults.HorizontalResize else PointerIconDefaults.VerticalResize)
+        .pointerHoverIcon(if (isHorizontal) PointerIcon.HorizontalResize else PointerIcon.VerticalResize)
         .run {
             if (isHorizontal) {
                 this.width(8.dp)

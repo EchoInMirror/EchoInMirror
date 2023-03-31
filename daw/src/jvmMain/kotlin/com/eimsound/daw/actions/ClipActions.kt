@@ -68,7 +68,7 @@ class ClipsEditAction(
         }
         if (newTracks != null) tracks.addAll(newTracks)
     }
-    @Suppress("DuplicatedCode")
+
     override suspend fun perform(isForward: Boolean): Boolean {
         if (deltaX != 0 || deltaDuration != 0) {
             val x = if (isForward) deltaX else -deltaX

@@ -5,7 +5,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.PointerMatcher
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -22,7 +21,6 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.unit.*
 import androidx.compose.ui.util.fastForEach
-import com.eimsound.daw.components.utils.Zero
 import com.eimsound.daw.utils.BasicEditor
 
 private data class FloatingLayer(val key: Any, val onClose: ((Any) -> Unit)?, val position: Offset?,
@@ -114,7 +112,7 @@ fun FloatingLayer(layerContent: @Composable (Size, () -> Unit) -> Unit,
     FloatingLayer(layerContent, modifier, enabled, hasOverlay, isCentral, PointerMatcher.Primary, content = content)
 }
 
-@OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun FloatingLayer(layerContent: @Composable (Size, () -> Unit) -> Unit,
                   modifier: Modifier = Modifier, enabled: Boolean = true,
@@ -130,7 +128,7 @@ fun FloatingLayer(layerContent: @Composable (Size, () -> Unit) -> Unit,
     Box((if (isCentral) modifier else modifier.onGloballyPositioned {
         offset[0] = it.positionInRoot()
         size[0] = it.size.toSize()
-    }).let { if (enabled) it.pointerHoverIcon(PointerIconDefaults.Hand) else it }
+    }).let { if (enabled) it.pointerHoverIcon(PointerIcon.Hand) else it }
         .pointerInput(pass) {
             awaitPointerEventScope {
                 while (true) {
@@ -151,7 +149,7 @@ fun Dialog(onOk: (() -> Unit)? = null, onCancel: (() -> Unit)? = null,
            modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     val flag = onOk != null || onCancel != null
     Dialog(modifier.widthIn(min = minWidth).width(IntrinsicSize.Max),
-        if (hasPadding) Modifier.padding(16.dp, 16.dp, 16.dp, if (flag) Dp.Zero else 16.dp) else Modifier) {
+        if (hasPadding) Modifier.padding(16.dp, 16.dp, 16.dp, if (flag) 0.dp else 16.dp) else Modifier) {
         content()
         if (flag) Row {
             Filled()

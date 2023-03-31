@@ -28,7 +28,7 @@ class EnvelopePointsAmountAction(private val list: EnvelopePointList, private va
         if (isForward) {
             list.addAll(points)
             list.sort()
-        } else list.removeAll(points)
+        } else list.removeAll(points.toSet())
         list.update()
         return true
     }

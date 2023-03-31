@@ -18,11 +18,10 @@ import androidx.compose.material.icons.outlined.CheckBoxOutlineBlank
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerButton
-import androidx.compose.ui.input.pointer.PointerIconDefaults
+import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -89,7 +88,6 @@ object FileSystemBrowser : Panel {
         Spacer(Modifier.width(leftDp).fillMaxHeight().background(color.copy(0.14F)))
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     @Composable
     private fun Previewer() {
         val width = remember { intArrayOf(1) }
@@ -145,7 +143,7 @@ object FileSystemBrowser : Panel {
                                     !fileBrowserPreviewer.position.isProjectLooping
                             }) { fileBrowserPreviewer.playPosition = it.x / width[0].toDouble() }
                         }
-                        .pointerHoverIcon(PointerIconDefaults.HorizontalResize)
+                        .pointerHoverIcon(PointerIcon.HorizontalResize)
                     ) {
                         PlayHead(interactionSource, width)
                     }

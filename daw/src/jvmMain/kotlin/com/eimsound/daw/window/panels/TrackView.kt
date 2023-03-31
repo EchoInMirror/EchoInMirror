@@ -25,7 +25,6 @@ import com.eimsound.daw.components.CustomCheckbox
 import com.eimsound.daw.components.audioparameters.BasicAudioParameterView
 import com.eimsound.daw.components.utils.clickableWithIcon
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CardHeader(p: TrackAudioProcessorWrapper, index: Int) {
 //    val shape = MaterialTheme.shapes.small.copy(bottomStart = CornerSize(0.dp), bottomEnd = CornerSize(0.dp))

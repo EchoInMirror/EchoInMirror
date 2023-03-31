@@ -52,7 +52,7 @@ class NoteAmountAction(private val clip: TrackClip<MidiClip>, private val notes:
         if (isForward) {
             clip.clip.notes.addAll(notes)
             clip.clip.notes.sort()
-        } else clip.clip.notes.removeAll(notes)
+        } else clip.clip.notes.removeAll(notes.toSet())
         clip.reset()
         clip.clip.notes.update()
         return true

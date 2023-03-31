@@ -15,10 +15,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.input.pointer.PointerIconDefaults
+import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
@@ -73,7 +72,6 @@ fun FilledIconToggleButton(
     Box(boxModifier, Alignment.Center) { content() }
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun IconToggleButton(
     checked: Boolean,
@@ -98,7 +96,7 @@ fun IconToggleButton(
                     bounded = false,
                     radius = size / 2
                 )
-            ).let { if (enabled) it.pointerHoverIcon(PointerIconDefaults.Hand) else it },
+            ).let { if (enabled) it.pointerHoverIcon(PointerIcon.Hand) else it },
         contentAlignment = Alignment.Center
     ) {
         val contentColor = colors.contentColor(enabled, checked).value

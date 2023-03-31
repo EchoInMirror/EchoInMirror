@@ -16,7 +16,6 @@ import com.eimsound.daw.components.Dialog
 import com.eimsound.daw.components.utils.HsvColor
 import com.eimsound.daw.components.utils.randomColor
 
-@Suppress("PrivatePropertyName")
 private val KEY = Any()
 
 fun FloatingLayerProvider.openColorPicker(initialColor: Color = randomColor(),

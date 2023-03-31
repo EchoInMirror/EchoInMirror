@@ -1,7 +1,11 @@
+@file:Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER")
+
 package com.eimsound.daw.impl.clips.midi.editor
 
-import androidx.compose.foundation.gestures.*
-import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitPointerSlopOrCancellation
+import androidx.compose.foundation.gestures.drag
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
@@ -11,14 +15,14 @@ import com.eimsound.audioprocessor.data.midi.NoteMessage
 import com.eimsound.audioprocessor.data.midi.defaultNoteMessage
 import com.eimsound.audioprocessor.data.midi.toNoteOffEvent
 import com.eimsound.audioprocessor.data.midi.toNoteOnEvent
-import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.actions.doNoteAmountAction
 import com.eimsound.daw.actions.doNoteMessageEditAction
+import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.components.FloatingLayerProvider
 import com.eimsound.daw.components.KEYBOARD_KEYS
 import com.eimsound.daw.components.openEditorMenu
 import com.eimsound.daw.components.utils.*
-import com.eimsound.daw.utils.*
+import com.eimsound.daw.utils.fitInUnit
 import com.eimsound.daw.window.panels.playlist.calcScroll
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -57,13 +61,12 @@ private fun stopAllNotes(editor: DefaultMidiClipEditor) {
     }
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Suppress("DuplicatedCode")
 internal suspend fun PointerInputScope.handleMouseEvent(coroutineScope: CoroutineScope,
                                                         editor: DefaultMidiClipEditor,
                                                         floatingLayerProvider: FloatingLayerProvider) {
-    forEachGesture { editor.apply {
-        awaitPointerEventScope {
+    awaitEachGesture {
+        editor.apply {
             var event: PointerEvent
             var selectedNotesLeft = Int.MAX_VALUE
             var selectedNotesTop = 0
@@ -73,21 +76,25 @@ internal suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutin
                 event = awaitPointerEvent(PointerEventPass.Main)
                 when (event.type) {
                     PointerEventType.Move -> {
-                        var cursor0 = PointerIconDefaults.Default
+                        var cursor0 = PointerIcon.Default
                         getClickedNotes(event.x, event.y, editor)?.let {
                             val startTime = clip.time + it.time - clip.start
                             val startX = startTime * noteWidth.value.toPx() - horizontalScrollState.value
-                            val endX = (startTime + it.duration) * noteWidth.value.toPx() - horizontalScrollState.value
+                            val endX =
+                                (startTime + it.duration) * noteWidth.value.toPx() - horizontalScrollState.value
                             cursor0 = if ((event.x < startX + 4 && event.x > startX - 4) ||
-                                (event.x < endX + 4 && event.x > endX - 4)) PointerIconDefaults.HorizontalResize
-                            else PointerIconDefaults.Move
+                                (event.x < endX + 4 && event.x > endX - 4)
+                            ) PointerIcon.HorizontalResize
+                            else PointerIcon.Move
                         }
                         cursor = cursor0
                         continue
                     }
+
                     PointerEventType.Scroll -> {
                         calcScroll(event, noteWidth, horizontalScrollState, coroutineScope) {
-                            val newValue = (noteHeight.value + (if (it.scrollDelta.y > 0) -1 else 1)).coerceIn(8F, 32F)
+                            val newValue =
+                                (noteHeight.value + (if (it.scrollDelta.y > 0) -1 else 1)).coerceIn(8F, 32F)
                             if (newValue == noteHeight.value) return@calcScroll
                             val y = it.position.x
                             val oldY = (y + verticalScrollState.value) / noteHeight.toPx()
@@ -101,6 +108,7 @@ internal suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutin
                         }
                         continue
                     }
+
                     PointerEventType.Press -> {
                         isEventPanelActive = false
                         if (event.buttons.isPrimaryPressed) {
@@ -112,8 +120,12 @@ internal suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutin
                             if (currentSelectNote == null) {
                                 val noteUnit = EchoInMirror.editUnit
                                 currentSelectedNote?.apply { lastSelectedNoteDuration = duration }
-                                currentSelectNote = defaultNoteMessage(currentNote, currentX.fitInUnit(noteUnit),
-                                    lastSelectedNoteDuration.coerceAtLeast(noteUnit), DefaultMidiClipEditor.defaultVelocity)
+                                currentSelectNote = defaultNoteMessage(
+                                    currentNote,
+                                    currentX.fitInUnit(noteUnit),
+                                    lastSelectedNoteDuration.coerceAtLeast(noteUnit),
+                                    DefaultMidiClipEditor.defaultVelocity
+                                )
                                 clip.doNoteAmountAction(listOf(currentSelectNote), false)
                                 clip.clip.notes.sort()
                                 clip.clip.notes.update()
@@ -160,7 +172,7 @@ internal suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutin
                             break
                         } else if (event.buttons.isTertiaryPressed) {
                             selectedNotes.clear()
-                            getClickedNotes(event.x, event.y, editor) ?.let(deletionList::add)
+                            getClickedNotes(event.x, event.y, editor)?.let(deletionList::add)
                             action = EditAction.DELETE
                             break
                         } else if (event.buttons.isSecondaryPressed) {
@@ -178,8 +190,10 @@ internal suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutin
             var drag: PointerInputChange?
             do {
                 @Suppress("INVISIBLE_MEMBER")
-                drag = awaitPointerSlopOrCancellation(down.id, down.type,
-                    triggerOnMainAxisSlop = false) { change, _ -> change.consume() }
+                drag = awaitPointerSlopOrCancellation(
+                    down.id, down.type,
+                    triggerOnMainAxisSlop = false
+                ) { change, _ -> change.consume() }
             } while (drag != null && !drag.isConsumed)
             if (drag == null) {
                 if (action == EditAction.DELETE) {
@@ -188,7 +202,7 @@ internal suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutin
                 }
                 stopAllNotes(editor)
                 action = EditAction.NONE
-                return@awaitPointerEventScope
+                return@awaitEachGesture
             }
             if (action == EditAction.SELECT) {
                 selectedNotes.clear()
@@ -201,14 +215,18 @@ internal suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutin
             drag(drag.id) {
                 when (action) {
                     EditAction.SELECT -> {
-                        selectionX = (it.position.x.coerceAtMost(size.width.toFloat()) + horizontalScrollState.value)
-                            .coerceAtLeast(0F)
-                        selectionY = ((it.position.y.coerceAtMost(size.height.toFloat()) + verticalScrollState.value) /
-                                noteHeight.toPx()).roundToInt()
+                        selectionX =
+                            (it.position.x.coerceAtMost(size.width.toFloat()) + horizontalScrollState.value)
+                                .coerceAtLeast(0F)
+                        selectionY =
+                            ((it.position.y.coerceAtMost(size.height.toFloat()) + verticalScrollState.value) /
+                                    noteHeight.toPx()).roundToInt()
                     }
+
                     EditAction.DELETE -> getClickedNotes(it.position.x, it.position.y, editor) { note ->
                         !deletionList.contains(note)
                     }?.let(deletionList::add)
+
                     EditAction.MOVE, EditAction.RESIZE -> {
                         val noteUnit = EchoInMirror.editUnit
                         // calc delta in noteUnit, then check all move notes are in bound
@@ -236,7 +254,8 @@ internal suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutin
                         }
                         if (x != deltaX) deltaX = x
                     }
-                    else -> { }
+
+                    else -> {}
                 }
                 // detect out of frame then auto scroll
                 if (it.position.x < 0) coroutineScope.launch { horizontalScrollState.scrollBy(-1F) }
@@ -269,23 +288,29 @@ internal suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutin
                     }
                     selectedNotes.addAll(list)
                 }
+
                 EditAction.DELETE -> {
                     clip.doNoteAmountAction(deletionList, true)
                     deletionList.clear()
                 }
-                EditAction.MOVE -> clip.doNoteMessageEditAction(selectedNotes,
-                    deltaX, -deltaY, 0)
+
+                EditAction.MOVE -> clip.doNoteMessageEditAction(
+                    selectedNotes,
+                    deltaX, -deltaY, 0
+                )
+
                 EditAction.RESIZE -> {
                     if (resizeDirectionRight)
                         clip.doNoteMessageEditAction(selectedNotes, 0, 0, deltaX)
                     else clip.doNoteMessageEditAction(selectedNotes, deltaX, 0, -deltaX)
                 }
-                else -> { }
+
+                else -> {}
             }
             deltaX = 0
             deltaY = 0
             action = EditAction.NONE
             stopAllNotes(editor)
         }
-    } }
+    }
 }

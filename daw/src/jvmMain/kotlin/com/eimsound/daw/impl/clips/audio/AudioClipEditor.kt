@@ -14,7 +14,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.eimsound.audioprocessor.convertSecondsToPPQ
@@ -29,7 +28,6 @@ import com.eimsound.daw.api.TrackClip
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.components.*
 import com.eimsound.daw.components.silder.Slider
-import com.eimsound.daw.components.utils.Zero
 import com.eimsound.daw.components.utils.toOnSurfaceColor
 import com.eimsound.daw.dawutils.openMaxValue
 import com.eimsound.daw.utils.range
@@ -78,7 +76,7 @@ class AudioClipEditor(private val clip: TrackClip<AudioClip>, private val track:
     private fun EditorContent() {
         Column(Modifier.fillMaxSize()) {
             val range = remember(clip.start, clip.duration) { clip.start..(clip.start + clip.duration) }
-            Timeline(Modifier.zIndex(3F), noteWidth, horizontalScrollState, range, Dp.Zero,
+            Timeline(Modifier.zIndex(3F), noteWidth, horizontalScrollState, range, 0.dp,
                 EchoInMirror.editUnit, EchoInMirror.currentPosition.oneBarPPQ,
                 EchoInMirror.currentPosition::setCurrentTime
             ) {

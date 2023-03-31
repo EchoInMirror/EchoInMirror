@@ -25,7 +25,6 @@ abstract class Synthesizer(
         }
     }
 
-    @Suppress("DuplicatedCode")
     protected inline fun forEachNotes(block: (MidiEvent) -> Unit) {
         noteRecorder.forEachNotes { block(MidiEvent(notesData[it])) }
     }

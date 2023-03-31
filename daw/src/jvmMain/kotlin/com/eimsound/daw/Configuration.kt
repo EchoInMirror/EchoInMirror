@@ -1,5 +1,3 @@
-@file:Suppress("PrivatePropertyName")
-
 package com.eimsound.daw
 
 import androidx.compose.runtime.getValue
@@ -26,7 +24,6 @@ val WORKING_PATH: Path = Path.of(
 )
 val ROOT_PATH: Path = WORKING_PATH.resolve("EchoInMirror")
 val FAVORITE_AUDIO_PROCESSORS_PATH: Path = ROOT_PATH.resolve("favoriteAudioProcessors.json")
-@Suppress("MemberVisibilityCanBePrivate")
 val AUDIO_THUMBNAIL_CACHE_PATH: Path = ROOT_PATH.resolve("audioThumbnailCache.db")
 private val RECENT_PROJECT_PATH = ROOT_PATH.resolve("recentProjects.json")
 private val CONFIG_PATH = ROOT_PATH.resolve("config.json")

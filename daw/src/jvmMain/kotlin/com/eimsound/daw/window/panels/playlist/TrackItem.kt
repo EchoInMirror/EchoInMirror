@@ -1,4 +1,4 @@
-@file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE", "PrivatePropertyName")
+@file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
 
 package com.eimsound.daw.window.panels.playlist
 
@@ -64,7 +64,7 @@ internal fun binarySearchTrackByHeight(trackHeights: List<TrackToHeight>, y: Flo
 
 private suspend fun AwaitPointerEventScope.handleDrag(playlist: Playlist, track: Track, parentTrack: Track,
                                                       isDragging: MutableState<Boolean>) {
-    val down = awaitFirstDownOnPass(PointerEventPass.Final, false)
+    val down = awaitFirstDown(false, PointerEventPass.Final)
     awaitPointerSlopOrCancellation(down.id, down.type, triggerOnMainAxisSlop = false) { change, _ ->
         playlist.apply {
             trackHeights = getAllTrackHeights(trackHeight.toPx(), density)
@@ -142,7 +142,7 @@ private fun TrackItem(playlist: Playlist, track: Track, parentTrack: Track, inde
             }
             .pointerInput(track, parentTrack) {
                 trackMovingFlags[track] = TrackMoveFlags(parentTrack)
-                forEachGesture { awaitPointerEventScope { handleDrag(playlist, track, parentTrack, isDragging) } }
+                awaitEachGesture { handleDrag(playlist, track, parentTrack, isDragging) }
             }
             .alpha(animateFloatAsState(if (isDragging.value) 0.3F else 1F).value)
         ) {
