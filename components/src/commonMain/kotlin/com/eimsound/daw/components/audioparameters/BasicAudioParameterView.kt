@@ -14,6 +14,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import com.eimsound.audioprocessor.IAudioProcessorParameter
+import com.eimsound.daw.api.processor.DefaultHandledParameter
 import com.eimsound.daw.api.processor.TrackAudioProcessorWrapper
 import com.eimsound.daw.components.*
 import com.eimsound.daw.components.silder.Slider
@@ -33,12 +34,11 @@ private fun ParameterSlider(p: IAudioProcessorParameter) {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun BasicAudioParameterView(parameters: List<IAudioProcessorParameter>, content: @Composable (() -> Unit)? = null) {
-    FlowRow(Modifier.fillMaxWidth().padding(8.dp, 4.dp), Arrangement.SpaceEvenly) {
+fun BasicAudioParameterView(parameters: List<IAudioProcessorParameter>) {
+    FlowRow(Modifier.fillMaxWidth().padding(8.dp, 4.dp, 8.dp), Arrangement.SpaceEvenly) {
         parameters.fastForEach { p ->
             key(p) { ParameterSlider(p) }
         }
-        content?.invoke()
     }
 }
 
@@ -47,14 +47,15 @@ private fun FloatingLayerProvider.openParameterSelector(processor: TrackAudioPro
     val key = Any()
     val close = { closeFloatingLayer(key) }
     openFloatingLayer(::closeFloatingLayer, key = key, hasOverlay = true) {
-        Dialog(close, modifier = Modifier.widthIn(max = 460.dp)) {
+        Dialog(close, modifier = Modifier.widthIn(max = 400.dp)) {
             Text("选择参数", style = MaterialTheme.typography.titleMedium)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 processor.handledParameters.fastForEach {
                     key(it.parameter) {
                         InputChip(true, {
-                            // TODO
-                        }, { Text(it.parameter.id) },
+                            // TODO: convert to action
+                            processor.handledParameters = processor.handledParameters.filter { p -> p != it }
+                        }, { Text(it.parameter.name) },
                             trailingIcon = { Icon(Icons.Filled.Close, "删除") },
                         )
                     }
@@ -62,12 +63,22 @@ private fun FloatingLayerProvider.openParameterSelector(processor: TrackAudioPro
             }
             Divider(Modifier.padding(vertical = 8.dp))
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                var selectedParameter by remember { mutableStateOf("") }
+                var selectedParameter by remember {
+                    val lastModified = processor.processor.lastModifiedParameter
+                    mutableStateOf(if (lastModified == null) "" else "${lastModified.name} (${lastModified.id})")
+                }
                 Selector(remember(processor.handledParameters) {
                     val set = processor.handledParameters.mapTo(mutableSetOf()) { it.parameter }
                     processor.processor.parameters.mapNotNull { if (it in set) null else "${it.name} (${it.id})" }
                 }, selectedParameter, Modifier.weight(1F)) { selectedParameter = it }
-                IconButton({ /* TODO */ }, 30.dp, Modifier.padding(start = 8.dp)) {
+                IconButton({
+                    // TODO: convert to action
+                    val cur = selectedParameter
+                    selectedParameter = ""
+                    processor.handledParameters += DefaultHandledParameter(processor.processor.parameters.firstOrNull {
+                        "${it.name} (${it.id})" == cur
+                    } ?: return@IconButton)
+                }, 30.dp, Modifier.padding(start = 8.dp)) {
                     Icon(Icons.Filled.Add, "添加")
                 }
             }
@@ -77,9 +88,12 @@ private fun FloatingLayerProvider.openParameterSelector(processor: TrackAudioPro
 
 @Composable
 fun BasicAudioParameterView(processor: TrackAudioProcessorWrapper) {
-    BasicAudioParameterView(processor.handledParameters.map { it.parameter }) {
+    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+        BasicAudioParameterView(processor.handledParameters.map { it.parameter })
         val floatingLayerProvider = LocalFloatingLayerProvider.current
-        CustomButton({ floatingLayerProvider.openParameterSelector(processor) }) {
+        CustomButton({
+            floatingLayerProvider.openParameterSelector(processor)
+        }, Modifier.padding(bottom = 4.dp)) {
             Text("选择参数")
         }
     }

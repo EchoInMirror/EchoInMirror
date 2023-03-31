@@ -127,6 +127,7 @@ fun Selector(
                         }
                     }
                 }
+                VerticalScrollbar(rememberScrollbarAdapter(state), Modifier.align(Alignment.CenterEnd).fillMaxHeight())
             }
         }
     }, modifier = boxModifier, enabled = enabled, matcher = matcher, pass = PointerEventPass.Initial) {

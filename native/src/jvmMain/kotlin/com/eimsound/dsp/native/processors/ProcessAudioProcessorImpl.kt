@@ -259,8 +259,11 @@ open class ProcessAudioProcessorImpl(
             3 -> { // parameter change
                 val index = input.readVarInt()
                 val value = input.readFloat()
-                print(index)
-                if (index > 0 && index < parameters.size) parameters[index].doChangeAction(value)
+                if (index > 0 && index < parameters.size) {
+                    val cur = parameters[index]
+                    lastModifiedParameter = cur
+                    cur.doChangeAction(value)
+                }
             }
         }
     }

@@ -143,7 +143,7 @@ fun Timeline(modifier: Modifier = Modifier, noteWidth: MutableState<Dp>, scrollS
                 if (shouldSkipBars && i % 4 != 0) continue
                 val result = textMeasurer.measure(AnnotatedString("${i + 1}", if (i % 4 == 0) boldText else normalText, BOTTOM),
                     maxLines = 1)
-                drawText(result, topLeft = Offset(offsetXValue + x +
+                drawText(result, color, topLeft = Offset(offsetXValue + x +
                         (if (i == 0 && offsetXValue == 0F) 4 else -result.size.width / 2), 10f))
             }
 

@@ -10,7 +10,6 @@ import com.eimsound.audioprocessor.data.DefaultEnvelopePointList
 import com.eimsound.audioprocessor.data.EnvelopePoint
 import com.eimsound.audioprocessor.data.VOLUME_RANGE
 import com.eimsound.audioprocessor.data.midi.MidiNoteRecorder
-import com.eimsound.daw.actions.GlobalEnvelopeEditorEventHandler
 import com.eimsound.daw.api.*
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.components.EnvelopeEditor
@@ -114,8 +113,8 @@ class AudioClipFactoryImpl: AudioClipFactory {
         Box {
             Waveform(clip.clip.thumbnail, EchoInMirror.currentPosition, startPPQ, widthPPQ, clip.clip.volumeEnvelope, contentColor, isDrawMinAndMax)
             remember(clip) {
-                EnvelopeEditor(clip.clip.volumeEnvelope, VOLUME_RANGE, 1F, true, GlobalEnvelopeEditorEventHandler)
-            }.Editor(startPPQ, contentColor, noteWidth, true, clipStartTime = clip.start, stroke = 0.5F)
+                EnvelopeEditor(clip.clip.volumeEnvelope, VOLUME_RANGE, 1F, true)
+            }.Editor(startPPQ, contentColor, noteWidth, false, clipStartTime = clip.start, stroke = 0.5F)
         }
     }
 

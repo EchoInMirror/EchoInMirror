@@ -4,6 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.eimsound.audioprocessor.*
+import com.eimsound.audioprocessor.data.DefaultEnvelopePointList
 import com.eimsound.audioprocessor.data.EnvelopePointList
 import com.eimsound.audioprocessor.dsp.Disabled
 import com.eimsound.audioprocessor.dsp.Pan
@@ -55,13 +56,13 @@ interface Bus : Track {
 }
 
 interface HandledParameter {
-    val parameter: AudioProcessorParameter
+    val parameter: IAudioProcessorParameter
     val points: EnvelopePointList
 }
 
 data class DefaultHandledParameter(
-    override val parameter: AudioProcessorParameter,
-    override val points: EnvelopePointList
+    override val parameter: IAudioProcessorParameter,
+    override val points: EnvelopePointList = DefaultEnvelopePointList()
 ) : HandledParameter
 
 interface TrackAudioProcessorWrapper : JsonSerializable {

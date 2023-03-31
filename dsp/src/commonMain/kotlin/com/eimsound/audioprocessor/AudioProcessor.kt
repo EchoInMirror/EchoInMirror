@@ -152,6 +152,7 @@ interface AudioProcessor: Recoverable, AutoCloseable, SuddenChangeListener {
     val factory: AudioProcessorFactory<*>
     val id: String
     val parameters: List<IAudioProcessorParameter>
+    val lastModifiedParameter: IAudioProcessorParameter?
     var isBypass: Boolean
     suspend fun processBlock(buffers: Array<FloatArray>, position: CurrentPosition, midiBuffer: ArrayList<Int>) { }
     fun prepareToPlay(sampleRate: Int, bufferSize: Int) { }
@@ -180,9 +181,11 @@ abstract class AbstractAudioProcessor(
     override val description = description
     override var name = description.name
     override val parameters = emptyList<IAudioProcessorParameter>()
+    override var lastModifiedParameter: IAudioProcessorParameter? = null
+        protected set
     override var isBypass = false
     private val _listeners = WeakHashMap<AudioProcessorListener, Unit>()
-    protected val listeners: Set<AudioProcessorListener> get() = _listeners.keys
+    protected val listeners get() = _listeners.keys
 
     @Suppress("MemberVisibilityCanBePrivate")
     protected fun JsonObjectBuilder.buildBaseJson() {
