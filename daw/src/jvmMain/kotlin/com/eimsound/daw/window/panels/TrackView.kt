@@ -21,8 +21,8 @@ import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.processor.TrackAudioProcessorWrapper
 import com.eimsound.daw.api.window.Panel
 import com.eimsound.daw.api.window.PanelDirection
+import com.eimsound.daw.components.BasicAudioParameterView
 import com.eimsound.daw.components.CustomCheckbox
-import com.eimsound.daw.components.audioparameters.BasicAudioParameterView
 import com.eimsound.daw.components.utils.clickableWithIcon
 
 @Composable

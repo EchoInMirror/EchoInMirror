@@ -1,4 +1,4 @@
-package com.eimsound.daw.components.audioparameters
+package com.eimsound.daw.components
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.*
@@ -16,7 +16,6 @@ import androidx.compose.ui.util.fastForEach
 import com.eimsound.audioprocessor.IAudioProcessorParameter
 import com.eimsound.daw.api.processor.DefaultHandledParameter
 import com.eimsound.daw.api.processor.TrackAudioProcessorWrapper
-import com.eimsound.daw.components.*
 import com.eimsound.daw.components.silder.Slider
 import com.eimsound.daw.utils.range
 
