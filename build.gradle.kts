@@ -17,6 +17,6 @@ allprojects {
 
 subprojects {
     tasks.withType<KotlinCompile>().configureEach {
-        kotlinOptions.languageVersion = "1.8"
+        kotlinOptions.languageVersion = "1.9"
     }
 }

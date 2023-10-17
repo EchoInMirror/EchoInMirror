@@ -8,7 +8,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogWindow
-import androidx.compose.ui.window.DialogWindowScope
 import androidx.compose.ui.zIndex
 import com.eimsound.audioprocessor.RenderFormat
 import com.eimsound.audioprocessor.convertPPQToSamples
@@ -40,7 +39,7 @@ private val floatingLayerProvider = FloatingLayerProvider()
 
 @OptIn(DelicateCoroutinesApi::class)
 val ExportDialog = @Composable {
-    DialogWindow(::closeQuickLoadWindow, title = "导出", content = fun DialogWindowScope.() {
+    DialogWindow(::closeQuickLoadWindow, title = "导出") {
         remember { EchoInMirror.currentPosition.isPlaying = false }
         window.minimumSize = Dimension(300, 500)
 
@@ -104,7 +103,7 @@ val ExportDialog = @Composable {
                                 ) {
                                     Text("导出格式: ")
                                     Menu({ close ->
-                                        RenderFormat.values().forEach {
+                                        RenderFormat.entries.forEach {
                                             MenuItem(
                                                 {
                                                     close()
@@ -127,7 +126,7 @@ val ExportDialog = @Composable {
                                 Row(Modifier.weight(1F)) {
                                     Menu({ close ->
                                         Column {
-                                            ChannelType.values().forEach {
+                                            ChannelType.entries.forEach {
                                                 MenuItem({
                                                     close()
                                                     soundSelect = it
@@ -282,5 +281,5 @@ val ExportDialog = @Composable {
             }
         }
         floatingLayerProvider.FloatingLayers()
-    })
+    }
 }

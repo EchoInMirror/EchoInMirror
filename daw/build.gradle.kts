@@ -69,7 +69,7 @@ compose.desktop {
 
 fun downloadEIMHost(ext: String, appendExt: Boolean = false) {
     val file = File(if (appendExt) "EIMHost-$ext" else "EIMHost")
-    if (File("src").exists() || file.exists()) return
+    if (!File("src").exists() || file.exists()) return
     val connection = URL("https://github.com/EchoInMirror/EIMHost/releases/latest/download/EIMHost-$ext")
         .openConnection() as HttpURLConnection
     connection.connect()
