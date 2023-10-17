@@ -24,7 +24,7 @@ class TrackClipImpl <T: Clip> (override val clip: T, time: Int = 0, duration: In
         set(value) {
             if (value < 0 && !clip.isExpandable) {
                 _start = 0
-                logger.warn("Start of a clip cannot be negative: $this")
+                logger.warn { "Start of a clip cannot be negative: $this" }
             } else _start = value
         }
     override var currentIndex = -1

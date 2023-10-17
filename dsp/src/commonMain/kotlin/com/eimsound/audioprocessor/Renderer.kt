@@ -43,11 +43,11 @@ class RenderPosition(override var ppq: Int, override val sampleRate: Int, range:
     override var timeSigNumerator = 4
     override var timeSigDenominator = 4
     override var projectRange = range
-        set(_) = logger.warn("Modify projectRange is not supported in RenderPosition")
+        set(_) = logger.warn { "Modify projectRange is not supported in RenderPosition" }
     override var loopingRange = range
-        set(_) = logger.warn("Modify loopingRange is not supported in RenderPosition")
+        set(_) = logger.warn { "Modify loopingRange is not supported in RenderPosition" }
     override var isPlaying = true
-        set(_) = logger.warn("Modify isPlaying is not supported in RenderPosition")
+        set(_) = logger.warn { "Modify isPlaying is not supported in RenderPosition" }
     override var isLooping = false
     override var isRecording = false
     override val isRealtime = false
@@ -59,18 +59,18 @@ class RenderPosition(override var ppq: Int, override val sampleRate: Int, range:
         get() = (bufferSize / sampleRate / 60.0 * bpm * ppq).toInt()
 
     override fun setCurrentTime(timeInPPQ: Int) {
-        logger.warn("Call setCurrentTime is not supported in RenderPosition")
+        logger.warn { "Call setCurrentTime is not supported in RenderPosition" }
     }
 
     override fun setPPQPosition(ppqPosition: Double) {
-        logger.warn("Call setPPQPosition is not supported in RenderPosition")
+        logger.warn { "Call setPPQPosition is not supported in RenderPosition" }
     }
 
     override fun update(timeInSamples: Long) {
-        logger.warn("Call update is not supported in RenderPosition")
+        logger.warn { "Call update is not supported in RenderPosition" }
     }
 
     override fun setSampleRateAndBufferSize(sampleRate: Int, bufferSize: Int) {
-        logger.warn("Call setSampleRateAndBufferSize is not supported in RenderPosition")
+        logger.warn { "Call setSampleRateAndBufferSize is not supported in RenderPosition" }
     }
 }

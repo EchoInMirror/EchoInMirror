@@ -416,7 +416,7 @@ class BusImpl(
     }
 
     override suspend fun save() {
-        busLogger.info("Saving project: $project to ${project.root.pathString}")
+        busLogger.info { "Saving project: $project to ${project.root.pathString}" }
         val cost = measureTimeMillis {
             val time = System.currentTimeMillis()
             project.timeCost += (time - lastSaveTime).toInt()
@@ -425,11 +425,11 @@ class BusImpl(
             super.save(project.root.pathString)
             backup()
         }
-        busLogger.info("Saved project by cost ${cost}ms")
+        busLogger.info { "Saved project by cost ${cost}ms" }
     }
 
     override suspend fun save(path: String) {
-        busLogger.info("Saving project: $project to $path")
+        busLogger.info { "Saving project: $project to $path" }
         val cost = measureTimeMillis {
             val time = System.currentTimeMillis()
             project.timeCost += (time - lastSaveTime).toInt()
@@ -437,7 +437,7 @@ class BusImpl(
             project.save(Paths.get(path))
             super.save(path)
         }
-        busLogger.info("Saved project by cost ${cost}ms")
+        busLogger.info { "Saved project by cost ${cost}ms" }
     }
 
     override suspend fun processBlock(

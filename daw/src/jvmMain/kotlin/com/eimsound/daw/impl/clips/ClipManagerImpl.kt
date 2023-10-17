@@ -28,7 +28,7 @@ class ClipManagerImpl : ClipManager {
 
     override suspend fun createClip(path: String, json: JsonObject): Clip {
         val name = json["factory"]?.asString()
-        logger.info("Creating clip ${json["id"]} in $path with factory \"$name\"")
+        logger.info { "Creating clip ${json["id"]} in $path with factory \"$name\"" }
         return factories[name]?.createClip(path, json) ?: throw NoSuchFactoryException(name ?: "Null")
     }
 

@@ -60,7 +60,7 @@ fun ApplicationScope.MainWindow() {
         windowManager.mainWindow = window
         windowManager.floatingLayerProvider = LocalFloatingLayerProvider.current
         window.exceptionHandler = WindowExceptionHandler {
-            logger.error("Uncaught compose exception", it)
+            logger.error(it) { "Uncaught compose exception" }
             windowManager.globalException = GlobalException(it, Crashes.trackCrash(it, Thread.currentThread(), null))
         }
 

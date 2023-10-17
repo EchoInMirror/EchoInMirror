@@ -24,7 +24,7 @@ class EIMAudioProcessorFactory : AudioProcessorFactory<AudioProcessor> {
     private val audioProcessors = descriptions.associateBy { it.name }
 
     override suspend fun createAudioProcessor(description: AudioProcessorDescription): AudioProcessor {
-        logger.info("Creating audio processor \"${description.name}\"")
+        logger.info { "Creating audio processor \"${description.name}\"" }
         return when(description) {
             KarplusStrongSynthesizerDescription -> KarplusStrongSynthesizer(this)
             SineWaveSynthesizerDescription -> SineWaveSynthesizer(this)
@@ -34,7 +34,7 @@ class EIMAudioProcessorFactory : AudioProcessorFactory<AudioProcessor> {
 
     override suspend fun createAudioProcessor(path: String, json: JsonObject): AudioProcessor {
         val name = json["name"]?.asString() ?: "Unknown"
-        logger.info("Creating audio processor \"$name\" in \"$path\"")
+        logger.info { "Creating audio processor \"$name\" in \"$path\"" }
         val desc = audioProcessors[name] ?: throw NoSuchAudioProcessorException(name, this.name)
         return createAudioProcessor(desc).apply { load(path, json) }
     }

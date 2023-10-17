@@ -82,10 +82,10 @@ class AudioClipFactoryImpl: AudioClipFactory {
         AudioSourceManager.instance.createAudioSource(path))
 
     override fun createClip() = AudioClipImpl(null, this).apply {
-        logger.info("Creating clip \"${this.id}\"")
+        logger.info { "Creating clip \"${this.id}\"" }
     }
     override fun createClip(path: String, json: JsonObject): AudioClipImpl {
-        logger.info("Creating clip ${json["id"]} in $path")
+        logger.info { "Creating clip ${json["id"]} in $path" }
         return AudioClipImpl(json, this)
     }
     override fun getEditor(clip: TrackClip<AudioClip>, track: Track) = AudioClipEditor(clip, track)

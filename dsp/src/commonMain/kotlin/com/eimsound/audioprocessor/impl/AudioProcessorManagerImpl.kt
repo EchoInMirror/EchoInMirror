@@ -25,7 +25,7 @@ class AudioProcessorManagerImpl: AudioProcessorManager {
     }
 
     override suspend fun createAudioProcessor(factory: String, description: AudioProcessorDescription): AudioProcessor {
-        audioProcessorManagerLogger.info("Creating audio processor ${description.name} with factory \"$factory\"")
+        audioProcessorManagerLogger.info { "Creating audio processor ${description.name} with factory \"$factory\"" }
         return factories[factory]?.createAudioProcessor(description) ?: throw NoSuchFactoryException(factory)
     }
 
@@ -34,7 +34,7 @@ class AudioProcessorManagerImpl: AudioProcessorManager {
 
     override suspend fun createAudioProcessor(path: String, json: JsonObject): AudioProcessor {
         val factory = json["factory"]?.asString()
-        audioProcessorManagerLogger.info("Creating audio processor ${json["id"]} in \"$path\" with factory \"$factory\"")
+        audioProcessorManagerLogger.info { "Creating audio processor ${json["id"]} in \"$path\" with factory \"$factory\"" }
         return factories[factory]?.createAudioProcessor(path, json)
             ?: throw NoSuchFactoryException(factory ?: "Null")
     }

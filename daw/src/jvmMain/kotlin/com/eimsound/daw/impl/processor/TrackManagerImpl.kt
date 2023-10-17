@@ -31,7 +31,7 @@ class TrackManagerImpl : TrackManager {
 
     override suspend fun createTrack(path: String, json: JsonObject): Track {
         val factory = json["factory"]?.asString()
-        trackManagerLogger.info("Creating track ${json["id"]} in \"$path\" with factory \"$factory\"")
+        trackManagerLogger.info { "Creating track ${json["id"]} in \"$path\" with factory \"$factory\"" }
         return factories[factory]?.createAudioProcessor(path, json)
             ?: throw NoSuchFactoryException(factory ?: "Null")
     }
@@ -67,12 +67,12 @@ class DefaultTrackFactory : TrackFactory<Track> {
     override val descriptions = setOf(DefaultTrackDescription)
 
     override suspend fun createAudioProcessor(description: AudioProcessorDescription): TrackImpl {
-        defaultTrackLogger.info("Creating track ${description.identifier}")
+        defaultTrackLogger.info { "Creating track ${description.identifier}" }
         return TrackImpl(description, this)
     }
 
     override suspend fun createAudioProcessor(path: String, json: JsonObject): TrackImpl {
-        defaultTrackLogger.info("Creating track ${json["id"]} in \"$path\"")
+        defaultTrackLogger.info { "Creating track ${json["id"]} in \"$path\"" }
         return TrackImpl(DefaultTrackDescription, this).apply { load(path, json) }
     }
 

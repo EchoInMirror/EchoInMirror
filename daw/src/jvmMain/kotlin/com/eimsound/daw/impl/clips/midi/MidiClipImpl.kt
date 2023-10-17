@@ -78,10 +78,10 @@ private val logger = KotlinLogging.logger { }
 class MidiClipFactoryImpl : MidiClipFactory {
     override val name = "MIDIClip"
     override fun createClip() = MidiClipImpl(null, this).apply {
-        logger.info("Creating clip \"${this.id}\"")
+        logger.info { "Creating clip \"${this.id}\"" }
     }
     override fun createClip(path: String, json: JsonObject): MidiClipImpl {
-        logger.info("Creating clip ${json["id"]} in $path")
+        logger.info { "Creating clip ${json["id"]} in $path" }
         return MidiClipImpl(json, this)
     }
     override fun getEditor(clip: TrackClip<MidiClip>, track: Track) = DefaultMidiClipEditor(clip, track)
