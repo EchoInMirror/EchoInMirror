@@ -10,7 +10,6 @@ import androidx.compose.material.icons.filled.KeyboardOptionKey
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.nativeKeyCode
@@ -23,7 +22,6 @@ import java.awt.event.KeyEvent
 val DEFAULT_ICON_MODIFIER = Modifier.size(18.dp).padding(top = 2.dp)
 val DEFAULT_COMMAND_NAME_MODIFIER = Modifier.padding(start = 4.dp)
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun KeysHint(keys: Array<Key>, iconModifier: Modifier = DEFAULT_ICON_MODIFIER) {
     var hasCtrl = false

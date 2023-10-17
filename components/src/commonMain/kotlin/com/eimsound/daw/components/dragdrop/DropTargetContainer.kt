@@ -40,7 +40,7 @@ internal interface DropTargetChild : DropTarget {
 }
 
 internal sealed class DragAction {
-    object Reject : DragAction()
+    data object Reject : DragAction()
 
     data class Accept(val dropTarget: DropTarget) : DragAction()
 

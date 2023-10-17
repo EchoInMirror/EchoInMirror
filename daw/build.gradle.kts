@@ -83,10 +83,10 @@ fun downloadEIMHost(ext: String, appendExt: Boolean = false) {
 project(":daw") {
     task<Copy>("downloadEIMHost") {
         val os = org.gradle.nativeplatform.platform.internal.DefaultNativePlatform.getCurrentOperatingSystem()
-        if (os.isWindows()) {
+        if (os.isWindows) {
             downloadEIMHost("x64.exe", true)
 //          downloadEIMHost("x86.exe", true)
-        } else if (os.isMacOsX()) {
+        } else if (os.isMacOsX) {
             downloadEIMHost("MacOS")
         } else {
             downloadEIMHost("Linux")

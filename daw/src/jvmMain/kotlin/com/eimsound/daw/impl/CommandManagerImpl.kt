@@ -2,7 +2,6 @@ package com.eimsound.daw.impl
 
 //import cn.apisium.eim.api.processor.NativeAudioPluginDescription
 //import cn.apisium.eim.impl.processor.nativeAudioPluginManager
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.input.key.*
 import com.eimsound.audioprocessor.AudioProcessorManager
 import com.eimsound.audioprocessor.NativeAudioPluginDescription
@@ -21,7 +20,6 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.encodeToStream
 import kotlin.io.path.exists
 
-@OptIn(ExperimentalComposeUiApi::class)
 class CommandManagerImpl : CommandManager {
     override val commands = mutableMapOf<String, Command>()
     val commandsMap = mutableMapOf<String, Command>()

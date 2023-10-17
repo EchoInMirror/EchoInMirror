@@ -29,7 +29,6 @@ import com.eimsound.daw.components.splitpane.VerticalSplitPane
 import com.eimsound.daw.components.splitpane.rememberSplitPaneState
 import com.eimsound.daw.dawutils.openMaxValue
 import com.eimsound.daw.utils.*
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.util.*

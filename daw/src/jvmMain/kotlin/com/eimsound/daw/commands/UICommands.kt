@@ -1,8 +1,5 @@
-@file:OptIn(ExperimentalComposeUiApi::class)
-
 package com.eimsound.daw.commands
 
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.input.key.Key
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.AbstractCommand

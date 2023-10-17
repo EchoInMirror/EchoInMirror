@@ -55,7 +55,6 @@ fun calcDrag(x0: Float, noteWidth: Float, editUnit: Int, range: IntRange?, onRan
 
 val TIMELINE_HEIGHT = 40.dp
 
-@OptIn(ExperimentalTextApi::class)
 @Composable
 fun Timeline(modifier: Modifier = Modifier, noteWidth: MutableState<Dp>, scrollState: ScrollState,
              range: IntRange? = null, offsetX: Dp = 0.dp, editUnit: Int = 96, barPPQ: Int = 96 * 4,

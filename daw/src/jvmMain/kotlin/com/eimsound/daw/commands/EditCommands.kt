@@ -1,10 +1,7 @@
-@file:OptIn(ExperimentalComposeUiApi::class)
-
 package com.eimsound.daw.commands
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.text.AnnotatedString
 import com.eimsound.daw.api.EchoInMirror

@@ -24,7 +24,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.util.fastForEach
@@ -90,7 +89,6 @@ private fun DefaultMidiClipEditor.EditorHorizontalGrid() {
     }
 }
 
-@OptIn(ExperimentalTextApi::class)
 @Composable
 internal fun NotesEditorCanvas(editor: DefaultMidiClipEditor) {
     val coroutineScope = rememberCoroutineScope()

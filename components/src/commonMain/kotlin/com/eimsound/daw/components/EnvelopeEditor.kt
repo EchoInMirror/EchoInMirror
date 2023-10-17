@@ -22,7 +22,6 @@ import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.rememberTextMeasurer
@@ -39,7 +38,6 @@ import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.components.utils.EditAction
 import com.eimsound.daw.utils.*
 import kotlinx.coroutines.launch
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlin.math.*
 
@@ -192,7 +190,6 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: FloatRange,
     override fun selectAll() { selectedPoints.addAll(points) }
 
     @Suppress("DuplicatedCode")
-    @OptIn(ExperimentalTextApi::class)
     @Composable
     fun Editor(start: Float, color: Color, noteWidth: MutableState<Dp>, showThumb: Boolean = true, editUnit: Int = 24,
                horizontalScrollState: ScrollState? = null, clipStartTime: Int = 0, stroke: Float = 2F) {
@@ -569,7 +566,7 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: FloatRange,
                 }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
             }
             MenuItem(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                EnvelopeType.values().forEach {
+                EnvelopeType.entries.forEach {
                     EnvelopeTypeToggleButton(it, currentPoint.type == it) { checked ->
                         close()
                         if (checked) eventHandler?.onTypeChanged(this@EnvelopeEditor, selectedPoints.toList(), it)

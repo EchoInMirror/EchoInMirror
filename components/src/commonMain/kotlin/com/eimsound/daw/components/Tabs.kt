@@ -24,7 +24,6 @@ interface Tab {
 
 interface SettingTab : Tab
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Tabs(tabs: List<Tab>, content: (@Composable (Tab?) -> Unit)? = null) {
     Surface(Modifier.fillMaxSize(), tonalElevation = 4.dp) {

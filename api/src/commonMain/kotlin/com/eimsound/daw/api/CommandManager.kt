@@ -1,6 +1,5 @@
 package com.eimsound.daw.api
 
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.key.Key
 
@@ -29,7 +28,6 @@ interface CommandManager {
     fun getKeysOfCommand(command: Command): Array<Key>
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
 fun Collection<Key>.sortedKeys(): List<Key> {
     var hasCtrl = false
     var hasShift = false

@@ -6,7 +6,6 @@ import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.key.*
@@ -35,7 +34,6 @@ internal object ShortcutKeySettings : SettingTab {
     }
 
     @Composable
-    @OptIn(ExperimentalComposeUiApi::class)
     override fun content() {
         var selectKey by remember { mutableStateOf("") }
         Column {

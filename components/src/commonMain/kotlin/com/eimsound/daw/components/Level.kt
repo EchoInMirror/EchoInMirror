@@ -56,7 +56,6 @@ val levelMarks = listOf(
     50.118725F to "-12"
 )
 
-@OptIn(ExperimentalTextApi::class)
 @Composable
 fun LevelHints(
     modifier: Modifier = Modifier.height(80.dp),

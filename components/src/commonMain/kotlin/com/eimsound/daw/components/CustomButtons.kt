@@ -13,7 +13,6 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.dp
 
 @Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CustomButton(
     onClick: () -> Unit,

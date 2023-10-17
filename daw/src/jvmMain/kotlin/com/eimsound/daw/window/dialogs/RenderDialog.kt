@@ -7,7 +7,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogWindow
+import androidx.compose.ui.window.DialogWindowScope
 import androidx.compose.ui.zIndex
 import com.eimsound.audioprocessor.RenderFormat
 import com.eimsound.audioprocessor.convertPPQToSamples
@@ -37,9 +38,9 @@ private fun formatSecondTime(timeInSecond: Float): String {
 
 private val floatingLayerProvider = FloatingLayerProvider()
 
-@OptIn(DelicateCoroutinesApi::class, ExperimentalMaterial3Api::class)
+@OptIn(DelicateCoroutinesApi::class)
 val ExportDialog = @Composable {
-    Dialog(::closeQuickLoadWindow, title = "导出") {
+    DialogWindow(::closeQuickLoadWindow, title = "导出", content = fun DialogWindowScope.() {
         remember { EchoInMirror.currentPosition.isPlaying = false }
         window.minimumSize = Dimension(300, 500)
 
@@ -104,10 +105,14 @@ val ExportDialog = @Composable {
                                     Text("导出格式: ")
                                     Menu({ close ->
                                         RenderFormat.values().forEach {
-                                            MenuItem({
-                                                close()
-                                                renderFormat = it
-                                            }, renderFormat == it, modifier = Modifier.fillMaxWidth()) { Text(it.extend) }
+                                            MenuItem(
+                                                {
+                                                    close()
+                                                    renderFormat = it
+                                                },
+                                                renderFormat == it,
+                                                modifier = Modifier.fillMaxWidth()
+                                            ) { Text(it.extend) }
                                         }
                                     }) {
                                         Text(
@@ -277,5 +282,5 @@ val ExportDialog = @Composable {
             }
         }
         floatingLayerProvider.FloatingLayers()
-    }
+    })
 }

@@ -20,7 +20,6 @@ import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.rememberTextMeasurer
@@ -198,7 +197,7 @@ private fun FloatingLayerProvider.openEventSelectorDialog(events: MutableMidiCCE
 
 internal val eventSelectorHeight = 26.dp
 
-@OptIn(ExperimentalTextApi::class, ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 internal fun EventEditor(editor: DefaultMidiClipEditor) {
     editor.apply {

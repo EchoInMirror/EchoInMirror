@@ -85,7 +85,6 @@ private fun saveFavoriteAudioProcessors() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 fun FloatingLayerProvider.openQuickLoadDialog(onClose: ((AudioProcessorDescriptionAndFactory?) -> Unit) = { }) {
     loadFavoriteAudioProcessors()
     openFloatingLayer({

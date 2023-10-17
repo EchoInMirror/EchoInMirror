@@ -47,7 +47,6 @@ fun IconButton(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FilledIconToggleButton(
     checked: Boolean,
