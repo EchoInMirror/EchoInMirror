@@ -35,7 +35,7 @@ import com.eimsound.daw.dawutils.border
 import com.eimsound.daw.impl.WindowManagerImpl
 import com.eimsound.daw.window.panels.playlist.mainPlaylist
 import com.microsoft.appcenter.crashes.Crashes
-import io.github.oshai.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 
 private val logger = KotlinLogging.logger("MainWindow")
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalMaterial3Api::class)

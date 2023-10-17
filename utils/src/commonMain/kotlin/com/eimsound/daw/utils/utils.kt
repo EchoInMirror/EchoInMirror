@@ -1,7 +1,7 @@
 package com.eimsound.daw.utils
 
 import com.aventrix.jnanoid.jnanoid.NanoIdUtils
-import io.github.oshai.KLogger
+import io.github.oshai.kotlinlogging.KLogger
 import kotlin.math.ceil
 import kotlin.math.roundToInt
 
@@ -38,7 +38,7 @@ val FloatRange.range get() = endInclusive - start
 
 inline fun <T> tryOrNull(logger: KLogger? = null, message: String? = null, block: () -> T): T? {
     return try { block() } catch (e: Throwable) {
-        logger?.error(message, e)
+        logger?.error(e) { "$message" }
         null
     }
 }

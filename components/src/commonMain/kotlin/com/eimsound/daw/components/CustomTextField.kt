@@ -18,8 +18,12 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 
-@OptIn(ExperimentalMaterial3Api::class)
-private val DEFAULT_PADDING = TextFieldDefaults.textFieldWithLabelPadding(8.dp, 8.dp, 6.dp, 4.dp)
+private val DEFAULT_PADDING = TextFieldDefaults.contentPaddingWithLabel(
+    start = 8.dp,
+    top = 6.dp,
+    end = 8.dp,
+    bottom = 4.dp,
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,6 +38,8 @@ fun CustomOutlinedTextField(
     placeholder: @Composable (() -> Unit)? = null,
     leadingIcon: @Composable (() -> Unit)? = null,
     trailingIcon: @Composable (() -> Unit)? = null,
+    prefix: @Composable (() -> Unit)? = null,
+    suffix: @Composable (() -> Unit)? = null,
     supportingText: @Composable (() -> Unit)? = null,
     isError: Boolean = false,
     visualTransformation: VisualTransformation = VisualTransformation.None,
@@ -43,15 +49,15 @@ fun CustomOutlinedTextField(
     maxLines: Int = Int.MAX_VALUE,
     minLines: Int = 1,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
-    shape: Shape = TextFieldDefaults.outlinedShape,
-    colors: TextFieldColors = TextFieldDefaults.outlinedTextFieldColors(),
+    shape: Shape = OutlinedTextFieldDefaults.shape,
+    colors: TextFieldColors = TextFieldDefaults.colors(),
     paddingValues: PaddingValues = DEFAULT_PADDING
 ) {
     BasicTextField(value, onValueChange, modifier, enabled, readOnly, textStyle, keyboardOptions, keyboardActions,
         singleLine, maxLines, minLines, visualTransformation, {}, interactionSource) {
-        TextFieldDefaults.OutlinedTextFieldDecorationBox(value, it, enabled, singleLine, visualTransformation,
-            interactionSource, isError, label, placeholder, leadingIcon, trailingIcon, supportingText, colors, paddingValues) {
-            TextFieldDefaults.OutlinedBorderContainerBox(
+        TextFieldDefaults.DecorationBox(value, it, enabled, singleLine, visualTransformation, interactionSource,
+            isError, label, placeholder, leadingIcon, trailingIcon, prefix, suffix, supportingText, shape, colors, paddingValues) {
+            TextFieldDefaults.ContainerBox(
                 enabled,
                 isError,
                 interactionSource,
@@ -75,6 +81,8 @@ fun CustomTextField(
     placeholder: @Composable (() -> Unit)? = null,
     leadingIcon: @Composable (() -> Unit)? = null,
     trailingIcon: @Composable (() -> Unit)? = null,
+    prefix: @Composable (() -> Unit)? = null,
+    suffix: @Composable (() -> Unit)? = null,
     supportingText: @Composable (() -> Unit)? = null,
     isError: Boolean = false,
     visualTransformation: VisualTransformation = VisualTransformation.None,
@@ -84,14 +92,14 @@ fun CustomTextField(
     maxLines: Int = Int.MAX_VALUE,
     minLines: Int = 1,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
-    shape: Shape = TextFieldDefaults.filledShape,
-    colors: TextFieldColors = TextFieldDefaults.textFieldColors(),
+    shape: Shape = TextFieldDefaults.shape,
+    colors: TextFieldColors = TextFieldDefaults.colors(),
     paddingValues: PaddingValues = DEFAULT_PADDING
 ) {
     BasicTextField(value, onValueChange, modifier, enabled, readOnly, textStyle, keyboardOptions, keyboardActions,
         singleLine, maxLines, minLines, visualTransformation, {}, interactionSource) {
-        TextFieldDefaults.TextFieldDecorationBox(value, it, enabled, singleLine, visualTransformation,
-            interactionSource, isError, label, placeholder, leadingIcon, trailingIcon, supportingText, shape, colors, paddingValues)
+        TextFieldDefaults.DecorationBox(value, it, enabled, singleLine, visualTransformation, interactionSource,
+            isError, label, placeholder, leadingIcon, trailingIcon, prefix, suffix, supportingText, shape, colors, paddingValues)
         }
     }
 
@@ -99,7 +107,7 @@ fun CustomTextField(
 @Composable
 fun ReadonlyTextField(modifier: Modifier = Modifier, enabled: Boolean = false, content: @Composable () -> Unit) {
     Box(modifier) {
-        TextFieldDefaults.TextFieldDecorationBox("", content, enabled,
+        TextFieldDefaults.DecorationBox("", content, enabled,
             singleLine = true,
             visualTransformation = VisualTransformation.None,
             interactionSource = remember { MutableInteractionSource() },

@@ -20,7 +20,7 @@ import com.eimsound.daw.api.processor.*
 import com.eimsound.daw.components.utils.randomColor
 import com.eimsound.daw.utils.*
 import com.eimsound.daw.window.panels.fileBrowserPreviewer
-import io.github.oshai.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.*

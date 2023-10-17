@@ -1,7 +1,8 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("multiplatform") version "1.8.0" apply false
+    id("org.jetbrains.compose") apply false
+    kotlin("multiplatform") version "1.9.10" apply false
     `maven-publish`
 }
 

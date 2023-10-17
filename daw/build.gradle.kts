@@ -7,9 +7,9 @@ import java.net.URL
 
 plugins {
     kotlin("multiplatform")
-    kotlin("plugin.serialization") version "1.8.0"
+    kotlin("plugin.serialization") version "1.9.10"
     id("org.jetbrains.compose")
-    id("com.github.johnrengelman.shadow") version "7.1.2"
+    id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
 repositories {
@@ -67,9 +67,9 @@ compose.desktop {
     }
 }
 
-fun downloadEIMHost(ext: String) {
-    val file = File("EIMHost-$ext")
-    if (file.exists()) return
+fun downloadEIMHost(ext: String, appendExt: Boolean = false) {
+    val file = File(if (appendExt) "EIMHost-$ext" else "EIMHost")
+    if (File("src").exists() || file.exists()) return
     val connection = URL("https://github.com/EchoInMirror/EIMHost/releases/latest/download/EIMHost-$ext")
         .openConnection() as HttpURLConnection
     connection.connect()
@@ -82,8 +82,15 @@ fun downloadEIMHost(ext: String) {
 
 project(":daw") {
     task<Copy>("downloadEIMHost") {
-        downloadEIMHost("x64.exe")
-//        downloadEIMHost("x86.exe")
+        val os = org.gradle.nativeplatform.platform.internal.DefaultNativePlatform.getCurrentOperatingSystem()
+        if (os.isWindows()) {
+            downloadEIMHost("x64.exe", true)
+//          downloadEIMHost("x86.exe", true)
+        } else if (os.isMacOsX()) {
+            downloadEIMHost("MacOS")
+        } else {
+            downloadEIMHost("Linux")
+        }
     }
 }
 

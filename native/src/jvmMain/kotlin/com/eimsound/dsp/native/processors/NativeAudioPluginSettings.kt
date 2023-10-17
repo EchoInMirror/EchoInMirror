@@ -64,7 +64,6 @@ class NativeAudioPluginSettings: SettingTab {
     }
 
     @Suppress("DuplicatedCode")
-    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun content() {
         Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
@@ -98,10 +97,10 @@ class NativeAudioPluginSettings: SettingTab {
                     Card {
                         apm.scanPaths.forEach {
                             ListItem(
-                                modifier = Modifier.background(MaterialTheme.colorScheme.surface).clickableWithIcon {
+                                { Text(it) },
+                                Modifier.background(MaterialTheme.colorScheme.surface).clickableWithIcon {
                                     if (apm.pluginIsFile) openInExplorer(File(it))
                                 },
-                                headlineText = { Text(it) },
                                 trailingContent = {
                                     IconButton(
                                         {
@@ -135,10 +134,10 @@ class NativeAudioPluginSettings: SettingTab {
                             apm.scanningPlugins.forEach { (k, v) ->
                                 key(k) {
                                     ListItem(
-                                        modifier = Modifier.background(MaterialTheme.colorScheme.surface).clickableWithIcon {
+                                        { Text(k) },
+                                        Modifier.background(MaterialTheme.colorScheme.surface).clickableWithIcon {
                                             if (apm.pluginIsFile) selectInExplorer(File(k))
                                         },
-                                        headlineText = { Text(k) },
                                         trailingContent = {
                                             IconButton(
                                                 { v.destroy() },
@@ -188,10 +187,10 @@ class NativeAudioPluginSettings: SettingTab {
                     Card {
                         apm.skipList.forEach {
                             ListItem(
-                                modifier = Modifier.background(MaterialTheme.colorScheme.surface).clickableWithIcon {
+                                { Text(it) },
+                                Modifier.background(MaterialTheme.colorScheme.surface).clickableWithIcon {
                                     if (apm.pluginIsFile) selectInExplorer(File(it))
                                 },
-                                headlineText = { Text(it) },
                                 trailingContent = {
                                     IconButton(
                                         {

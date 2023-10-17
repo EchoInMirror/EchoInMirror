@@ -5,14 +5,16 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.eimsound.audioprocessor.*
-import com.eimsound.daw.utils.*
+import com.eimsound.daw.utils.asString
+import com.eimsound.daw.utils.encodeJsonFile
+import com.eimsound.daw.utils.fromJsonFile
+import com.eimsound.daw.utils.mutableStateSetOf
 import com.eimsound.dsp.native.isX86PEFile
-import io.github.oshai.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.sync.withPermit
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.*
 import org.apache.commons.lang3.SystemUtils
 import java.io.File
@@ -75,26 +77,31 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
         val scanned = hashSetOf<String>()
         scanned.addAll(skipList)
         descriptions.forEach { scanned.add(it.fileOrIdentifier) }
-        val scanVisitor = fileVisitor {
-            onPreVisitDirectory { directory, _ ->
-                if (directory.name.startsWith(".")) {
-                    FileVisitResult.SKIP_SUBTREE
-                } else {
+
+        if (SystemUtils.IS_OS_MAC) {
+            pluginList.addAll(getAudioUnitsForMacOS())
+        } else {
+            val scanVisitor = fileVisitor {
+                onPreVisitDirectory { directory, _ ->
+                    if (directory.name.startsWith(".")) {
+                        FileVisitResult.SKIP_SUBTREE
+                    } else {
+                        FileVisitResult.CONTINUE
+                    }
+                }
+                onVisitFile { file, _ ->
+                    if (pluginExtensions.contains(file.extension) && !scanned.contains(file.absolutePathString())) {
+                        pluginList.add(file.absolutePathString())
+                    }
                     FileVisitResult.CONTINUE
                 }
             }
-            onVisitFile { file, _ ->
-                if (pluginExtensions.contains(file.extension) && !scanned.contains(file.absolutePathString())) {
-                    pluginList.add(file.absolutePathString())
-                }
-                FileVisitResult.CONTINUE
-            }
-        }
 
-        scanPaths.forEach {
-            val path = Path(it)
-            if(!path.exists()) return@forEach
-            Files.walkFileTree(path, scanVisitor)
+            scanPaths.forEach {
+                val path = Path(it)
+                if(!path.exists()) return@forEach
+                Files.walkFileTree(path, scanVisitor)
+            }
         }
         allScanCount = pluginList.size
 
@@ -106,7 +113,7 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
             pluginList.map {
                 async {
                     scanSemaphore.withPermit {
-                        logger.info("Scanning native audio plugin: {}", it)
+                        logger.info { "Scanning native audio plugin: $it" }
                         val pb = ProcessBuilder(getNativeHostPath(it), "-S", "#")
                         pb.redirectError()
                         val process = pb.start()
@@ -120,7 +127,7 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
                                 .substringAfter("\$EIMHostScanner{{").substringBeforeLast("}}EIMHostScanner\$")
                             descriptions.addAll(Json.decodeFromString<List<NativeAudioPluginDescription>>(result))
                         } catch (e: Throwable) {
-                            logger.error("Failed to scan native audio plugin: $it, data: $result", e)
+                            logger.error(e) { "Failed to scan native audio plugin: $it, data: $result" }
                             skipList.add(it)
                         } finally {
                             scannedCount++
@@ -138,7 +145,7 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
     override suspend fun createAudioProcessor(description: AudioProcessorDescription): NativeAudioPlugin {
         if (description !is NativeAudioPluginDescription)
             throw NoSuchAudioProcessorException(description.identifier, name)
-        logger.info("Creating native audio plugin: {}", description)
+        logger.info { "Creating native audio plugin: $description" }
         return NativeAudioPluginImpl(description, this).apply {
             launch(getNativeHostPath(description), null)
         }
@@ -147,7 +154,7 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
     override suspend fun createAudioProcessor(path: String, json: JsonObject): NativeAudioPlugin {
         val description = descriptions.find { it.identifier == json["identifier"]!!.asString() }
             ?: throw NoSuchAudioProcessorException(path, name)
-        logger.info("Creating native audio plugin: {} in {}", description, path)
+        logger.info { "Creating native audio plugin: $description in $path" }
         return NativeAudioPluginImpl(description, this).apply {
             launch(getNativeHostPath(description), "$path/${json["id"]}.bin")
         }
@@ -195,7 +202,15 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
         }
     }
 
-    private fun getNativeHostPath(isX86: Boolean) = Paths.get(System.getProperty("eim.dsp.nativeaudioplugins.host" +
+    private suspend fun getAudioUnitsForMacOS(): List<String> {
+        val pb = ProcessBuilder(getNativeHostPath(), "-S")
+        pb.redirectError()
+        return withContext(Dispatchers.IO) {
+            Json.decodeFromString<List<String>>(pb.start().inputStream.readAllBytes().decodeToString())
+        }
+    }
+
+    private fun getNativeHostPath(isX86: Boolean = false) = Paths.get(System.getProperty("eim.dsp.nativeaudioplugins.host" +
             (if (isX86) ".x86" else ""))).absolutePathString()
     fun getNativeHostPath(description: NativeAudioPluginDescription) =
         getNativeHostPath(SystemUtils.IS_OS_WINDOWS && description.isX86)

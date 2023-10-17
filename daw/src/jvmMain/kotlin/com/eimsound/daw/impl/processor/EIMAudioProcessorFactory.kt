@@ -7,7 +7,7 @@ import com.eimsound.daw.processor.synthesizer.KarplusStrongSynthesizerDescriptio
 import com.eimsound.daw.processor.synthesizer.SineWaveSynthesizer
 import com.eimsound.daw.processor.synthesizer.SineWaveSynthesizerDescription
 import com.eimsound.daw.utils.asString
-import io.github.oshai.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.json.JsonObject
 
 class EIMAudioProcessorDescription(name: String, category: String? = null, isInstrument: Boolean = false):

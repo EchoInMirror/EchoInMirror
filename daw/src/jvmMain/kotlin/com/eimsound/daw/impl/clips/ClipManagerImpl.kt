@@ -8,7 +8,7 @@ import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.utils.NoSuchFactoryException
 import com.eimsound.daw.utils.asInt
 import com.eimsound.daw.utils.asString
-import io.github.oshai.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.json.JsonObject
 import java.util.*
 

@@ -1,6 +1,6 @@
 package com.eimsound.audioprocessor
 
-import io.github.oshai.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import java.io.File
 
 interface Renderable {

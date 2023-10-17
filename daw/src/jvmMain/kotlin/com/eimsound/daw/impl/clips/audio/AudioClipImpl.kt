@@ -15,7 +15,7 @@ import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.components.EnvelopeEditor
 import com.eimsound.daw.components.Waveform
 import com.eimsound.daw.utils.putNotDefault
-import io.github.oshai.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.json.*
 import java.nio.file.Path
 import kotlin.io.path.name

@@ -1,6 +1,6 @@
 plugins {
     kotlin("multiplatform")
-    kotlin("plugin.serialization") version "1.8.0"
+    kotlin("plugin.serialization") version "1.9.10"
     id("org.jetbrains.compose")
 }
 
@@ -29,7 +29,7 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${extra["eim.dependencies.kotlinx.coroutines"]}")
                 implementation("org.apache.commons:commons-lang3:${extra["eim.dependencies.commons.lang"]}")
                 implementation("org.slf4j:slf4j-api:${extra["eim.dependencies.slf4j"]}")
-                implementation("com.github.ShirasawaSama:JavaSharedMemory:0.0.2")
+                implementation("com.github.ShirasawaSama:JavaSharedMemory:0.1.3")
 
                 compileOnly(compose.material3)
                 compileOnly(compose.materialIconsExtended)

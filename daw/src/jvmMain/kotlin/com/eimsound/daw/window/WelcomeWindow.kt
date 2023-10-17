@@ -43,7 +43,6 @@ private class Projects: Tab {
         Icon(Icons.Filled.ListAlt, "Projects")
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun content() {
         Column {
@@ -93,7 +92,7 @@ private class Projects: Tab {
             projects.forEach {
                 ListItem({ Text(it.path.name) },
                     Modifier.clickableWithIcon { EchoInMirror.windowManager.openProject(it.path) },
-                    supportingText = { Text(it.createdTime) },
+                    supportingContent = { Text(it.createdTime) },
                     trailingContent = { Text(it.lastModified) },
                     leadingContent = {
                         Avatar(randomColor()) { Text(it.path.name.firstOrNull()?.toString() ?: "") }

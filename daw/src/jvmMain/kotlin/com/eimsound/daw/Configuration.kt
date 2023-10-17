@@ -62,7 +62,9 @@ object Configuration : JsonSerializable {
         } catch (ignored: Throwable) { }
         if (CONFIG_PATH.exists()) fromJsonFile(CONFIG_PATH.toFile())
         else save()
-        nativeHostPath = Paths.get("D:\\Cpp\\EIMPluginScanner\\build\\EIMHost_artefacts\\MinSizeRel\\EIMHost.exe")
+        nativeHostPath = Paths.get(if (SystemUtils.IS_OS_MAC)
+            "/Users/shirasawa/code/EIMHost/cmake-build-debug/EIMHost_artefacts/Debug/EIMHost"
+            else "D:\\Cpp\\EIMPluginScanner\\build\\EIMHost_artefacts\\MinSizeRel\\EIMHost.exe")
         if (!Files.exists(nativeHostPath)) nativeHostPath = Paths.get("EIMHost-x64.exe")
         val x86Host = nativeHostPath.absolute().parent.resolve(nativeHostPath.name.replace("x64", "x86"))
 

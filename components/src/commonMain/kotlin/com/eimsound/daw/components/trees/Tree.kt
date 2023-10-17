@@ -24,7 +24,7 @@ import com.eimsound.audioprocessor.data.midi.toMidiTracks
 import com.eimsound.audioprocessor.data.midi.toOneMidiTrack
 import com.eimsound.daw.components.dragdrop.FileDraggable
 import com.eimsound.daw.components.dragdrop.GlobalDraggable
-import io.github.oshai.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File

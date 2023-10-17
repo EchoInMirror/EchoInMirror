@@ -7,7 +7,7 @@ import com.eimsound.daw.utils.ManualState
 import com.eimsound.daw.utils.UndoManager
 import com.eimsound.daw.utils.UndoableAction
 import com.eimsound.daw.utils.UndoableActionExecuteException
-import io.github.oshai.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 
 private val logger = KotlinLogging.logger { }
 class DefaultUndoManager: UndoManager {

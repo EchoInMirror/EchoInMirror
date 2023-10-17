@@ -6,7 +6,6 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.onClick
 import androidx.compose.material3.LocalTextStyle
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -29,7 +28,7 @@ import androidx.compose.ui.unit.TextUnit
 fun ClickableText(
     text: String,
     modifier: Modifier = Modifier,
-    color: Color = MaterialTheme.colorScheme.primary,
+    color: Color = Color.Unspecified,
     fontSize: TextUnit = TextUnit.Unspecified,
     fontStyle: FontStyle? = null,
     fontWeight: FontWeight? = null,
@@ -41,6 +40,7 @@ fun ClickableText(
     overflow: TextOverflow = TextOverflow.Clip,
     softWrap: Boolean = true,
     maxLines: Int = Int.MAX_VALUE,
+    minLines: Int = 1,
     onTextLayout: (TextLayoutResult) -> Unit = {},
     style: TextStyle = LocalTextStyle.current,
     onClick: () -> Unit
@@ -50,5 +50,5 @@ fun ClickableText(
         .onClick(interactionSource = source, onClick = onClick),
         color, fontSize, fontStyle, fontWeight, fontFamily, letterSpacing,
         if (source.collectIsHoveredAsState().value) TextDecoration.Underline else textDecoration,
-        textAlign, lineHeight, overflow, softWrap, maxLines, onTextLayout, style)
+        textAlign, lineHeight, overflow, softWrap, maxLines, minLines, onTextLayout, style)
 }
