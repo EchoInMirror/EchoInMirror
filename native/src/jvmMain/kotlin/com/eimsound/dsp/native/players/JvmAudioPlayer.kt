@@ -68,7 +68,7 @@ class JvmAudioPlayer(
         val sampleBits = getSampleBits(bits)
         val bufferSize = buffers[0].size
         try {
-            while (thread?.isAlive == true && sdl?.isActive == true) {
+            while (thread?.isAlive == true && sdl?.isOpen == true) {
                 enterProcessBlock()
                 buffers.forEach { it.fill(0F) }
 

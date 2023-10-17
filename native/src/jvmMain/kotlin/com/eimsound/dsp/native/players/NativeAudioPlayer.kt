@@ -73,14 +73,14 @@ class NativeAudioPlayer(
                     add(it.size.toString())
                 }
             })
-            pb.redirectOutput(ProcessBuilder.Redirect.INHERIT)
+            pb.redirectError(ProcessBuilder.Redirect.INHERIT)
             val p = pb.start()
             process = p
 
-            val flag1 = p.errorStream.read() == 1
-            val flag2 = p.errorStream.read() == 2
+            val flag1 = p.inputStream.read() == 1
+            val flag2 = p.inputStream.read() == 2
             val isBigEndian = flag1 && flag2
-            inputStream = ByteBufInputStream(isBigEndian, p.errorStream)
+            inputStream = ByteBufInputStream(isBigEndian, p.inputStream)
             outputStream = ByteBufOutputStream(isBigEndian, p.outputStream)
 
             outputStream.writeString(name)
@@ -218,7 +218,7 @@ class NativeAudioPlayerFactory : AudioPlayerFactory {
     private val execFile get() = System.getProperty("eim.dsp.nativeaudioplayer.file")
     override val name = "Native"
     override suspend fun getPlayers() = withContext(Dispatchers.IO) {
-        ProcessBuilder(execFile, "-O", "-A").start().errorStream
+        ProcessBuilder(execFile, "-O", "-A").start().inputStream
             .readAllBytes().decodeToString().split("\$EIM\$").filter { it.isNotEmpty() }
     }
     override fun create(name: String, currentPosition: CurrentPosition, processor: AudioProcessor) = try {

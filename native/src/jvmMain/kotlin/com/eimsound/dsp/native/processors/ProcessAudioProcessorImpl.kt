@@ -163,13 +163,13 @@ open class ProcessAudioProcessorImpl(
             val pb = if (preset == null) ProcessBuilder(execFile, "-L", "#", *args.toTypedArray())
             else ProcessBuilder(execFile, "-L", "#", "-P", "#", *args.toTypedArray())
 
-            pb.redirectOutput(ProcessBuilder.Redirect.INHERIT)
+            pb.redirectError(ProcessBuilder.Redirect.INHERIT)
             val p = pb.start()
 
-            val flag1 = p.errorStream.read() == 1
-            val flag2 = p.errorStream.read() == 2
+            val flag1 = p.inputStream.read() == 1
+            val flag2 = p.inputStream.read() == 2
             val isBigEndian = flag1 && flag2
-            val input = ByteBufInputStream(isBigEndian, p.errorStream)
+            val input = ByteBufInputStream(isBigEndian, p.inputStream)
             val output = ByteBufOutputStream(isBigEndian, p.outputStream)
 
             output.writeString(Json.encodeToString(description))

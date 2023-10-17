@@ -112,6 +112,10 @@ tasks.withType<ShadowJar> {
     archiveVersion.set("")
 }
 
+tasks.withType<JavaExec> {
+    jvmArgs("--enable-preview")
+}
+
 // Run before build
 tasks.withType<GradleBuild> {
     dependsOn(":downloadEIMHost")
