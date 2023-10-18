@@ -37,6 +37,7 @@ import com.eimsound.daw.components.utils.EditAction
 import com.eimsound.daw.components.utils.HorizontalResize
 import com.eimsound.daw.components.utils.toOnSurfaceColor
 import com.eimsound.daw.utils.fitInUnit
+import com.eimsound.daw.utils.isCrossPlatformCtrlPressed
 import kotlin.math.absoluteValue
 
 private val RESIZE_HAND_MODIFIER = Modifier.width(4.dp).fillMaxHeight()
@@ -57,7 +58,7 @@ private suspend fun AwaitPointerEventScope.handleDragEvent(playlist: Playlist, c
                         selectedClips.clear()
                         selectedClips.add(clip)
                     }
-                    if (event.keyboardModifiers.isCtrlPressed) continue
+                    if (event.keyboardModifiers.isCrossPlatformCtrlPressed) continue
                     break
                 } else if (event.buttons.isSecondaryPressed) {
                     selectedClips.clear()

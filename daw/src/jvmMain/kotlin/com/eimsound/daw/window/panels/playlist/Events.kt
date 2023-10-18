@@ -6,6 +6,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAll
 import com.eimsound.daw.api.TrackClip
 import com.eimsound.daw.components.utils.EditAction
+import com.eimsound.daw.utils.isCrossPlatformCtrlPressed
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -38,7 +39,7 @@ internal suspend fun PointerInputScope.handleMouseEvent(playlist: Playlist, scop
                     }
                     PointerEventType.Press -> {
                         if (event.buttons.isPrimaryPressed) {
-                            if (event.keyboardModifiers.isCtrlPressed) action = EditAction.SELECT
+                            if (event.keyboardModifiers.isCrossPlatformCtrlPressed) action = EditAction.SELECT
                             selectedClips.clear()
                             break
                         } else if (event.buttons.isForwardPressed) {

@@ -244,7 +244,7 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: FloatRange,
                             PointerEventType.Press -> {
                                 val x = event.changes[0].position.x
                                 val y = event.changes[0].position.y
-                                if (event.keyboardModifiers.isCtrlPressed || event.buttons.isForwardPressed) {
+                                if (event.keyboardModifiers.isCrossPlatformCtrlPressed || event.buttons.isForwardPressed) {
                                     selectedPoints.clear()
                                     selectionStartX = x
                                     selectionStartY = y

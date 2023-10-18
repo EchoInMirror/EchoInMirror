@@ -23,6 +23,7 @@ import com.eimsound.daw.components.KEYBOARD_KEYS
 import com.eimsound.daw.components.openEditorMenu
 import com.eimsound.daw.components.utils.*
 import com.eimsound.daw.utils.fitInUnit
+import com.eimsound.daw.utils.isCrossPlatformCtrlPressed
 import com.eimsound.daw.window.panels.playlist.calcScroll
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -112,7 +113,7 @@ internal suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutin
                     PointerEventType.Press -> {
                         isEventPanelActive = false
                         if (event.buttons.isPrimaryPressed) {
-                            if (event.keyboardModifiers.isCtrlPressed) {
+                            if (event.keyboardModifiers.isCrossPlatformCtrlPressed) {
                                 action = EditAction.SELECT
                                 break
                             }

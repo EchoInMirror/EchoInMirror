@@ -20,6 +20,7 @@ import com.eimsound.daw.components.utils.clickableWithIcon
 import com.eimsound.daw.impl.CommandManagerImpl
 import com.eimsound.daw.utils.mutableStateSetOf
 import com.eimsound.daw.utils.toMutableStateSet
+import org.apache.commons.lang3.SystemUtils
 import java.awt.event.KeyEvent
 
 internal object ShortcutKeySettings : SettingTab {
@@ -102,31 +103,40 @@ internal object ShortcutKeySettings : SettingTab {
                                 selectKey = curKey
                                 preKeyCompose.clear()
                                 keyDown.clear()
-                                keyCompose.forEach {
-                                    preKeyCompose.add(it)
-                                }
+                                preKeyCompose.addAll(keyCompose)
                                 keyCompose.clear()
                             }
                         }.onKeyEvent {
                             if (selectKey != curKey) return@onKeyEvent false
+                            var pressKey = it.key
+                            when (pressKey) {
+                                Key.MetaLeft, Key.MetaRight -> if (SystemUtils.IS_OS_MAC) pressKey = Key.CtrlLeft
+                                Key.CtrlLeft, Key.CtrlRight -> if (SystemUtils.IS_OS_MAC) pressKey = Key.MetaLeft
+                                Key.ShiftRight -> pressKey = Key.ShiftLeft
+                                Key.AltRight -> pressKey = Key.AltLeft
+                            }
                             if (it.type == KeyEventType.KeyDown) {
-                                when (it.key) {
+                                when (pressKey) {
                                     Key.Escape -> cancel()
                                     Key.Enter -> return@onKeyEvent false
                                     else -> {
-                                        keyDown.add(it.key)
-                                        keyCompose.add(it.key)
+                                        keyDown.add(pressKey)
+                                        keyCompose.add(pressKey)
                                     }
                                 }
                             } else if (it.type == KeyEventType.KeyUp) {
-                                keyDown.remove(it.key)
-                                if (keyDown.isEmpty())
-                                    done()
+                                keyDown.remove(pressKey)
+                                if (keyDown.isEmpty()) done()
                             }
                             true
                         }) {
                         Text(keyCompose.sortedKeys().joinToString(separator = "+") {
-                            KeyEvent.getKeyText(it.nativeKeyCode)
+                            var cur = it
+                            when (it) {
+                                Key.MetaLeft, Key.MetaRight -> if (SystemUtils.IS_OS_MAC) cur = Key.CtrlLeft
+                                Key.CtrlLeft, Key.CtrlRight -> if (SystemUtils.IS_OS_MAC) cur = Key.MetaLeft
+                            }
+                            KeyEvent.getKeyText(cur.nativeKeyCode)
                         }, Modifier.fillMaxWidth())
                     }
                     Spacer(Modifier.weight(0.5f))

@@ -32,6 +32,8 @@ import com.eimsound.daw.dawutils.CLIPBOARD_MANAGER
 import com.eimsound.daw.dawutils.Logo
 import com.eimsound.daw.dawutils.border
 import com.eimsound.daw.impl.WindowManagerImpl
+import com.eimsound.daw.utils.isCrossPlatformAltPressed
+import com.eimsound.daw.utils.isCrossPlatformCtrlPressed
 import com.eimsound.daw.window.panels.playlist.mainPlaylist
 import com.microsoft.appcenter.crashes.Crashes
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -46,10 +48,9 @@ fun ApplicationScope.MainWindow() {
     }, icon = Logo, title = "Echo In Mirror (v$VERSION)", onKeyEvent = {
         if (it.type != KeyEventType.KeyUp) return@Window false
         var keys = it.key.keyCode.toString()
-        if (it.isCtrlPressed) keys = "${Key.CtrlLeft.keyCode} $keys"
+        if (it.isCrossPlatformCtrlPressed) keys = "${Key.CtrlLeft.keyCode} $keys"
         if (it.isShiftPressed) keys = "${Key.ShiftLeft.keyCode} $keys"
-        if (it.isAltPressed) keys = "${Key.AltLeft.keyCode} $keys"
-        if (it.isMetaPressed) keys = "${Key.MetaLeft.keyCode} $keys"
+        if (it.isCrossPlatformAltPressed) keys = "${Key.AltLeft.keyCode} $keys"
         EchoInMirror.commandManager.executeCommand(keys)
         false
     }) {

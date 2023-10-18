@@ -33,9 +33,7 @@ import com.eimsound.daw.components.*
 import com.eimsound.daw.components.dragdrop.GlobalDropTarget
 import com.eimsound.daw.components.utils.EditAction
 import com.eimsound.daw.dawutils.openMaxValue
-import com.eimsound.daw.utils.BasicEditor
-import com.eimsound.daw.utils.fitInUnitCeil
-import com.eimsound.daw.utils.mutableStateSetOf
+import com.eimsound.daw.utils.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -43,10 +41,9 @@ val noteWidthRange = 0.02f..5f
 val noteWidthSliderRange = (noteWidthRange.start / 0.4F)..(noteWidthRange.endInclusive / 0.4F)
 fun Density.calcScroll(event: PointerEvent, noteWidth: MutableState<Dp>, horizontalScrollState: ScrollState,
                        coroutineScope: CoroutineScope, onVerticalScroll: (PointerInputChange) -> Unit) {
-    if (event.keyboardModifiers.isShiftPressed) return
-    if (event.keyboardModifiers.isCtrlPressed) {
+    if (event.keyboardModifiers.isCrossPlatformCtrlPressed) {
         val change = event.changes[0]
-        if (event.keyboardModifiers.isAltPressed) onVerticalScroll(change)
+        if (event.keyboardModifiers.isCrossPlatformAltPressed) onVerticalScroll(change)
         else {
             val x = change.position.x
             val oldX = (x + horizontalScrollState.value) / noteWidth.value.toPx()
@@ -65,6 +62,9 @@ fun Density.calcScroll(event: PointerEvent, noteWidth: MutableState<Dp>, horizon
             }
         }
         change.consume()
+    } else {
+        val x = event.changes[0].scrollDelta.x
+        if (x != 0F) coroutineScope.launch { horizontalScrollState.scrollBy(x * density * 5) }
     }
 }
 
