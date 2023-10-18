@@ -60,7 +60,6 @@ internal var cursor by mutableStateOf(PointerIcon.Default)
 internal var currentNote = 0
 
 private const val MIN_NOTE_WIDTH_WITH_KEY_NAME = 30
-private val MAX_KEY_NAME_SIZE = Size(40F, 18F)
 
 private data class NoteDrawObject(val note: NoteMessage, val offset: Offset, val size: Size, val color: Color,
                                   val keyNameOffset: Offset?)
@@ -128,6 +127,7 @@ internal fun NotesEditorCanvas(editor: DefaultMidiClipEditor) {
                 val verticalScrollValue = verticalScrollState.value
                 val horizontalScrollValue = horizontalScrollState.value
                 val noteHeightPx = noteHeight.toPx()
+                val maxKeyNameSize = Size(20 * density, 16 * density)
                 val shouldDrawNoteName = noteHeightPx >= 13
                 val notes = arrayListOf<NoteDrawObject>()
                 val backingsNotes = arrayListOf<BackingTrack>()
@@ -164,7 +164,7 @@ internal fun NotesEditorCanvas(editor: DefaultMidiClipEditor) {
                             (noteHeightPx + y).coerceAtLeast(0F) else noteHeightPx),
                             trackColor.saturate(it.colorSaturation),
                             if (shouldDrawNoteName && width > MIN_NOTE_WIDTH_WITH_KEY_NAME)
-                                Offset(x + 2, y) else null
+                                Offset(x + 3 * density, y) else null
                         )
                     )
                 }
@@ -208,7 +208,7 @@ internal fun NotesEditorCanvas(editor: DefaultMidiClipEditor) {
                         drawRoundRect(it.color, it.offset, it.size, borderCornerRadius2PX)
                         if (it.keyNameOffset != null)
                             drawText(measurer, getNoteName(it.note.note), it.keyNameOffset,
-                                keyNameTextStyle, size = MAX_KEY_NAME_SIZE)
+                                keyNameTextStyle, size = maxKeyNameSize)
                     }
                     selectedNotes.forEach {
                         var y = (KEYBOARD_KEYS - 1 - it.note) * noteHeightPx - verticalScrollValue
@@ -240,7 +240,7 @@ internal fun NotesEditorCanvas(editor: DefaultMidiClipEditor) {
                         drawRoundRect(primaryColor, offset, size, borderCornerRadius2PX, Stroke(1.5f * density))
                         if (shouldDrawNoteName && size.width > MIN_NOTE_WIDTH_WITH_KEY_NAME)
                             drawText(measurer, getNoteName(it.note - offsetNote),
-                                Offset(offset.x + 2, y), keyNameTextStyle, size = MAX_KEY_NAME_SIZE)
+                                Offset(offset.x + 3 * density, y), keyNameTextStyle, size = maxKeyNameSize)
                     }
                 }
             })

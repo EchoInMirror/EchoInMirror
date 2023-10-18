@@ -6,6 +6,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Piano
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.VolumeOff
 import androidx.compose.material.icons.filled.VolumeUp
@@ -20,6 +21,7 @@ import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
@@ -77,6 +79,7 @@ private fun MixerProcessorDropTarget(isLoading: MutableState<Boolean>, onDrop: (
     }
 }
 
+private val BUTTON_PADDINGS = PaddingValues(6.dp, 0.dp)
 @Composable
 private fun MixerProcessorButton(isLoading: MutableState<Boolean>, list: MutableList<TrackAudioProcessorWrapper>,
                                  wrapper: TrackAudioProcessorWrapper? = null, index: Int = -1, fontStyle: FontStyle? = null,
@@ -85,12 +88,21 @@ private fun MixerProcessorButton(isLoading: MutableState<Boolean>, list: Mutable
         if (wrapper == null) list.doAddOrRemoveAudioProcessorAction(it)
         else list.doReplaceAudioProcessorAction(it, index)
     }, Modifier.height(28.dp).fillMaxWidth()) {
-        if (it) TextButton(onClick, Modifier.fillMaxSize()) {
+        if (it) TextButton(onClick, Modifier.fillMaxSize(), contentPadding = BUTTON_PADDINGS) {
+            if (wrapper?.processor?.description?.isInstrument == true) {
+                Icon(Icons.Default.Piano, null, Modifier.size(16.dp))
+                Gap(2)
+            }
             if (wrapper == null) Text("...", fontSize = MaterialTheme.typography.labelMedium.fontSize,
                 maxLines = 1, lineHeight = 7.sp, fontStyle = fontStyle, fontWeight = fontWeight)
             else Marquee {
-                Text(wrapper.processor.name, Modifier.fillMaxWidth(), fontSize = MaterialTheme.typography.labelMedium.fontSize,
-                    maxLines = 1, lineHeight = 7.sp, textAlign = TextAlign.Center, fontStyle = fontStyle, fontWeight = fontWeight)
+                Text(wrapper.processor.name, Modifier.fillMaxWidth(),
+                    fontSize = MaterialTheme.typography.labelSmall.fontSize, maxLines = 1, lineHeight = 7.sp,
+                    textAlign = TextAlign.Center, fontStyle = fontStyle, fontWeight = fontWeight,
+                    textDecoration = if (wrapper.processor.isBypass) TextDecoration.LineThrough else null,
+                    color = if (wrapper.processor.isBypass) LocalContentColor.current.copy(alpha = 0.5f)
+                    else LocalContentColor.current
+                )
             }
         } else Text(if (wrapper == null) "添加" else "替换", Modifier.align(Alignment.Center),
             style = MaterialTheme.typography.labelMedium)
@@ -140,14 +152,14 @@ private fun MixerTrack(track: Track, index: String, containerColor: Color = Mate
         .clip(MaterialTheme.shapes.medium)) {
         val trackColor = if (track is Bus) MaterialTheme.colorScheme.primary else track.color
         val isSelected = EchoInMirror.selectedTrack == track
-        var curModifier = Modifier.width(80.dp)
+        var curModifier = Modifier.width(90.dp)
         if (isSelected) curModifier = curModifier.border(1.dp, trackColor, MaterialTheme.shapes.medium)
         Layout({
             Column(curModifier.shadow(1.dp, MaterialTheme.shapes.medium, clip = false)
                 .background(containerColor, MaterialTheme.shapes.medium)
                 .clip(MaterialTheme.shapes.medium)) {
                 Row(Modifier.background(trackColor).height(24.dp)
-                    .clickableWithIcon { if (track != EchoInMirror.bus) EchoInMirror.selectedTrack = track }
+                    .clickableWithIcon { EchoInMirror.selectedTrack = track }
                     .padding(vertical = 2.5.dp).zIndex(2f)) {
                     val color = trackColor.toOnSurfaceColor()
                     Text(

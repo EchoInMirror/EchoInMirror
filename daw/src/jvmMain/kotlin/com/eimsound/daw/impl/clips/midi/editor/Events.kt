@@ -258,10 +258,10 @@ internal suspend fun PointerInputScope.handleMouseEvent(coroutineScope: Coroutin
                     else -> {}
                 }
                 // detect out of frame then auto scroll
-                if (it.position.x < 0) coroutineScope.launch { horizontalScrollState.scrollBy(-1F) }
-                else if (it.position.x > size.width - 5) coroutineScope.launch { horizontalScrollState.scrollBy(1F) }
-                if (it.position.y < 0) coroutineScope.launch { verticalScrollState.scrollBy(-1F) }
-                else if (it.position.y > size.height) coroutineScope.launch { verticalScrollState.scrollBy(1F) }
+                if (it.position.x < 0) coroutineScope.launch { horizontalScrollState.scrollBy(-density * 2) }
+                else if (it.position.x > size.width - 5) coroutineScope.launch { horizontalScrollState.scrollBy(density * 2) }
+                if (it.position.y < 0) coroutineScope.launch { verticalScrollState.scrollBy(-density * 2) }
+                else if (it.position.y > size.height) coroutineScope.launch { verticalScrollState.scrollBy(density * 2) }
                 it.consume()
             }
             // calc selected notes

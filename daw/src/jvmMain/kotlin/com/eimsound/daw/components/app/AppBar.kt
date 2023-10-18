@@ -12,6 +12,7 @@ import androidx.compose.material3.ButtonDefaults.textButtonColors
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -81,7 +82,7 @@ private fun AppBarIcons() {
 @Composable
 private fun TimeText() {
     AppBarButton {
-        Row(verticalAlignment = Alignment.Bottom) {
+        Row(Modifier.width(90.dp), verticalAlignment = Alignment.Bottom) {
             Text("${(EchoInMirror.currentPosition.timeInSeconds.toInt() / 60).toString().padStart(2, '0')}:${(EchoInMirror.currentPosition.timeInSeconds.toInt() % 60).toString().padStart(2, '0')}:",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
@@ -100,7 +101,7 @@ private fun TimeText() {
 @Composable
 private fun PPQText() {
     AppBarButton {
-        Row(verticalAlignment = Alignment.Bottom) {
+        Row(Modifier.width(90.dp), verticalAlignment = Alignment.Bottom) {
             Text("${(1 + EchoInMirror.currentPosition.ppqPosition / EchoInMirror.currentPosition.timeSigNumerator)
                     .toInt().toString().padStart(2, '0')}:${(1 + EchoInMirror.currentPosition.ppqPosition
                     .toInt() % EchoInMirror.currentPosition.timeSigNumerator).toString().padStart(2, '0')}:",
@@ -203,24 +204,38 @@ val APP_BAR_HEIGHT = 54.dp
 @Composable
 internal fun EimAppBar() {
     Surface(modifier = Modifier.fillMaxWidth().height(APP_BAR_HEIGHT), shadowElevation = 2.dp, tonalElevation = 5.dp) {
-        Row(
-            Modifier.padding(horizontal = 20.dp),
-            horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(Modifier.weight(1f), horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically) { }
-            Row(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                TimeText()
-                AppBarIcons()
-                PPQText()
-            }
-            Row(Modifier.weight(1f), horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically) {
-                Quantification()
-                RootNote()
-                Scale()
-                TimeSignature()
-                BPM()
+        Layout(
+            {
+                Row(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) { }
+                Row(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    TimeText()
+                    AppBarIcons()
+                    PPQText()
+                }
+                Row(horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
+                    Quantification()
+                    RootNote()
+                    Scale()
+                    TimeSignature()
+                    BPM()
+                }
+            },
+            Modifier.padding(horizontal = 10.dp)
+        ) { (left, center, right), constraints ->
+            var width = constraints.maxWidth
+            val centerPlaceable = center.measure(constraints.copy(0))
+            width -= centerPlaceable.width
+            val rightPlaceable = if (width > 0) right.measure(constraints.copy(0, width)) else null
+            width -= rightPlaceable?.width ?: 0
+            val leftPlaceable = if (width > 0) left.measure(constraints.copy(0, width)) else null
+            var mid = constraints.maxWidth / 2
+            val rightX = constraints.maxWidth - (rightPlaceable?.width ?: 0)
+            if (mid + centerPlaceable.width / 2 > rightX) mid = rightX - centerPlaceable.width / 2
+
+            layout(constraints.maxWidth, constraints.maxHeight) {
+                rightPlaceable?.place(rightX, 0)
+                leftPlaceable?.place(0, 0)
+                centerPlaceable.place(mid - centerPlaceable.width / 2, 0)
             }
         }
     }

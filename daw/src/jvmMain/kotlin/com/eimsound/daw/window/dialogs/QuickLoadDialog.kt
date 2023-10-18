@@ -115,6 +115,7 @@ fun FloatingLayerProvider.openQuickLoadDialog(onClose: ((AudioProcessorDescripti
             }
             descriptions.sort()
             val descList = arrayListOf<AudioProcessorDescription>()
+            val notFavoriteDescList = arrayListOf<AudioProcessorDescription>()
             val categoryList = hashSetOf<String>()
             val factoryList = hashSetOf<String>()
             var categoryAllCount = 0
@@ -134,10 +135,13 @@ fun FloatingLayerProvider.openQuickLoadDialog(onClose: ((AudioProcessorDescripti
                 val isCurrentManufacturer = selectedManufacturer0 == null || it.manufacturerName == selectedManufacturer0
                 val isCurrentCategory = selectedCategory0 == null || it.category?.contains(selectedCategory0) == true
                 val isCurrentInstrument = selectedInstrument0 == null || it.isInstrument == selectedInstrument0
-                val isCurrentFactory = selectedFactory0 == null || (isFavorite && favorites.contains(it)) ||
+                val isCurrentFavorite = favorites.contains(it)
+                val isCurrentFactory = selectedFactory0 == null || (isFavorite && isCurrentFavorite) ||
                         descriptionsToFactory[it] == selectedFactory0
                 // 根据已选的厂商、类别、乐器过滤插件
-                if (isCurrentManufacturer && isCurrentCategory && isCurrentInstrument && isCurrentFactory) descList.add(it)
+                if (isCurrentManufacturer && isCurrentCategory && isCurrentInstrument && isCurrentFactory) {
+                    (if (isCurrentFavorite) descList else notFavoriteDescList).add(it)
+                }
                 // 根据已选的厂商、乐器过滤类别
                 if (isCurrentManufacturer && isCurrentInstrument && isCurrentFactory && it.category != null) {
                     val list = it.category!!.split("|")
@@ -161,6 +165,7 @@ fun FloatingLayerProvider.openQuickLoadDialog(onClose: ((AudioProcessorDescripti
                     instrumentAllCount++
                 }
             }
+            descList.addAll(notFavoriteDescList)
 
             var selectedDescription by mutableStateOf<AudioProcessorDescription?>(null)
             Scaffold(Modifier.fillMaxSize(),
