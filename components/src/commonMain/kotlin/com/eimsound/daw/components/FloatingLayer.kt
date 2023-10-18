@@ -71,8 +71,8 @@ class FloatingLayerProvider {
                     Box(Modifier.graphicsLayer(alpha = alpha, shadowElevation = if (alpha == 1F) 0F else 5F)) { layer.content() }
                 }) { measurables, constraints ->
                     if (layer.overflow) {
-                        val width = constraints.maxWidth - 12
-                        val height = constraints.maxHeight - 25
+                        val width = constraints.maxWidth - (12 * density).toInt()
+                        val height = constraints.maxHeight - (26 * density).toInt()
                         val placeable = measurables.firstOrNull()?.measure(Constraints(0, width, 0, height))
                         val pw = placeable?.width ?: 0
                         val ph = placeable?.height ?: 0
@@ -81,17 +81,17 @@ class FloatingLayerProvider {
                                 if (layer.position.y + ph > height) height - ph else layer.position.y.toInt(), 5F)
                         }
                     } else {
-                        var height = constraints.maxHeight - layer.position.y.toInt() - 25
-                        var width = constraints.maxWidth - layer.position.x.toInt() - 12
-                        val isTooSmall = height < 40
-                        val isTooRight = width < 100
-                        if (isTooSmall) height = constraints.maxHeight - 50
-                        if (isTooRight) width = constraints.maxWidth - 100
+                        var height = (constraints.maxHeight - layer.position.y - 25 * density).toInt()
+                        var width = (constraints.maxWidth - layer.position.x - 12 * density).toInt()
+                        val isTooSmall = height < 40 * density
+                        val isTooRight = width < 100 * density
+                        if (isTooSmall) height = constraints.maxHeight - (50 * density).toInt()
+                        if (isTooRight) width = constraints.maxWidth - (100 * density).toInt()
                         val c = Constraints(0, width, 0, height)
                         val placeable = measurables.firstOrNull()?.measure(c)
                         layout(c.maxWidth, c.maxHeight) {
                             placeable?.place(layer.position.x.toInt() - (if (isTooRight) placeable.width else 0),
-                                layer.position.y.toInt() - (if (isTooSmall) placeable.height + 25 else 0), 5F)
+                                layer.position.y.toInt() - (if (isTooSmall) placeable.height + 25 * density else 0).toInt(), 5F)
                         }
                     }
                 }

@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -68,15 +69,20 @@ fun DropdownMenu(
 ) {
     FloatingLayer({ size, close ->
         Surface(
-            Modifier.widthIn(size.width.dp).width(IntrinsicSize.Min).heightIn(8.dp), MaterialTheme.shapes.extraSmall,
+            Modifier.widthIn(size.width.dp).width(IntrinsicSize.Min).heightIn(8.dp).height(IntrinsicSize.Min), MaterialTheme.shapes.extraSmall,
             shadowElevation = 5.dp, tonalElevation = 5.dp
         ) {
-            Box {
+            Layout({
                 val stateVertical = rememberScrollState(0)
-                Column(Modifier.verticalScroll(stateVertical)) {
-                    menuItems(close)
+                Column(Modifier.verticalScroll(stateVertical)) { menuItems(close) }
+                VerticalScrollbar(rememberScrollbarAdapter(stateVertical), Modifier.fillMaxHeight())
+            }) { measurables, constraints ->
+                val col = measurables[0].measure(constraints)
+                val scroll = measurables[1].measure(constraints.copy(0, maxHeight = col.height))
+                layout(col.width, col.height) {
+                    col.placeRelative(0, 0)
+                    scroll.placeRelative(constraints.maxWidth - scroll.width, 0)
                 }
-                VerticalScrollbar(rememberScrollbarAdapter(stateVertical), Modifier.align(Alignment.CenterEnd).fillMaxHeight())
             }
         }
     }, modifier = boxModifier, enabled = enabled, matcher = matcher, content = content)

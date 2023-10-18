@@ -386,7 +386,7 @@ class BusImpl(
     override fun fromJson(json: JsonElement) {
         json as JsonObject
         super.fromJson(json)
-        json["channelType"]?.asInt()?.let { channelType = ChannelType.values()[it] }
+        json["channelType"]?.asInt()?.let { channelType = ChannelType.entries[it] }
     }
 
     private suspend fun backup() {
@@ -407,8 +407,11 @@ class BusImpl(
                 val target = backupRoot.resolve(relativePath)
                 launch {
                     withContext(Dispatchers.IO) {
-                        if (Files.isDirectory(it)) Files.createDirectory(target)
-                        else Files.copy(it, target)
+                        if (Files.isDirectory(it)) Files.createDirectories(target)
+                        else {
+                            Files.createDirectories(target.parent)
+                            Files.copy(it, target)
+                        }
                     }
                 }
             }
