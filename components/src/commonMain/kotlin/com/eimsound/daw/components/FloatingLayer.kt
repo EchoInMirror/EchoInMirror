@@ -104,7 +104,7 @@ class FloatingLayerProvider {
 val LocalFloatingLayerProvider = staticCompositionLocalOf { FloatingLayerProvider() }
 
 @Composable
-fun FloatingLayer(layerContent: @Composable (Size, () -> Unit) -> Unit,
+fun FloatingLayer(layerContent: @Composable (DpSize, () -> Unit) -> Unit,
                   modifier: Modifier = Modifier, enabled: Boolean = true,
                   hasOverlay: Boolean = false, isCentral: Boolean = false,
                   content: @Composable BoxScope.() -> Unit) {
@@ -114,7 +114,7 @@ fun FloatingLayer(layerContent: @Composable (Size, () -> Unit) -> Unit,
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun FloatingLayer(layerContent: @Composable (Size, () -> Unit) -> Unit,
+fun FloatingLayer(layerContent: @Composable (DpSize, () -> Unit) -> Unit,
                   modifier: Modifier = Modifier, enabled: Boolean = true,
                   hasOverlay: Boolean = false, isCentral: Boolean = false,
                   matcher: PointerMatcher = PointerMatcher.Primary,
@@ -136,7 +136,7 @@ fun FloatingLayer(layerContent: @Composable (Size, () -> Unit) -> Unit,
                     if (event.type != PointerEventType.Press || !matcher.matches(event)) continue
                     localFloatingLayerProvider.openFloatingLayer({ closeLayer() },
                         if (isCentral) null else offset[0] + Offset(0f, size[0].height), id, hasOverlay
-                    ) { layerContent(size[0], closeLayer) }
+                    ) { layerContent(size[0].toDpSize(), closeLayer) }
                 }
             }
         }
@@ -153,7 +153,11 @@ fun Dialog(onOk: (() -> Unit)? = null, onCancel: (() -> Unit)? = null,
         content()
         if (flag) Row {
             Filled()
-            if (onCancel != null) TextButton(onCancel) { Text("取消") }
+            if (onCancel != null) {
+                TextButton(onCancel,
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.secondary)
+                ) { Text("取消") }
+            }
             if (onOk != null) TextButton(onOk) { Text("确认") }
         }
     }

@@ -13,6 +13,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.util.fastMap
 import com.eimsound.audioprocessor.IAudioProcessorParameter
 import com.eimsound.daw.api.processor.DefaultHandledParameter
 import com.eimsound.daw.api.processor.TrackAudioProcessorWrapper
@@ -21,12 +22,12 @@ import com.eimsound.daw.utils.range
 
 @Composable
 private fun ParameterSlider(p: IAudioProcessorParameter) {
-    Column(Modifier.width(64.dp).padding(vertical = 4.dp)) {
+    Column(Modifier.width(80.dp).padding(vertical = 4.dp)) {
         if (p.isFloat) Slider(p.value, { p.value = it }, valueRange = p.range)
         else Slider(p.value, { p.value = it }, valueRange = p.range, steps = p.range.range.toInt())
         Text(p.name, Modifier.fillMaxWidth(),
             style = MaterialTheme.typography.labelSmall,
-            maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center
+            maxLines = 2, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center
         )
     }
 }
@@ -34,7 +35,7 @@ private fun ParameterSlider(p: IAudioProcessorParameter) {
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun BasicAudioParameterView(parameters: List<IAudioProcessorParameter>) {
-    FlowRow(Modifier.fillMaxWidth().padding(8.dp, 4.dp, 8.dp), Arrangement.SpaceEvenly) {
+    FlowRow(Modifier.fillMaxWidth().padding(8.dp, 4.dp, 8.dp), Arrangement.SpaceEvenly, maxItemsInEachRow = 3) {
         parameters.fastForEach { p ->
             key(p) { ParameterSlider(p) }
         }
@@ -44,9 +45,19 @@ fun BasicAudioParameterView(parameters: List<IAudioProcessorParameter>) {
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
 private fun FloatingLayerProvider.openParameterSelector(processor: TrackAudioProcessorWrapper) {
     val key = Any()
+    var tmpSelectedParameter = ""
     val close = { closeFloatingLayer(key) }
     openFloatingLayer(::closeFloatingLayer, key = key, hasOverlay = true) {
-        Dialog(close, modifier = Modifier.widthIn(max = 400.dp)) {
+        Dialog({
+            close()
+            if (tmpSelectedParameter.isNotEmpty()) {
+                processor.processor.parameters.firstOrNull {
+                    "${it.name} (${it.id})" == tmpSelectedParameter
+                }?.let {
+                    processor.handledParameters += DefaultHandledParameter(it)
+                }
+            }
+        }, close, modifier = Modifier.widthIn(300.dp, 800.dp)) {
             Text("选择参数", style = MaterialTheme.typography.titleMedium)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 processor.handledParameters.fastForEach {
@@ -66,6 +77,7 @@ private fun FloatingLayerProvider.openParameterSelector(processor: TrackAudioPro
                     val lastModified = processor.processor.lastModifiedParameter
                     mutableStateOf(if (lastModified == null) "" else "${lastModified.name} (${lastModified.id})")
                 }
+                tmpSelectedParameter = selectedParameter
                 Selector(remember(processor.handledParameters) {
                     val set = processor.handledParameters.mapTo(mutableSetOf()) { it.parameter }
                     processor.processor.parameters.mapNotNull { if (it in set) null else "${it.name} (${it.id})" }
@@ -74,6 +86,7 @@ private fun FloatingLayerProvider.openParameterSelector(processor: TrackAudioPro
                     // TODO: convert to action
                     val cur = selectedParameter
                     selectedParameter = ""
+                    tmpSelectedParameter = ""
                     processor.handledParameters += DefaultHandledParameter(processor.processor.parameters.firstOrNull {
                         "${it.name} (${it.id})" == cur
                     } ?: return@IconButton)
@@ -88,7 +101,7 @@ private fun FloatingLayerProvider.openParameterSelector(processor: TrackAudioPro
 @Composable
 fun BasicAudioParameterView(processor: TrackAudioProcessorWrapper) {
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        BasicAudioParameterView(processor.handledParameters.map { it.parameter })
+        BasicAudioParameterView(processor.handledParameters.fastMap { it.parameter })
         val floatingLayerProvider = LocalFloatingLayerProvider.current
         CustomButton({
             floatingLayerProvider.openParameterSelector(processor)

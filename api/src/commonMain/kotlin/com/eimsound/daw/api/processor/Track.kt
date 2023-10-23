@@ -6,6 +6,8 @@ import androidx.compose.runtime.setValue
 import com.eimsound.audioprocessor.*
 import com.eimsound.audioprocessor.data.DefaultEnvelopePointList
 import com.eimsound.audioprocessor.data.EnvelopePointList
+import com.eimsound.audioprocessor.data.fromJson
+import com.eimsound.audioprocessor.data.putNotDefault
 import com.eimsound.audioprocessor.dsp.Disabled
 import com.eimsound.audioprocessor.dsp.Pan
 import com.eimsound.audioprocessor.dsp.Solo
@@ -13,14 +15,9 @@ import com.eimsound.audioprocessor.dsp.Volume
 import com.eimsound.daw.api.Colorable
 import com.eimsound.daw.api.ProjectInformation
 import com.eimsound.daw.api.TrackClipList
-import com.eimsound.daw.utils.JsonSerializable
-import com.eimsound.daw.utils.LevelMeter
-import com.eimsound.daw.utils.asBoolean
-import com.eimsound.daw.utils.putNotDefault
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.buildJsonObject
+import com.eimsound.daw.utils.*
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.*
 
 enum class ChannelType {
     STEREO, LEFT, RIGHT, MONO, SIDE
@@ -55,15 +52,26 @@ interface Bus : Track {
     suspend fun save()
 }
 
-interface HandledParameter {
+interface HandledParameter : JsonSerializable {
     val parameter: IAudioProcessorParameter
     val points: EnvelopePointList
 }
 
+@Serializable
 data class DefaultHandledParameter(
     override val parameter: IAudioProcessorParameter,
     override val points: EnvelopePointList = DefaultEnvelopePointList()
-) : HandledParameter
+) : HandledParameter {
+    override fun toJson() = buildJsonObject {
+        put("id", parameter.id)
+        putNotDefault("points", points)
+    }
+
+    override fun fromJson(json: JsonElement) {
+        json as JsonObject
+        points.fromJson(json["points"])
+    }
+}
 
 interface TrackAudioProcessorWrapper : JsonSerializable {
     val processor: AudioProcessor
@@ -81,11 +89,21 @@ class DefaultTrackAudioProcessorWrapper(
     override fun toJson() = buildJsonObject {
         put("processor", if (processor is JsonSerializable) processor.toJson() else JsonPrimitive(processor.id))
         putNotDefault("isBypassed", isBypassed)
+        putNotDefault("handledParameters", handledParameters)
     }
 
     override fun fromJson(json: JsonElement) {
         json as JsonObject
         json["isBypassed"]?.let { isBypassed = it.asBoolean() }
+        handledParameters = json["handledParameters"]?.let { arr ->
+            (arr as JsonArray).mapNotNull { elm ->
+                if (elm !is JsonObject) return@mapNotNull null
+                val id = elm["id"]?.asString() ?: return@mapNotNull null
+                DefaultHandledParameter(
+                    processor.parameters.firstOrNull { it.id == id } ?: return@mapNotNull null
+                ).apply { fromJson(elm) }
+            }
+        } ?: emptyList()
     }
 
     override fun toString(): String {

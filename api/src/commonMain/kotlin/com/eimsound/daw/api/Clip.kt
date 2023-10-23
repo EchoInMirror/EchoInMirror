@@ -9,7 +9,7 @@ import com.eimsound.audioprocessor.AudioSource
 import com.eimsound.audioprocessor.CurrentPosition
 import com.eimsound.audioprocessor.ResampledAudioSource
 import com.eimsound.audioprocessor.data.AudioThumbnail
-import com.eimsound.audioprocessor.data.EnvelopePoint
+import com.eimsound.audioprocessor.data.BaseEnvelopePointList
 import com.eimsound.audioprocessor.data.EnvelopePointList
 import com.eimsound.audioprocessor.data.midi.MidiNoteRecorder
 import com.eimsound.audioprocessor.data.midi.NoteMessageList
@@ -97,7 +97,7 @@ interface Clip : JsonSerializable {
     val maxDuration: Int
 }
 
-typealias MidiCCEvents = Map<Int, List<EnvelopePoint>>
+typealias MidiCCEvents = Map<Int, BaseEnvelopePointList>
 typealias MutableMidiCCEvents = MutableMap<Int, EnvelopePointList>
 
 interface MidiClip : Clip {

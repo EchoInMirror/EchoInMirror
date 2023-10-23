@@ -13,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.eimsound.daw.actions.doNoteDisabledAction
 import com.eimsound.daw.actions.doNoteVelocityAction
@@ -59,7 +60,7 @@ private fun TrackItem(track: Track, backingTracks: IManualStateValue<WeakHashMap
 internal fun EditorControls(editor: DefaultMidiClipEditor) {
     val track = EchoInMirror.selectedTrack
     FloatingLayer({ size, _ ->
-        Surface(Modifier.width(IntrinsicSize.Max).widthIn(min = size.width.dp), shape = MaterialTheme.shapes.extraSmall,
+        Surface(Modifier.width(IntrinsicSize.Max).widthIn(min = size.width), shape = MaterialTheme.shapes.extraSmall,
             tonalElevation = 5.dp, shadowElevation = 5.dp) {
             val stateVertical = rememberScrollState(0)
             Column(Modifier.verticalScroll(stateVertical).padding(vertical = 4.dp)) {
@@ -70,7 +71,7 @@ internal fun EditorControls(editor: DefaultMidiClipEditor) {
         val color by animateColorAsState(track?.color ?: MaterialTheme.colorScheme.surface, tween(100))
         Surface(Modifier.fillMaxWidth().height(TIMELINE_HEIGHT), shadowElevation = 2.dp, tonalElevation = 4.dp, color = color) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                val textColor by animateColorAsState(color.toOnSurfaceColor(), tween(80))
+                val textColor = color.toOnSurfaceColor()
                 Text(
                     remember(track) {
                         if (track == null) null else dfsTrackIndex(EchoInMirror.bus!!, track, "")?.trimStart('.')
@@ -79,7 +80,8 @@ internal fun EditorControls(editor: DefaultMidiClipEditor) {
                     fontWeight = FontWeight.Bold,
                     fontSize = MaterialTheme.typography.labelLarge.fontSize
                 )
-                Text(track?.name ?: "未选择", Modifier.weight(1f), textColor, style = MaterialTheme.typography.labelLarge)
+                Text(track?.name ?: "未选择", Modifier.weight(1f), textColor, style = MaterialTheme.typography.labelLarge,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Icon(Icons.Filled.ExpandMore, null, Modifier.padding(horizontal = 8.dp), textColor)
             }
         }

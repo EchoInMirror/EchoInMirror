@@ -9,6 +9,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.window.Panel
@@ -31,12 +33,12 @@ private var sideBarLastSelected: Panel? = sideBarSelectedItem
 private var bottomBarLastSelected: Panel? = bottomBarSelectedItem
 
 internal val sideBarWidthState = object : SplitPaneState() {
-    override fun dispatchRawMovement(delta: Float) {
+    override fun dispatchRawMovement(delta: Float, density: Density) {
         val movableArea = maxPosition - minPosition
         if (movableArea <= 0) return
         val width = (position + delta).coerceIn(minPosition, maxPosition)
         if (sideBarSelectedItem == null) {
-            if (width >= 240 && sideBarLastSelected != null) {
+            if (width >= 240 * density.density && sideBarLastSelected != null) {
                 sideBarSelectedItem = sideBarLastSelected
                 position = width
                 return
@@ -44,8 +46,8 @@ internal val sideBarWidthState = object : SplitPaneState() {
             if (position != 0F) position = 0F
             return
         }
-        if (width < 240) {
-            if (width < 80) {
+        if (width < 240 * density.density) {
+            if (width < 80 * density.density) {
                 position = 0F
                 sideBarSelectedItem = null
             }
@@ -56,12 +58,12 @@ internal val sideBarWidthState = object : SplitPaneState() {
 }
 
 internal val bottomBarHeightState = object : SplitPaneState(0.5F) {
-    override fun dispatchRawMovement(delta: Float) {
+    override fun dispatchRawMovement(delta: Float, density: Density) {
         val movableArea = maxPosition - minPosition
         if (movableArea <= 0) return
         val height = (position - delta).coerceIn(minPosition, maxPosition)
         if (bottomBarSelectedItem == null) {
-            if (height >= 240 && bottomBarLastSelected != null) {
+            if (height >= 240 * density.density && bottomBarLastSelected != null) {
                 bottomBarSelectedItem = bottomBarLastSelected
                 position = height
                 return
@@ -69,8 +71,8 @@ internal val bottomBarHeightState = object : SplitPaneState(0.5F) {
             if (position != 0F) position = 0F
             return
         }
-        if (height < 240) {
-            if (height < 80) {
+        if (height < 240 * density.density) {
+            if (height < 80 * density.density) {
                 position = 0F
                 bottomBarSelectedItem = null
             }
@@ -94,6 +96,7 @@ internal fun SideBar() {
     }, tonalElevation = 2.dp) {
         NavigationRail {
             val floatingLayerProvider = LocalFloatingLayerProvider.current
+            val density = LocalDensity.current.density
             NavigationRailItem(
                 icon = { Icon(EIMLogo, "QuickLand") },
                 label = { Text("快速加载") },
@@ -112,7 +115,7 @@ internal fun SideBar() {
                                 sideBarWidthState.position = 0F
                             } else {
                                 sideBarSelectedItem = it
-                                if (sideBarWidthState.position == 0F) sideBarWidthState.position = 240F
+                                if (sideBarWidthState.position == 0F) sideBarWidthState.position = 240F * density
                                 sideBarLastSelected = sideBarSelectedItem
                             }
                         }
@@ -132,7 +135,7 @@ internal fun SideBar() {
                                 bottomBarHeightState.position = 0F
                             } else {
                                 bottomBarSelectedItem = it
-                                if (bottomBarHeightState.position == 0F) bottomBarHeightState.position = 240F
+                                if (bottomBarHeightState.position == 0F) bottomBarHeightState.position = 240F * density
                                 bottomBarLastSelected = bottomBarSelectedItem
                             }
                         }

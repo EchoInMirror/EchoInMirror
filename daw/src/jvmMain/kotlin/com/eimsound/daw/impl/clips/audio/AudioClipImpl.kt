@@ -5,18 +5,17 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import com.eimsound.audioprocessor.*
-import com.eimsound.audioprocessor.data.AudioThumbnail
-import com.eimsound.audioprocessor.data.DefaultEnvelopePointList
-import com.eimsound.audioprocessor.data.EnvelopePoint
-import com.eimsound.audioprocessor.data.VOLUME_RANGE
+import com.eimsound.audioprocessor.data.*
 import com.eimsound.audioprocessor.data.midi.MidiNoteRecorder
 import com.eimsound.daw.api.*
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.components.EnvelopeEditor
 import com.eimsound.daw.components.Waveform
-import com.eimsound.daw.utils.putNotDefault
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import java.nio.file.Path
 import kotlin.io.path.name
 
@@ -38,12 +37,7 @@ class AudioClipImpl(json: JsonObject?, factory: ClipFactory<AudioClip>, target: 
     override val defaultDuration get() = EchoInMirror.currentPosition.convertSamplesToPPQ(audioSource.length)
     override val maxDuration get() = defaultDuration
     override var thumbnail by mutableStateOf(AudioThumbnail(this.audioSource))
-    override val volumeEnvelope = DefaultEnvelopePointList().apply {
-        json?.get("volumeEnvelope")?.let {
-            addAll(Json.decodeFromJsonElement<List<EnvelopePoint>>(it))
-            update()
-        }
-    }
+    override val volumeEnvelope = DefaultEnvelopePointList().apply { fromJson(json?.get("volumeEnvelope")) }
     override val name: String
         get() {
             var source: AudioSource? = target
@@ -60,18 +54,14 @@ class AudioClipImpl(json: JsonObject?, factory: ClipFactory<AudioClip>, target: 
         put("id", id)
         put("factory", factory.name)
         put("target", target.toJson())
-        putNotDefault("volumeEnvelope", Json.encodeToJsonElement<List<EnvelopePoint>>(volumeEnvelope))
+        putNotDefault("volumeEnvelope", volumeEnvelope)
     }
 
     override fun fromJson(json: JsonElement) {
         super.fromJson(json)
         json as JsonObject
         json["target"]?.let { target = AudioSourceManager.instance.createAudioSource(it as JsonObject) }
-        json["volumeEnvelope"]?.let {
-            volumeEnvelope.clear()
-            volumeEnvelope.addAll(Json.decodeFromJsonElement<List<EnvelopePoint>>(it))
-            volumeEnvelope.update()
-        }
+        volumeEnvelope.fromJson(json["volumeEnvelope"])
     }
 }
 

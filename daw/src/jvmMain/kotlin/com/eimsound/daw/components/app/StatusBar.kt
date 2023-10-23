@@ -58,7 +58,7 @@ private fun BusChannelType() {
         Surface(Modifier.width(IntrinsicSize.Min), shape = MaterialTheme.shapes.extraSmall,
             tonalElevation = 5.dp, shadowElevation = 5.dp) {
             Column {
-                ChannelType.values().forEach { type ->
+                ChannelType.entries.forEach { type ->
                     MenuItem({
                         close()
                         EchoInMirror.bus!!.channelType = type

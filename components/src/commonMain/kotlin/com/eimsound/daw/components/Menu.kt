@@ -69,7 +69,7 @@ fun DropdownMenu(
 ) {
     FloatingLayer({ size, close ->
         Surface(
-            Modifier.widthIn(size.width.dp).width(IntrinsicSize.Min).heightIn(8.dp).height(IntrinsicSize.Min), MaterialTheme.shapes.extraSmall,
+            Modifier.widthIn(size.width).width(IntrinsicSize.Min).heightIn(8.dp).height(IntrinsicSize.Min), MaterialTheme.shapes.extraSmall,
             shadowElevation = 5.dp, tonalElevation = 5.dp
         ) {
             Layout({
@@ -114,7 +114,7 @@ fun Selector(
     val filter = remember { mutableStateOf<String?>(null) }
     FloatingLayer({ size, close ->
         Surface(
-            Modifier.width(size.width.dp).heightIn(max = 300.dp), MaterialTheme.shapes.extraSmall,
+            Modifier.width(size.width).heightIn(max = 300.dp), MaterialTheme.shapes.extraSmall,
             shadowElevation = 5.dp, tonalElevation = 5.dp
         ) {
             Box {

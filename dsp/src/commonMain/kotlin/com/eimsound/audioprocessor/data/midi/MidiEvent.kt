@@ -2,15 +2,16 @@
 
 package com.eimsound.audioprocessor.data.midi
 
+import com.eimsound.audioprocessor.data.BaseEnvelopePointList
 import com.eimsound.audioprocessor.data.EnvelopePoint
+import org.mozilla.universalchardet.UniversalDetector
 import java.nio.charset.Charset
 import javax.sound.midi.MidiMessage
 import javax.sound.midi.Sequence
 import javax.sound.midi.Track
 import kotlin.experimental.and
-import javax.sound.midi.MidiEvent as JMidiEvent
 import kotlin.math.pow
-import org.mozilla.universalchardet.UniversalDetector
+import javax.sound.midi.MidiEvent as JMidiEvent
 
 val KEY_NAMES = arrayOf("C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B")
 
@@ -110,11 +111,11 @@ data class MidiTrack(
 
     // 非元信息
     var noteEvents: List<NoteMessage> = mutableListOf(),
-    var keyPressureEvents: List<EnvelopePoint> = mutableListOf(),
-    var controlChangeEvents: Map<Int, List<EnvelopePoint>> = mapOf(),
-    var programChangeEvents: List<EnvelopePoint> = mutableListOf(),
-    var channelPressureEvents: List<EnvelopePoint> = mutableListOf(),
-    var pitchBendEvents: List<EnvelopePoint> = mutableListOf(),
+    var keyPressureEvents: BaseEnvelopePointList = mutableListOf(),
+    var controlChangeEvents: Map<Int, BaseEnvelopePointList> = mapOf(),
+    var programChangeEvents: BaseEnvelopePointList = mutableListOf(),
+    var channelPressureEvents: BaseEnvelopePointList = mutableListOf(),
+    var pitchBendEvents: BaseEnvelopePointList = mutableListOf(),
 ) {
     val hasMidiEvent
         get() = noteEvents.isNotEmpty() or
@@ -275,7 +276,7 @@ fun Collection<MidiEventWithTime>.toNoteMessages(): List<NoteMessage> {
     return noteMessages
 }
 
-fun Collection<MidiEventWithTime>.toControlEvents(): Map<Int, List<EnvelopePoint>> {
+fun Collection<MidiEventWithTime>.toControlEvents(): Map<Int, BaseEnvelopePointList> {
     val events = HashMap<Int, ArrayList<EnvelopePoint>>()
     forEach { (event, time) ->
         val list = events.getOrPut(event.controller) { ArrayList() }

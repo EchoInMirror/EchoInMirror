@@ -85,7 +85,8 @@ internal class HandleScopeImpl(
         detectDragGestures { change, _ ->
             change.consume()
             containerScope.splitPaneState.dispatchRawMovement(
-                if (containerScope.isHorizontal) change.position.x else change.position.y
+                if (containerScope.isHorizontal) change.position.x else change.position.y,
+                this@pointerInput
             )
         }
     }

@@ -7,6 +7,7 @@ import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import kotlinx.serialization.json.*
 import kotlin.math.absoluteValue
 
 enum class EnvelopeType {
@@ -23,6 +24,7 @@ enum class EnvelopeType {
                     controlPoint1 = value0
                     controlPoint2 = value1
                 } else {
+                    @Suppress("DuplicatedCode")
                     val dy = (value1 - value0).absoluteValue * -tension
                     if (value0 > value1) {
                         controlPoint1 = value0 - dy
@@ -62,18 +64,34 @@ data class EnvelopePoint(
     var type: EnvelopeType = EnvelopeType.SMOOTH
 )
 
+typealias BaseEnvelopePointList = List<EnvelopePoint>
+typealias MutableBaseEnvelopePointList = MutableList<EnvelopePoint>
+
 @Serializable
-data class SerializableEnvelopePointList(val ppq: Int, val points: List<EnvelopePoint>) {
+data class SerializableEnvelopePointList(val ppq: Int, val points: BaseEnvelopePointList) {
     @OptIn(ExperimentalSerializationApi::class)
     @Suppress("unused")
     @EncodeDefault
     val className = "EnvelopePointList"
 }
 
+fun JsonObjectBuilder.put(key: String, value: BaseEnvelopePointList?) {
+    put(key, Json.encodeToJsonElement(value))
+}
+fun JsonObjectBuilder.putNotDefault(key: String, value: BaseEnvelopePointList?) {
+    if (!value.isNullOrEmpty()) put(key, Json.encodeToJsonElement(value))
+}
+
 @Serializable
-sealed interface EnvelopePointList : MutableList<EnvelopePoint>, IManualState {
+sealed interface EnvelopePointList : MutableBaseEnvelopePointList, IManualState, BaseEnvelopePointList {
     fun sort()
     fun getValue(position: Int, defaultValue: Float = 0F): Float
+}
+
+fun EnvelopePointList.fromJson(json: JsonElement?) {
+    clear()
+    if (json != null) addAll(Json.decodeFromJsonElement<BaseEnvelopePointList>(json))
+    update()
 }
 
 val PAN_RANGE = -1F..1F
@@ -110,5 +128,3 @@ class DefaultEnvelopePointList : EnvelopePointList, ArrayList<EnvelopePoint>() {
     override fun update() { modification.value++ }
     override fun read() { modification.value }
 }
-
-

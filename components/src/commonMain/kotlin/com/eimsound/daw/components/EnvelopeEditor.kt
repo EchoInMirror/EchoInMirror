@@ -30,10 +30,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.util.fastForEach
-import com.eimsound.audioprocessor.data.EnvelopePoint
-import com.eimsound.audioprocessor.data.EnvelopePointList
-import com.eimsound.audioprocessor.data.EnvelopeType
-import com.eimsound.audioprocessor.data.SerializableEnvelopePointList
+import com.eimsound.audioprocessor.data.*
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.components.utils.EditAction
 import com.eimsound.daw.utils.*
@@ -123,12 +120,12 @@ private fun PointerInputScope.getSelectedPoint(position: Offset, points: Envelop
 }
 
 interface EnvelopeEditorEventHandler {
-    fun onAddPoints(editor: EnvelopeEditor, points: List<EnvelopePoint>)
-    fun onPastePoints(editor: EnvelopeEditor, points: List<EnvelopePoint>): List<EnvelopePoint>
-    fun onRemovePoints(editor: EnvelopeEditor, points: List<EnvelopePoint>)
-    fun onMovePoints(editor: EnvelopeEditor, points: List<EnvelopePoint>, offsetTime: Int, offsetValue: Float)
-    fun onTensionChanged(editor: EnvelopeEditor, points: List<EnvelopePoint>, tension: Float)
-    fun onTypeChanged(editor: EnvelopeEditor, points: List<EnvelopePoint>, type: EnvelopeType)
+    fun onAddPoints(editor: EnvelopeEditor, points: BaseEnvelopePointList)
+    fun onPastePoints(editor: EnvelopeEditor, points: BaseEnvelopePointList): BaseEnvelopePointList
+    fun onRemovePoints(editor: EnvelopeEditor, points: BaseEnvelopePointList)
+    fun onMovePoints(editor: EnvelopeEditor, points: BaseEnvelopePointList, offsetTime: Int, offsetValue: Float)
+    fun onTensionChanged(editor: EnvelopeEditor, points: BaseEnvelopePointList, tension: Float)
+    fun onTypeChanged(editor: EnvelopeEditor, points: BaseEnvelopePointList, type: EnvelopeType)
 }
 
 class EnvelopeEditor(val points: EnvelopePointList, val valueRange: FloatRange,
@@ -147,16 +144,16 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: FloatRange,
     private var startValue = 0F
     private var clipStartTimeValue = 0
     private var editUnitValue = 0
-    private var tempPoints: MutableList<EnvelopePoint>? = null
+    private var tempPoints: MutableBaseEnvelopePointList? = null
     private var currentAdjustingPoint = -1
     private var positionInRoot = Offset.Zero
 
     companion object {
-        var copiedPoints: List<EnvelopePoint>? = null
+        var copiedPoints: BaseEnvelopePointList? = null
         var defaultTension = 0F
     }
 
-    private fun copyAsObject(): List<EnvelopePoint> {
+    private fun copyAsObject(): BaseEnvelopePointList {
         val startTime = selectedPoints.minOf { it.time }
         return selectedPoints.map { it.copy(it.time - startTime, mapValue(it.value, valueRange)) }
     }

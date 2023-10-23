@@ -3,6 +3,7 @@ package com.eimsound.daw.components.splitpane
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.unit.Density
 
 open class SplitPaneState(
     private var initialPositionPercentage: Float = -1F,
@@ -16,7 +17,7 @@ open class SplitPaneState(
 
     var maxPosition: Float = Float.POSITIVE_INFINITY
 
-    open fun dispatchRawMovement(delta: Float) {
+    open fun dispatchRawMovement(delta: Float, density: Density) {
         val movableArea = maxPosition - minPosition
         if (movableArea > 0) {
             position = (position + delta).coerceIn(minPosition, maxPosition)

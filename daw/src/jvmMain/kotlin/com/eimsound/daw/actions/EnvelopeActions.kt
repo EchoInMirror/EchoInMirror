@@ -4,6 +4,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Tune
 import com.eimsound.audioprocessor.IAudioProcessorParameter
+import com.eimsound.audioprocessor.data.BaseEnvelopePointList
 import com.eimsound.audioprocessor.data.EnvelopePoint
 import com.eimsound.audioprocessor.data.EnvelopePointList
 import com.eimsound.audioprocessor.data.EnvelopeType
@@ -34,7 +35,7 @@ class EnvelopePointsAmountAction(private val list: EnvelopePointList, private va
     }
 }
 
-fun EnvelopePointList.doEnvelopePointsEditAction(points: List<EnvelopePoint>, deltaX: Int, deltaY: Float, valueRange: FloatRange? = null) {
+fun EnvelopePointList.doEnvelopePointsEditAction(points: BaseEnvelopePointList, deltaX: Int, deltaY: Float, valueRange: FloatRange? = null) {
     if (deltaX == 0 && deltaY == 0F) return
     runBlocking {
         EchoInMirror.undoManager.execute(
@@ -131,30 +132,30 @@ class EnvelopePointsTypeAction(
 }
 
 object GlobalEnvelopeEditorEventHandler : EnvelopeEditorEventHandler {
-    override fun onAddPoints(editor: EnvelopeEditor, points: List<EnvelopePoint>) {
+    override fun onAddPoints(editor: EnvelopeEditor, points: BaseEnvelopePointList) {
         editor.points.doEnvelopePointsAmountAction(points)
     }
 
-    override fun onPastePoints(editor: EnvelopeEditor, points: List<EnvelopePoint>): List<EnvelopePoint> {
+    override fun onPastePoints(editor: EnvelopeEditor, points: BaseEnvelopePointList): BaseEnvelopePointList {
         val startTime = EchoInMirror.currentPosition.timeInPPQ.fitInUnitCeil(EchoInMirror.editUnit)
         val notes = points.map { it.copy(it.time + startTime, it.value * editor.valueRange.range + editor.valueRange.start) }
         editor.points.doEnvelopePointsAmountAction(notes)
         return notes
     }
 
-    override fun onRemovePoints(editor: EnvelopeEditor, points: List<EnvelopePoint>) {
+    override fun onRemovePoints(editor: EnvelopeEditor, points: BaseEnvelopePointList) {
         editor.points.doEnvelopePointsAmountAction(points, true)
     }
 
-    override fun onMovePoints(editor: EnvelopeEditor, points: List<EnvelopePoint>, offsetTime: Int, offsetValue: Float) {
+    override fun onMovePoints(editor: EnvelopeEditor, points: BaseEnvelopePointList, offsetTime: Int, offsetValue: Float) {
         editor.points.doEnvelopePointsEditAction(points, offsetTime, offsetValue, editor.valueRange)
     }
 
-    override fun onTensionChanged(editor: EnvelopeEditor, points: List<EnvelopePoint>, tension: Float) {
+    override fun onTensionChanged(editor: EnvelopeEditor, points: BaseEnvelopePointList, tension: Float) {
         editor.points.doEnvelopePointsTensionAction(points, tension)
     }
 
-    override fun onTypeChanged(editor: EnvelopeEditor, points: List<EnvelopePoint>, type: EnvelopeType) {
+    override fun onTypeChanged(editor: EnvelopeEditor, points: BaseEnvelopePointList, type: EnvelopeType) {
         editor.points.doEnvelopePointsTypeAction(points, type)
     }
 }

@@ -21,7 +21,8 @@ fun DefaultHandle(
             detectDragGestures { change, _ ->
                 change.consume()
                 splitPaneState.dispatchRawMovement(
-                    if (isHorizontal) change.position.x else change.position.y
+                    if (isHorizontal) change.position.x else change.position.y,
+                    this@pointerInput
                 )
             }
         }

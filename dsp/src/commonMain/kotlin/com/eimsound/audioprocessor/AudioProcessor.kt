@@ -96,6 +96,39 @@ open class AudioProcessorParameter(
     operator fun getValue(thisRef: Any?, property: KProperty<*>) = value
 
     operator fun setValue(thisRef: Any?, property: KProperty<*>, value: Float) { this.value = value }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is AudioProcessorParameter) return false
+
+        if (id != other.id) return false
+        if (name != other.name) return false
+        if (label != other.label) return false
+        if (isSuggestion != other.isSuggestion) return false
+        if (isFloat != other.isFloat) return false
+        if (isAutomatable != other.isAutomatable) return false
+        if (value != other.value) return false
+        if (range != other.range) return false
+        if (initialValue != other.initialValue) return false
+        if (!valueStrings.contentEquals(other.valueStrings)) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = id.hashCode()
+        result = 31 * result + name.hashCode()
+        result = 31 * result + range.hashCode()
+        result = 31 * result + initialValue.hashCode()
+        result = 31 * result + label.hashCode()
+        result = 31 * result + isFloat.hashCode()
+        result = 31 * result + isSuggestion.hashCode()
+        result = 31 * result + isAutomatable.hashCode()
+        result = 31 * result + valueStrings.contentHashCode()
+        result = 31 * result + (onChange?.hashCode() ?: 0)
+        result = 31 * result + value.hashCode()
+        return result
+    }
 }
 
 @Suppress("NOTHING_TO_INLINE")

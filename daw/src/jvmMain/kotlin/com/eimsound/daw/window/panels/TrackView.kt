@@ -1,5 +1,7 @@
 package com.eimsound.daw.window.panels
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -10,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ViewDay
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -18,12 +21,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.eimsound.audioprocessor.AudioProcessorEditor
 import com.eimsound.daw.api.EchoInMirror
+import com.eimsound.daw.api.processor.Bus
 import com.eimsound.daw.api.processor.TrackAudioProcessorWrapper
 import com.eimsound.daw.api.window.Panel
 import com.eimsound.daw.api.window.PanelDirection
 import com.eimsound.daw.components.BasicAudioParameterView
 import com.eimsound.daw.components.CustomCheckbox
 import com.eimsound.daw.components.utils.clickableWithIcon
+import com.eimsound.daw.components.utils.toOnSurfaceColor
 
 @Composable
 private fun CardHeader(p: TrackAudioProcessorWrapper, index: Int) {
@@ -62,6 +67,18 @@ private fun AudioProcessorEditor(index: Int, p: TrackAudioProcessorWrapper) {
 //    }
 }
 
+@Composable
+private fun TrackName() {
+    val track = EchoInMirror.selectedTrack
+    val color by animateColorAsState(if (track is Bus) MaterialTheme.colorScheme.primary
+        else track?.color ?: MaterialTheme.colorScheme.surface, tween(100))
+    Surface(Modifier.fillMaxWidth(), shadowElevation = 2.dp, tonalElevation = 4.dp, color = color) {
+        Text(track?.name ?: "未选择", color = color.toOnSurfaceColor(), style = MaterialTheme.typography.labelLarge,
+            maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(8.dp, 6.dp),
+            textAlign = TextAlign.Center)
+    }
+}
+
 object TrackView : Panel {
     override val name = "轨道视图"
     override val direction = PanelDirection.Vertical
@@ -73,20 +90,23 @@ object TrackView : Panel {
 
     @Composable
     override fun Content() {
-        Box(Modifier.fillMaxSize()) {
-            val state = rememberLazyListState()
-            val track = EchoInMirror.selectedTrack
-            LazyColumn(state = state) {
-                if (track != null) {
-                    itemsIndexed(track.preProcessorsChain) { index, item ->
-                        AudioProcessorEditor(index, item)
-                    }
-                    itemsIndexed(track.postProcessorsChain) { index, item ->
-                        AudioProcessorEditor(index, item)
+        Column {
+            TrackName()
+            Box(Modifier.fillMaxSize()) {
+                val state = rememberLazyListState()
+                LazyColumn(state = state) {
+                    val track = EchoInMirror.selectedTrack
+                    if (track != null) {
+                        itemsIndexed(track.preProcessorsChain) { index, item ->
+                            AudioProcessorEditor(index, item)
+                        }
+                        itemsIndexed(track.postProcessorsChain) { index, item ->
+                            AudioProcessorEditor(index, item)
+                        }
                     }
                 }
+                VerticalScrollbar(rememberScrollbarAdapter(state), Modifier.align(Alignment.CenterEnd).fillMaxHeight())
             }
-            VerticalScrollbar(rememberScrollbarAdapter(state), Modifier.align(Alignment.CenterEnd).fillMaxHeight())
         }
     }
 }
