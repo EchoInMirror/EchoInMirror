@@ -161,18 +161,20 @@ object GlobalEnvelopeEditorEventHandler : EnvelopeEditorEventHandler {
 }
 
 class AudioProcessorParameterChangeAction(
-    private val parameter: IAudioProcessorParameter, private val value: Float
+    private val parameter: IAudioProcessorParameter, private val value: Float, private val emitEvent: Boolean = true
 ): UndoableAction {
     private val oldValue = parameter.value
     override val name = "参数修改 (${parameter.name})"
     override val icon = Icons.Default.Tune
+    private var isExecuted = false
     override suspend fun undo(): Boolean {
         parameter.value = oldValue
         return true
     }
 
     override suspend fun execute(): Boolean {
-        parameter.value = value
+        parameter.setValue(value, emitEvent || isExecuted)
+        isExecuted = true
         return true
     }
 }

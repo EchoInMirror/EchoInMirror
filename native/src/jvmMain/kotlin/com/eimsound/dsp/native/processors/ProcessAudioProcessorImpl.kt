@@ -49,6 +49,8 @@ open class ProcessAudioProcessorImpl(
     protected var inputStream: ByteBufInputStream? = null
     protected var outputStream: ByteBufOutputStream? = null
     protected val mutex = Mutex()
+    private val parametersToId = hashMapOf<IAudioProcessorParameter, Int>()
+    private val modifiedParameter = hashSetOf<IAudioProcessorParameter>()
 
     override suspend fun processBlock(buffers: Array<FloatArray>, position: CurrentPosition, midiBuffer: ArrayList<Int>) {
         val output = outputStream
@@ -56,12 +58,12 @@ open class ProcessAudioProcessorImpl(
         if (!prepared) prepareToPlay(position.sampleRate, position.bufferSize)
         mutex.withLock {
             val bufferSize = position.bufferSize
-            output.write(1)
-            output.write(position.toFlags())
-            output.writeDouble(position.bpm)
+            output.write(1) // action
+            output.write(position.toFlags()) // flags
+            output.writeDouble(position.bpm) // bpm
             output.writeShort((midiBuffer.size / 2).toShort()) // midi event count
-            output.writeShort(0) // parameter count
-            output.writeVarLong(position.timeInSamples)
+            output.writeShort(modifiedParameter.size.toShort()) // parameter count
+            output.writeVarLong(position.timeInSamples) // time in samples
             val inputChannels = inputChannelsCount.coerceAtMost(buffers.size)
             val outputChannels = outputChannelsCount.coerceAtMost(buffers.size)
             val bf = byteBuffer
@@ -78,9 +80,14 @@ open class ProcessAudioProcessorImpl(
                 bf.rewind()
             }
             for (i in 0 until midiBuffer.size step 2) {
-                output.writeInt(midiBuffer[i])
+                output.writeVarInt(midiBuffer[i])
                 output.writeShort(midiBuffer[i + 1].toShort())
             }
+            modifiedParameter.forEach { p ->
+                output.writeVarInt(parametersToId[p] ?: 9999999)
+                output.writeFloat(p.value)
+            }
+            modifiedParameter.clear()
             output.flush()
             midiBuffer.clear()
 
@@ -212,6 +219,7 @@ open class ProcessAudioProcessorImpl(
             outputChannelsCount = input.read()
             val len = input.readVarInt()
 
+            parametersToId.clear()
             parameters = List(len) {
                 val flags = input.read()
                 val initialValue = input.readFloat()
@@ -224,12 +232,15 @@ open class ProcessAudioProcessorImpl(
                 val id = it.toString()
 
                 if (flags and PARAMETER_IS_BOOLEAN != 0) {
-                    audioProcessorParameterOf(id, name, initialValue != 0F, isAutomatable = isAutomatable)
+                    audioProcessorParameterOf(id, name, initialValue != 0F, isAutomatable = isAutomatable,
+                        onChange = ::handleParameterChange)
                 } else if (flags and PARAMETER_IS_DISCRETE != 0) {
-                    audioProcessorParameterOf(id, name, valueStrings, label = label, isAutomatable = isAutomatable)
+                    audioProcessorParameterOf(id, name, valueStrings, label = label, isAutomatable = isAutomatable,
+                        onChange = ::handleParameterChange)
                 } else {
-                    audioProcessorParameterOf(id, name, initialValue = initialValue, label = label, isAutomatable = isAutomatable)
-                }
+                    audioProcessorParameterOf(id, name, initialValue = initialValue, label = label,
+                        isAutomatable = isAutomatable, onChange = ::handleParameterChange)
+                }.apply { parametersToId[this] = it }
             }
         }
     }
@@ -262,9 +273,11 @@ open class ProcessAudioProcessorImpl(
                 if (index > 0 && index < parameters.size) {
                     val cur = parameters[index]
                     lastModifiedParameter = cur
-                    cur.doChangeAction(value)
+                    cur.doChangeAction(value, false)
                 }
             }
         }
     }
+
+    private fun handleParameterChange(p: IAudioProcessorParameter) { modifiedParameter.add(p) }
 }

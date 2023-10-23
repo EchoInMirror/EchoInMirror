@@ -39,7 +39,7 @@ class EchoInMirrorImpl : IEchoInMirror {
         errorHandlers.add(Crashes::trackError)
         errorHandlers.add { GlobalSnackbarProvider.enqueueSnackbar(it) }
         @OptIn(ExperimentalEIMApi::class)
-        globalChangeHandler = { p, v -> runBlocking { execute(AudioProcessorParameterChangeAction(p, v)) } }
+        globalChangeHandler = { p, v, e -> runBlocking { execute(AudioProcessorParameterChangeAction(p, v, e)) } }
     }
 
     private var _selectedTrack by mutableStateOf<Track?>(null)
