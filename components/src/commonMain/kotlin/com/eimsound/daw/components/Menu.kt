@@ -15,6 +15,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.UiComposable
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
@@ -58,6 +59,18 @@ fun MenuItem(
     }
 }
 
+@Composable
+private fun FlexibleScrollable(content: @Composable @UiComposable () -> Unit) {
+    Layout(content) { measurables, constraints ->
+        val col = measurables[0].measure(constraints)
+        val scroll = measurables[1].measure(constraints.copy(0, maxHeight = col.height))
+        layout(col.width, col.height) {
+            col.placeRelative(0, 0)
+            scroll.placeRelative(constraints.maxWidth - scroll.width, 0)
+        }
+    }
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun DropdownMenu(
@@ -72,17 +85,10 @@ fun DropdownMenu(
             Modifier.widthIn(size.width).width(IntrinsicSize.Min).heightIn(8.dp).height(IntrinsicSize.Min), MaterialTheme.shapes.extraSmall,
             shadowElevation = 5.dp, tonalElevation = 5.dp
         ) {
-            Layout({
+            FlexibleScrollable {
                 val stateVertical = rememberScrollState(0)
                 Column(Modifier.verticalScroll(stateVertical)) { menuItems(close) }
                 VerticalScrollbar(rememberScrollbarAdapter(stateVertical), Modifier.fillMaxHeight())
-            }) { measurables, constraints ->
-                val col = measurables[0].measure(constraints)
-                val scroll = measurables[1].measure(constraints.copy(0, maxHeight = col.height))
-                layout(col.width, col.height) {
-                    col.placeRelative(0, 0)
-                    scroll.placeRelative(constraints.maxWidth - scroll.width, 0)
-                }
             }
         }
     }, modifier = boxModifier, enabled = enabled, matcher = matcher, content = content)
@@ -117,7 +123,7 @@ fun Selector(
             Modifier.width(size.width).heightIn(max = 300.dp), MaterialTheme.shapes.extraSmall,
             shadowElevation = 5.dp, tonalElevation = 5.dp
         ) {
-            Box {
+            FlexibleScrollable {
                 val state = rememberLazyListState()
                 val currentValue = filter.value
                 val items0 = remember(items, currentValue) { (if (currentValue == null) items else items
@@ -133,7 +139,7 @@ fun Selector(
                         }
                     }
                 }
-                VerticalScrollbar(rememberScrollbarAdapter(state), Modifier.align(Alignment.CenterEnd).fillMaxHeight())
+                VerticalScrollbar(rememberScrollbarAdapter(state), Modifier.fillMaxHeight())
             }
         }
     }, modifier = boxModifier, enabled = enabled, matcher = matcher, pass = PointerEventPass.Initial) {
