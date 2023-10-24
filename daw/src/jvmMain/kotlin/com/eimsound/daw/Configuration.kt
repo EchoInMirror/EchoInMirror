@@ -63,9 +63,15 @@ object Configuration : JsonSerializable {
         if (CONFIG_PATH.exists()) fromJsonFile(CONFIG_PATH.toFile())
         else save()
         nativeHostPath = Paths.get(if (SystemUtils.IS_OS_MAC)
-            "/Users/shirasawa/code/EIMHost/cmake-build-debug/EIMHost_artefacts/Debug/EIMHost"
+            "/Users/shirasawa/code/EIMHost/cmake-build-debug/EIMHost_artefacts/Debug/EIMHost.app/Contents/MacOS/EIMHost"
             else "D:\\Cpp\\EIMPluginScanner\\build\\EIMHost_artefacts\\MinSizeRel\\EIMHost.exe")
-        if (!Files.exists(nativeHostPath)) nativeHostPath = Paths.get(if (SystemUtils.IS_OS_WINDOWS) "EIMHost-x64.exe" else "EIMHost")
+        if (!Files.exists(nativeHostPath)) {
+            nativeHostPath = Paths.get(
+                if (SystemUtils.IS_OS_WINDOWS) "EIMHost-x64.exe"
+                else if (SystemUtils.IS_OS_MAC) "EIMHost.app/Contents/MacOS/EIMHost"
+                else "EIMHost"
+            )
+        }
         val x86Host = nativeHostPath.absolute().parent.resolve(nativeHostPath.name.replace("x64", "x86"))
 
         System.setProperty("com.microsoft.appcenter.crashes.uncaughtexception.autosend", "true")

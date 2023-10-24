@@ -156,7 +156,7 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
             ?: throw NoSuchAudioProcessorException(path, name)
         logger.info { "Creating native audio plugin: $description in $path" }
         return NativeAudioPluginImpl(description, this).apply {
-            launch(getNativeHostPath(description), "$path/${json["id"]}.bin")
+            launch(getNativeHostPath(description), "$path/${json["id"]!!.asString()}.bin")
         }
     }
 

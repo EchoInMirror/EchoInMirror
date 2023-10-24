@@ -4,7 +4,6 @@ test_project
 *.log
 /logs
 ffmpeg
-/daw/EIMHost
 
 .gradle
 wix311

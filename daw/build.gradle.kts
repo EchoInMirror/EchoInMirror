@@ -3,7 +3,7 @@ import org.jetbrains.compose.ComposeBuildConfig
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import java.io.FileOutputStream
 import java.net.HttpURLConnection
-import java.net.URL
+import java.net.URI
 
 plugins {
     kotlin("multiplatform")
@@ -67,17 +67,18 @@ compose.desktop {
     }
 }
 
-fun downloadEIMHost(ext: String, appendExt: Boolean = false) {
+fun downloadEIMHost(ext: String, appendExt: Boolean = false): Boolean {
     val file = File(if (appendExt) "EIMHost-$ext" else "EIMHost")
-    if (!File("src").exists() || file.exists()) return
-    val connection = URL("https://github.com/EchoInMirror/EIMHost/releases/latest/download/EIMHost-$ext")
-        .openConnection() as HttpURLConnection
+    if (!File("src").exists() || file.exists()) return false
+    val connection = URI.create("https://github.com/EchoInMirror/EIMHost/releases/latest/download/EIMHost-$ext")
+        .toURL().openConnection() as HttpURLConnection
     connection.connect()
     val input = connection.inputStream
     val output = FileOutputStream(file)
     input.copyTo(output)
     input.close()
     output.close()
+    return true
 }
 
 project(":daw") {
@@ -87,7 +88,9 @@ project(":daw") {
             downloadEIMHost("x64.exe", true)
 //          downloadEIMHost("x86.exe", true)
         } else if (os.isMacOsX) {
-            downloadEIMHost("MacOS")
+            if (downloadEIMHost("MacOS.zip", true)) {
+                from(zipTree(File("EIMHost-MacOS.zip"))).into(".")
+            }
         } else {
             downloadEIMHost("Linux")
         }
