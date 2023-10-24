@@ -99,8 +99,8 @@ private fun MixerProcessorButton(isLoading: MutableState<Boolean>, list: Mutable
                 Text(wrapper.processor.name, Modifier.fillMaxWidth(),
                     fontSize = MaterialTheme.typography.labelSmall.fontSize, maxLines = 1, lineHeight = 7.sp,
                     textAlign = TextAlign.Center, fontStyle = fontStyle, fontWeight = fontWeight,
-                    textDecoration = if (wrapper.processor.isBypass) TextDecoration.LineThrough else null,
-                    color = if (wrapper.processor.isBypass) LocalContentColor.current.copy(alpha = 0.5f)
+                    textDecoration = if (wrapper.processor.isBypassed) TextDecoration.LineThrough else null,
+                    color = if (wrapper.processor.isBypassed) LocalContentColor.current.copy(alpha = 0.5f)
                     else LocalContentColor.current
                 )
             }
@@ -195,8 +195,8 @@ private fun MixerTrack(track: Track, index: String, containerColor: Color = Mate
                         Modifier.fillMaxWidth().padding(vertical = 4.dp),
                         horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically
                     ) {
-                        IconButton({ track.isBypass = !track.isBypass }, 20.dp) {
-                            if (track.isBypass) Icon(Icons.Default.VolumeOff, null, tint = MaterialTheme.colorScheme.error)
+                        IconButton({ track.isBypassed = !track.isBypassed }, 20.dp) {
+                            if (track.isBypassed) Icon(Icons.Default.VolumeOff, null, tint = MaterialTheme.colorScheme.error)
                             else Icon(Icons.Default.VolumeUp, null)
                         }
                         Gap(6)

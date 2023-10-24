@@ -162,7 +162,7 @@ interface AudioProcessor: Recoverable, AutoCloseable, SuddenChangeListener {
     val id: String
     val parameters: List<IAudioProcessorParameter>
     val lastModifiedParameter: IAudioProcessorParameter?
-    var isBypass: Boolean
+    var isBypassed: Boolean
     suspend fun processBlock(buffers: Array<FloatArray>, position: CurrentPosition, midiBuffer: ArrayList<Int>) { }
     fun prepareToPlay(sampleRate: Int, bufferSize: Int) { }
     fun onClick() { }
@@ -192,7 +192,7 @@ abstract class AbstractAudioProcessor(
     override val parameters = emptyList<IAudioProcessorParameter>()
     override var lastModifiedParameter: IAudioProcessorParameter? = null
         protected set
-    override var isBypass = false
+    override var isBypassed by mutableStateOf(false)
     private val _listeners = WeakHashMap<AudioProcessorListener, Unit>()
     protected val listeners get() = _listeners.keys
 
@@ -202,6 +202,7 @@ abstract class AbstractAudioProcessor(
         put("name", name)
         put("id", id)
         put("identifier", description.identifier)
+        putNotDefault("isBypassed", isBypassed)
         if (saveParameters) put("parameters", buildJsonObject {
             parameters.forEach { if (it.value != it.initialValue) put(it.id, it.value) }
         })
@@ -212,6 +213,7 @@ abstract class AbstractAudioProcessor(
         json as JsonObject
         name = json["name"]?.asString() ?: ""
         json["id"]?.asString()?.let { if (it.isNotEmpty()) id = it }
+        isBypassed = json["isBypassed"]?.jsonPrimitive?.boolean ?: false
         if (saveParameters) json["parameters"]?.jsonObject?.let { obj ->
             val params = parameters.associateBy { it.id }
             obj.forEach { (id, value) ->

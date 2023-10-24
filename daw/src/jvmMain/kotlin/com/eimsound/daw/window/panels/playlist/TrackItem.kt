@@ -160,8 +160,8 @@ private fun TrackItem(playlist: Playlist, track: Track, parentTrack: Track, inde
                 Column(Modifier.fillMaxHeight(), Arrangement.SpaceBetween) {
                     Text(track.name, style = MaterialTheme.typography.labelLarge, overflow = TextOverflow.Ellipsis, maxLines = 1)
                     if (trackHeight.value > 54) SegmentedButtons {
-                        SegmentedButton({ track.isBypass = !track.isBypass }, track.isBypass, false) {
-                            Icon(if (track.isBypass) Icons.Filled.VolumeOff else Icons.Filled.VolumeUp, null, TRACK_ITEM_ICON_SIZE)
+                        SegmentedButton({ track.isBypassed = !track.isBypassed }, track.isBypassed, false) {
+                            Icon(if (track.isBypassed) Icons.Filled.VolumeOff else Icons.Filled.VolumeUp, null, TRACK_ITEM_ICON_SIZE)
                         }
                         SegmentedDivider()
                         SegmentedButton({ track.isSolo = !track.isSolo }, track.isSolo, false) {

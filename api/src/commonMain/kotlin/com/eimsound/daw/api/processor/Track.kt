@@ -75,26 +75,21 @@ data class DefaultHandledParameter(
 
 interface TrackAudioProcessorWrapper : JsonSerializable {
     val processor: AudioProcessor
-    var isBypassed: Boolean
     var handledParameters: List<HandledParameter>
 }
 
 class DefaultTrackAudioProcessorWrapper(
-    override val processor: AudioProcessor,
-    isBypassed: Boolean = false
+    override val processor: AudioProcessor
 ) : TrackAudioProcessorWrapper {
-    override var isBypassed by mutableStateOf(isBypassed)
     override var handledParameters by mutableStateOf(emptyList<HandledParameter>())
 
     override fun toJson() = buildJsonObject {
         put("processor", if (processor is JsonSerializable) processor.toJson() else JsonPrimitive(processor.id))
-        putNotDefault("isBypassed", isBypassed)
         putNotDefault("handledParameters", handledParameters)
     }
 
     override fun fromJson(json: JsonElement) {
         json as JsonObject
-        json["isBypassed"]?.let { isBypassed = it.asBoolean() }
         handledParameters = json["handledParameters"]?.let { arr ->
             (arr as JsonArray).mapNotNull { elm ->
                 if (elm !is JsonObject) return@mapNotNull null
@@ -107,6 +102,6 @@ class DefaultTrackAudioProcessorWrapper(
     }
 
     override fun toString(): String {
-        return "DefaultTrackAudioProcessorWrapper(processor=$processor, isBypassed=$isBypassed)"
+        return "DefaultTrackAudioProcessorWrapper(processor=$processor)"
     }
 }

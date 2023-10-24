@@ -57,7 +57,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
     private var tempBuffer = arrayOf(FloatArray(1024), FloatArray(1024))
     private var tempBuffer2 = arrayOf(FloatArray(1024), FloatArray(1024))
     override var isRendering by mutableStateOf(false)
-    override var isBypass by observableMutableStateOf(false, ::stateChange)
+    override var isBypassed by observableMutableStateOf(false, ::stateChange)
     override var isSolo by observableMutableStateOf(false, ::stateChange)
     override var isDisabled by observableMutableStateOf(false, ::stateChange)
 
@@ -76,7 +76,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         position: CurrentPosition,
         midiBuffer: ArrayList<Int>
     ) {
-        if (isBypass || isDisabled) return
+        if (isBypassed || isDisabled) return
         if (pendingMidiBuffer.isNotEmpty()) {
             midiBuffer.addAll(pendingMidiBuffer)
             pendingMidiBuffer.clear()
@@ -106,14 +106,14 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
                 clip.clip.factory.processBlock(clip, buffers, position, midiBuffer, noteRecorder, pendingNoteOns)
             }
         }
-        preProcessorsChain.forEach { if (!it.isBypassed) it.processor.processBlock(buffers, position, midiBuffer) }
+        preProcessorsChain.forEach { if (!it.processor.isBypassed) it.processor.processBlock(buffers, position, midiBuffer) }
         if (subTracks.isNotEmpty()) {
             tempBuffer[0].fill(0F)
             tempBuffer[1].fill(0F)
             runBlocking {
                 val bus = EchoInMirror.bus
                 subTracks.forEach {
-                    if (it.isBypass || it.isDisabled || it.isRendering) return@forEach
+                    if (it.isBypassed || it.isDisabled || it.isRendering) return@forEach
                     launch {
                         val buffer = if (it is TrackImpl) it.tempBuffer2.apply {
                             this[0].fill(0F)
@@ -131,7 +131,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         }
 
         if (position.isRealtime) internalProcessorsChain.fastForEach { it.processBlock(buffers, position, midiBuffer) }
-        postProcessorsChain.forEach { if (!it.isBypassed) it.processor.processBlock(buffers, position, midiBuffer) }
+        postProcessorsChain.forEach { if (!it.processor.isBypassed) it.processor.processBlock(buffers, position, midiBuffer) }
 
         var leftPeak = 0F
         var rightPeak = 0F
@@ -234,7 +234,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         putNotDefault("name", name)
         put("color", color.value.toLong())
         putNotDefault("height", height)
-        putNotDefault("isBypass", isBypass)
+        putNotDefault("isBypassed", isBypassed)
         putNotDefault("isSolo", isSolo)
         putNotDefault("isDisabled", isDisabled)
         putNotDefault("subTracks", subTracks.map { it.id })
@@ -288,7 +288,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         json["name"]?.asString()?.let { name = it }
         json["color"]?.asLong()?.let { color = Color(it.toULong()) }
         json["height"]?.asInt()?.let { height = it }
-        json["isBypass"]?.asBoolean()?.let { isBypass = it }
+        json["isBypassed"]?.asBoolean()?.let { isBypassed = it }
         json["isSolo"]?.asBoolean()?.let { isSolo = it }
         json["isDisabled"]?.asBoolean()?.let { isDisabled = it }
     }
