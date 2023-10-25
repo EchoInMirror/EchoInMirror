@@ -12,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
@@ -129,7 +130,7 @@ class Playlist : Panel, MultiSelectableEditor {
                     TrackItems(this@Playlist)
                 }
             }
-            Box(Modifier.fillMaxSize()) {
+            Box(Modifier.fillMaxSize().clipToBounds()) {
                 Column {
                     val localDensity = LocalDensity.current
                     Timeline(Modifier.zIndex(3f), noteWidth, horizontalScrollState, EchoInMirror.currentPosition.projectRange,

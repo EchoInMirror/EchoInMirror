@@ -38,8 +38,6 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlin.math.*
 
-private val MAX_TEXT_SIZE = Constraints(maxWidth = 40, maxHeight = 24)
-
 @Suppress("DuplicatedCode")
 fun EnvelopeType.toPath(height: Float, tension: Float, x0: Float, x1: Float,
                         value0: Float, value1: Float) = Path().apply {
@@ -416,6 +414,8 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: FloatRange,
             var lastTextX = Float.NEGATIVE_INFINITY
             var lastTextY = Float.NEGATIVE_INFINITY
 
+            val maxTextSize = Constraints(maxWidth = (30 * density).toInt(), maxHeight = (20 * density).toInt())
+
             if (action == EditAction.MOVE && movingPoints != null) {
                 val first = movingPoints.firstOrNull()
                 val isFirstSelected = first != null && selectedPoints.contains(first)
@@ -456,7 +456,7 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: FloatRange,
                                 AnnotatedString(if (isFloat) "%.2f".format(curValue) else curValue.toInt().toString()),
                                 textStyle,
                                 maxLines = 1,
-                                constraints = MAX_TEXT_SIZE
+                                constraints = maxTextSize
                             ),
                             curColor,
                             Offset(startX + 6, if (currentY + 20 > size.height) currentY - 20 else currentY + 2)
@@ -507,7 +507,7 @@ class EnvelopeEditor(val points: EnvelopePointList, val valueRange: FloatRange,
                                 AnnotatedString(if (isFloat) "%.2f".format(cur.value) else cur.value.toInt().toString()),
                                 textStyle,
                                 maxLines = 1,
-                                constraints = MAX_TEXT_SIZE
+                                constraints = maxTextSize
                             ),
                             curColor,
                             Offset(startX + 6, if (currentY + 20 > size.height) currentY - 20 else currentY + 2)

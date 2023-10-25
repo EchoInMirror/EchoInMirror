@@ -105,10 +105,11 @@ private fun MixerProcessorDropTarget(
 @Composable
 private fun MixerProcessorDragAndDropTarget(
     isLoading: MutableState<Boolean>, list: MutableList<TrackAudioProcessorWrapper>, index: Int,
-    onDrop: (AudioProcessor) -> Unit, onDrag: () -> Any,
+    onDrop: (AudioProcessor) -> Unit, onDrag: (() -> Any)? = null,
     modifier: Modifier = Modifier, content: @Composable BoxScope.(Boolean) -> Unit
 ) {
-    GlobalDraggable(onDrag, draggingComponent = { Box(Modifier.size(TRACK_WIDTH - 4.dp, 30.dp)) { content(true) } }) {
+    if (onDrag == null) MixerProcessorDropTarget(isLoading, list, index, onDrop, modifier, content)
+    else GlobalDraggable(onDrag, draggingComponent = { Box(Modifier.size(TRACK_WIDTH - 4.dp, 30.dp)) { content(true) } }) {
         MixerProcessorDropTarget(isLoading, list, index, onDrop, modifier, content)
     }
 }
@@ -118,12 +119,17 @@ private val BUTTON_PADDINGS = PaddingValues(6.dp, 0.dp)
 private fun MixerProcessorButton(isLoading: MutableState<Boolean>, list: MutableList<TrackAudioProcessorWrapper>,
                                  wrapper: TrackAudioProcessorWrapper? = null, index: Int = -1, fontStyle: FontStyle? = null,
                                  fontWeight: FontWeight? = null, onClick: () -> Unit) {
-    MixerProcessorDragAndDropTarget(isLoading, list, index, {
-        if (wrapper == null) list.doAddOrRemoveAudioProcessorAction(it)
-        else list.doReplaceAudioProcessorAction(it, index)
-    }, {
-        TrackAudioProcessorMoveAction(index, list)
-    }, Modifier.height(28.dp).fillMaxWidth()) {
+    val indexValue by rememberUpdatedState(index)
+    val listValue by rememberUpdatedState(list)
+    MixerProcessorDragAndDropTarget(
+        isLoading, list, index,
+        {
+            if (wrapper == null) list.doAddOrRemoveAudioProcessorAction(it)
+            else list.doReplaceAudioProcessorAction(it, index)
+        },
+        wrapper?.let { { TrackAudioProcessorMoveAction(indexValue, listValue) } },
+        Modifier.height(28.dp).fillMaxWidth()
+    ) {
         if (it) {
             var modifier = Modifier.fillMaxSize()
             if (wrapper != null) {
