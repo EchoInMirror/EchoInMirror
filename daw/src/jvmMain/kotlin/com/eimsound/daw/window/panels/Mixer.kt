@@ -32,6 +32,7 @@ import com.eimsound.audioprocessor.AudioProcessor
 import com.eimsound.audioprocessor.AudioProcessorDescriptionAndFactory
 import com.eimsound.audioprocessor.createAudioProcessorOrNull
 import com.eimsound.daw.actions.doAddOrRemoveAudioProcessorAction
+import com.eimsound.daw.actions.doMoveAudioProcessorAction
 import com.eimsound.daw.actions.doReplaceAudioProcessorAction
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.processor.Bus
@@ -40,6 +41,7 @@ import com.eimsound.daw.api.processor.TrackAudioProcessorWrapper
 import com.eimsound.daw.api.window.Panel
 import com.eimsound.daw.api.window.PanelDirection
 import com.eimsound.daw.components.*
+import com.eimsound.daw.components.dragdrop.GlobalDraggable
 import com.eimsound.daw.components.dragdrop.GlobalDropTarget
 import com.eimsound.daw.components.dragdrop.LocalGlobalDragAndDrop
 import com.eimsound.daw.components.silder.DefaultTrack
@@ -52,26 +54,43 @@ import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
+private val TRACK_WIDTH = 90.dp
+
+data class TrackAudioProcessorMoveAction(val index: Int, val list: MutableList<TrackAudioProcessorWrapper>)
+
 @OptIn(DelicateCoroutinesApi::class)
 @Composable
-private fun MixerProcessorDropTarget(isLoading: MutableState<Boolean>, onDrop: (AudioProcessor) -> Unit,
-                               modifier: Modifier = Modifier, content: @Composable BoxScope.(Boolean) -> Unit) {
+private fun MixerProcessorDropTarget(
+    isLoading: MutableState<Boolean>, list: MutableList<TrackAudioProcessorWrapper>, index: Int,
+    onDrop: (AudioProcessor) -> Unit, modifier: Modifier = Modifier, content: @Composable BoxScope.(Boolean) -> Unit
+) {
+    val indexValue by rememberUpdatedState(index)
+    val listValue by rememberUpdatedState(list)
     val snackbarProvider = LocalSnackbarProvider.current
     GlobalDropTarget({ data, _ ->
-        if (isLoading.value || data !is AudioProcessorDescriptionAndFactory) return@GlobalDropTarget
-        GlobalScope.launch {
-            val (ap, err) = data.factory.createAudioProcessorOrNull(data.description)
-            if (err != null) {
-                snackbarProvider.enqueueSnackbar(err)
-                return@launch
+        if (isLoading.value) return@GlobalDropTarget
+        when (data) {
+            is AudioProcessorDescriptionAndFactory -> {
+                GlobalScope.launch {
+                    val (ap, err) = data.factory.createAudioProcessorOrNull(data.description)
+                    if (err != null) {
+                        snackbarProvider.enqueueSnackbar(err)
+                        return@launch
+                    }
+                    if (ap == null) return@launch
+                    isLoading.value = true
+                    onDrop(ap)
+                    isLoading.value = false
+                }
             }
-            if (ap == null) return@launch
-            isLoading.value = true
-            onDrop(ap)
-            isLoading.value = false
+            is TrackAudioProcessorMoveAction -> {
+                data.list.doMoveAudioProcessorAction(data.index, listValue, indexValue)
+            }
         }
     }, modifier) {
-        val isActive = it != null && LocalGlobalDragAndDrop.current.dataTransfer is AudioProcessorDescriptionAndFactory
+        val isActive = it != null && LocalGlobalDragAndDrop.current.dataTransfer.let { d ->
+            d is AudioProcessorDescriptionAndFactory || d is TrackAudioProcessorMoveAction
+        }
         Box(
             Modifier.fillMaxSize().background(
                 MaterialTheme.colorScheme.primary.copy(animateFloatAsState(if (isActive) 0.3f else 0f).value),
@@ -83,24 +102,40 @@ private fun MixerProcessorDropTarget(isLoading: MutableState<Boolean>, onDrop: (
     }
 }
 
+@Composable
+private fun MixerProcessorDragAndDropTarget(
+    isLoading: MutableState<Boolean>, list: MutableList<TrackAudioProcessorWrapper>, index: Int,
+    onDrop: (AudioProcessor) -> Unit, onDrag: () -> Any,
+    modifier: Modifier = Modifier, content: @Composable BoxScope.(Boolean) -> Unit
+) {
+    GlobalDraggable(onDrag, draggingComponent = { Box(Modifier.size(TRACK_WIDTH - 4.dp, 30.dp)) { content(true) } }) {
+        MixerProcessorDropTarget(isLoading, list, index, onDrop, modifier, content)
+    }
+}
+
 private val BUTTON_PADDINGS = PaddingValues(6.dp, 0.dp)
 @Composable
 private fun MixerProcessorButton(isLoading: MutableState<Boolean>, list: MutableList<TrackAudioProcessorWrapper>,
                                  wrapper: TrackAudioProcessorWrapper? = null, index: Int = -1, fontStyle: FontStyle? = null,
                                  fontWeight: FontWeight? = null, onClick: () -> Unit) {
-    MixerProcessorDropTarget(isLoading, {
+    MixerProcessorDragAndDropTarget(isLoading, list, index, {
         if (wrapper == null) list.doAddOrRemoveAudioProcessorAction(it)
         else list.doReplaceAudioProcessorAction(it, index)
+    }, {
+        TrackAudioProcessorMoveAction(index, list)
     }, Modifier.height(28.dp).fillMaxWidth()) {
         if (it) {
             var modifier = Modifier.fillMaxSize()
             if (wrapper != null) {
                 val pos = remember { arrayOf(Offset.Zero) }
                 val floatingLayerProvider = LocalFloatingLayerProvider.current
+                val snackbarProvider = LocalSnackbarProvider.current
                 modifier = modifier.onGloballyPositioned { p ->
                     pos[0] = p.positionInRoot()
                 }.onRightClickOrLongPress { p ->
-                    floatingLayerProvider.openAudioProcessorMenu(pos[0] + p, wrapper, list)
+                    if (!isLoading.value)
+                        floatingLayerProvider.openAudioProcessorMenu(pos[0] + p, wrapper, list, index,
+                            snackbarProvider, isLoading)
                 }
             }
             TextButton(onClick, modifier, contentPadding = BUTTON_PADDINGS) {
@@ -131,13 +166,14 @@ private fun MixerProcessorButton(isLoading: MutableState<Boolean>, list: Mutable
 @OptIn(DelicateCoroutinesApi::class)
 @Composable
 private fun MixerProcessorButtons(isLoading: MutableState<Boolean>, list: MutableList<TrackAudioProcessorWrapper>) {
-    MixerProcessorDropTarget(isLoading, { list.doAddOrRemoveAudioProcessorAction(it, index = 0) }) {
+    MixerProcessorDropTarget(isLoading, list, 0, { list.doAddOrRemoveAudioProcessorAction(it, index = 0) }) {
         Divider(Modifier.padding(6.dp, 2.dp), 2.dp, MaterialTheme.colorScheme.primary)
     }
     list.forEachIndexed { i, it ->
         key(it) {
             MixerProcessorButton(isLoading, list, it, i, onClick = it::onClick)
-            MixerProcessorDropTarget(isLoading, { list.doAddOrRemoveAudioProcessorAction(it, index = i + 1) }) {
+            MixerProcessorDropTarget(isLoading, list, i + 1,
+                { list.doAddOrRemoveAudioProcessorAction(it, index = i + 1) }) {
                 Divider(Modifier.padding(8.dp, 2.dp))
             }
         }
@@ -244,7 +280,7 @@ private fun MixerTrack(track: Track, index: String, containerColor: Color = Mate
         .clip(MaterialTheme.shapes.medium)) {
         val trackColor = if (track is Bus) MaterialTheme.colorScheme.primary else track.color
         val isSelected = EchoInMirror.selectedTrack == track
-        var curModifier = Modifier.width(90.dp)
+        var curModifier = Modifier.width(TRACK_WIDTH)
         if (isSelected) curModifier = curModifier.border(1.dp, trackColor, MaterialTheme.shapes.medium)
         Layout({
             Column(curModifier.shadow(1.dp, MaterialTheme.shapes.medium, clip = false)

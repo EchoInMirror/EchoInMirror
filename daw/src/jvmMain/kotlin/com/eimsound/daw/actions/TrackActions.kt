@@ -8,6 +8,7 @@ import com.eimsound.daw.api.processor.DefaultTrackAudioProcessorWrapper
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.api.processor.TrackAudioProcessorWrapper
 import com.eimsound.daw.utils.ListAddOrRemoveAction
+import com.eimsound.daw.utils.ListElementMoveAction
 import com.eimsound.daw.utils.ListReplaceAction
 import com.eimsound.daw.utils.UndoableAction
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -66,10 +67,26 @@ fun MutableList<TrackAudioProcessorWrapper>.doAddOrRemoveAudioProcessorAction(au
     }
 }
 
+fun MutableList<TrackAudioProcessorWrapper>.doMoveAudioProcessorAction(index: Int, to: MutableList<TrackAudioProcessorWrapper>,
+                                                                       toIndex: Int = -1) {
+    runBlocking {
+        EchoInMirror.undoManager.execute(
+            AudioProcessorMoveAction(index, this@doMoveAudioProcessorAction, to, toIndex)
+        )
+    }
+}
+
 class AudioProcessorAddOrRemoveAction(target: TrackAudioProcessorWrapper, source: MutableList<TrackAudioProcessorWrapper>, isDelete: Boolean,
                                       index: Int = -1): ListAddOrRemoveAction<TrackAudioProcessorWrapper>(target, source, isDelete, index) {
     override val name = if (isDelete) "删除音频处理器" else "添加音频处理器"
     override val icon = if (isDelete) Icons.Filled.Close else Icons.Filled.Add
+}
+
+class AudioProcessorMoveAction(
+    index: Int, from: MutableList<TrackAudioProcessorWrapper>, to: MutableList<TrackAudioProcessorWrapper>, toIndex: Int = -1
+) : ListElementMoveAction<TrackAudioProcessorWrapper>(index, from, to, toIndex) {
+    override val name = "移动音频处理器"
+    override val icon = Icons.Filled.Reorder
 }
 
 fun MutableList<TrackAudioProcessorWrapper>.doReplaceAudioProcessorAction(target: AudioProcessor, index: Int) {
