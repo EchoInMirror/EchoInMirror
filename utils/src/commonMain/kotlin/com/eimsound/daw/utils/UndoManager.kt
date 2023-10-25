@@ -57,7 +57,6 @@ abstract class ListAddOrRemoveAction<T>(private val target: T, private val list:
             val dir = createTempDirectory("undo")
             Files.createDirectories(dir)
             restorablePath = dir.absolutePathString()
-            println(restorablePath)
             target.store(restorablePath!!)
         }
         if (target is AutoCloseable) target.close()

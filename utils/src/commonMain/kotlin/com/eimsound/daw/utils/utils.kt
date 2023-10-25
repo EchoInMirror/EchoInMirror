@@ -3,6 +3,7 @@ package com.eimsound.daw.utils
 import com.aventrix.jnanoid.jnanoid.NanoIdUtils
 import io.github.oshai.kotlinlogging.KLogger
 import java.nio.file.Files
+import java.nio.file.Path
 import kotlin.math.ceil
 import kotlin.math.roundToInt
 
@@ -44,6 +45,6 @@ inline fun <T> tryOrNull(logger: KLogger? = null, message: String? = null, block
     }
 }
 
-fun createTempDirectory(prefix: String? = null) = Files.createTempDirectory(
+fun createTempDirectory(prefix: String? = null): Path = Files.createTempDirectory(
     System.getProperty("eim.tempfiles.prefix", "EchoInMirror") + (if (prefix == null) "" else "-$prefix")
 )

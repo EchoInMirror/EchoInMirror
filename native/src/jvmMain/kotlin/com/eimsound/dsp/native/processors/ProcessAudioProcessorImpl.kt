@@ -4,8 +4,11 @@ import cn.apisium.shm.SharedMemory
 import com.eimsound.audioprocessor.*
 import com.eimsound.daw.utils.ByteBufInputStream
 import com.eimsound.daw.utils.ByteBufOutputStream
+import com.eimsound.daw.utils.randomId
 import com.eimsound.dsp.native.IS_SHM_SUPPORTED
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
+import kotlinx.coroutines.selects.onTimeout
 import kotlinx.coroutines.selects.select
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -26,6 +29,7 @@ private const val PARAMETER_IS_META = 0b01000
 @Suppress("unused")
 private const val PARAMETER_IS_ORIENTATION_INVERTED = 0b10000
 
+private val logger = KotlinLogging.logger {  }
 @Suppress("MemberVisibilityCanBePrivate")
 open class ProcessAudioProcessorImpl(
     override val description: NativeAudioPluginDescription,
@@ -46,7 +50,9 @@ open class ProcessAudioProcessorImpl(
     private var prepared = false
     private var sharedMemory: SharedMemory? = null
     private var byteBuffer: ByteBuffer? = null
-    private val shmName = if (enabledSharedMemory) "EIM-NativePlayer-${UUID.randomUUID()}" else ""
+    private val shmId = randomId()
+    private val shmName
+        get() = if (enabledSharedMemory) "EIM-$shmId-$id" else ""
     protected var inputStream: ByteBufInputStream? = null
     protected var outputStream: ByteBufOutputStream? = null
     protected val mutex = Mutex()
@@ -132,23 +138,23 @@ open class ProcessAudioProcessorImpl(
         var newSize = 0
         if (enabledSharedMemory && IS_SHM_SUPPORTED) {
             val size = bufferSize * inputChannelsCount.coerceAtLeast(outputChannelsCount) * 4
-            sharedMemory?.let {
-                if (it.size != size) {
-                    it.close()
-                    try {
-                        sharedMemory = SharedMemory.create(shmName, size)
-                        byteBuffer = sharedMemory!!.toByteBuffer()
-                        newSize = size
-                    } catch (ignored: Throwable) {
-                        sharedMemory = null
-                        byteBuffer = null
-                    }
+            if (sharedMemory?.size != size) {
+                sharedMemory?.close()
+                try {
+                    sharedMemory = SharedMemory.create(shmName, size)
+                    byteBuffer = sharedMemory!!.toByteBuffer()
+                    newSize = size
+                } catch (e: Throwable) {
+                    logger.warn(e) { "Failed to create shared memory: $shmName" }
+                    sharedMemory = null
+                    byteBuffer = null
                 }
             }
         }
         if (sharedMemory == null) output.write(0)
         else {
             output.write(1)
+            output.writeString(shmName)
             output.writeInt(newSize)
         }
         output.flush()
@@ -157,7 +163,7 @@ open class ProcessAudioProcessorImpl(
     override suspend fun launch(execFile: String, preset: String?, vararg commands: String): Boolean = coroutineScope {
         if (isLaunched) return@coroutineScope true
         val res = try {
-            select<Boolean> {
+            select {
                 var ret = false
                 launch {
                     withContext(Dispatchers.IO) {
@@ -166,10 +172,6 @@ open class ProcessAudioProcessorImpl(
                         if (handler.isNotEmpty()) {
                             args.add("-H")
                             args.add(handler)
-                        }
-                        if (enabledSharedMemory && IS_SHM_SUPPORTED) {
-                            args.add("-M")
-                            args.add(shmName)
                         }
                         args.addAll(commands)
                         val pb = if (preset == null) ProcessBuilder(execFile, "-L", "#", *args.toTypedArray())
@@ -200,6 +202,7 @@ open class ProcessAudioProcessorImpl(
                         p.onExit().thenAccept {
                             isLaunched = false
                             process = null
+                            prepared = false
                         }
 
                         try {
@@ -272,6 +275,7 @@ open class ProcessAudioProcessorImpl(
             inputStream = null
             outputStream = null
             isLaunched = false
+            prepared = false
         }
         super.close()
     }
@@ -296,20 +300,28 @@ open class ProcessAudioProcessorImpl(
 
     override suspend fun restore(path: String) {
         super.restore(path)
-        runBlocking {
-            launch(factory.getNativeHostPath(description), "$path/state.bin")
-        }
+        launch(factory.getNativeHostPath(description), "$path/state.bin")
     }
 
-    override suspend fun store(path: String) {
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override suspend fun store(path: String) = coroutineScope {
         super.store(path)
-        if (!isLaunched) return
-        mutex.withLock {
-            outputStream?.apply {
-                write(3)
-                writeString("$path/state.bin")
-                flush()
+        if (!isLaunched) return@coroutineScope
+            select {
+                onTimeout(5000) { close() }
+                launch {
+                    mutex.withLock {
+                        outputStream?.apply {
+                            write(3)
+                            writeString("$path/state.bin")
+                            flush()
+                            if (inputStream?.read() != 1) {
+                                logger.warn { "Failed to store native audio plugin $description to $path/state.bin" }
+                            }
+                        }
+                    }
+                }.onJoin { }
             }
-        }
+        coroutineContext.cancelChildren()
     }
 }

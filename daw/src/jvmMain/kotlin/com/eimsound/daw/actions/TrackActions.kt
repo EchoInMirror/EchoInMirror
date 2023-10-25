@@ -10,6 +10,9 @@ import com.eimsound.daw.api.processor.TrackAudioProcessorWrapper
 import com.eimsound.daw.utils.ListAddOrRemoveAction
 import com.eimsound.daw.utils.ListReplaceAction
 import com.eimsound.daw.utils.UndoableAction
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
 class AddOrRemoveTrackAction(track: Track, target: MutableList<Track>,
@@ -53,9 +56,10 @@ fun MutableList<TrackAudioProcessorWrapper>.doAddOrRemoveAudioProcessorAction(au
                                                                               isDelete: Boolean = false, index: Int = -1) {
     doAddOrRemoveAudioProcessorAction(DefaultTrackAudioProcessorWrapper(audioProcessor), isDelete, index)
 }
+@OptIn(DelicateCoroutinesApi::class)
 fun MutableList<TrackAudioProcessorWrapper>.doAddOrRemoveAudioProcessorAction(audioProcessor: TrackAudioProcessorWrapper,
-                                                                  isDelete: Boolean = false, index: Int = -1) {
-    runBlocking {
+                                                                              isDelete: Boolean = false, index: Int = -1) {
+    GlobalScope.launch {
         EchoInMirror.undoManager.execute(
             AudioProcessorAddOrRemoveAction(audioProcessor, this@doAddOrRemoveAudioProcessorAction, isDelete, index)
         )
