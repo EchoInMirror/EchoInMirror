@@ -29,13 +29,11 @@ class AudioProcessorManagerImpl: AudioProcessorManager {
         return factories[factory]?.createAudioProcessor(description) ?: throw NoSuchFactoryException(factory)
     }
 
-    override suspend fun createAudioProcessor(path: String, id: String) = createAudioProcessor(path,
-        File("$path/$id.json").toJsonElement() as JsonObject)
-
-    override suspend fun createAudioProcessor(path: String, json: JsonObject): AudioProcessor {
+    override suspend fun createAudioProcessor(path: String): AudioProcessor {
+        val json = File(path, "processor.json").toJsonElement() as JsonObject
         val factory = json["factory"]?.asString()
         audioProcessorManagerLogger.info { "Creating audio processor ${json["id"]} in \"$path\" with factory \"$factory\"" }
-        return factories[factory]?.createAudioProcessor(path, json)
+        return factories[factory]?.createAudioProcessor(path)
             ?: throw NoSuchFactoryException(factory ?: "Null")
     }
 }

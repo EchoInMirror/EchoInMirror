@@ -130,7 +130,7 @@ interface EnvelopeEditorEventHandler {
 
 class EnvelopeEditor(val points: EnvelopePointList, val valueRange: FloatRange,
                      private val defaultValue: Float = valueRange.start, private val isFloat: Boolean = false,
-                     private val eventHandler: EnvelopeEditorEventHandler? = null): SerializableEditor {
+                     private val eventHandler: EnvelopeEditorEventHandler? = null): SerializableEditor, MultiSelectableEditor {
     @Suppress("MemberVisibilityCanBePrivate")
     val selectedPoints = mutableStateSetOf<EnvelopePoint>()
     private var selectionStartX by mutableStateOf(0F)

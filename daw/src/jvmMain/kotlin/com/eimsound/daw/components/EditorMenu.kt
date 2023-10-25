@@ -7,11 +7,14 @@ import com.eimsound.daw.api.Command
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.commands.*
 import com.eimsound.daw.dawutils.CLIPBOARD_MANAGER
+import com.eimsound.daw.utils.MultiSelectableEditor
 import com.eimsound.daw.utils.SerializableEditor
 
 @Composable
-fun CommandMenuItem(command: Command, enabled: Boolean = true, iconModifier: Modifier = DEFAULT_ICON_MODIFIER, onClick: () -> Unit) {
-    CommandMenuItem(command, EchoInMirror.commandManager.getKeysOfCommand(command), enabled, iconModifier, onClick)
+fun CommandMenuItem(command: Command, showIcon: Boolean, enabled: Boolean = true, iconModifier: Modifier = DEFAULT_ICON_MODIFIER, onClick: () -> Unit) {
+    CommandMenuItem(command,
+        if (showIcon) EchoInMirror.commandManager.getKeysOfCommand(command)
+        else emptyArray(), enabled, iconModifier, onClick)
 }
 
 /**
@@ -19,34 +22,36 @@ fun CommandMenuItem(command: Command, enabled: Boolean = true, iconModifier: Mod
  */
 fun initEditorMenuItems() {
     @Suppress("INVISIBLE_MEMBER")
-    editorMenuComposable = @Composable { editor, close ->
+    editorMenuComposable = @Composable { editor, showIcon, close ->
         val hasSelected = editor.hasSelected
-        CommandMenuItem(SelectAllCommand) {
-            close()
-            editor.selectAll()
+        if (editor is MultiSelectableEditor) {
+            CommandMenuItem(SelectAllCommand, showIcon) {
+                close()
+                editor.selectAll()
+            }
         }
-        CommandMenuItem(DeleteCommand, hasSelected) {
+        CommandMenuItem(DeleteCommand, showIcon, hasSelected) {
             close()
             editor.delete()
         }
-        CommandMenuItem(CopyCommand, hasSelected) {
+        CommandMenuItem(CopyCommand, showIcon, hasSelected) {
             close()
             editor.copy()
         }
-        CommandMenuItem(CutCommand, hasSelected) {
+        CommandMenuItem(CutCommand, showIcon, hasSelected) {
             close()
             editor.cut()
         }
-        CommandMenuItem(PasteCommand, editor.canPaste) {
+        CommandMenuItem(PasteCommand, showIcon, editor.canPaste) {
             close()
             editor.paste()
         }
         if (editor is SerializableEditor) {
-            CommandMenuItem(CopyToClipboard, hasSelected) {
+            CommandMenuItem(CopyToClipboard, showIcon, hasSelected) {
                 close()
                 CLIPBOARD_MANAGER?.setText(AnnotatedString(editor.copyAsString()))
             }
-            CommandMenuItem(PasteFromClipboard) {
+            CommandMenuItem(PasteFromClipboard, showIcon) {
                 close()
                 editor.pasteFromString(CLIPBOARD_MANAGER?.getText()?.text ?: return@CommandMenuItem)
             }

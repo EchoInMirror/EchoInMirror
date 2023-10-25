@@ -35,20 +35,20 @@ import com.eimsound.daw.components.utils.toOnSurfaceColor
 private fun CardHeader(p: TrackAudioProcessorWrapper, index: Int) {
 //    val shape = MaterialTheme.shapes.small.copy(bottomStart = CornerSize(0.dp), bottomEnd = CornerSize(0.dp))
 //    val backgroundColor = MaterialTheme.colorScheme.surfaceColorAtElevation(LocalAbsoluteTonalElevation.current)
-    Surface(Modifier.clickableWithIcon(onClick = p.processor::onClick)) {
+    Surface(Modifier.clickableWithIcon(onClick = p::onClick)) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            val isBypassed = p.processor.isBypassed
+            val isBypassed = p.isBypassed
             Row(Modifier.weight(1F).padding(horizontal = 12.dp)) {
                 Text("$index.", Modifier.padding(end = 6.dp),
                     fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.titleSmall
                 )
-                Text(p.processor.name, Modifier.weight(1F), style = MaterialTheme.typography.titleSmall,
+                Text(p.name, Modifier.weight(1F), style = MaterialTheme.typography.titleSmall,
                     maxLines = 1, overflow = TextOverflow.Ellipsis,
                     textDecoration = if (isBypassed) TextDecoration.LineThrough else TextDecoration.None,
                     color = LocalContentColor.current.copy(alpha = if (isBypassed) 0.7F else 1F))
             }
-            CustomCheckbox(!isBypassed, { p.processor.isBypassed = !it }, Modifier.padding(start = 8.dp))
+            CustomCheckbox(!isBypassed, { p.isBypassed = !it }, Modifier.padding(start = 8.dp))
         }
     }
 }
@@ -63,10 +63,9 @@ private fun AudioProcessorEditor(index: Int, p: TrackAudioProcessorWrapper) {
         Column {
             CardHeader(p, index)
             Divider()
-            val processor = p.processor
-            if (processor is AudioProcessorEditor) processor.Editor()
-            else if (processor.parameters.isNotEmpty()) BasicAudioParameterView(p)
-            else Text("未知的处理器: ${processor.name}", Modifier.padding(16.dp, 50.dp), textAlign = TextAlign.Center)
+            if (p is AudioProcessorEditor) p.Editor()
+            else if (p.parameters.isNotEmpty()) BasicAudioParameterView(p)
+            else Text("未知的处理器: ${p.name}", Modifier.padding(16.dp, 50.dp), textAlign = TextAlign.Center)
         }
     }
 //    }
@@ -104,6 +103,10 @@ object TrackView : Panel {
                     if (track != null) {
                         itemsIndexed(track.preProcessorsChain) { index, item ->
                             AudioProcessorEditor(index, item)
+                        }
+                        item {
+                            if (track.postProcessorsChain.isNotEmpty())
+                                Divider(Modifier.padding(horizontal = 16.dp), 2.dp, MaterialTheme.colorScheme.primary)
                         }
                         itemsIndexed(track.postProcessorsChain) { index, item ->
                             AudioProcessorEditor(index, item)

@@ -51,7 +51,7 @@ private fun FloatingLayerProvider.openParameterSelector(processor: TrackAudioPro
         Dialog({
             close()
             if (tmpSelectedParameter.isNotEmpty()) {
-                processor.processor.parameters.firstOrNull {
+                processor.parameters.firstOrNull {
                     "${it.name} (${it.id})" == tmpSelectedParameter
                 }?.let {
                     processor.handledParameters += DefaultHandledParameter(it)
@@ -74,20 +74,20 @@ private fun FloatingLayerProvider.openParameterSelector(processor: TrackAudioPro
             Divider(Modifier.padding(vertical = 8.dp))
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 var selectedParameter by remember {
-                    val lastModified = processor.processor.lastModifiedParameter
+                    val lastModified = processor.lastModifiedParameter
                     mutableStateOf(if (lastModified == null) "" else "${lastModified.name} (${lastModified.id})")
                 }
                 tmpSelectedParameter = selectedParameter
                 Selector(remember(processor.handledParameters) {
                     val set = processor.handledParameters.mapTo(mutableSetOf()) { it.parameter }
-                    processor.processor.parameters.mapNotNull { if (it in set) null else "${it.name} (${it.id})" }
+                    processor.parameters.mapNotNull { if (it in set) null else "${it.name} (${it.id})" }
                 }, selectedParameter, Modifier.weight(1F)) { selectedParameter = it }
                 IconButton({
                     // TODO: convert to action
                     val cur = selectedParameter
                     selectedParameter = ""
                     tmpSelectedParameter = ""
-                    processor.handledParameters += DefaultHandledParameter(processor.processor.parameters.firstOrNull {
+                    processor.handledParameters += DefaultHandledParameter(processor.parameters.firstOrNull {
                         "${it.name} (${it.id})" == cur
                     } ?: return@IconButton)
                 }, 30.dp, Modifier.padding(start = 8.dp)) {

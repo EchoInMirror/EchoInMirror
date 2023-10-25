@@ -16,8 +16,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -42,6 +45,7 @@ import com.eimsound.daw.components.dragdrop.LocalGlobalDragAndDrop
 import com.eimsound.daw.components.silder.DefaultTrack
 import com.eimsound.daw.components.silder.Slider
 import com.eimsound.daw.components.utils.clickableWithIcon
+import com.eimsound.daw.components.utils.onRightClickOrLongPress
 import com.eimsound.daw.components.utils.toOnSurfaceColor
 import com.eimsound.daw.window.dialogs.openQuickLoadDialog
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -88,21 +92,36 @@ private fun MixerProcessorButton(isLoading: MutableState<Boolean>, list: Mutable
         if (wrapper == null) list.doAddOrRemoveAudioProcessorAction(it)
         else list.doReplaceAudioProcessorAction(it, index)
     }, Modifier.height(28.dp).fillMaxWidth()) {
-        if (it) TextButton(onClick, Modifier.fillMaxSize(), contentPadding = BUTTON_PADDINGS) {
-            if (wrapper?.processor?.description?.isInstrument == true) {
-                Icon(Icons.Default.Piano, null, Modifier.size(16.dp))
-                Gap(2)
+        if (it) {
+            var modifier = Modifier.fillMaxSize()
+            if (wrapper != null) {
+                val pos = remember { arrayOf(Offset.Zero) }
+                val floatingLayerProvider = LocalFloatingLayerProvider.current
+                modifier = modifier.onGloballyPositioned { p ->
+                    pos[0] = p.positionInRoot()
+                }.onRightClickOrLongPress { p ->
+                    floatingLayerProvider.openAudioProcessorMenu(pos[0] + p, wrapper, list)
+                }
             }
-            if (wrapper == null) Text("...", fontSize = MaterialTheme.typography.labelMedium.fontSize,
-                maxLines = 1, lineHeight = 7.sp, fontStyle = fontStyle, fontWeight = fontWeight)
-            else Marquee {
-                Text(wrapper.processor.name, Modifier.fillMaxWidth(),
-                    fontSize = MaterialTheme.typography.labelSmall.fontSize, maxLines = 1, lineHeight = 7.sp,
-                    textAlign = TextAlign.Center, fontStyle = fontStyle, fontWeight = fontWeight,
-                    textDecoration = if (wrapper.processor.isBypassed) TextDecoration.LineThrough else null,
-                    color = if (wrapper.processor.isBypassed) LocalContentColor.current.copy(alpha = 0.5f)
-                    else LocalContentColor.current
+            TextButton(onClick, modifier, contentPadding = BUTTON_PADDINGS) {
+                if (wrapper?.description?.isInstrument == true) {
+                    Icon(Icons.Default.Piano, null, Modifier.size(16.dp))
+                    Gap(2)
+                }
+                if (wrapper == null) Text(
+                    "...", fontSize = MaterialTheme.typography.labelMedium.fontSize,
+                    maxLines = 1, lineHeight = 7.sp, fontStyle = fontStyle, fontWeight = fontWeight
                 )
+                else Marquee {
+                    Text(
+                        wrapper.name, Modifier.fillMaxWidth(),
+                        fontSize = MaterialTheme.typography.labelSmall.fontSize, maxLines = 1, lineHeight = 7.sp,
+                        textAlign = TextAlign.Center, fontStyle = fontStyle, fontWeight = fontWeight,
+                        textDecoration = if (wrapper.isBypassed) TextDecoration.LineThrough else null,
+                        color = if (wrapper.isBypassed) LocalContentColor.current.copy(alpha = 0.5f)
+                        else LocalContentColor.current
+                    )
+                }
             }
         } else Text(if (wrapper == null) "添加" else "替换", Modifier.align(Alignment.Center),
             style = MaterialTheme.typography.labelMedium)
@@ -117,7 +136,7 @@ private fun MixerProcessorButtons(isLoading: MutableState<Boolean>, list: Mutabl
     }
     list.forEachIndexed { i, it ->
         key(it) {
-            MixerProcessorButton(isLoading, list, it, i, onClick = it.processor::onClick)
+            MixerProcessorButton(isLoading, list, it, i, onClick = it::onClick)
             MixerProcessorDropTarget(isLoading, { list.doAddOrRemoveAudioProcessorAction(it, index = i + 1) }) {
                 Divider(Modifier.padding(8.dp, 2.dp))
             }
@@ -137,7 +156,80 @@ private fun MixerProcessorButtons(isLoading: MutableState<Boolean>, list: Mutabl
                 }
                 if (ap == null) return@launch
                 list.doAddOrRemoveAudioProcessorAction(ap)
-                isLoading.value = false
+            }.invokeOnCompletion { isLoading.value = false }
+        }
+    }
+}
+
+@Composable
+private fun TrackName(track: Track, trackColor: Color, index: String) {
+    Row(Modifier.background(trackColor).height(24.dp)
+        .clickableWithIcon { EchoInMirror.selectedTrack = track }
+        .padding(vertical = 2.5.dp).zIndex(2f)) {
+        val color = trackColor.toOnSurfaceColor()
+        Text(
+            index,
+            Modifier.padding(start = 5.dp, end = 3.dp),
+            color = color,
+            fontSize = MaterialTheme.typography.labelLarge.fontSize,
+            lineHeight = 18.0.sp,
+            fontWeight = FontWeight.Bold
+        )
+        Marquee {
+            Text(
+                track.name,
+                color = color,
+                fontSize = MaterialTheme.typography.labelLarge.fontSize,
+                lineHeight = 18.0.sp,
+            )
+        }
+    }
+}
+
+@Composable
+private fun PanSlider(track: Track) {
+    Slider(
+        track.pan,
+        { track.pan = it },
+        valueRange = -1f..1f,
+        modifier = Modifier.fillMaxWidth(),
+        track = { modifier, progress, interactionSource, tickFractions, enabled, isVertical ->
+            DefaultTrack(modifier, progress, interactionSource, tickFractions, enabled, isVertical, startPoint = 0.5f)
+        }
+    )
+}
+
+@Composable
+private fun VolumeText(track: Track) {
+    Text(
+        track.levelMeter.cachedMaxLevelString,
+        Modifier.width(30.dp).padding(start = 2.dp),
+        fontSize = MaterialTheme.typography.labelMedium.fontSize,
+        textAlign = TextAlign.Center,
+        letterSpacing = (-1).sp,
+        lineHeight = 12.sp,
+        maxLines = 1
+    )
+}
+
+@Composable
+private fun TrackLevels(track: Track) {
+    Row(
+        Modifier.fillMaxWidth().padding(bottom = 2.dp),
+        horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically
+    ) {
+        VolumeSlider(track)
+        LevelHints(Modifier.height(136.dp).width(24.dp))
+        Level(track.levelMeter, Modifier.height(136.dp))
+    }
+}
+
+@Composable
+private fun SubTracksButton(track: Track, index: String, containerColor: Color, depth: Int) {
+    if (track.subTracks.isNotEmpty()) Row(Modifier.padding(horizontal = 7.dp)) {
+        track.subTracks.forEachIndexed { i, it ->
+            key(it) {
+                MixerTrack(it, "$index.${i + 1}", containerColor, depth + 1)
             }
         }
     }
@@ -158,38 +250,10 @@ private fun MixerTrack(track: Track, index: String, containerColor: Color = Mate
             Column(curModifier.shadow(1.dp, MaterialTheme.shapes.medium, clip = false)
                 .background(containerColor, MaterialTheme.shapes.medium)
                 .clip(MaterialTheme.shapes.medium)) {
-                Row(Modifier.background(trackColor).height(24.dp)
-                    .clickableWithIcon { EchoInMirror.selectedTrack = track }
-                    .padding(vertical = 2.5.dp).zIndex(2f)) {
-                    val color = trackColor.toOnSurfaceColor()
-                    Text(
-                        index,
-                        Modifier.padding(start = 5.dp, end = 3.dp),
-                        color = color,
-                        fontSize = MaterialTheme.typography.labelLarge.fontSize,
-                        lineHeight = 18.0.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Marquee {
-                        Text(
-                            track.name,
-                            color = color,
-                            fontSize = MaterialTheme.typography.labelLarge.fontSize,
-                            lineHeight = 18.0.sp,
-                        )
-                    }
-                }
+                TrackName(track, trackColor, index)
 
                 Column(Modifier.padding(4.dp)) {
-                    Slider(
-                        track.pan,
-                        { track.pan = it },
-                        valueRange = -1f..1f,
-                        modifier = Modifier.fillMaxWidth(),
-                        track = { modifier, progress, interactionSource, tickFractions, enabled, isVertical ->
-                            DefaultTrack(modifier, progress, interactionSource, tickFractions, enabled, isVertical, startPoint = 0.5f)
-                        }
-                    )
+                    PanSlider(track)
 
                     Row(
                         Modifier.fillMaxWidth().padding(vertical = 4.dp),
@@ -200,25 +264,10 @@ private fun MixerTrack(track: Track, index: String, containerColor: Color = Mate
                             else Icon(Icons.Default.VolumeUp, null)
                         }
                         Gap(6)
-                        Text(
-                            track.levelMeter.cachedMaxLevelString,
-                            Modifier.width(30.dp).padding(start = 2.dp),
-                            fontSize = MaterialTheme.typography.labelMedium.fontSize,
-                            textAlign = TextAlign.Center,
-                            letterSpacing = (-1).sp,
-                            lineHeight = 12.sp,
-                            maxLines = 1
-                        )
+                        VolumeText(track)
                     }
 
-                    Row(
-                        Modifier.fillMaxWidth().padding(bottom = 2.dp),
-                        horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        VolumeSlider(track)
-                        LevelHints(Modifier.height(136.dp).width(24.dp))
-                        Level(track.levelMeter, Modifier.height(136.dp))
-                    }
+                    TrackLevels(track)
                 }
 
                 Column {
@@ -227,15 +276,7 @@ private fun MixerTrack(track: Track, index: String, containerColor: Color = Mate
                     MixerProcessorButtons(loading, track.postProcessorsChain)
                 }
             }
-            if (renderChildren && track.subTracks.isNotEmpty()) {
-                Row(Modifier.padding(horizontal = 7.dp)) {
-                    track.subTracks.forEachIndexed { i, it ->
-                        key(it) {
-                            MixerTrack(it, "$index.${i + 1}", containerColor, depth + 1)
-                        }
-                    }
-                }
-            }
+            if (renderChildren) SubTracksButton(track, index, containerColor, depth)
         }) { measurables, constraints ->
             if (measurables.size > 1) {
                 val content = measurables[1].measure(constraints)

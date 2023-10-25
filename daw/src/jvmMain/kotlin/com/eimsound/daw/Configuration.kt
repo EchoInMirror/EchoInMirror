@@ -4,6 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.utils.*
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.*
@@ -80,6 +81,7 @@ object Configuration : JsonSerializable {
         System.setProperty("eim.dsp.nativeaudioplugins.host", nativeHostPath.absolutePathString())
         System.setProperty("eim.dsp.nativeaudioplugins.host.x86", (if (Files.exists(x86Host)) x86Host else nativeHostPath).absolutePathString())
         System.setProperty("eim.dsp.nativeaudioplayer.file", nativeHostPath.absolutePathString())
+        System.setProperty("eim.tempfiles.prefix", "EchoInMirror")
     }
 
     fun save() { encodeJsonFile(CONFIG_PATH.toFile(), true) }
@@ -90,6 +92,7 @@ object Configuration : JsonSerializable {
         put("audioDeviceFactoryName", audioDeviceFactoryName)
         put("audioDeviceName", audioDeviceName)
         put("autoCutOver0db", autoCutOver0db)
+        put("isDarkTheme", EchoInMirror.windowManager.isDarkTheme)
     }
 
     override fun fromJson(json: JsonElement) {
@@ -98,6 +101,7 @@ object Configuration : JsonSerializable {
         json["audioDeviceFactoryName"]?.asString()?.let { audioDeviceFactoryName = it }
         json["audioDeviceName"]?.asString()?.let { audioDeviceName = it }
         json["autoCutOver0db"]?.asBoolean()?.let { autoCutOver0db = it }
+        json["isDarkTheme"]?.asBoolean()?.let { EchoInMirror.windowManager.isDarkTheme = it }
         val id = json["userId"]?.asString()
         if (id == null) save() else userId = id
     }

@@ -70,7 +70,7 @@ fun Density.calcScroll(event: PointerEvent, noteWidth: MutableState<Dp>, horizon
 
 val playListExtensions: MutableList<EditorExtension> = mutableStateListOf()
 
-class Playlist : Panel, BasicEditor {
+class Playlist : Panel, MultiSelectableEditor {
     override val name = "Playlist"
     override val direction = PanelDirection.Horizontal
     val selectedClips = mutableStateSetOf<TrackClip<*>>()

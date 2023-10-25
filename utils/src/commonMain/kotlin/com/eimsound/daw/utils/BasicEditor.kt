@@ -8,9 +8,12 @@ interface BasicEditor {
         delete()
     }
     fun paste() { }
-    fun selectAll() { }
     val hasSelected get() = true
     val canPaste get() = true
+}
+
+interface MultiSelectableEditor : BasicEditor {
+    fun selectAll() { }
 }
 
 interface SerializableEditor : BasicEditor {

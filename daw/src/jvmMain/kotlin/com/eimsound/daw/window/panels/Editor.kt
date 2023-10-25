@@ -18,9 +18,9 @@ import com.eimsound.daw.api.ClipEditor
 import com.eimsound.daw.api.window.Panel
 import com.eimsound.daw.api.window.PanelDirection
 import com.eimsound.daw.components.Gap
-import com.eimsound.daw.utils.BasicEditor
+import com.eimsound.daw.utils.MultiSelectableEditor
 
-object Editor: Panel, BasicEditor {
+object Editor: Panel, MultiSelectableEditor {
     override val name = "编辑器"
     override val direction = PanelDirection.Horizontal
     private var editor: ClipEditor? = null

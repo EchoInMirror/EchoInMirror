@@ -12,6 +12,7 @@ import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
+import java.io.File
 import java.util.*
 import kotlin.reflect.KProperty
 
@@ -150,7 +151,7 @@ fun IAudioProcessorParameter.doChangeAction(newValue: Float, emitEvent: Boolean 
     @OptIn(ExperimentalEIMApi::class) globalChangeHandler(this, newValue, emitEvent)
 }
 
-interface AudioProcessor: Recoverable, AutoCloseable, SuddenChangeListener {
+interface AudioProcessor: Restorable, AutoCloseable, SuddenChangeListener {
     var name: String
     @Transient
     val description: AudioProcessorDescription
@@ -168,8 +169,6 @@ interface AudioProcessor: Recoverable, AutoCloseable, SuddenChangeListener {
     fun onClick() { }
     fun addListener(listener: AudioProcessorListener)
     fun removeListener(listener: AudioProcessorListener)
-    suspend fun save(path: String)
-    suspend fun load(path: String, json: JsonObject)
 }
 
 interface AudioProcessorEditor : AudioProcessor {
@@ -195,6 +194,7 @@ abstract class AbstractAudioProcessor(
     override var isBypassed by mutableStateOf(false)
     private val _listeners = WeakHashMap<AudioProcessorListener, Unit>()
     protected val listeners get() = _listeners.keys
+    protected open val storeFileName = "processor.json"
 
     @Suppress("MemberVisibilityCanBePrivate")
     protected fun JsonObjectBuilder.buildBaseJson() {
@@ -223,15 +223,18 @@ abstract class AbstractAudioProcessor(
         }
     }
 
-    override suspend fun save(path: String) { }
-    override suspend fun load(path: String, json: JsonObject) { fromJson(json) }
+    override suspend fun store(path: String) {
+        encodeJsonFile(File("$path/$storeFileName"), true)
+    }
+    override suspend fun restore(path: String) {
+        fromJsonFile(File("$path/$storeFileName"))
+    }
 
     override fun addListener(listener: AudioProcessorListener) { _listeners[listener] = Unit }
     override fun removeListener(listener: AudioProcessorListener) { _listeners.remove(listener) }
 
     override fun close() { }
     override fun onSuddenChange() { }
-    override fun recover(path: String) { }
 }
 
 open class DefaultAudioProcessorDescription(

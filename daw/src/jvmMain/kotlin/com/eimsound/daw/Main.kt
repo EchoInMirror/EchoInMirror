@@ -11,12 +11,15 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.application
 import com.eimsound.daw.api.EchoInMirror
+import com.eimsound.daw.components.icons.EIMLogo
 import com.eimsound.daw.window.CrashWindow
 import com.eimsound.daw.window.MainWindow
 import com.eimsound.daw.window.ProjectWindow
 import com.microsoft.appcenter.AppCenter
 import com.microsoft.appcenter.analytics.Analytics
 import com.microsoft.appcenter.crashes.Crashes
+import java.awt.Taskbar
+import java.awt.Toolkit
 import java.io.File
 import java.nio.file.Paths
 import javax.swing.UIManager
@@ -38,6 +41,11 @@ fun main() {
         AppCenter.setUserId(Configuration.userId)
     }
     UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
+    if (Taskbar.isTaskbarSupported() && Taskbar.getTaskbar().isSupported(Taskbar.Feature.ICON_IMAGE)) {
+        Taskbar.getTaskbar().iconImage = Toolkit.getDefaultToolkit().getImage(
+            EIMLogo::class.java.getResource("/logo.png")
+        )
+    }
     val windowManager = EchoInMirror.windowManager
     Runtime.getRuntime().addShutdownHook(thread(false) {
         androidApplication?.close()

@@ -5,7 +5,6 @@ import com.eimsound.audioprocessor.DefaultAudioProcessorDescription
 import com.eimsound.daw.api.ProjectInformation
 import com.eimsound.daw.utils.NoSuchFactoryException
 import com.eimsound.daw.utils.Reloadable
-import kotlinx.serialization.json.JsonObject
 import java.util.*
 
 object DefaultTrackDescription : DefaultAudioProcessorDescription("Track", "Track")
@@ -26,9 +25,7 @@ interface TrackManager : Reloadable {
     @Throws(NoSuchFactoryException::class)
     suspend fun createTrack(factory: String? = null): Track
     @Throws(NoSuchFactoryException::class)
-    suspend fun createTrack(path: String, json: JsonObject): Track
-    @Throws(NoSuchFactoryException::class)
-    suspend fun createTrack(path: String, id: String): Track
+    suspend fun createTrackFromPath(path: String): Track
 
     suspend fun createBus(project: ProjectInformation): Pair<Bus, suspend () -> Unit>
 }

@@ -6,6 +6,7 @@ import com.eimsound.daw.utils.ByteBufInputStream
 import com.eimsound.daw.utils.ByteBufOutputStream
 import com.eimsound.dsp.native.IS_SHM_SUPPORTED
 import kotlinx.coroutines.*
+import kotlinx.coroutines.selects.select
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.encodeToString
@@ -27,8 +28,8 @@ private const val PARAMETER_IS_ORIENTATION_INVERTED = 0b10000
 
 @Suppress("MemberVisibilityCanBePrivate")
 open class ProcessAudioProcessorImpl(
-    description: AudioProcessorDescription,
-    factory: AudioProcessorFactory<*>,
+    override val description: NativeAudioPluginDescription,
+    override val factory: NativeAudioPluginFactoryImpl,
     private var enabledSharedMemory: Boolean = IS_SHM_SUPPORTED &&
             System.getProperty("eim.dsp.nativeaudioplugins.sharedmemory", "1") != "false",
 ) : ProcessAudioProcessor, AbstractAudioProcessor(description, factory, false) {
@@ -153,64 +154,76 @@ open class ProcessAudioProcessorImpl(
         output.flush()
     }
 
-    override suspend fun launch(execFile: String, preset: String?, vararg commands: String): Boolean {
-        if (isLaunched) return true
-        return withContext(Dispatchers.IO) {
-            val args = ArrayList<String>()
-            val handler = System.getProperty("eim.window.handler", "")
-            if (handler.isNotEmpty()) {
-                args.add("-H")
-                args.add(handler)
+    override suspend fun launch(execFile: String, preset: String?, vararg commands: String): Boolean = coroutineScope {
+        if (isLaunched) return@coroutineScope true
+        val res = try {
+            select<Boolean> {
+                var ret = false
+                launch {
+                    withContext(Dispatchers.IO) {
+                        val args = ArrayList<String>()
+                        val handler = System.getProperty("eim.window.handler", "")
+                        if (handler.isNotEmpty()) {
+                            args.add("-H")
+                            args.add(handler)
+                        }
+                        if (enabledSharedMemory && IS_SHM_SUPPORTED) {
+                            args.add("-M")
+                            args.add(shmName)
+                        }
+                        args.addAll(commands)
+                        val pb = if (preset == null) ProcessBuilder(execFile, "-L", "#", *args.toTypedArray())
+                        else ProcessBuilder(execFile, "-L", "#", "-P", "#", *args.toTypedArray())
+
+                        pb.redirectError(ProcessBuilder.Redirect.INHERIT)
+                        val p = pb.start()
+
+                        val flag1 = p.inputStream.read() == 1
+                        val flag2 = p.inputStream.read() == 2
+                        val isBigEndian = flag1 && flag2
+                        val input = ByteBufInputStream(isBigEndian, p.inputStream)
+                        val output = ByteBufOutputStream(isBigEndian, p.outputStream)
+
+                        output.writeString(Json.encodeToString(description))
+                        if (preset != null) output.writeString(preset)
+                        output.flush()
+
+                        val id = input.read()
+                        if (id == 127) {
+                            throw FailedToLoadAudioPluginException(input.readString())
+                        }
+                        if (id != 0) {
+                            p.destroy()
+                            throw FailedToLoadAudioPluginException("Failed to load plugin")
+                        }
+
+                        p.onExit().thenAccept {
+                            isLaunched = false
+                            process = null
+                        }
+
+                        try {
+                            readInitInformation(input)
+
+                            process = p
+                            inputStream = input
+                            outputStream = output
+
+                            isLaunched = true
+                        } catch (e: Throwable) {
+                            p.destroy()
+                            throw e
+                        }
+                        ret = true
+                    }
+                }.onJoin { ret }
             }
-            if (enabledSharedMemory && IS_SHM_SUPPORTED) {
-                args.add("-M")
-                args.add(shmName)
-            }
-            args.addAll(commands)
-            val pb = if (preset == null) ProcessBuilder(execFile, "-L", "#", *args.toTypedArray())
-            else ProcessBuilder(execFile, "-L", "#", "-P", "#", *args.toTypedArray())
-
-            pb.redirectError(ProcessBuilder.Redirect.INHERIT)
-            val p = pb.start()
-
-            val flag1 = p.inputStream.read() == 1
-            val flag2 = p.inputStream.read() == 2
-            val isBigEndian = flag1 && flag2
-            val input = ByteBufInputStream(isBigEndian, p.inputStream)
-            val output = ByteBufOutputStream(isBigEndian, p.outputStream)
-
-            output.writeString(Json.encodeToString(description))
-            if (preset != null) output.writeString(preset)
-            output.flush()
-
-            val id = input.read()
-            if (id == 127) {
-                throw FailedToLoadAudioPluginException(input.readString())
-            }
-            if (id != 0) {
-                p.destroy()
-                throw FailedToLoadAudioPluginException("Failed to load plugin")
-            }
-
-            p.onExit().thenAccept {
-                isLaunched = false
-                process = null
-            }
-
-            try {
-                readInitInformation(input)
-
-                process = p
-                inputStream = input
-                outputStream = output
-
-                isLaunched = true
-            } catch (e: Throwable) {
-                p.destroy()
-                throw e
-            }
-            true
+        } catch (e: CancellationException) {
+            close()
+            false
         }
+        coroutineContext.cancelChildren()
+        return@coroutineScope res
     }
 
     private suspend fun readInitInformation(input: ByteBufInputStream) {
@@ -280,4 +293,23 @@ open class ProcessAudioProcessorImpl(
     }
 
     private fun handleParameterChange(p: IAudioProcessorParameter) { modifiedParameter.add(p) }
+
+    override suspend fun restore(path: String) {
+        super.restore(path)
+        runBlocking {
+            launch(factory.getNativeHostPath(description), "$path/state.bin")
+        }
+    }
+
+    override suspend fun store(path: String) {
+        super.store(path)
+        if (!isLaunched) return
+        mutex.withLock {
+            outputStream?.apply {
+                write(3)
+                writeString("$path/state.bin")
+                flush()
+            }
+        }
+    }
 }

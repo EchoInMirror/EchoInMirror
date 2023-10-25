@@ -73,14 +73,13 @@ data class DefaultHandledParameter(
     }
 }
 
-interface TrackAudioProcessorWrapper : JsonSerializable {
-    val processor: AudioProcessor
+interface TrackAudioProcessorWrapper : JsonSerializable, AudioProcessor {
     var handledParameters: List<HandledParameter>
 }
 
 class DefaultTrackAudioProcessorWrapper(
-    override val processor: AudioProcessor
-) : TrackAudioProcessorWrapper {
+    val processor: AudioProcessor
+) : TrackAudioProcessorWrapper, AudioProcessor by processor {
     override var handledParameters by mutableStateOf(emptyList<HandledParameter>())
 
     override fun toJson() = buildJsonObject {

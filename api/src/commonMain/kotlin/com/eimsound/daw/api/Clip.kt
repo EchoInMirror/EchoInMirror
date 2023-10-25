@@ -26,12 +26,12 @@ import kotlinx.serialization.json.JsonObject
 import java.nio.file.Path
 import java.util.*
 
-interface ClipEditor : BasicEditor {
+interface ClipEditor : MultiSelectableEditor {
     @Composable
     fun Editor()
 }
 
-interface MidiClipEditor: ClipEditor, SerializableEditor {
+interface MidiClipEditor: ClipEditor, SerializableEditor, MultiSelectableEditor {
     val clip: TrackClip<MidiClip>
     val track: Track
 }

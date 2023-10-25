@@ -8,6 +8,7 @@ import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.AbstractCommand
 import com.eimsound.daw.utils.BasicEditor
 import com.eimsound.daw.dawutils.CLIPBOARD_MANAGER
+import com.eimsound.daw.utils.MultiSelectableEditor
 import com.eimsound.daw.utils.SerializableEditor
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
@@ -59,7 +60,7 @@ object SelectAllCommand : AbstractCommand("EIM:Select All", "选择全部", arra
     override fun execute() {
         super.execute()
         val panel = EchoInMirror.windowManager.activePanel
-        if (panel is BasicEditor) panel.selectAll()
+        if (panel is MultiSelectableEditor) panel.selectAll()
     }
 }
 

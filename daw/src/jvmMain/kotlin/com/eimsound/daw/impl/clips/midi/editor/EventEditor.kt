@@ -40,13 +40,13 @@ import com.eimsound.daw.components.*
 import com.eimsound.daw.components.IconButton
 import com.eimsound.daw.components.utils.EditAction
 import com.eimsound.daw.components.utils.clickableWithIcon
-import com.eimsound.daw.utils.BasicEditor
 import com.eimsound.daw.utils.FloatRange
+import com.eimsound.daw.utils.MultiSelectableEditor
 import com.eimsound.daw.utils.SerializableEditor
 import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
 
-interface EventType : BasicEditor {
+interface EventType : MultiSelectableEditor {
     val range: FloatRange
     val name: String
     val isInteger: Boolean
@@ -113,7 +113,8 @@ class VelocityEvent(private val editor: MidiClipEditor) : EventType {
     }
 }
 
-class CCEvent(private val editor: MidiClipEditor, eventId: Int, points: EnvelopePointList) : EventType, SerializableEditor {
+class CCEvent(private val editor: MidiClipEditor, eventId: Int, points: EnvelopePointList) :
+    EventType, SerializableEditor, MultiSelectableEditor {
     override val range get() = MIDI_CC_RANGE
     override val name = "CC:${eventId}"
     override val isInteger = true

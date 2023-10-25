@@ -9,7 +9,6 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import kotlinx.serialization.json.JsonObject
 import java.util.*
 
 class NoSuchAudioProcessorException(name: String, factory: String): Exception("No such audio processor: $name of $factory")
@@ -27,9 +26,7 @@ interface AudioProcessorManager : Reloadable {
     @Throws(NoSuchFactoryException::class)
     suspend fun createAudioProcessor(factory: String, description: AudioProcessorDescription): AudioProcessor
     @Throws(NoSuchFactoryException::class)
-    suspend fun createAudioProcessor(path: String, id: String): AudioProcessor
-    @Throws(NoSuchFactoryException::class)
-    suspend fun createAudioProcessor(path: String, json: JsonObject): AudioProcessor
+    suspend fun createAudioProcessor(path: String): AudioProcessor
 }
 
 private val audioProcessorFactoryLogger = KotlinLogging.logger("AudioProcessorFactory")
@@ -43,7 +40,7 @@ interface AudioProcessorFactory<T: AudioProcessor> : IDisplayName {
     val name: String
     val descriptions: Set<AudioProcessorDescription>
     suspend fun createAudioProcessor(description: AudioProcessorDescription): T
-    suspend fun createAudioProcessor(path: String, json: JsonObject): T
+    suspend fun createAudioProcessor(path: String): T
 }
 
 suspend fun <T: AudioProcessor> AudioProcessorFactory<T>.createAudioProcessorOrNull(

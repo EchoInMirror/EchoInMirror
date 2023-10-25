@@ -174,15 +174,18 @@ fun Dialog(modifier: Modifier = Modifier.width(IntrinsicSize.Min),
 /**
  * @see com.eimsound.daw.components.initEditorMenuItems
  */
-internal var editorMenuComposable: @Composable (BasicEditor, () -> Unit) -> Unit = { _, _ -> }
-fun FloatingLayerProvider.openEditorMenu(position: Offset, editor: BasicEditor, content: @Composable ((() -> Unit) -> Unit)? = null) {
+internal var editorMenuComposable: @Composable (BasicEditor, Boolean, () -> Unit) -> Unit = { _, _, _ -> }
+fun FloatingLayerProvider.openEditorMenu(
+    position: Offset, editor: BasicEditor, showIcon: Boolean = true,
+    content: @Composable ((() -> Unit) -> Unit)? = null
+) {
     val key = Any()
     val close = { closeFloatingLayer(key) }
 
     openFloatingLayer({ close() }, position, key, overflow = true) {
         Dialog {
             content?.invoke(close)
-            editorMenuComposable(editor, close)
+            editorMenuComposable(editor, showIcon, close)
         }
     }
 }

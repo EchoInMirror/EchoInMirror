@@ -24,11 +24,17 @@ class WindowManagerImpl: WindowManager {
     override val dialogs = mutableStateMapOf<@Composable () -> Unit, Boolean>()
     override val panels = mutableStateListOf(Mixer, Editor, FileSystemBrowser, UndoList, TrackView)
     override var mainWindow: ComposeWindow? = null
-    override var isDarkTheme by mutableStateOf(true)
     override var activePanel: Panel? by mutableStateOf(null)
     override var isMainWindowOpened by mutableStateOf(false)
     override var globalException: GlobalException? by mutableStateOf(null)
     var floatingLayerProvider: FloatingLayerProvider? = null
+    private var _isDarkTheme by mutableStateOf(true)
+    override var isDarkTheme
+        get() = _isDarkTheme
+        set(value) {
+            _isDarkTheme = value
+            Configuration.save()
+        }
 
     init {
         dialogs[SettingsWindow] = false

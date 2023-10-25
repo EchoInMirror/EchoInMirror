@@ -5,15 +5,11 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.eimsound.audioprocessor.*
-import com.eimsound.daw.utils.asString
-import com.eimsound.daw.utils.encodeJsonFile
-import com.eimsound.daw.utils.fromJsonFile
-import com.eimsound.daw.utils.mutableStateSetOf
+import com.eimsound.daw.utils.*
 import com.eimsound.dsp.native.isX86PEFile
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.serialization.json.*
 import org.apache.commons.lang3.SystemUtils
@@ -151,7 +147,8 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
         }
     }
 
-    override suspend fun createAudioProcessor(path: String, json: JsonObject): NativeAudioPlugin {
+    override suspend fun createAudioProcessor(path: String): NativeAudioPlugin {
+        val json = File(path, "processor.json").toJsonElement() as JsonObject
         val description = descriptions.find { it.identifier == json["identifier"]!!.asString() }
             ?: throw NoSuchAudioProcessorException(path, name)
         logger.info { "Creating native audio plugin: $description in $path" }
@@ -222,22 +219,4 @@ class NativeAudioPluginImpl(
     override val factory: NativeAudioPluginFactoryImpl,
 ) : NativeAudioPlugin, ProcessAudioProcessorImpl(description, factory) {
     override var name = description.name
-
-    override suspend fun save(path: String) {
-        super.save(path)
-        if (!isLaunched) return
-        mutex.withLock {
-            outputStream?.apply {
-                write(3)
-                writeString("$path.bin")
-                flush()
-            }
-        }
-    }
-
-    override fun recover(path: String) {
-        runBlocking {
-            launch(factory.getNativeHostPath(description), "$path/$id.bin")
-        }
-    }
 }

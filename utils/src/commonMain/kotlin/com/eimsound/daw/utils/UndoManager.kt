@@ -1,6 +1,10 @@
 package com.eimsound.daw.utils
 
 import androidx.compose.ui.graphics.vector.ImageVector
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.nio.file.Files
+import kotlin.io.path.absolutePathString
 
 interface UndoableAction {
     suspend fun undo(): Boolean
@@ -10,8 +14,9 @@ interface UndoableAction {
     fun merge(other: UndoableAction): UndoableAction? = null
 }
 
-interface Recoverable {
-    fun recover(path: String)
+interface Restorable {
+    suspend fun restore(path: String)
+    suspend fun store(path: String)
 }
 
 abstract class ReversibleAction(private val reversed: Boolean = false) : UndoableAction {
@@ -21,24 +26,41 @@ abstract class ReversibleAction(private val reversed: Boolean = false) : Undoabl
 }
 
 abstract class ListAddOrRemoveAction<T>(private val target: T, private val list: MutableList<T>,
-                             private val isDelete: Boolean, private var index: Int = -1): ReversibleAction(isDelete) {
-    override suspend fun perform(isForward: Boolean): Boolean {
-        if (isForward) {
-            if (isDelete) {
-                index = list.indexOf(target)
-                list.remove(target)
-                if (target is AutoCloseable) target.close()
-            } else if (index == -1) list.add(target) else list.add(index, target)
+                             private val isDelete: Boolean, private var index: Int = -1): UndoableAction {
+    private var restorablePath: String? = null
+
+    override suspend fun execute(): Boolean {
+        if (isDelete) {
+            index = list.indexOf(target)
+            remove()
         } else {
-            if (isDelete) {
-                list.add(index, target)
-                if (target is Recoverable) target.recover("") // TODO: recover path
-            } else {
-                list.remove(target)
-                if (target is AutoCloseable) target.close()
-            }
+            if (index == -1) {
+                list.add(target)
+                index = list.size - 1
+            } else list.add(index, target)
+            if (target is Restorable && restorablePath != null) target.restore(restorablePath!!)
         }
         return true
+    }
+
+    override suspend fun undo(): Boolean {
+        if (isDelete) {
+            list.add(index, target)
+            if (target is Restorable && restorablePath != null) target.restore(restorablePath!!)
+        } else remove()
+        return true
+    }
+
+    private suspend fun remove() {
+        list.remove(target)
+        if (target is Restorable) withContext(Dispatchers.IO) {
+            val dir = createTempDirectory("undo")
+            Files.createDirectories(dir)
+            restorablePath = dir.absolutePathString()
+            println(restorablePath)
+            target.store(restorablePath!!)
+        }
+        if (target is AutoCloseable) target.close()
     }
 }
 
@@ -51,7 +73,7 @@ abstract class ListReplaceAction<T>(private val target: T, private val list: Mut
         old = list.getOrNull(index)?.apply { if (this is AutoCloseable) this.close() }
         list[index] = target
         if (isReplaced) {
-            target.let { if (it is Recoverable) it.recover("") } // TODO: recover path
+            target.let { if (it is Restorable) it.restore("") } // TODO: recover path
         } else isReplaced = true
         return true
     }
@@ -61,7 +83,7 @@ abstract class ListReplaceAction<T>(private val target: T, private val list: Mut
         val o = old ?: return false
         target.let { if (it is AutoCloseable) it.close() }
         list[index] = o
-        if (o is Recoverable) o.recover("") // TODO: recover path
+        if (o is Restorable) o.restore("") // TODO: recover path
         return true
     }
 }

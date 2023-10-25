@@ -65,7 +65,7 @@ fun MutableList<TrackAudioProcessorWrapper>.doAddOrRemoveAudioProcessorAction(au
 class AudioProcessorAddOrRemoveAction(target: TrackAudioProcessorWrapper, source: MutableList<TrackAudioProcessorWrapper>, isDelete: Boolean,
                                       index: Int = -1): ListAddOrRemoveAction<TrackAudioProcessorWrapper>(target, source, isDelete, index) {
     override val name = if (isDelete) "删除音频处理器" else "添加音频处理器"
-    override val icon = if (isDelete) Icons.Filled.Add else Icons.Filled.Close
+    override val icon = if (isDelete) Icons.Filled.Close else Icons.Filled.Add
 }
 
 fun MutableList<TrackAudioProcessorWrapper>.doReplaceAudioProcessorAction(target: AudioProcessor, index: Int) {

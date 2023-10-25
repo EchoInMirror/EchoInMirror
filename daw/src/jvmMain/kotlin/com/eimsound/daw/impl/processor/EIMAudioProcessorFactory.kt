@@ -7,8 +7,10 @@ import com.eimsound.daw.processor.synthesizer.KarplusStrongSynthesizerDescriptio
 import com.eimsound.daw.processor.synthesizer.SineWaveSynthesizer
 import com.eimsound.daw.processor.synthesizer.SineWaveSynthesizerDescription
 import com.eimsound.daw.utils.asString
+import com.eimsound.daw.utils.toJsonElement
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.json.JsonObject
+import java.io.File
 
 class EIMAudioProcessorDescription(name: String, category: String? = null, isInstrument: Boolean = false):
     DefaultAudioProcessorDescription(name, name, category, "EIMSound", VERSION, isInstrument)
@@ -32,10 +34,11 @@ class EIMAudioProcessorFactory : AudioProcessorFactory<AudioProcessor> {
         }
     }
 
-    override suspend fun createAudioProcessor(path: String, json: JsonObject): AudioProcessor {
+    override suspend fun createAudioProcessor(path: String): AudioProcessor {
+        val json = File(path, "processor.json").toJsonElement() as JsonObject
         val name = json["name"]?.asString() ?: "Unknown"
         logger.info { "Creating audio processor \"$name\" in \"$path\"" }
         val desc = audioProcessors[name] ?: throw NoSuchAudioProcessorException(name, this.name)
-        return createAudioProcessor(desc).apply { load(path, json) }
+        return createAudioProcessor(desc).apply { restore(path) }
     }
 }

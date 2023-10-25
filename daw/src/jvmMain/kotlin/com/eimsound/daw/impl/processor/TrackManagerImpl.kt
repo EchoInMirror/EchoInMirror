@@ -29,15 +29,13 @@ class TrackManagerImpl : TrackManager {
         (factories[factory] ?: factories.values.firstOrNull())?.createAudioProcessor(DefaultTrackDescription)
             ?: throw NoSuchFactoryException(factory ?: "DefaultTrackFactory")
 
-    override suspend fun createTrack(path: String, json: JsonObject): Track {
+    override suspend fun createTrackFromPath(path: String): Track {
+        val json = File(path, "track.json").toJsonElement() as JsonObject
         val factory = json["factory"]?.asString()
         trackManagerLogger.info { "Creating track ${json["id"]} in \"$path\" with factory \"$factory\"" }
-        return factories[factory]?.createAudioProcessor(path, json)
+        return factories[factory]?.createAudioProcessor(path)
             ?: throw NoSuchFactoryException(factory ?: "Null")
     }
-
-    override suspend fun createTrack(path: String, id: String) = createTrack(path,
-        File(path, "track.json").toJsonElement() as JsonObject)
 
     override suspend fun createBus(project: ProjectInformation): Pair<Bus, suspend () -> Unit> {
         val file = project.root.resolve("track.json")
@@ -50,7 +48,7 @@ class TrackManagerImpl : TrackManager {
         val factoryName = json["factory"]?.asString()
         val factory = factories[factoryName] ?: throw NoSuchFactoryException(factoryName ?: "Null")
         val bus = factory.createBus(project)
-        return bus to { bus.load(project.root.absolutePathString(), json) }
+        return bus to { bus.restore(project.root.absolutePathString()) }
     }
 
     override fun reload() {
@@ -71,9 +69,9 @@ class DefaultTrackFactory : TrackFactory<Track> {
         return TrackImpl(description, this)
     }
 
-    override suspend fun createAudioProcessor(path: String, json: JsonObject): TrackImpl {
-        defaultTrackLogger.info { "Creating track ${json["id"]} in \"$path\"" }
-        return TrackImpl(DefaultTrackDescription, this).apply { load(path, json) }
+    override suspend fun createAudioProcessor(path: String): TrackImpl {
+        defaultTrackLogger.info { "Creating track from \"$path\"" }
+        return TrackImpl(DefaultTrackDescription, this).apply { restore(path) }
     }
 
     override suspend fun createBus(project: ProjectInformation) = BusImpl(project, DefaultTrackDescription, this)
