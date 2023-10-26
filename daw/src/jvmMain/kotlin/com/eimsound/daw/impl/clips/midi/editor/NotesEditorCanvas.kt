@@ -24,8 +24,9 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.drawText
-import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.*
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.util.fastForEach
 import com.eimsound.audioprocessor.data.defaultScale
 import com.eimsound.audioprocessor.data.midi.NoteMessage
@@ -62,7 +63,7 @@ internal var currentNote = 0
 private const val MIN_NOTE_WIDTH_WITH_KEY_NAME = 30
 
 private data class NoteDrawObject(val note: NoteMessage, val offset: Offset, val size: Size, val color: Color,
-                                  val keyNameOffset: Offset?)
+                                  val keyNameOffset: Offset? = null, val textLayoutResult: TextLayoutResult? = null)
 private data class BackingTrack(val track: Track, val notes: ArrayList<NoteDrawObject>)
 
 
@@ -122,12 +123,36 @@ internal fun NotesEditorCanvas(editor: DefaultMidiClipEditor) {
             }
             EditorHorizontalGrid()
             notesEditorExtensions.EditorExtensions(true)
+
+            val maxKeyNameSize = Constraints(0, (20 * localDensity.density).toInt(),
+                0, (16 * localDensity.density).toInt())
+            val keyNameLayerResults = remember(localDensity) { arrayOfNulls<TextLayoutResult>(127) }
+            val disabledKeyNameLayerResults = remember(localDensity) { arrayOfNulls<TextLayoutResult>(127) }
+            val trackColor = track.color
+            val keyNameTextColor = trackColor.toOnSurfaceColor().copy(0.9F)
+            val disabledKeyNameTextStyle = labelMediumStyle.copy(textDecoration = TextDecoration.LineThrough)
+
+            fun NoteMessage.getLayoutResult(offset: Int = 0): TextLayoutResult {
+                val results = if (disabled) disabledKeyNameLayerResults else keyNameLayerResults
+                val curNote = note - offset
+                var layoutResult = if (curNote in 0..126) results[curNote] else null
+                if (layoutResult == null) {
+                    layoutResult = measurer.measure(
+                        AnnotatedString(getNoteName(curNote)),
+                        if (disabled) disabledKeyNameTextStyle else labelMediumStyle,
+                        constraints = maxKeyNameSize,
+                        density = localDensity
+                    )
+                    if (curNote in 0..126) results[curNote] = layoutResult
+                }
+                return layoutResult
+            }
+
             Spacer(Modifier.fillMaxSize().drawWithCache {
                 val noteWidthPx = noteWidth.value.toPx()
                 val verticalScrollValue = verticalScrollState.value
                 val horizontalScrollValue = horizontalScrollState.value
                 val noteHeightPx = noteHeight.toPx()
-                val maxKeyNameSize = Size(20 * density, 16 * density)
                 val shouldDrawNoteName = noteHeightPx >= 13
                 val notes = arrayListOf<NoteDrawObject>()
                 val backingsNotes = arrayListOf<BackingTrack>()
@@ -143,8 +168,6 @@ internal fun NotesEditorCanvas(editor: DefaultMidiClipEditor) {
                 selectedNotes.removeIf { !allNotes.contains(it) }
 
                 val notesInViewList = arrayListOf<NoteMessage>()
-                val trackColor = track.color
-                val keyNameTextStyle = labelMediumStyle.copy(trackColor.toOnSurfaceColor().copy(0.9F))
                 val canvasHeight = size.height
                 for ((index, it) in clip.notes.withIndex()) {
                     val y = (KEYBOARD_KEYS - 1 - it.note) * noteHeightPx - verticalScrollValue
@@ -159,13 +182,13 @@ internal fun NotesEditorCanvas(editor: DefaultMidiClipEditor) {
                         flag = false
                     }
                     if (selectedNotes.contains(it)) continue
+                    val offset = Offset(x, y.coerceAtLeast(0F))
+                    val size = Size(width, if (y < 0) (noteHeightPx + y).coerceAtLeast(0F) else noteHeightPx)
+                    val color = trackColor.saturate(it.colorSaturation)
                     notes.add(
-                        NoteDrawObject(it, Offset(x, y.coerceAtLeast(0F)), Size(width, if (y < 0)
-                            (noteHeightPx + y).coerceAtLeast(0F) else noteHeightPx),
-                            trackColor.saturate(it.colorSaturation),
-                            if (shouldDrawNoteName && width > MIN_NOTE_WIDTH_WITH_KEY_NAME)
-                                Offset(x + 3 * density, y) else null
-                        )
+                        if (shouldDrawNoteName && width > MIN_NOTE_WIDTH_WITH_KEY_NAME)
+                            NoteDrawObject(it, offset, size, color, Offset(x + 3 * density, y), it.getLayoutResult())
+                        else NoteDrawObject(it, offset, size, color)
                     )
                 }
                 notesInView = notesInViewList
@@ -206,9 +229,7 @@ internal fun NotesEditorCanvas(editor: DefaultMidiClipEditor) {
                     }
                     notes.fastForEach {
                         drawRoundRect(it.color, it.offset, it.size, borderCornerRadius2PX)
-                        if (it.keyNameOffset != null)
-                            drawText(measurer, getNoteName(it.note.note), it.keyNameOffset,
-                                keyNameTextStyle, size = maxKeyNameSize)
+                        it.keyNameOffset?.let { o -> drawText(it.textLayoutResult!!, keyNameTextColor, o) }
                     }
                     selectedNotes.forEach {
                         var y = (KEYBOARD_KEYS - 1 - it.note) * noteHeightPx - verticalScrollValue
@@ -238,9 +259,9 @@ internal fun NotesEditorCanvas(editor: DefaultMidiClipEditor) {
                         if (size.height <= 0 || size.width <= 0) return@forEach
                         drawRoundRect(trackColor.saturate(it.colorSaturation), offset, size, borderCornerRadius2PX)
                         drawRoundRect(primaryColor, offset, size, borderCornerRadius2PX, Stroke(1.5f * density))
-                        if (shouldDrawNoteName && size.width > MIN_NOTE_WIDTH_WITH_KEY_NAME)
-                            drawText(measurer, getNoteName(it.note - offsetNote),
-                                Offset(offset.x + 3 * density, y), keyNameTextStyle, size = maxKeyNameSize)
+                        if (shouldDrawNoteName && size.width > MIN_NOTE_WIDTH_WITH_KEY_NAME) {
+                            drawText(it.getLayoutResult(offsetNote), keyNameTextColor, Offset(offset.x + 3 * density, y))
+                        }
                     }
                 }
             })
