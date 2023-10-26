@@ -2,7 +2,7 @@ package com.eimsound.daw.impl.clips.midi.editor
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -228,7 +228,7 @@ internal fun EventEditor(editor: DefaultMidiClipEditor) {
                 }
             }
 
-            Row(Modifier.fillMaxSize()) {
+            Row(Modifier.fillMaxSize().scrollable(horizontalScrollState, Orientation.Horizontal, reverseDirection = true)) {
                 Surface(Modifier.width(KEYBOARD_DEFAULT_WIDTH).fillMaxHeight().zIndex(2f), shadowElevation = 5.dp) {
                     val lineColor = MaterialTheme.colorScheme.outlineVariant
                     val style = MaterialTheme.typography.labelMedium

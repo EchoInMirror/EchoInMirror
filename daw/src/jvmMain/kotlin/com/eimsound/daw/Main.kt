@@ -18,6 +18,7 @@ import com.eimsound.daw.window.ProjectWindow
 import com.microsoft.appcenter.AppCenter
 import com.microsoft.appcenter.analytics.Analytics
 import com.microsoft.appcenter.crashes.Crashes
+import org.apache.commons.lang3.SystemUtils
 import java.awt.Taskbar
 import java.awt.Toolkit
 import java.io.File
@@ -40,10 +41,18 @@ fun main() {
         AppCenter.start(androidApplication, APP_CENTER_SECRET, Analytics::class.java, Crashes::class.java)
         AppCenter.setUserId(Configuration.userId)
     }
+
+    if (SystemUtils.IS_OS_MAC) {
+        System.setProperty("apple.laf.useScreenMenuBar", "true")
+        System.setProperty("apple.awt.application.name", "EchoInMirror")
+        System.setProperty("apple.awt.application.appearance", "system")
+        System.setProperty("com.apple.mrj.application.apple.menu.about.name", "EchoInMirror")
+    }
+
     UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
     if (Taskbar.isTaskbarSupported() && Taskbar.getTaskbar().isSupported(Taskbar.Feature.ICON_IMAGE)) {
         Taskbar.getTaskbar().iconImage = Toolkit.getDefaultToolkit().getImage(
-            EIMLogo::class.java.getResource("/logo.png")
+            EIMLogo::class.java.getResource("/logo@2x.png")
         )
     }
     val windowManager = EchoInMirror.windowManager
@@ -54,6 +63,7 @@ fun main() {
 
     if (!File("test_project").exists()) File("test_project").mkdir()
     windowManager.openProject(Paths.get("test_project"))
+
     application {
         MaterialTheme(if (windowManager.isDarkTheme) darkColorScheme() else lightColorScheme()) {
             val color = MaterialTheme.colorScheme.onSurface

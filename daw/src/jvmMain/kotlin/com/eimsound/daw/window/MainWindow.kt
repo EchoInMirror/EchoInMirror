@@ -54,6 +54,8 @@ fun ApplicationScope.MainWindow() {
         EchoInMirror.commandManager.executeCommand(keys)
         false
     }) {
+//        window.rootPane.putClientProperty("apple.awt.fullWindowContent", true)
+//        window.rootPane.putClientProperty("apple.awt.transparentTitleBar", true)
         CLIPBOARD_MANAGER = LocalClipboardManager.current
         System.setProperty("eim.window.handler", window.windowHandle.toString())
         val windowManager = EchoInMirror.windowManager as WindowManagerImpl
