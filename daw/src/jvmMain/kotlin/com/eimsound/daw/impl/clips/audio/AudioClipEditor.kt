@@ -27,11 +27,10 @@ import com.eimsound.daw.api.ClipEditor
 import com.eimsound.daw.api.TrackClip
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.components.*
-import com.eimsound.daw.components.silder.Slider
 import com.eimsound.daw.components.utils.toOnSurfaceColor
+import com.eimsound.daw.components.NoteWidthSlider
 import com.eimsound.daw.dawutils.openMaxValue
 import com.eimsound.daw.utils.range
-import com.eimsound.daw.window.panels.playlist.noteWidthSliderRange
 
 class AudioClipEditor(private val clip: TrackClip<AudioClip>, private val track: Track) : ClipEditor {
     val noteWidth = mutableStateOf(0.4.dp)
@@ -67,7 +66,7 @@ class AudioClipEditor(private val clip: TrackClip<AudioClip>, private val track:
                 }
             }
             Column(Modifier.padding(10.dp)) {
-                Slider(noteWidth.value.value / 0.4f, { noteWidth.value = 0.4.dp * it }, valueRange = noteWidthSliderRange)
+                NoteWidthSlider(noteWidth)
             }
         }
     }

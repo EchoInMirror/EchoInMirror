@@ -1,6 +1,12 @@
 package com.eimsound.daw.utils
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.onPointerEvent
+import androidx.compose.ui.platform.LocalFocusManager
 import org.apache.commons.lang3.SystemUtils
 import java.awt.Component
 import java.awt.Desktop
@@ -25,4 +31,10 @@ fun selectInExplorer(file: File) {
         if (isSupported(Desktop.Action.BROWSE_FILE_DIR)) browseFileDirectory(file)
         else if (SystemUtils.IS_OS_WINDOWS) Runtime.getRuntime().exec(arrayOf("explorer.exe", "/select,\"${file.absolutePath}\""))
     }
+}
+
+@OptIn(ExperimentalComposeUiApi::class)
+fun Modifier.clearFocus() = composed {
+    val manager = LocalFocusManager.current
+    onPointerEvent(PointerEventType.Press) { manager.clearFocus(true) }
 }

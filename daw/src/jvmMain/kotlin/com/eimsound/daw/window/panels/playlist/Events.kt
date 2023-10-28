@@ -5,6 +5,7 @@ import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAll
 import com.eimsound.daw.api.TrackClip
+import com.eimsound.daw.components.calcScroll
 import com.eimsound.daw.components.utils.EditAction
 import com.eimsound.daw.utils.isCrossPlatformCtrlPressed
 import kotlinx.coroutines.CoroutineScope

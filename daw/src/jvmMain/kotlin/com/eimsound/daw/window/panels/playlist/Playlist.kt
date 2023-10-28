@@ -1,7 +1,6 @@
 package com.eimsound.daw.window.panels.playlist
 
 import androidx.compose.foundation.*
-import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.QueueMusic
@@ -16,8 +15,7 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.eimsound.audioprocessor.oneBarPPQ
@@ -35,39 +33,6 @@ import com.eimsound.daw.components.dragdrop.GlobalDropTarget
 import com.eimsound.daw.components.utils.EditAction
 import com.eimsound.daw.dawutils.openMaxValue
 import com.eimsound.daw.utils.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
-
-val noteWidthRange = 0.02f..5f
-val noteWidthSliderRange = (noteWidthRange.start / 0.4F)..(noteWidthRange.endInclusive / 0.4F)
-fun Density.calcScroll(event: PointerEvent, noteWidth: MutableState<Dp>, horizontalScrollState: ScrollState,
-                       coroutineScope: CoroutineScope, onVerticalScroll: (PointerInputChange) -> Unit) {
-    if (event.keyboardModifiers.isCrossPlatformCtrlPressed) {
-        val change = event.changes[0]
-        if (event.keyboardModifiers.isCrossPlatformAltPressed) onVerticalScroll(change)
-        else {
-            val x = change.position.x
-            val oldX = (x + horizontalScrollState.value) / noteWidth.value.toPx()
-            val newValue = (noteWidth.value.value +
-                    (if (change.scrollDelta.y > 0) -0.05F else 0.05F)).coerceIn(noteWidthRange)
-            if (newValue != noteWidth.value.value) {
-                horizontalScrollState.openMaxValue =
-                    (noteWidth.value * EchoInMirror.currentPosition.projectDisplayPPQ).toPx().toInt()
-                noteWidth.value = newValue.dp
-                coroutineScope.launch {
-                    val noteWidthPx = noteWidth.value.toPx()
-                    horizontalScrollState.scrollBy(
-                        (oldX - (x + horizontalScrollState.value) / noteWidthPx) * noteWidthPx
-                    )
-                }
-            }
-        }
-        change.consume()
-    } else {
-        val x = event.changes[0].scrollDelta.x
-        if (x != 0F) coroutineScope.launch { horizontalScrollState.scrollBy(x * density * 5) }
-    }
-}
 
 val playListExtensions: MutableList<EditorExtension> = mutableStateListOf()
 
@@ -109,28 +74,27 @@ class Playlist : Panel, MultiSelectableEditor {
         Icon(Icons.Filled.QueueMusic, "Playlist")
     }
 
+    // Focusable
     @OptIn(ExperimentalComposeUiApi::class)
     @Composable
     override fun Content() {
+        val focusManager = LocalFocusManager.current
         Row(Modifier.onPointerEvent(PointerEventType.Press, PointerEventPass.Initial) {
             EchoInMirror.windowManager.activePanel = this@Playlist
+            focusManager.clearFocus(true)
         }) {
             Surface(Modifier.width(200.dp).fillMaxHeight().zIndex(5f), shadowElevation = 2.dp, tonalElevation = 2.dp) {
                 Column {
                     Surface(shadowElevation = 2.dp, tonalElevation = 4.dp) {
                         Row(Modifier.height(TIMELINE_HEIGHT).fillMaxWidth().padding(horizontal = 10.dp),
                             verticalAlignment = Alignment.CenterVertically) {
-                            com.eimsound.daw.components.silder.Slider(
-                                noteWidth.value.value / 0.4f,
-                                { noteWidth.value = 0.4.dp * it },
-                                valueRange = noteWidthSliderRange
-                            )
+                            NoteWidthSlider(noteWidth)
                         }
                     }
                     TrackItems(this@Playlist)
                 }
             }
-            Box(Modifier.fillMaxSize().clipToBounds()) {
+            Box(Modifier.fillMaxSize().clipToBounds().scalableNoteWidth(noteWidth, horizontalScrollState)) {
                 Column {
                     val localDensity = LocalDensity.current
                     Timeline(Modifier.zIndex(3f), noteWidth, horizontalScrollState, EchoInMirror.currentPosition.projectRange,

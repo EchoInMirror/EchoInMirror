@@ -19,14 +19,10 @@ import com.eimsound.daw.actions.doNoteDisabledAction
 import com.eimsound.daw.actions.doNoteVelocityAction
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.processor.Track
-import com.eimsound.daw.components.CustomTextField
-import com.eimsound.daw.components.FloatingLayer
-import com.eimsound.daw.components.MenuItem
-import com.eimsound.daw.components.TIMELINE_HEIGHT
+import com.eimsound.daw.components.*
 import com.eimsound.daw.components.silder.Slider
 import com.eimsound.daw.components.utils.toOnSurfaceColor
 import com.eimsound.daw.utils.IManualStateValue
-import com.eimsound.daw.window.panels.playlist.noteWidthSliderRange
 import java.util.*
 import kotlin.math.roundToInt
 
@@ -87,7 +83,7 @@ internal fun EditorControls(editor: DefaultMidiClipEditor) {
         }
     }
     Column(Modifier.padding(10.dp)) {
-        Slider(editor.noteWidth.value.value / 0.4f, { editor.noteWidth.value = 0.4.dp * it }, valueRange = noteWidthSliderRange)
+        NoteWidthSlider(editor.noteWidth)
 
         editor.apply {
             Row(verticalAlignment = Alignment.CenterVertically) {

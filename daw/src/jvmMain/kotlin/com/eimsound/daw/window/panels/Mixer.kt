@@ -44,6 +44,7 @@ import com.eimsound.daw.components.*
 import com.eimsound.daw.components.dragdrop.GlobalDraggable
 import com.eimsound.daw.components.dragdrop.GlobalDropTarget
 import com.eimsound.daw.components.dragdrop.LocalGlobalDragAndDrop
+import com.eimsound.daw.components.menus.openAudioProcessorMenu
 import com.eimsound.daw.components.silder.DefaultTrack
 import com.eimsound.daw.components.silder.Slider
 import com.eimsound.daw.components.utils.clickableWithIcon

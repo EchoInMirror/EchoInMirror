@@ -1,4 +1,4 @@
-package com.eimsound.daw.components
+package com.eimsound.daw.components.menus
 
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,6 +17,10 @@ import androidx.compose.ui.unit.dp
 import com.eimsound.audioprocessor.AudioProcessorManager
 import com.eimsound.daw.actions.doAddOrRemoveAudioProcessorAction
 import com.eimsound.daw.api.processor.TrackAudioProcessorWrapper
+import com.eimsound.daw.components.CustomCheckbox
+import com.eimsound.daw.components.FloatingLayerProvider
+import com.eimsound.daw.components.SnackbarProvider
+import com.eimsound.daw.components.openEditorMenu
 import com.eimsound.daw.utils.BasicEditor
 import com.eimsound.daw.utils.createTempDirectory
 import io.github.oshai.kotlinlogging.KotlinLogging

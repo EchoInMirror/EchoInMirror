@@ -21,10 +21,7 @@ import com.eimsound.daw.api.MidiClip
 import com.eimsound.daw.api.MidiClipEditor
 import com.eimsound.daw.api.TrackClip
 import com.eimsound.daw.api.processor.Track
-import com.eimsound.daw.components.Keyboard
-import com.eimsound.daw.components.PlayHead
-import com.eimsound.daw.components.TIMELINE_HEIGHT
-import com.eimsound.daw.components.Timeline
+import com.eimsound.daw.components.*
 import com.eimsound.daw.components.splitpane.VerticalSplitPane
 import com.eimsound.daw.components.splitpane.rememberSplitPaneState
 import com.eimsound.daw.dawutils.openMaxValue
@@ -34,12 +31,13 @@ import kotlinx.serialization.json.Json
 import java.util.*
 import kotlin.math.roundToInt
 
+// Focusable
 @Composable
 private fun EditorContent(editor: DefaultMidiClipEditor) {
     editor.apply {
         VerticalSplitPane(splitPaneState = rememberSplitPaneState(100F)) {
             first(TIMELINE_HEIGHT) {
-                Column(Modifier.fillMaxSize()) {
+                Column(Modifier.fillMaxSize().clearFocus().scalableNoteWidth(noteWidth, horizontalScrollState)) {
                     val localDensity = LocalDensity.current
                     var contentWidth by remember { mutableStateOf(0.dp) }
                     val range = remember(clip.time, clip.duration) { clip.time..(clip.time + clip.duration) }

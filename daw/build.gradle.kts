@@ -116,7 +116,11 @@ tasks.withType<ShadowJar> {
 }
 
 tasks.withType<JavaExec> {
-    jvmArgs("--enable-preview")
+    jvmArgs(
+        "--enable-preview",
+        "--enable-native-access=ALL-UNNAMED",
+        "--add-exports=java.desktop/com.apple.eawt.event=ALL-UNNAMED"
+    )
 }
 
 // Run before build

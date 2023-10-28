@@ -5,9 +5,10 @@
 -XX:SoftRefLRUPolicyMSPerMB=50
 -XX:CICompilerCount=2
 -XX:-OmitStackTraceInFastThrow
--ea
 --enable-preview
 --enable-native-access=ALL-UNNAMED
+--add-exports=java.desktop/com.apple.eawt.event=ALL-UNNAMED
+java.desktop/com.apple.eawt.event=ALL-UNNAMED
 -Dsun.io.useCanonCaches=false
 -Dsun.java2d.metal=true
 -Dsun.java2d.metal.displaySync=false
