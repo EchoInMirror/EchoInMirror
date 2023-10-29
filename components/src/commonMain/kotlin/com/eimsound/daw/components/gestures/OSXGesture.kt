@@ -7,6 +7,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
 import com.eimsound.daw.utils.CurrentWindow
+import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Proxy
 import javax.swing.JComponent
 import javax.swing.SwingUtilities
@@ -35,9 +36,10 @@ internal fun Modifier.osxOnZoom(key: Any, onZoom: (magnification: Float, focal: 
             val listener = Proxy.newProxyInstance(
                 GestureUtilities.classLoader,
                 arrayOf(Class.forName("com.apple.eawt.event.MagnificationListener"))
-            ) { _, _, (e) ->
-                if (e == null) return@newProxyInstance null
-                if (lastPointer != null) onZoom((getMagnification.invoke(e) as Double).toFloat(), lastPointer!!)
+            ) { obj, method, params ->
+                if (method.name != "magnify") return@newProxyInstance InvocationHandler.invokeDefault(obj, method, params)
+                if (params[0] == null) return@newProxyInstance null
+                if (lastPointer != null) onZoom((getMagnification.invoke(params[0]) as Double).toFloat(), lastPointer!!)
                 return@newProxyInstance null
             }
             addGestureListenerTo.invoke(null, rootPane, listener)

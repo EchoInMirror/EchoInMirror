@@ -16,11 +16,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.Layout
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -45,6 +42,7 @@ import com.eimsound.daw.components.dragdrop.GlobalDraggable
 import com.eimsound.daw.components.dragdrop.GlobalDropTarget
 import com.eimsound.daw.components.dragdrop.LocalGlobalDragAndDrop
 import com.eimsound.daw.components.menus.openAudioProcessorMenu
+import com.eimsound.daw.components.menus.openTrackMenu
 import com.eimsound.daw.components.silder.DefaultTrack
 import com.eimsound.daw.components.silder.Slider
 import com.eimsound.daw.components.utils.clickableWithIcon
@@ -134,15 +132,11 @@ private fun MixerProcessorButton(isLoading: MutableState<Boolean>, list: Mutable
         if (it) {
             var modifier = Modifier.fillMaxSize()
             if (wrapper != null) {
-                val pos = remember { arrayOf(Offset.Zero) }
                 val floatingLayerProvider = LocalFloatingLayerProvider.current
                 val snackbarProvider = LocalSnackbarProvider.current
-                modifier = modifier.onGloballyPositioned { p ->
-                    pos[0] = p.positionInRoot()
-                }.onRightClickOrLongPress { p ->
+                modifier = modifier.onRightClickOrLongPress { p ->
                     if (!isLoading.value)
-                        floatingLayerProvider.openAudioProcessorMenu(pos[0] + p, wrapper, list, index,
-                            snackbarProvider, isLoading)
+                        floatingLayerProvider.openAudioProcessorMenu(p, wrapper, list, index, snackbarProvider, isLoading)
                 }
             }
             TextButton(onClick, modifier, contentPadding = BUTTON_PADDINGS) {
@@ -206,9 +200,13 @@ private fun MixerProcessorButtons(isLoading: MutableState<Boolean>, list: Mutabl
 
 @Composable
 private fun TrackName(track: Track, trackColor: Color, index: String) {
+    val floatingLayerProvider = LocalFloatingLayerProvider.current
+    val trackValue by rememberUpdatedState(track)
     Row(Modifier.background(trackColor).height(24.dp)
+        .onRightClickOrLongPress { floatingLayerProvider.openTrackMenu(it, trackValue) }
         .clickableWithIcon { EchoInMirror.selectedTrack = track }
-        .padding(vertical = 2.5.dp).zIndex(2f)) {
+        .padding(vertical = 2.5.dp).zIndex(2f)
+    ) {
         val color = trackColor.toOnSurfaceColor()
         Text(
             index,
@@ -221,8 +219,9 @@ private fun TrackName(track: Track, trackColor: Color, index: String) {
         Marquee {
             Text(
                 track.name,
-                color = color,
+                color = if (track.isBypassed) color.copy(alpha = 0.7f) else color,
                 fontSize = MaterialTheme.typography.labelLarge.fontSize,
+                textDecoration = if (track.isBypassed) TextDecoration.LineThrough else null,
                 lineHeight = 18.0.sp,
             )
         }
@@ -279,46 +278,52 @@ private fun SubTracksButton(track: Track, index: String, containerColor: Color, 
 }
 
 @Composable
+private fun TrackCard(track: Track, containerColor: Color, index: String) {
+    val trackColor = if (track is Bus) MaterialTheme.colorScheme.primary else track.color
+    val isSelected = EchoInMirror.selectedTrack == track
+    var curModifier = Modifier.width(TRACK_WIDTH)
+    if (isSelected) curModifier = curModifier.border(1.dp, trackColor, MaterialTheme.shapes.medium)
+    Column(curModifier.shadow(1.dp, MaterialTheme.shapes.medium, clip = false)
+        .background(containerColor, MaterialTheme.shapes.medium)
+        .clip(MaterialTheme.shapes.medium)
+    ) {
+        TrackName(track, trackColor, index)
+
+        Column(Modifier.padding(4.dp)) {
+            PanSlider(track)
+
+            Row(
+                Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton({ track.isBypassed = !track.isBypassed }, 20.dp) {
+                    if (track.isBypassed) Icon(Icons.Default.VolumeOff, null, tint = MaterialTheme.colorScheme.error)
+                    else Icon(Icons.Default.VolumeUp, null)
+                }
+                Gap(6)
+                VolumeText(track)
+            }
+
+            TrackLevels(track)
+        }
+
+        Column {
+            val loading = remember { mutableStateOf(false) }
+            MixerProcessorButtons(loading, track.preProcessorsChain)
+            MixerProcessorButtons(loading, track.postProcessorsChain)
+        }
+    }
+}
+
+@Composable
 private fun MixerTrack(track: Track, index: String, containerColor: Color = MaterialTheme.colorScheme.surface,
                        depth: Int = 0, renderChildren: Boolean = true) {
     Row(Modifier.padding(7.dp, 14.dp, 7.dp, 14.dp)
         .shadow(1.dp, MaterialTheme.shapes.medium, clip = false)
         .background(MaterialTheme.colorScheme.surfaceColorAtElevation(((depth + 2) * 2).dp))
         .clip(MaterialTheme.shapes.medium)) {
-        val trackColor = if (track is Bus) MaterialTheme.colorScheme.primary else track.color
-        val isSelected = EchoInMirror.selectedTrack == track
-        var curModifier = Modifier.width(TRACK_WIDTH)
-        if (isSelected) curModifier = curModifier.border(1.dp, trackColor, MaterialTheme.shapes.medium)
         Layout({
-            Column(curModifier.shadow(1.dp, MaterialTheme.shapes.medium, clip = false)
-                .background(containerColor, MaterialTheme.shapes.medium)
-                .clip(MaterialTheme.shapes.medium)) {
-                TrackName(track, trackColor, index)
-
-                Column(Modifier.padding(4.dp)) {
-                    PanSlider(track)
-
-                    Row(
-                        Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                        horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        IconButton({ track.isBypassed = !track.isBypassed }, 20.dp) {
-                            if (track.isBypassed) Icon(Icons.Default.VolumeOff, null, tint = MaterialTheme.colorScheme.error)
-                            else Icon(Icons.Default.VolumeUp, null)
-                        }
-                        Gap(6)
-                        VolumeText(track)
-                    }
-
-                    TrackLevels(track)
-                }
-
-                Column {
-                    val loading = remember { mutableStateOf(false) }
-                    MixerProcessorButtons(loading, track.preProcessorsChain)
-                    MixerProcessorButtons(loading, track.postProcessorsChain)
-                }
-            }
+            TrackCard(track, containerColor, index)
             if (renderChildren) SubTracksButton(track, index, containerColor, depth)
         }) { measurables, constraints ->
             if (measurables.size > 1) {

@@ -75,14 +75,16 @@ class VelocityEvent(private val editor: MidiClipEditor) : EventType {
                 val scrollX = horizontalScrollState.value
                 val startTime = clip.time - clip.start
                 val trackColor = track.color
+                val circleRadius = 4 * density
                 notesInView.fastForEach {
                     val isSelected = selectedNotes.contains(it)
                     val x = (startTime + it.time) * noteWidthPx - scrollX + (if (isSelected) offsetX else 0f)
                     val y = (size.height * (1 - it.velocity / 127F) + (if (isSelected || selectedNote == it) offsetOfDelta else 0f))
                         .coerceIn(0f, size.height - 1)
-                    val color = if (isSelected) primaryColor else trackColor
-                    drawLine(color, Offset(x, y), Offset(x, size.height), 2 * density)
-                    drawCircle(color, 4 * density, Offset(x, y))
+                    var color = if (isSelected) primaryColor else trackColor
+                    if (it.disabled) color = color.copy(alpha = 0.5F)
+                    drawLine(color, Offset(x, y + circleRadius), Offset(x, size.height), 2 * density)
+                    drawCircle(color, circleRadius, Offset(x, y))
                 }
             }.pointerInput(editor) {
                 detectDragGestures({

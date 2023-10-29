@@ -1,26 +1,18 @@
 package com.eimsound.daw.components.menus
 
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Divider
-import androidx.compose.material3.LocalContentColor
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Piano
+import androidx.compose.material.icons.filled.SettingsInputHdmi
+import androidx.compose.material3.*
 import androidx.compose.runtime.MutableState
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.eimsound.audioprocessor.AudioProcessorManager
 import com.eimsound.daw.actions.doAddOrRemoveAudioProcessorAction
 import com.eimsound.daw.api.processor.TrackAudioProcessorWrapper
-import com.eimsound.daw.components.CustomCheckbox
-import com.eimsound.daw.components.FloatingLayerProvider
-import com.eimsound.daw.components.SnackbarProvider
-import com.eimsound.daw.components.openEditorMenu
+import com.eimsound.daw.components.*
 import com.eimsound.daw.utils.BasicEditor
 import com.eimsound.daw.utils.createTempDirectory
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -75,11 +67,9 @@ fun FloatingLayerProvider.openAudioProcessorMenu(
 
         override val canPaste get() = copiedAudioProcessorPath != null
     }, false) {
-        Row(Modifier.padding(start = 12.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text(p.name, Modifier.weight(1F), style = MaterialTheme.typography.titleSmall,
-                maxLines = 1, overflow = TextOverflow.Ellipsis,
-                textDecoration = if (p.isBypassed) TextDecoration.LineThrough else TextDecoration.None,
-                color = LocalContentColor.current.copy(alpha = if (p.isBypassed) 0.7F else 1F))
+        MenuHeader(p.name, !p.isBypassed,
+            if (p.description.isInstrument) Icons.Default.Piano else Icons.Default.SettingsInputHdmi
+        ) {
             CustomCheckbox(!p.isBypassed, { p.isBypassed = !it }, Modifier.padding(start = 8.dp))
         }
         Divider()

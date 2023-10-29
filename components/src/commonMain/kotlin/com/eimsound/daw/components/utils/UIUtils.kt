@@ -6,8 +6,11 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.*
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.semantics.Role
 
 val PointerEvent.x get() = if (changes.isEmpty()) 0f else changes[0].position.x
@@ -25,21 +28,37 @@ fun Modifier.clickableWithIcon(enabled: Boolean = true, onClickLabel: String? = 
     else modifier.clickable(interactionSource, indication, enabled, onClickLabel, role, onClick)
 }
 
-fun Modifier.onRightClickOrLongPress(onClick: (Offset) -> Unit) = pointerInput(Unit) {
-    awaitPointerEventScope {
-        while (true) {
-            val event = awaitPointerEvent(PointerEventPass.Initial)
-            if (event.type != PointerEventType.Press) continue
-            if (event.buttons.isPrimaryPressed) {
-                try {
-                    withTimeout(viewConfiguration.longPressTimeoutMillis) {
-                        waitForUpOrCancellation(PointerEventPass.Initial)
-                    }
-                } catch (_: PointerEventTimeoutCancellationException) {
-                    onClick(event.changes.last().position)
+@Suppress("DEPRECATION")
+fun Modifier.onRightClickOrLongPress(onClick: (Offset) -> Unit) = composed {
+    var (position) = remember { arrayOf(Offset.Zero) }
+    onGloballyPositioned { position = it.positionInWindow() }.pointerInput(Unit) {
+        awaitPointerEventScope {
+            while (true) {
+                val event = awaitPointerEvent(PointerEventPass.Main)
+                if (event.type == PointerEventType.Release) {
+                    event.changes.first().consume()
+                    continue
                 }
-            } else if (event.buttons.isSecondaryPressed) {
-                onClick(event.changes.last().position)
+                if (event.type != PointerEventType.Press) continue
+                val change = event.changes.first()
+                change.consumed.positionChange = false
+                if (event.buttons.isPrimaryPressed) {
+                    try {
+                        withTimeout(viewConfiguration.longPressTimeoutMillis) {
+                            waitForUpOrCancellation(PointerEventPass.Initial)
+                        }
+                    } catch (_: PointerEventTimeoutCancellationException) {
+                        if (!change.consumed.positionChange) {
+                            onClick(change.position + position)
+                            change.consume()
+                            change.consumed.positionChange = true
+                            change.changedToDown()
+                        }
+                    }
+                } else if (event.buttons.isSecondaryPressed && !change.isConsumed) {
+                    onClick(change.position + position)
+                    change.consume()
+                }
             }
         }
     }
