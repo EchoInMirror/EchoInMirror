@@ -7,7 +7,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
 import com.eimsound.daw.utils.CurrentWindow
-import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Proxy
 import javax.swing.JComponent
 import javax.swing.SwingUtilities
@@ -33,14 +32,22 @@ internal fun Modifier.osxOnZoom(key: Any, onZoom: (magnification: Float, focal: 
         var (lastPointer) = remember(key) { arrayOf<Offset?>(null) }
 
         DisposableEffect(key, rootPane) {
-            val listener = Proxy.newProxyInstance(
+            var listener: Any? = null
+            val hashCode = Any().hashCode()
+            listener = Proxy.newProxyInstance(
                 GestureUtilities.classLoader,
                 arrayOf(Class.forName("com.apple.eawt.event.MagnificationListener"))
-            ) { obj, method, params ->
-                if (method.name != "magnify") return@newProxyInstance InvocationHandler.invokeDefault(obj, method, params)
-                if (params[0] == null) return@newProxyInstance null
-                if (lastPointer != null) onZoom((getMagnification.invoke(params[0]) as Double).toFloat(), lastPointer!!)
-                return@newProxyInstance null
+            ) { _, method, params ->
+                return@newProxyInstance when (method.name) {
+                    "magnify" -> {
+                        if (params[0] != null && lastPointer != null)
+                            onZoom((getMagnification.invoke(params[0]) as Double).toFloat(), lastPointer!!)
+                        null
+                    }
+                    "equals" -> listener === params[0]
+                    "hashCode" -> hashCode
+                    else -> null
+                }
             }
             addGestureListenerTo.invoke(null, rootPane, listener)
             onDispose {

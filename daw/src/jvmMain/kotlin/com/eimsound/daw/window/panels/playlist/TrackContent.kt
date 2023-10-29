@@ -171,6 +171,96 @@ private suspend fun AwaitPointerEventScope.handleDragEvent(playlist: Playlist, c
 }
 
 @Composable
+private fun Playlist.ClipItem(density: Density, it: TrackClip<*>, track: Track, index: Int) {
+    Box {
+        with (density) {
+            val isSelected = selectedClips.contains(it)
+            val scrollXPPQ = horizontalScrollState.value / noteWidth.value.toPx()
+            val contentPPQ = contentWidth.value / noteWidth.value.value
+            val action0 = action
+            if (it.time <= scrollXPPQ + contentPPQ && it.time + it.duration >= scrollXPPQ) {
+                val clipStartPPQ = it.time
+                val clipEndPPQ = clipStartPPQ + it.duration
+                var clipStartPPQOnMove = clipStartPPQ
+                var clipEndPPQOnMove = clipEndPPQ
+                var y = 0.dp
+                if (isSelected) {
+                    if (action0 == EditAction.MOVE) {
+                        clipStartPPQOnMove += deltaX
+                        clipEndPPQOnMove += deltaX
+                        if (deltaY != 0) y = (trackHeights[(deltaY + index).coerceAtMost(trackHeights.size - 1)]
+                            .height - trackHeights[index].height).toDp()
+                    } else if (action0 == EditAction.RESIZE) {
+                        if (resizeDirectionRight) clipEndPPQOnMove += deltaX
+                        else clipStartPPQOnMove += deltaX
+                    }
+                }
+                val widthInPPQ = clipEndPPQOnMove.toFloat().coerceAtMost(scrollXPPQ + contentPPQ) -
+                        clipStartPPQOnMove.toFloat().coerceAtLeast(scrollXPPQ)
+                Box(Modifier
+                    .absoluteOffset(noteWidth.value * (clipStartPPQ - scrollXPPQ).coerceAtLeast(0F))
+                    .pointerInput(it, track, index) {
+                        awaitEachGesture { handleDragEvent(this@ClipItem, it, index, track) }
+                    }
+                    .size(noteWidth.value * widthInPPQ, trackHeight)
+                    .run {
+                        if (clipStartPPQ != clipStartPPQOnMove) {
+                            absoluteOffset(noteWidth.value * (
+                                    if (clipStartPPQOnMove < scrollXPPQ) {
+                                        if (deltaX < 0) -(clipStartPPQ - scrollXPPQ).coerceAtLeast(0F) else 0F
+                                    } else clipStartPPQOnMove - clipStartPPQ.toFloat().coerceAtLeast(scrollXPPQ)), y)
+                        } else if (y.value != 0F) absoluteOffset(0.dp, y)
+                        else this
+                    }
+                ) {
+                    if (!deletionList.contains(it)) {
+                        val trackColor = (if (isSelected && action0 == EditAction.MOVE && trackHeights.isNotEmpty())
+                            trackHeights[(deltaY + index).coerceAtMost(trackHeights.size - 1)].track
+                        else track).color
+                        Column(
+                            Modifier
+                                .fillMaxSize()
+                                .background(trackColor.copy(0.7F), MaterialTheme.shapes.extraSmall)
+                                .run {
+                                    if (isSelected) border(
+                                        2.dp, MaterialTheme.colorScheme.primary,
+                                        MaterialTheme.shapes.extraSmall
+                                    )
+                                    else this
+                                }
+                                .clip(MaterialTheme.shapes.extraSmall)
+                                .pointerHoverIcon(action0.toPointerIcon(PointerIcon.Hand))
+                        ) {
+                            val contentColor = trackColor.toOnSurfaceColor()
+                            if (trackHeight > 40.dp) {
+                                Text(
+                                    it.clip.name.ifEmpty { track.name },
+                                    Modifier.fillMaxWidth().background(trackColor).padding(horizontal = 4.dp),
+                                    contentColor, style = MaterialTheme.typography.labelMedium,
+                                    maxLines = 1, overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                            @Suppress("TYPE_MISMATCH")
+                            it.clip.factory.PlaylistContent(
+                                it, track,
+                                contentColor.copy(animateFloatAsState(if (isSelected) 1F else 0.8F).value),
+                                noteWidth,
+                                (scrollXPPQ - clipStartPPQOnMove).coerceAtLeast(0F) +
+                                        (it.start + if (isSelected && action0 == EditAction.RESIZE &&
+                                            !resizeDirectionRight) deltaX else 0),
+                                widthInPPQ
+                            )
+                        }
+                        Spacer(RESIZE_HAND_MODIFIER)
+                        Spacer(RESIZE_HAND_MODIFIER.align(Alignment.TopEnd))
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
 internal fun TrackContent(playlist: Playlist, track: Track, index: Int, density: Density): Int {
     playlist.apply {
         Box(Modifier.fillMaxWidth().height(trackHeight)) {
@@ -198,90 +288,7 @@ internal fun TrackContent(playlist: Playlist, track: Track, index: Int, density:
             track.clips.read()
             track.clips.fastForEach {
                 key(it) {
-                    Box {
-                        with (density) {
-                            val isSelected = playlist.selectedClips.contains(it)
-                            val scrollXPPQ = horizontalScrollState.value / noteWidth.value.toPx()
-                            val contentPPQ = contentWidth.value / noteWidth.value.value
-                            val action0 = action
-                            if (it.time <= scrollXPPQ + contentPPQ && it.time + it.duration >= scrollXPPQ) {
-                                val clipStartPPQ = it.time
-                                val clipEndPPQ = clipStartPPQ + it.duration
-                                var clipStartPPQOnMove = clipStartPPQ
-                                var clipEndPPQOnMove = clipEndPPQ
-                                var y = 0.dp
-                                if (isSelected) {
-                                    if (action0 == EditAction.MOVE) {
-                                        clipStartPPQOnMove += deltaX
-                                        clipEndPPQOnMove += deltaX
-                                        if (deltaY != 0) y = (trackHeights[(deltaY + index).coerceAtMost(trackHeights.size - 1)]
-                                            .height - trackHeights[index].height).toDp()
-                                    } else if (action0 == EditAction.RESIZE) {
-                                        if (resizeDirectionRight) clipEndPPQOnMove += deltaX
-                                        else clipStartPPQOnMove += deltaX
-                                    }
-                                }
-                                val widthInPPQ = clipEndPPQOnMove.toFloat().coerceAtMost(scrollXPPQ + contentPPQ) -
-                                        clipStartPPQOnMove.toFloat().coerceAtLeast(scrollXPPQ)
-                                Box(Modifier
-                                    .absoluteOffset(noteWidth.value * (clipStartPPQ - scrollXPPQ).coerceAtLeast(0F))
-                                    .pointerInput(it, track, index) {
-                                        awaitEachGesture { handleDragEvent(playlist, it, index, track) }
-                                    }
-                                    .size(noteWidth.value * widthInPPQ, trackHeight)
-                                    .run {
-                                        if (clipStartPPQ != clipStartPPQOnMove) {
-                                            absoluteOffset(noteWidth.value * (
-                                                    if (clipStartPPQOnMove < scrollXPPQ) {
-                                                        if (deltaX < 0) -(clipStartPPQ - scrollXPPQ).coerceAtLeast(0F) else 0F
-                                                    } else clipStartPPQOnMove - clipStartPPQ.toFloat().coerceAtLeast(scrollXPPQ)), y)
-                                        } else if (y.value != 0F) absoluteOffset(0.dp, y)
-                                        else this
-                                    }
-                                ) {
-                                    if (!deletionList.contains(it)) {
-                                        val trackColor = (if (isSelected && action0 == EditAction.MOVE && trackHeights.isNotEmpty())
-                                            trackHeights[(deltaY + index).coerceAtMost(trackHeights.size - 1)].track
-                                        else track).color
-                                        Column(
-                                            Modifier
-                                                .fillMaxSize()
-                                                .background(trackColor.copy(0.7F), MaterialTheme.shapes.extraSmall)
-                                                .run {
-                                                    if (isSelected) border(
-                                                        2.dp, MaterialTheme.colorScheme.primary,
-                                                        MaterialTheme.shapes.extraSmall
-                                                    )
-                                                    else this
-                                                }
-                                                .clip(MaterialTheme.shapes.extraSmall)
-                                                .pointerHoverIcon(action0.toPointerIcon(PointerIcon.Hand))
-                                        ) {
-                                            val contentColor = trackColor.toOnSurfaceColor()
-                                            Text(
-                                                it.clip.name.ifEmpty { track.name },
-                                                Modifier.fillMaxWidth().background(trackColor).padding(horizontal = 4.dp),
-                                                contentColor, style = MaterialTheme.typography.labelMedium,
-                                                maxLines = 1, overflow = TextOverflow.Ellipsis
-                                            )
-                                            @Suppress("TYPE_MISMATCH")
-                                            it.clip.factory.PlaylistContent(
-                                                it, track,
-                                                contentColor.copy(animateFloatAsState(if (isSelected) 1F else 0.8F).value),
-                                                noteWidth,
-                                                (scrollXPPQ - clipStartPPQOnMove).coerceAtLeast(0F) +
-                                                        (it.start + if (isSelected && action0 == EditAction.RESIZE &&
-                                                            !resizeDirectionRight) deltaX else 0),
-                                                widthInPPQ
-                                            )
-                                        }
-                                        Spacer(RESIZE_HAND_MODIFIER)
-                                        Spacer(RESIZE_HAND_MODIFIER.align(Alignment.TopEnd))
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    ClipItem(density, it, track, index)
                 }
             }
         }
