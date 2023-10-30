@@ -2,8 +2,7 @@
 
 package com.eimsound.daw.components.app
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -22,6 +21,7 @@ import com.eimsound.daw.dawutils.Border
 import com.eimsound.daw.dawutils.border
 import com.eimsound.daw.impl.WindowManagerImpl
 import com.eimsound.daw.window.dialogs.openQuickLoadDialog
+import org.apache.commons.lang3.SystemUtils
 
 //    SideBarItem("Favorite", "收藏") { Icon(Icons.Default.Favorite, "Favorite") },
 //    SideBarItem("Plugins", "插件") { Icon(Icons.Default.SettingsInputHdmi, "Plugins") },
@@ -87,6 +87,8 @@ internal val bottomBarHeightState = object : SplitPaneState(0.5F) {
     }
 }
 
+private val SIDE_BAR_TOP_SPACE = if (SystemUtils.IS_OS_MAC) 16.dp else 0.dp
+
 @Composable
 internal fun SideBar() {
     val lineColor = MaterialTheme.colorScheme.surfaceVariant
@@ -95,6 +97,7 @@ internal fun SideBar() {
         drawLine(lineColor, Offset(size.width - 0.3f, 0F), Offset(size.width - 0.3f, size.height), 0.6f)
     }, tonalElevation = 2.dp) {
         NavigationRail {
+            Spacer(Modifier.height(SIDE_BAR_TOP_SPACE).width(IntrinsicSize.Max))
             val floatingLayerProvider = LocalFloatingLayerProvider.current
             val density = LocalDensity.current.density
             NavigationRailItem(
