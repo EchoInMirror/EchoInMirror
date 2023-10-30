@@ -14,9 +14,7 @@ import androidx.compose.ui.input.key.*
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.ApplicationScope
-import androidx.compose.ui.window.Window
-import androidx.compose.ui.window.WindowExceptionHandler
+import androidx.compose.ui.window.*
 import com.eimsound.daw.VERSION
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.window.GlobalException
@@ -78,6 +76,8 @@ private fun MainWindowContent(window: ComposeWindow) {
     }
 }
 
+val mainWindowState = WindowState()
+
 private val logger = KotlinLogging.logger("MainWindow")
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -85,7 +85,7 @@ fun ApplicationScope.MainWindow() {
     Window({
         EchoInMirror.windowManager.closeMainWindow(true)
         exitApplication()
-    }, icon = Logo, title = "Echo In Mirror (v$VERSION)", onKeyEvent = {
+    }, mainWindowState, icon = Logo, title = "Echo In Mirror (v$VERSION)", onKeyEvent = {
         if (it.type != KeyEventType.KeyUp) return@Window false
         var keys = it.key.keyCode.toString()
         if (it.isCrossPlatformCtrlPressed) keys = "${Key.CtrlLeft.keyCode} $keys"

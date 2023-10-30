@@ -11,6 +11,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.WindowPlacement
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.window.Panel
 import com.eimsound.daw.api.window.PanelDirection
@@ -21,6 +22,7 @@ import com.eimsound.daw.dawutils.Border
 import com.eimsound.daw.dawutils.border
 import com.eimsound.daw.impl.WindowManagerImpl
 import com.eimsound.daw.window.dialogs.openQuickLoadDialog
+import com.eimsound.daw.window.mainWindowState
 import org.apache.commons.lang3.SystemUtils
 
 //    SideBarItem("Favorite", "收藏") { Icon(Icons.Default.Favorite, "Favorite") },
@@ -87,7 +89,7 @@ internal val bottomBarHeightState = object : SplitPaneState(0.5F) {
     }
 }
 
-private val SIDE_BAR_TOP_SPACE = if (SystemUtils.IS_OS_MAC) 16.dp else 0.dp
+private val SIDE_BAR_TOP_SPACE = if (SystemUtils.IS_OS_MAC) 16.dp else null
 
 @Composable
 internal fun SideBar() {
@@ -97,7 +99,8 @@ internal fun SideBar() {
         drawLine(lineColor, Offset(size.width - 0.3f, 0F), Offset(size.width - 0.3f, size.height), 0.6f)
     }, tonalElevation = 2.dp) {
         NavigationRail {
-            Spacer(Modifier.height(SIDE_BAR_TOP_SPACE).width(IntrinsicSize.Max))
+            if (SIDE_BAR_TOP_SPACE != null && mainWindowState.placement != WindowPlacement.Fullscreen)
+                Spacer(Modifier.height(SIDE_BAR_TOP_SPACE).width(IntrinsicSize.Max))
             val floatingLayerProvider = LocalFloatingLayerProvider.current
             val density = LocalDensity.current.density
             NavigationRailItem(

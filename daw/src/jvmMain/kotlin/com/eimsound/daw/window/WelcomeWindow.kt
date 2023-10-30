@@ -10,7 +10,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.ApplicationScope
 import androidx.compose.ui.window.Window
-import androidx.compose.ui.window.rememberWindowState
 import com.eimsound.daw.VERSION
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.components.*
@@ -108,8 +107,7 @@ val welcomeWindowTabs = mutableStateListOf<Tab>(Projects())
 
 @Composable
 fun ApplicationScope.ProjectWindow() {
-    val windowState = rememberWindowState()
-    Window(::exitApplication, windowState, icon = Logo, title = "Echo In Mirror (v$VERSION)") {
+    Window(::exitApplication, icon = Logo, title = "Echo In Mirror (v$VERSION)") {
         window.minimumSize = Dimension(860, 700)
         val floatingLayerProvider = remember { FloatingLayerProvider() }
         CompositionLocalProvider(LocalFloatingLayerProvider.provides(floatingLayerProvider)) {

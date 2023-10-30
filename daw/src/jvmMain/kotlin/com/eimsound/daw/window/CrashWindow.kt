@@ -14,7 +14,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.ApplicationScope
 import androidx.compose.ui.window.Window
-import androidx.compose.ui.window.rememberWindowState
 import com.eimsound.daw.VERSION
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.components.ClickableText
@@ -26,11 +25,10 @@ import java.awt.Dimension
 
 @Composable
 fun ApplicationScope.CrashWindow() {
-    val windowState = rememberWindowState()
     Window({
         EchoInMirror.windowManager.closeMainWindow(true)
         exitApplication()
-    }, windowState, icon = Logo, title = "Echo In Mirror (v$VERSION)") {
+    }, icon = Logo, title = "Echo In Mirror (v$VERSION)") {
         (EchoInMirror.windowManager as WindowManagerImpl).mainWindow = window
         window.minimumSize = Dimension(600, 400)
         val exception = EchoInMirror.windowManager.globalException ?: return@Window
