@@ -15,7 +15,9 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.nio.ByteBuffer
+import java.nio.file.Path
 import java.util.*
+import kotlin.io.path.absolutePathString
 
 //val ProcessAudioProcessorDescription = DefaultAudioProcessorDescription("ProcessAudioProcessor",
 //    "ProcessAudioProcessor", null, "EIMSound", "0.0.0", true)
@@ -298,13 +300,13 @@ open class ProcessAudioProcessorImpl(
 
     private fun handleParameterChange(p: IAudioProcessorParameter) { modifiedParameter.add(p) }
 
-    override suspend fun restore(path: String) {
+    override suspend fun restore(path: Path) {
         super.restore(path)
-        launch(factory.getNativeHostPath(description), "$path/state.bin")
+        launch(factory.getNativeHostPath(description), path.resolve("state.bin").absolutePathString())
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    override suspend fun store(path: String) = coroutineScope {
+    override suspend fun store(path: Path) = coroutineScope {
         super.store(path)
         if (!isLaunched) return@coroutineScope
             select {

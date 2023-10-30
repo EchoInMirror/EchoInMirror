@@ -9,6 +9,7 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import java.nio.file.Path
+import kotlin.io.path.exists
 import kotlin.io.path.name
 
 /**
@@ -32,7 +33,7 @@ class DefaultProjectInformation(override val root: Path): ProjectInformation, Js
     override var timeCost by mutableStateOf(0)
 
     @Transient
-    private val jsonFile = root.resolve("eim.json").toFile()
+    private val jsonFile = root.resolve("eim.json")
 
     init {
         var flag = false
@@ -47,7 +48,7 @@ class DefaultProjectInformation(override val root: Path): ProjectInformation, Js
         if (!flag) save()
     }
 
-    override fun save(file: Path?) { encodeJsonFile(file?.resolve("eim.json")?.toFile() ?: jsonFile, true) }
+    override fun save(file: Path?) { encodeJsonFile(file?.resolve("eim.json") ?: jsonFile, true) }
 
     override fun toJson() = buildJsonObject {
         putNotDefault("name", name)

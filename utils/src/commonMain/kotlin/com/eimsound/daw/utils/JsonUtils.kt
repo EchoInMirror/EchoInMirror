@@ -9,6 +9,9 @@ import java.io.File
 import java.io.InputStream
 import java.io.InputStreamReader
 import java.io.OutputStream
+import java.nio.file.Path
+import kotlin.io.path.inputStream
+import kotlin.io.path.outputStream
 
 inline fun JsonElement.asString() = jsonPrimitive.content
 inline fun JsonElement.asInt() = jsonPrimitive.int
@@ -35,7 +38,7 @@ fun JsonSerializable.encodeJsonStream(stream: OutputStream, prettier: Boolean = 
 }
 
 @OptIn(ExperimentalSerializationApi::class)
-fun JsonSerializable.encodeJsonFile(file: File, prettier: Boolean = false) {
+fun JsonSerializable.encodeJsonFile(file: Path, prettier: Boolean = false) {
     val json = toJson()
     file.outputStream().use { (if (prettier) JsonPrettier else JsonIgnoreDefaults).encodeToStream(json, it) }
 }
@@ -46,11 +49,11 @@ fun JsonSerializable.fromJsonStream(stream: InputStream) {
     fromJson(Json.parseToJsonElement(InputStreamReader(stream).use { it.readText() }))
 }
 
-fun JsonSerializable.fromJsonFile(file: File) {
+fun JsonSerializable.fromJsonFile(file: Path) {
     fromJson(Json.parseToJsonElement(file.inputStream().use { it.reader().readText() }))
 }
 
-fun File.toJsonElement() = Json.parseToJsonElement(inputStream().use { it.reader().readText() })
+fun Path.toJsonElement() = Json.parseToJsonElement(inputStream().use { it.reader().readText() })
 @OptIn(ExperimentalSerializationApi::class)
 inline fun <reified T> File.toJson() = Json.decodeFromStream<T>(inputStream())
 @OptIn(ExperimentalSerializationApi::class)

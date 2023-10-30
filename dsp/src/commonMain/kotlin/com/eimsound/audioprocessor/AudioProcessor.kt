@@ -12,7 +12,7 @@ import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
-import java.io.File
+import java.nio.file.Path
 import java.util.*
 import kotlin.reflect.KProperty
 
@@ -223,11 +223,11 @@ abstract class AbstractAudioProcessor(
         }
     }
 
-    override suspend fun store(path: String) {
-        encodeJsonFile(File("$path/$storeFileName"), true)
+    override suspend fun store(path: Path) {
+        encodeJsonFile(path.resolve(storeFileName), true)
     }
-    override suspend fun restore(path: String) {
-        fromJsonFile(File("$path/$storeFileName"))
+    override suspend fun restore(path: Path) {
+        fromJsonFile(path.resolve(storeFileName))
     }
 
     override fun addListener(listener: AudioProcessorListener) { _listeners[listener] = Unit }

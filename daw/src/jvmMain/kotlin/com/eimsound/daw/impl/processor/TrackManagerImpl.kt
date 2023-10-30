@@ -13,10 +13,9 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
-import java.io.File
 import java.nio.file.Files
+import java.nio.file.Path
 import java.util.*
-import kotlin.io.path.absolutePathString
 import kotlin.io.path.readText
 
 private val trackManagerLogger = KotlinLogging.logger {  }
@@ -29,8 +28,8 @@ class TrackManagerImpl : TrackManager {
         (factories[factory] ?: factories.values.firstOrNull())?.createAudioProcessor(DefaultTrackDescription)
             ?: throw NoSuchFactoryException(factory ?: "DefaultTrackFactory")
 
-    override suspend fun createTrackFromPath(path: String): Track {
-        val json = File(path, "track.json").toJsonElement() as JsonObject
+    override suspend fun createTrack(path: Path): Track {
+        val json = path.resolve("track.json").toJsonElement() as JsonObject
         val factory = json["factory"]?.asString()
         trackManagerLogger.info { "Creating track ${json["id"]} in \"$path\" with factory \"$factory\"" }
         return factories[factory]?.createAudioProcessor(path)
@@ -48,7 +47,7 @@ class TrackManagerImpl : TrackManager {
         val factoryName = json["factory"]?.asString()
         val factory = factories[factoryName] ?: throw NoSuchFactoryException(factoryName ?: "Null")
         val bus = factory.createBus(project)
-        return bus to { bus.restore(project.root.absolutePathString()) }
+        return bus to { bus.restore(project.root) }
     }
 
     override fun reload() {
@@ -69,7 +68,7 @@ class DefaultTrackFactory : TrackFactory<Track> {
         return TrackImpl(description, this)
     }
 
-    override suspend fun createAudioProcessor(path: String): TrackImpl {
+    override suspend fun createAudioProcessor(path: Path): TrackImpl {
         defaultTrackLogger.info { "Creating track from \"$path\"" }
         return TrackImpl(DefaultTrackDescription, this).apply { restore(path) }
     }

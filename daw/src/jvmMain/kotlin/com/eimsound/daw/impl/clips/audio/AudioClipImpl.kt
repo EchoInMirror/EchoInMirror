@@ -74,7 +74,7 @@ class AudioClipFactoryImpl: AudioClipFactory {
     override fun createClip() = AudioClipImpl(null, this).apply {
         logger.info { "Creating clip \"${this.id}\"" }
     }
-    override fun createClip(path: String, json: JsonObject): AudioClipImpl {
+    override fun createClip(path: Path, json: JsonObject): AudioClipImpl {
         logger.info { "Creating clip ${json["id"]} in $path" }
         return AudioClipImpl(json, this)
     }
@@ -108,7 +108,7 @@ class AudioClipFactoryImpl: AudioClipFactory {
         }
     }
 
-    override fun save(clip: AudioClip, path: String) { }
+    override fun save(clip: AudioClip, path: Path) { }
 
     override fun toString(): String {
         return "MidiClipFactoryImpl(name='$name')"

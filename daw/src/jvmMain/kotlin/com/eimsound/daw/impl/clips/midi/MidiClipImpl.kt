@@ -27,6 +27,7 @@ import com.eimsound.daw.utils.binarySearch
 import com.eimsound.daw.utils.putNotDefault
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.json.*
+import java.nio.file.Path
 
 class MidiClipImpl(json: JsonObject?, factory: ClipFactory<MidiClip>) : AbstractClip<MidiClip>(json, factory), MidiClip {
     override val notes = DefaultNoteMessageList()
@@ -80,7 +81,7 @@ class MidiClipFactoryImpl : MidiClipFactory {
     override fun createClip() = MidiClipImpl(null, this).apply {
         logger.info { "Creating clip \"${this.id}\"" }
     }
-    override fun createClip(path: String, json: JsonObject): MidiClipImpl {
+    override fun createClip(path: Path, json: JsonObject): MidiClipImpl {
         logger.info { "Creating clip ${json["id"]} in $path" }
         return MidiClipImpl(json, this)
     }

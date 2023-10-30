@@ -19,7 +19,6 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
 import java.nio.file.Files
 import java.nio.file.Path
-import kotlin.io.path.absolutePathString
 
 private var copiedAudioProcessorPath: Path? = null
 
@@ -40,7 +39,7 @@ fun FloatingLayerProvider.openAudioProcessorMenu(
                 val dir = createTempDirectory("copy")
                 Files.createDirectories(dir)
                 try {
-                    p.store(dir.absolutePathString())
+                    p.store(dir)
                     copiedAudioProcessorPath = dir
                 } catch (e: Exception) {
                     logger.error(e) { "Failed to copy audio processor: $p" }
@@ -55,7 +54,7 @@ fun FloatingLayerProvider.openAudioProcessorMenu(
             delete()
             GlobalScope.launch {
                 try {
-                    val ap = AudioProcessorManager.instance.createAudioProcessor(dir.absolutePathString())
+                    val ap = AudioProcessorManager.instance.createAudioProcessor(dir)
                     list.doAddOrRemoveAudioProcessorAction(ap, false, index)
                 } catch (e: Exception) {
                     logger.error(e) { "Failed to paste audio processor: $dir" }

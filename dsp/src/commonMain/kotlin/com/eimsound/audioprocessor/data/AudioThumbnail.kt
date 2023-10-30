@@ -10,7 +10,6 @@ import java.nio.ByteBuffer
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
-import kotlin.io.path.absolutePathString
 import kotlin.math.ceil
 import kotlin.math.roundToInt
 
@@ -162,15 +161,14 @@ class AudioThumbnailCache(file: File, private val samplesPerThumbSample: Int = D
     operator fun get(file: Path, audioSource: AudioSource? = null): AudioThumbnail? {
         try {
             val real = file.toRealPath()
-            val key = real.absolutePathString()
             val time = Files.getLastModifiedTime(real).toMillis()
-            val byteArray = db[key]
+            val byteArray = db[file.toString()]
             if (byteArray != null) {
                 val buf = ByteBuffer.wrap(byteArray)
                 if (buf.long == time) return AudioThumbnail(buf.position(0))
             }
             val value = AudioThumbnail(audioSource ?: AudioSourceManager.instance.createAudioSource(real), samplesPerThumbSample)
-            set(key, time, value)
+            set(file.toString(), time, value)
             return value
         } catch (e: IOException) {
             e.printStackTrace()

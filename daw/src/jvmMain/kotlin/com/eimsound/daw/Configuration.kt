@@ -61,7 +61,7 @@ object Configuration : JsonSerializable {
             }
             break
         } catch (ignored: Throwable) { }
-        if (CONFIG_PATH.exists()) fromJsonFile(CONFIG_PATH.toFile())
+        if (CONFIG_PATH.exists()) fromJsonFile(CONFIG_PATH)
         else save()
         nativeHostPath = Paths.get(if (SystemUtils.IS_OS_MAC)
             "/Users/shirasawa/code/EIMHost/cmake-build-debug/EIMHost_artefacts/Debug/EIMHost.app/Contents/MacOS/EIMHost"
@@ -84,7 +84,7 @@ object Configuration : JsonSerializable {
         System.setProperty("eim.tempfiles.prefix", "EchoInMirror")
     }
 
-    fun save() { encodeJsonFile(CONFIG_PATH.toFile(), true) }
+    fun save() { encodeJsonFile(CONFIG_PATH, true) }
 
     override fun toJson() = buildJsonObject {
         put("userId", userId)

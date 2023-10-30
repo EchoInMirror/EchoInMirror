@@ -16,6 +16,7 @@ import org.apache.commons.lang3.SystemUtils
 import java.io.File
 import java.nio.file.FileVisitResult
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.Paths
 import kotlin.io.path.*
 
@@ -147,17 +148,17 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
         }
     }
 
-    override suspend fun createAudioProcessor(path: String): NativeAudioPlugin {
-        val json = File(path, "processor.json").toJsonElement() as JsonObject
+    override suspend fun createAudioProcessor(path: Path): NativeAudioPlugin {
+        val json = path.resolve("processor.json").toJsonElement() as JsonObject
         val description = descriptions.find { it.identifier == json["identifier"]!!.asString() }
-            ?: throw NoSuchAudioProcessorException(path, name)
+            ?: throw NoSuchAudioProcessorException(path.toString(), name)
         logger.info { "Creating native audio plugin: $description in $path" }
         return NativeAudioPluginImpl(description, this).apply {
             launch(getNativeHostPath(description), "$path/state.bin")
         }
     }
 
-    override suspend fun save() { encodeJsonFile(configFile.toFile()) }
+    override suspend fun save() { encodeJsonFile(configFile) }
 
     override fun toJson() = buildJsonObject {
         put("descriptions", Json.encodeToJsonElement(descriptions))
@@ -178,9 +179,9 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
     private fun checkLoad() {
         if (loaded) return
         loaded = true
-        if (configFile.toFile().exists()) {
+        if (configFile.exists()) {
             try {
-                runBlocking { fromJsonFile(configFile.toFile()) }
+                runBlocking { fromJsonFile(configFile) }
                 return
             } catch (e: Throwable) {
                 e.printStackTrace()

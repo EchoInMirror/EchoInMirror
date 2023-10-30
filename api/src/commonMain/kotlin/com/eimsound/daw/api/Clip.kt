@@ -40,10 +40,10 @@ interface MidiClipEditor: ClipEditor, SerializableEditor, MultiSelectableEditor 
 interface ClipFactory<T: Clip> {
     val name: String
     fun createClip(): T
-    fun createClip(path: String, json: JsonObject): T
+    fun createClip(path: Path, json: JsonObject): T
     fun processBlock(clip: TrackClip<T>, buffers: Array<FloatArray>, position: CurrentPosition,
                      midiBuffer: ArrayList<Int>, noteRecorder: MidiNoteRecorder, pendingNoteOns: LongArray)
-    fun save(clip: T, path: String) { }
+    fun save(clip: T, path: Path) { }
     fun getEditor(clip: TrackClip<T>, track: Track): ClipEditor?
     @Composable
     fun PlaylistContent(clip: TrackClip<T>, track: Track, contentColor: Color,
@@ -76,10 +76,10 @@ interface ClipManager : Reloadable {
     @Throws(NoSuchFactoryException::class)
     suspend fun createClip(factory: String): Clip
     @Throws(NoSuchFactoryException::class)
-    suspend fun createClip(path: String, json: JsonObject): Clip
+    suspend fun createClip(path: Path, json: JsonObject): Clip
     fun <T: Clip> createTrackClip(clip: T, time: Int = 0, duration: Int = clip.defaultDuration.coerceAtLeast(0),
                                   start: Int = 0, track: Track? = null): TrackClip<T>
-    suspend fun createTrackClip(path: String, json: JsonObject): TrackClip<Clip>
+    suspend fun createTrackClip(path: Path, json: JsonObject): TrackClip<Clip>
 }
 
 val ClipManager.defaultMidiClipFactory get() = factories["MIDIClip"] as MidiClipFactory

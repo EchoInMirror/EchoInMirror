@@ -10,7 +10,7 @@ import com.eimsound.daw.utils.asString
 import com.eimsound.daw.utils.toJsonElement
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.json.JsonObject
-import java.io.File
+import java.nio.file.Path
 
 class EIMAudioProcessorDescription(name: String, category: String? = null, isInstrument: Boolean = false):
     DefaultAudioProcessorDescription(name, name, category, "EIMSound", VERSION, isInstrument)
@@ -34,8 +34,8 @@ class EIMAudioProcessorFactory : AudioProcessorFactory<AudioProcessor> {
         }
     }
 
-    override suspend fun createAudioProcessor(path: String): AudioProcessor {
-        val json = File(path, "processor.json").toJsonElement() as JsonObject
+    override suspend fun createAudioProcessor(path: Path): AudioProcessor {
+        val json = path.resolve("processor.json").toJsonElement() as JsonObject
         val name = json["name"]?.asString() ?: "Unknown"
         logger.info { "Creating audio processor \"$name\" in \"$path\"" }
         val desc = audioProcessors[name] ?: throw NoSuchAudioProcessorException(name, this.name)

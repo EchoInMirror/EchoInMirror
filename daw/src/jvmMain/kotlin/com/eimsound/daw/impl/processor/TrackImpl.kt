@@ -25,12 +25,13 @@ import kotlinx.coroutines.*
 import kotlinx.serialization.json.*
 import java.io.FileNotFoundException
 import java.nio.file.Files
+import java.nio.file.NoSuchFileException
 import java.nio.file.Path
-import java.nio.file.Paths
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
-import kotlin.io.path.absolutePathString
+import kotlin.io.path.ExperimentalPathApi
+import kotlin.io.path.deleteRecursively
 import kotlin.io.path.pathString
 import kotlin.system.measureTimeMillis
 
@@ -223,34 +224,35 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
     }
     override fun toJson() = buildJsonObject { buildJson() }
 
-    override suspend fun store(path: String) {
+    override suspend fun store(path: Path) {
         withContext(Dispatchers.IO) {
-            val dir = Paths.get(path)
-            if (!Files.exists(dir)) Files.createDirectory(dir)
+            if (!Files.exists(path)) Files.createDirectory(path)
             super.store(path)
 
             if (clips.isNotEmpty()) {
-                val clipsDir = dir.resolve("clips")
+                val clipsDir = path.resolve("clips")
                 if (!Files.exists(clipsDir)) Files.createDirectory(clipsDir)
                 clips.fastForEach {
                     launch {
                         @Suppress("TYPE_MISMATCH")
-                        it.clip.factory.save(it.clip, clipsDir.resolve(it.clip.id).absolutePathString())
+                        it.clip.factory.save(it.clip, clipsDir.resolve(it.clip.id))
                     }
                 }
             }
 
             if (subTracks.isNotEmpty()) {
-                val tracksDir = dir.resolve("tracks")
+                val tracksDir = path.resolve("tracks")
                 if (!Files.exists(tracksDir)) Files.createDirectory(tracksDir)
-                subTracks.forEach { launch { it.store(tracksDir.resolve(it.id).absolutePathString()) } }
+                subTracks.forEach { launch { it.store(tracksDir.resolve(it.id)) } }
             }
 
             if (preProcessorsChain.isNotEmpty() || postProcessorsChain.isNotEmpty()) {
-                val processorsDir = dir.resolve("processors")
+                val processorsDir = path.resolve("processors")
                 storeProcessors(preProcessorsChain, processorsDir)
                 storeProcessors(postProcessorsChain, processorsDir)
             }
+
+            clean(path)
         }
     }
 
@@ -260,8 +262,39 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
                 launch {
                     val processDIr = dir.resolve(it.id)
                     Files.createDirectories(processDIr)
-                    it.store(processDIr.absolutePathString())
+                    it.store(processDIr)
                 }
+            }
+        }
+    }
+
+    private suspend fun clean(path: Path) {
+        val processorsDir = path.resolve("processors")
+        val processors = hashSetOf<String>()
+        preProcessorsChain.fastForEach { processors.add(it.id) }
+        postProcessorsChain.fastForEach { processors.add(it.id) }
+        cleanAudioProcessors(processorsDir, processors)
+        cleanAudioProcessors(processorsDir, processors)
+        cleanAudioProcessors(path.resolve("tracks"), subTracks.mapTo(HashSet()) { it.id })
+    }
+
+    @OptIn(ExperimentalPathApi::class)
+    private suspend fun cleanAudioProcessors(dir: Path, names: Set<String>) {
+        withContext(Dispatchers.IO) {
+            try {
+                launch {
+                    Files.walk(dir).forEach {
+                        if (it == dir) return@forEach
+                        if (it.fileName.toString() !in names) {
+                            tryOrNull(trackLogger, "Failed to delete audio processor: $it") {
+                                it.deleteRecursively()
+                            }
+                        }
+                    }
+                }
+            } catch (_: NoSuchFileException) {
+            } catch (e: Exception) {
+                trackLogger.error(e) { "Failed to clean track: $id" }
             }
         }
     }
@@ -277,15 +310,14 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         json["isDisabled"]?.asBoolean()?.let { isDisabled = it }
     }
 
-    override suspend fun restore(path: String) {
+    override suspend fun restore(path: Path) {
         withContext(Dispatchers.Default) {
             try {
-                val json = Json.parseToJsonElement(Paths.get(path, "track.json").toFile().readText()).jsonObject
+                val json = Json.parseToJsonElement(path.resolve("track.json").toFile().readText()).jsonObject
                 fromJson(json)
-                val dir = Paths.get(path)
 
                 json["clips"]?.let { clipIds ->
-                    val clipsDir = dir.resolve("clips").absolutePathString()
+                    val clipsDir = path.resolve("clips")
                     clips.addAll(clipIds.jsonArray.map {
                         async {
                             tryOrNull(trackLogger, "Failed to load clip: $it") {
@@ -296,17 +328,16 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
                 }
 
                 json["subTracks"]?.let { tracks ->
-                    val tracksDir = dir.resolve("tracks")
+                    val tracksDir = path.resolve("tracks")
                     subTracks.addAll(tracks.jsonArray.map {
                         async {
                             tryOrNull(trackLogger, "Failed to load track: $it") {
-                                TrackManager.instance.createTrackFromPath(tracksDir.resolve(it.asString())
-                                    .absolutePathString())
+                                TrackManager.instance.createTrack(tracksDir.resolve(it.asString()))
                             }
                         }
                     }.awaitAll().filterNotNull())
                 }
-                val processorsDir = dir.resolve("processors")
+                val processorsDir = path.resolve("processors")
                 loadAudioProcessors(preProcessorsChain, json["preProcessorsChain"]?.jsonArray, processorsDir)
                 loadAudioProcessors(postProcessorsChain, json["postProcessorsChain"]?.jsonArray, processorsDir)
             } catch (_: FileNotFoundException) { }
@@ -322,7 +353,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
                     tryOrNull(trackLogger, "Failed to load audio processor: $id") {
                         val dir = processorsDir.resolve(id)
                         DefaultTrackAudioProcessorWrapper(
-                            AudioProcessorManager.instance.createAudioProcessor(dir.absolutePathString())
+                            AudioProcessorManager.instance.createAudioProcessor(dir)
                         )
                     }
                 }
@@ -374,10 +405,16 @@ class BusImpl(
         json["channelType"]?.asInt()?.let { channelType = ChannelType.entries[it] }
     }
 
+    @OptIn(ExperimentalPathApi::class)
     private suspend fun backup() {
         withContext(Dispatchers.IO) {
             val backupDir = project.root.resolve("backup")
             if (!Files.exists(backupDir)) Files.createDirectory(backupDir)
+
+            Files.list(backupDir).sorted(Comparator.reverseOrder()).skip(50).forEach {
+                tryOrNull(busLogger, "Failed to delete backup: $it") { it.deleteRecursively() }
+            }
+
             var backupRoot: Path
             var i = 0
             do {
@@ -410,19 +447,19 @@ class BusImpl(
             project.timeCost += (time - lastSaveTime).toInt()
             lastSaveTime = time
             project.save()
-            super.store(project.root.pathString)
+            super.store(project.root)
             backup()
         }
         busLogger.info { "Saved project by cost ${cost}ms" }
     }
 
-    override suspend fun store(path: String) {
+    override suspend fun store(path: Path) {
         busLogger.info { "Saving project: $project to $path" }
         val cost = measureTimeMillis {
             val time = System.currentTimeMillis()
             project.timeCost += (time - lastSaveTime).toInt()
             lastSaveTime = time
-            project.save(Paths.get(path))
+            project.save(path)
             super.store(path)
         }
         busLogger.info { "Saved project by cost ${cost}ms" }

@@ -1,10 +1,12 @@
+@file:Suppress("DuplicatedCode")
+
 package com.eimsound.daw.utils
 
 import androidx.compose.ui.graphics.vector.ImageVector
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.nio.file.Files
-import kotlin.io.path.absolutePathString
+import java.nio.file.Path
 
 interface UndoableAction {
     suspend fun undo(): Boolean
@@ -15,8 +17,8 @@ interface UndoableAction {
 }
 
 interface Restorable {
-    suspend fun restore(path: String)
-    suspend fun store(path: String)
+    suspend fun restore(path: Path)
+    suspend fun store(path: Path)
 }
 
 abstract class ReversibleAction(private val reversed: Boolean = false) : UndoableAction {
@@ -47,7 +49,7 @@ abstract class ListElementMoveAction<T>(private val index: Int, private val from
 
 abstract class ListAddOrRemoveAction<T>(private val target: T, private val list: MutableList<T>,
                              private val isDelete: Boolean, private var index: Int = -1): UndoableAction {
-    private var restorablePath: String? = null
+    private var restorablePath: Path? = null
 
     override suspend fun execute(): Boolean {
         if (isDelete) {
@@ -74,9 +76,9 @@ abstract class ListAddOrRemoveAction<T>(private val target: T, private val list:
     private suspend fun remove() {
         list.remove(target)
         if (target is Restorable) withContext(Dispatchers.IO) {
-            val dir = createTempDirectory("undo")
-            Files.createDirectories(dir)
-            restorablePath = dir.absolutePathString()
+            if (restorablePath == null) restorablePath = createTempDirectory("undo").apply {
+                Files.createDirectories(this)
+            }
             target.store(restorablePath!!)
         }
         if (target is AutoCloseable) target.close()
@@ -87,12 +89,15 @@ abstract class ListReplaceAction<T>(private val target: T, private val list: Mut
                                         private val index: Int): UndoableAction {
     private var old: T? = null
     private var isReplaced = false
+    private var restorablePath: Path? = null
 
     override suspend fun execute(): Boolean {
-        old = list.getOrNull(index)?.apply { if (this is AutoCloseable) this.close() }
+        old = list.getOrNull(index)?.apply { store(this) }
         list[index] = target
         if (isReplaced) {
-            target.let { if (it is Restorable) it.restore("") } // TODO: recover path
+            target.let { t ->
+                if (t is Restorable) restorablePath?.let { t.restore(it) }
+            }
         } else isReplaced = true
         return true
     }
@@ -100,10 +105,20 @@ abstract class ListReplaceAction<T>(private val target: T, private val list: Mut
     override suspend fun undo(): Boolean {
         if (list.getOrNull(index) != target) return false
         val o = old ?: return false
-        target.let { if (it is AutoCloseable) it.close() }
+        store(target)
         list[index] = o
-        if (o is Restorable) o.restore("") // TODO: recover path
+        if (o is Restorable) restorablePath?.let { o.restore(it) }
         return true
+    }
+
+    private suspend fun store(it: T) {
+        if (it is Restorable) withContext(Dispatchers.IO) {
+            if (restorablePath == null) restorablePath = createTempDirectory("undo").apply {
+                Files.createDirectories(this)
+            }
+            it.store(restorablePath!!)
+        }
+        if (it is AutoCloseable) it.close()
     }
 }
 
