@@ -76,8 +76,8 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         buffers: Array<FloatArray>,
         position: CurrentPosition,
         midiBuffer: ArrayList<Int>
-    ) {
-        if (isBypassed || isDisabled) return
+    ) = withContext(Dispatchers.Default) {
+        if (isBypassed || isDisabled) return@withContext
         if (pendingMidiBuffer.isNotEmpty()) {
             midiBuffer.addAll(pendingMidiBuffer)
             pendingMidiBuffer.clear()
@@ -111,22 +111,20 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         if (subTracks.isNotEmpty()) {
             tempBuffer[0].fill(0F)
             tempBuffer[1].fill(0F)
-            runBlocking {
-                val bus = EchoInMirror.bus
-                subTracks.forEach {
-                    if (it.isBypassed || it.isDisabled || it.isRendering) return@forEach
-                    launch {
-                        val buffer = if (it is TrackImpl) it.tempBuffer2.apply {
-                            this[0].fill(0F)
-                            this[1].fill(0F)
-                        } else arrayOf(FloatArray(buffers[0].size), FloatArray(buffers[1].size))
-                        buffers[0].copyInto(buffer[0])
-                        buffers[1].copyInto(buffer[1])
-                        it.processBlock(buffer, position, ArrayList(midiBuffer))
-                        if (bus != null) tempBuffer.mixWith(buffer)
-                    }
+            val bus = EchoInMirror.bus
+            subTracks.mapNotNull {
+                if (it.isBypassed || it.isDisabled || it.isRendering) return@mapNotNull null
+                launch {
+                    val buffer = if (it is TrackImpl) it.tempBuffer2.apply {
+                        this[0].fill(0F)
+                        this[1].fill(0F)
+                    } else arrayOf(FloatArray(buffers[0].size), FloatArray(buffers[1].size))
+                    buffers[0].copyInto(buffer[0])
+                    buffers[1].copyInto(buffer[1])
+                    it.processBlock(buffer, position, ArrayList(midiBuffer))
+                    if (bus != null) tempBuffer.mixWith(buffer)
                 }
-            }
+            }.joinAll()
             tempBuffer[0].copyInto(buffers[0])
             tempBuffer[1].copyInto(buffers[1])
         }

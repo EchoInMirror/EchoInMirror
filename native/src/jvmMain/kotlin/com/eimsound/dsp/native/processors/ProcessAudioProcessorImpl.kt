@@ -62,58 +62,60 @@ open class ProcessAudioProcessorImpl(
     private val modifiedParameter = hashSetOf<IAudioProcessorParameter>()
 
     override suspend fun processBlock(buffers: Array<FloatArray>, position: CurrentPosition, midiBuffer: ArrayList<Int>) {
-        val output = outputStream
-        if (!isLaunched || output == null) return
-        if (!prepared) prepareToPlay(position.sampleRate, position.bufferSize)
-        mutex.withLock {
-            val bufferSize = position.bufferSize
-            output.write(1) // action
-            output.write(position.toFlags()) // flags
-            output.writeDouble(position.bpm) // bpm
-            output.writeShort((midiBuffer.size / 2).toShort()) // midi event count
-            output.writeShort(modifiedParameter.size.toShort()) // parameter count
-            output.writeVarLong(position.timeInSamples) // time in samples
-            val inputChannels = inputChannelsCount.coerceAtMost(buffers.size)
-            val outputChannels = outputChannelsCount.coerceAtMost(buffers.size)
-            val bf = byteBuffer
-            if (bf == null) {
-                output.write(inputChannels)
-                output.write(outputChannels)
-                repeat(inputChannels) { i ->
-                    repeat(bufferSize) { j -> output.writeFloat(buffers[i][j]) }
+        withContext(Dispatchers.IO) {
+            val output = outputStream
+            if (!isLaunched || output == null) return@withContext
+            if (!prepared) prepareToPlay(position.sampleRate, position.bufferSize)
+            mutex.withLock {
+                val bufferSize = position.bufferSize
+                output.write(1) // action
+                output.write(position.toFlags()) // flags
+                output.writeDouble(position.bpm) // bpm
+                output.writeShort((midiBuffer.size / 2).toShort()) // midi event count
+                output.writeShort(modifiedParameter.size.toShort()) // parameter count
+                output.writeVarLong(position.timeInSamples) // time in samples
+                val inputChannels = inputChannelsCount.coerceAtMost(buffers.size)
+                val outputChannels = outputChannelsCount.coerceAtMost(buffers.size)
+                val bf = byteBuffer
+                if (bf == null) {
+                    output.write(inputChannels)
+                    output.write(outputChannels)
+                    repeat(inputChannels) { i ->
+                        repeat(bufferSize) { j -> output.writeFloat(buffers[i][j]) }
+                    }
+                } else {
+                    repeat(inputChannels) { i ->
+                        repeat(bufferSize) { j -> bf.putFloat(buffers[i][j]) }
+                    }
+                    bf.rewind()
                 }
-            } else {
-                repeat(inputChannels) { i ->
-                    repeat(bufferSize) { j -> bf.putFloat(buffers[i][j]) }
+                for (i in 0 until midiBuffer.size step 2) {
+                    output.writeVarInt(midiBuffer[i])
+                    output.writeShort(midiBuffer[i + 1].toShort())
                 }
-                bf.rewind()
-            }
-            for (i in 0 until midiBuffer.size step 2) {
-                output.writeVarInt(midiBuffer[i])
-                output.writeShort(midiBuffer[i + 1].toShort())
-            }
-            modifiedParameter.forEach { p ->
-                output.writeVarInt(parametersToId[p] ?: 9999999)
-                output.writeFloat(p.value)
-            }
-            modifiedParameter.clear()
-            output.flush()
-            midiBuffer.clear()
+                modifiedParameter.forEach { p ->
+                    output.writeVarInt(parametersToId[p] ?: 9999999)
+                    output.writeFloat(p.value)
+                }
+                modifiedParameter.clear()
+                output.flush()
+                midiBuffer.clear()
 
-            val input = inputStream!!
-            do {
-                val id = input.read()
-                handleInput(id, position)
-            } while (id != 1)
-            if (bf == null) {
-                repeat(outputChannels) { i ->
-                    repeat(bufferSize) { j -> buffers[i][j] = input.readFloat() }
+                val input = inputStream!!
+                do {
+                    val id = input.read()
+                    handleInput(id, position)
+                } while (id != 1)
+                if (bf == null) {
+                    repeat(outputChannels) { i ->
+                        repeat(bufferSize) { j -> buffers[i][j] = input.readFloat() }
+                    }
+                } else {
+                    repeat(outputChannels) { i ->
+                        repeat(bufferSize) { j -> buffers[i][j] = bf.float }
+                    }
+                    bf.rewind()
                 }
-            } else {
-                repeat(outputChannels) { i ->
-                    repeat(bufferSize) { j -> buffers[i][j] = bf.float }
-                }
-                bf.rewind()
             }
         }
     }
@@ -121,7 +123,7 @@ open class ProcessAudioProcessorImpl(
     @OptIn(DelicateCoroutinesApi::class)
     override fun onClick() {
         if (!isLaunched) return
-        GlobalScope.launch {
+        GlobalScope.launch(Dispatchers.IO) {
             mutex.withLock {
                 outputStream?.apply {
                     write(2)
