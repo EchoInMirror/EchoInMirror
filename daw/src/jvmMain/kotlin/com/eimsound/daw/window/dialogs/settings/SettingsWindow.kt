@@ -16,7 +16,7 @@ import java.awt.Dimension
 import java.util.*
 
 val settingsTabsLoader: ServiceLoader<SettingTab> by lazy { ServiceLoader.load(SettingTab::class.java) }
-val settingsTabs: List<SettingTab> get() = mutableListOf(AudioSettings, ShortcutKeySettings).apply {
+val settingsTabs: List<SettingTab> get() = mutableListOf(AudioSettings, ShortcutKeySettings, FileBrowserSettings).apply {
     addAll(settingsTabsLoader)
     add(AboutPanel)
 }
