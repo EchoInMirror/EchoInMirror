@@ -23,6 +23,7 @@ fun VolumeSlider(volume: Volume, modifier: Modifier = Modifier.height(150.dp), i
         useTickFractions = false,
         modifier = modifier,
         isVertical = isVertical,
+        onValueReset = { volume.volume = 1F },
         track = { m, progress, interactionSource, tickFractions, enabled, i ->
             DefaultTrack(
                 m,

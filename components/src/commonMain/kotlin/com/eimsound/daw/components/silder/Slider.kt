@@ -48,6 +48,7 @@ fun Slider(
     valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
     /*@IntRange(from = 0)*/
     steps: Int = 0,
+    onValueReset: (() -> Unit)? = null,
     tickFractions: List<Float> = emptyList(),
     onValueChangeFinished: (() -> Unit)? = null,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
@@ -182,7 +183,7 @@ fun Slider(
         )
 
         val press = Modifier.sliderPressModifier(
-            draggableState, interactionSource, maxPx, rawOffset, gestureEndAction, enabled, isVertical
+            draggableState, interactionSource, maxPx, rawOffset, gestureEndAction, enabled, onValueReset, isVertical
         )
 
         val drag = Modifier.draggable(
@@ -336,11 +337,13 @@ private fun Modifier.sliderPressModifier(
     rawOffset: State<Float>,
     gestureEndAction: State<(Float) -> Unit>,
     enabled: Boolean,
+    onValueReset: (() -> Unit)?,
     isVertical: Boolean
 ): Modifier =
     if (enabled) {
         pointerInput(draggableState, interactionSource, maxPx) {
             detectTapGestures(
+                onValueReset?.let { { onValueReset() } },
                 onPress = { pos ->
                     draggableState.drag(MutatePriority.UserInput) {
                         val to = if (isVertical) pos.y else pos.x

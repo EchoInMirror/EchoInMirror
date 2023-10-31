@@ -15,7 +15,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -28,7 +27,7 @@ import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
-private val ICON_SIZE = Modifier.scale(0.8f).padding(4.dp, end = 2.dp)
+private val ICON_SIZE = Modifier.size(24.dp).padding(start = 4.dp, end = 2.dp)
 
 @OptIn(DelicateCoroutinesApi::class)
 @Composable
@@ -37,17 +36,16 @@ private fun UndoItem(index: Int, it: UndoableAction) {
     val cursor = EchoInMirror.undoManager.cursor
     val fontStyle = if (index < cursor) FontStyle.Normal else FontStyle.Italic
     if (index >= cursor) color = color.copy(0.38F)
-    Row(
-        Modifier.padding(horizontal = 4.dp).fillMaxWidth().clickableWithIcon {
-            val flag = index < cursor
-            GlobalScope.launch {
-                if (flag) EchoInMirror.undoManager.undo(cursor - index - 1)
-                else EchoInMirror.undoManager.redo(index - cursor + 1)
-            }
-        }) {
+    Row(Modifier.padding(horizontal = 8.dp).fillMaxWidth().clickableWithIcon {
+        val flag = index < cursor
+        GlobalScope.launch {
+            if (flag) EchoInMirror.undoManager.undo(cursor - index - 1)
+            else EchoInMirror.undoManager.redo(index - cursor + 1)
+        }
+    }, verticalAlignment = Alignment.CenterVertically) {
         Icon(it.icon, "redo", ICON_SIZE, color)
         Text(
-            EchoInMirror.undoManager.actions[index].name,
+            it.name,
             color = color,
             style = MaterialTheme.typography.labelLarge,
             fontStyle = fontStyle
@@ -69,13 +67,12 @@ object UndoList: Panel {
     override fun Content() {
         Box(Modifier.fillMaxSize()) {
             val state = rememberLazyListState()
-            LazyColumn(Modifier.padding(vertical = 4.dp), state) {
+            LazyColumn(Modifier, state) {
                 item {
-                    Row(
-                        Modifier.fillMaxWidth().clickableWithIcon {
-                            GlobalScope.launch { EchoInMirror.undoManager.reset() }
-                        }) {
-                        Icon(Icons.Outlined.RestartAlt, "redo", ICON_SIZE)
+                    Row(Modifier.fillMaxWidth().clickableWithIcon {
+                        GlobalScope.launch { EchoInMirror.undoManager.reset() }
+                    }, verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Outlined.RestartAlt, "undo", ICON_SIZE)
                         Text("初始状态", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
                     }
                 }

@@ -235,6 +235,7 @@ private fun PanSlider(track: Track) {
         { track.pan = it },
         valueRange = -1f..1f,
         modifier = Modifier.fillMaxWidth(),
+        onValueReset = { track.pan = 0f },
         track = { modifier, progress, interactionSource, tickFractions, enabled, isVertical ->
             DefaultTrack(modifier, progress, interactionSource, tickFractions, enabled, isVertical, startPoint = 0.5f)
         }

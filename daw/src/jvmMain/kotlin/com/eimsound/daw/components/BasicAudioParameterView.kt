@@ -23,8 +23,8 @@ import com.eimsound.daw.utils.range
 @Composable
 private fun ParameterSlider(p: IAudioProcessorParameter) {
     Column(Modifier.width(80.dp).padding(vertical = 4.dp)) {
-        if (p.isFloat) Slider(p.value, { p.value = it }, valueRange = p.range)
-        else Slider(p.value, { p.value = it }, valueRange = p.range, steps = p.range.range.toInt())
+        if (p.isFloat) Slider(p.value, { p.value = it }, valueRange = p.range, onValueReset = { p.value = p.initialValue })
+        else Slider(p.value, { p.value = it }, valueRange = p.range, steps = p.range.range.toInt(), onValueReset = { p.value = p.initialValue })
         Text(p.name, Modifier.fillMaxWidth(),
             style = MaterialTheme.typography.labelSmall,
             maxLines = 2, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center
