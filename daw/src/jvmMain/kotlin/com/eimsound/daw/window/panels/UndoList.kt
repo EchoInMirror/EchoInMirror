@@ -36,7 +36,7 @@ private fun UndoItem(index: Int, it: UndoableAction) {
     val cursor = EchoInMirror.undoManager.cursor
     val fontStyle = if (index < cursor) FontStyle.Normal else FontStyle.Italic
     if (index >= cursor) color = color.copy(0.38F)
-    Row(Modifier.padding(horizontal = 8.dp).fillMaxWidth().clickableWithIcon {
+    Row(Modifier.fillMaxWidth().clickableWithIcon {
         val flag = index < cursor
         GlobalScope.launch {
             if (flag) EchoInMirror.undoManager.undo(cursor - index - 1)

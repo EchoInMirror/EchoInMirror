@@ -85,11 +85,11 @@ private fun saveFavoriteAudioProcessors() {
     }
 }
 
-fun FloatingLayerProvider.openQuickLoadDialog(onClose: ((AudioProcessorDescriptionAndFactory?) -> Unit) = { }) {
+fun FloatingLayerProvider.openQuickLoadDialog(onClose: ((AudioProcessorDescriptionAndFactory?) -> Unit)? = null) {
     loadFavoriteAudioProcessors()
     openFloatingLayer({
         closeFloatingLayer(KEY)
-        onClose(null)
+        onClose?.invoke(null)
     }, key = KEY) {
         val favoriteIconColors = IconButtonDefaults.iconToggleButtonColors(
             contentColor = MaterialTheme.colorScheme.outline,
@@ -236,7 +236,7 @@ fun FloatingLayerProvider.openQuickLoadDialog(onClose: ((AudioProcessorDescripti
                                 }, onDragEnd = { closeFloatingLayer(KEY) }
                             ) { desc ->
                                 if (desc == null) return@DescList
-                                if (selectedDescription == desc) {
+                                if (onClose != null && selectedDescription == desc) {
                                     closeFloatingLayer(KEY)
                                     onClose(AudioProcessorDescriptionAndFactory(desc, descriptionsToFactory[desc] ?: return@DescList))
                                 } else selectedDescription = descList.find { it == desc }
@@ -255,11 +255,11 @@ fun FloatingLayerProvider.openQuickLoadDialog(onClose: ((AudioProcessorDescripti
                         )
                         TextButton({
                             closeFloatingLayer(KEY)
-                            onClose(null)
+                            onClose?.invoke(null)
                         }) {
                             Text("取消")
                         }
-                        Button({
+                        if (onClose != null) Button({
                             closeFloatingLayer(KEY)
                             val desc = selectedDescription
                             val factory = descriptionsToFactory[desc]

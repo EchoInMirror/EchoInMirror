@@ -25,7 +25,6 @@ import kotlinx.coroutines.*
 import kotlinx.serialization.json.*
 import java.io.FileNotFoundException
 import java.nio.file.Files
-import java.nio.file.NoSuchFileException
 import java.nio.file.Path
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -281,7 +280,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         withContext(Dispatchers.IO) {
             try {
                 launch {
-                    Files.walk(dir).forEach {
+                    if (Files.exists(dir)) Files.walk(dir).forEach {
                         if (it == dir) return@forEach
                         if (it.fileName.toString() !in names) {
                             tryOrNull(trackLogger, "Failed to delete audio processor: $it") {
@@ -290,7 +289,6 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
                         }
                     }
                 }
-            } catch (_: NoSuchFileException) {
             } catch (e: Exception) {
                 trackLogger.error(e) { "Failed to clean track: $id" }
             }
