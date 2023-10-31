@@ -80,11 +80,21 @@ private fun BusChannelType() {
 }
 
 @Composable
-fun ThemeSwitch() {
+private fun ThemeSwitch() {
     StatusBarItem("Theme",
         if (EchoInMirror.windowManager.isDarkTheme) Icons.Default.DarkMode else Icons.Default.LightMode,
         onClick = { EchoInMirror.windowManager.isDarkTheme = !EchoInMirror.windowManager.isDarkTheme }
     )
+}
+
+@Composable
+private fun ProjectName() {
+    StatusBarItem("Project", Icons.Default.Folder,
+        onClick = { openInExplorer(EchoInMirror.bus!!.project.root.toFile()) },
+        onLongClick = { EchoInMirror.windowManager.closeMainWindow() }
+    ) {
+        Text(EchoInMirror.bus!!.project.name + (if (EchoInMirror.bus?.project?.saved == true) "" else " (未保存)"))
+    }
 }
 
 @Composable
@@ -98,12 +108,7 @@ internal fun StatusBar() {
                     StatusBarItem("Settings", Icons.Default.Settings, onClick = { EchoInMirror.windowManager.dialogs[SettingsWindow] = true })
                     ThemeSwitch()
                     StatusBarItem("Export", Icons.Default.IosShare, onClick = { EchoInMirror.windowManager.dialogs[ExportDialog] = true })
-                    StatusBarItem("Project", Icons.Default.Folder,
-                        onClick = { openInExplorer(EchoInMirror.bus!!.project.root.toFile()) },
-                        onLongClick = { EchoInMirror.windowManager.closeMainWindow() }
-                    ) {
-                        Text(EchoInMirror.bus!!.project.name)
-                    }
+                    ProjectName()
                     StatusBarItem("TimeCost", Icons.Default.EventNote) {
                         Text(formatDuration(EchoInMirror.bus!!.project.timeCost.toLong()))
                     }

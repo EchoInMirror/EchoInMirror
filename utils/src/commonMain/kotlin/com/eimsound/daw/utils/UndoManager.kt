@@ -129,6 +129,7 @@ interface UndoManager {
     val limit: Int
     val cursor: Int
     val errorHandlers: MutableSet<(UndoableActionExecuteException) -> Unit>
+    val cursorChangeHandlers: MutableSet<() -> Unit>
     suspend fun undo(steps: Int = 1): Boolean
     suspend fun redo(steps: Int = 1): Boolean
     suspend fun execute(action: UndoableAction): Boolean

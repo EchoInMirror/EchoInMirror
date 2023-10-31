@@ -38,7 +38,7 @@ open class ProcessAudioProcessorImpl(
     override val factory: NativeAudioPluginFactoryImpl,
     private var enabledSharedMemory: Boolean = IS_SHM_SUPPORTED &&
             System.getProperty("eim.dsp.nativeaudioplugins.sharedmemory", "1") != "false",
-) : ProcessAudioProcessor, AbstractAudioProcessor(description, factory, false) {
+) : ProcessAudioProcessor, AbstractAudioProcessor(description, factory, false, AudioProcessorState.Loading) {
     override var inputChannelsCount = 0
         protected set
     override var outputChannelsCount = 0
@@ -166,6 +166,7 @@ open class ProcessAudioProcessorImpl(
 
     override suspend fun launch(execFile: String, preset: String?, vararg commands: String): Boolean = coroutineScope {
         if (isLaunched) return@coroutineScope true
+        state = AudioProcessorState.Loading
         val res = try {
             select {
                 var ret = false
@@ -223,9 +224,13 @@ open class ProcessAudioProcessorImpl(
                         }
                         ret = true
                     }
-                }.onJoin { ret }
+                }.onJoin {
+                    state = AudioProcessorState.Ready
+                    ret
+                }
             }
-        } catch (e: CancellationException) {
+        } catch (e: Throwable) {
+            state = AudioProcessorState.Failed
             close()
             false
         }
@@ -279,9 +284,9 @@ open class ProcessAudioProcessorImpl(
             inputStream = null
             outputStream = null
             isLaunched = false
+            state = if (prepared) AudioProcessorState.Unloaded else AudioProcessorState.Failed
             prepared = false
         }
-        super.close()
     }
 
     private fun handleInput(id: Int, position: CurrentPosition) {

@@ -22,6 +22,7 @@ interface ProjectInformation {
     var author: String
     var description: String
     var timeCost: Int
+    val saved: Boolean
 
     fun save(file: Path? = null)
 }
@@ -31,6 +32,8 @@ class DefaultProjectInformation(override val root: Path): ProjectInformation, Js
     override var author by mutableStateOf("")
     override var description by mutableStateOf("")
     override var timeCost by mutableStateOf(0)
+    override var saved by mutableStateOf(true)
+        private set
 
     @Transient
     private val jsonFile = root.resolve("eim.json")
@@ -46,9 +49,14 @@ class DefaultProjectInformation(override val root: Path): ProjectInformation, Js
             }
         }
         if (!flag) save()
+
+        EchoInMirror.undoManager.cursorChangeHandlers += { if (saved) saved = false }
     }
 
-    override fun save(file: Path?) { encodeJsonFile(file?.resolve("eim.json") ?: jsonFile, true) }
+    override fun save(file: Path?) {
+        encodeJsonFile(file?.resolve("eim.json") ?: jsonFile, true)
+        saved = true
+    }
 
     override fun toJson() = buildJsonObject {
         putNotDefault("name", name)

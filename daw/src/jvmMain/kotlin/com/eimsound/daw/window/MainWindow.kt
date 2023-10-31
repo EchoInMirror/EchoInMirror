@@ -1,11 +1,8 @@
 package com.eimsound.daw.window
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.Surface
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -13,14 +10,14 @@ import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.*
+import com.eimsound.daw.IS_DEBUG
 import com.eimsound.daw.VERSION
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.window.GlobalException
-import com.eimsound.daw.components.LocalFloatingLayerProvider
-import com.eimsound.daw.components.LocalSnackbarHost
-import com.eimsound.daw.components.LocalSnackbarProvider
+import com.eimsound.daw.components.*
 import com.eimsound.daw.components.app.*
 import com.eimsound.daw.components.dragdrop.LocalGlobalDragAndDrop
 import com.eimsound.daw.components.dragdrop.PlatformDropTargetModifier
@@ -36,6 +33,7 @@ import com.eimsound.daw.utils.isCrossPlatformCtrlPressed
 import com.eimsound.daw.window.panels.playlist.mainPlaylist
 import com.microsoft.appcenter.crashes.Crashes
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.runBlocking
 import org.apache.commons.lang3.SystemUtils
 
 @Composable
@@ -76,15 +74,55 @@ private fun MainWindowContent(window: ComposeWindow) {
     }
 }
 
+private var saveProjectDialogOpen by mutableStateOf(false)
+
+@Composable
+private fun SaveProjectWarningDialog(exit: () -> Unit) {
+    val windowState = rememberDialogState(width = 400.dp, height = 160.dp)
+    if (saveProjectDialogOpen) DialogWindow({
+        saveProjectDialogOpen = false
+    }, windowState, resizable = false, title = "是否保存项目并退出?"
+    ) {
+        Surface(Modifier.fillMaxSize(), tonalElevation = 4.dp) {
+            Column(Modifier.padding(20.dp)) {
+                Text("当前还没有保存项目, 是否需要保存项目并退出?", Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+                Gap(20)
+                Row {
+                    TextButton(exit, colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)) {
+                        Text("不保存")
+                    }
+                    Filled()
+                    TextButton({ saveProjectDialogOpen = false }) {
+                        Text("取消")
+                    }
+                    Gap(4)
+                    Button({
+                        runBlocking {
+                            EchoInMirror.bus?.save()
+                            exit()
+                        }
+                    }) {
+                        Text("保存并退出")
+                    }
+                }
+            }
+        }
+    }
+}
+
 val mainWindowState = WindowState()
 
 private val logger = KotlinLogging.logger("MainWindow")
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun ApplicationScope.MainWindow() {
-    Window({
+    val exitApp = {
         EchoInMirror.windowManager.closeMainWindow(true)
         exitApplication()
+    }
+    Window({
+        if (!IS_DEBUG && EchoInMirror.bus?.project?.saved == false) saveProjectDialogOpen = true
+        else exitApp()
     }, mainWindowState, icon = Logo, title = "Echo In Mirror (v$VERSION)", onKeyEvent = {
         if (it.type != KeyEventType.KeyUp) return@Window false
         var keys = it.key.keyCode.toString()
@@ -109,6 +147,8 @@ fun ApplicationScope.MainWindow() {
             logger.error(it) { "Uncaught compose exception" }
             windowManager.globalException = GlobalException(it, Crashes.trackCrash(it, Thread.currentThread(), null))
         }
+
+        SaveProjectWarningDialog(exitApp)
 
         Box {
             MainWindowContent(window)

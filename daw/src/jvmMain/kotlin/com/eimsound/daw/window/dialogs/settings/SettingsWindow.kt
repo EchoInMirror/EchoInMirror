@@ -9,7 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogWindow
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.components.*
 import java.awt.Dimension
@@ -28,7 +28,7 @@ private fun closeSettingWindow() {
 private val floatingLayerProvider = FloatingLayerProvider()
 
 val SettingsWindow: @Composable () -> Unit = @Composable {
-    Dialog(::closeSettingWindow, title = "设置") {
+    DialogWindow(::closeSettingWindow, title = "设置") {
         window.minimumSize = Dimension(860, 700)
         window.isModal = false
         CompositionLocalProvider(LocalFloatingLayerProvider.provides(floatingLayerProvider)) {

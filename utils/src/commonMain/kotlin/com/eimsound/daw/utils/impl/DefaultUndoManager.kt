@@ -22,6 +22,7 @@ class DefaultUndoManager: UndoManager {
     override val limit = 100
     override var cursor by mutableStateOf(0)
     override val errorHandlers = mutableSetOf<(UndoableActionExecuteException) -> Unit>()
+    override val cursorChangeHandlers = mutableSetOf<() -> Unit>()
 
     private suspend fun tryRun(block: suspend () -> Boolean) = try {
         block()
@@ -34,20 +35,32 @@ class DefaultUndoManager: UndoManager {
 
     override suspend fun undo(steps: Int): Boolean {
         if (steps <= 0) return true
+        var flag = false
         for (i in 0 until steps.coerceAtMost(cursor)) {
-            if (!tryRun(actions[cursor - 1]::undo)) return false
+            if (!tryRun(actions[cursor - 1]::undo)) {
+                if (flag) cursorChangeHandlers.forEach { it() }
+                return false
+            }
             cursor--
+            flag = true
         }
+        if (flag) cursorChangeHandlers.forEach { it() }
         manualState.update()
         return true
     }
 
     override suspend fun redo(steps: Int): Boolean {
         if (steps <= 0) return true
+        var flag = false
         for (i in 0 until steps.coerceAtMost(actions.size - cursor)) {
-            if (!tryRun(actions[cursor]::execute)) return false
+            if (!tryRun(actions[cursor]::execute)) {
+                if (flag) cursorChangeHandlers.forEach { it() }
+                return false
+            }
             cursor++
+            flag = true
         }
+        if (flag) cursorChangeHandlers.forEach { it() }
         manualState.update()
         return true
     }
@@ -62,12 +75,14 @@ class DefaultUndoManager: UndoManager {
             if (merged != null) {
                 if (!tryRun(merged::execute)) return false
                 _actions[cursor - 1] = merged
+                cursorChangeHandlers.forEach { it() }
                 manualState.update()
                 return true
             }
         }
         if (!tryRun(action::execute)) return false
         _actions.add(action)
+        cursorChangeHandlers.forEach { it() }
         if (actions.size > limit) {
             _actions.removeFirst()
         } else {
@@ -79,10 +94,13 @@ class DefaultUndoManager: UndoManager {
 
     override suspend fun reset(): Boolean {
         if (cursor == 0) return true
+        var flag = false
         for (i in 0 until cursor) {
             if (!tryRun(actions[cursor - 1]::undo)) return false
             cursor--
+            flag = true
         }
+        if (flag) cursorChangeHandlers.forEach { it() }
         manualState.update()
         return true
     }

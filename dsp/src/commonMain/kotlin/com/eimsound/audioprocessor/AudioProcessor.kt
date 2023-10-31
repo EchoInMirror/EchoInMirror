@@ -151,6 +151,10 @@ fun IAudioProcessorParameter.doChangeAction(newValue: Float, emitEvent: Boolean 
     @OptIn(ExperimentalEIMApi::class) globalChangeHandler(this, newValue, emitEvent)
 }
 
+enum class AudioProcessorState {
+    Ready, Loading, Failed, Unloaded
+}
+
 interface AudioProcessor: Restorable, AutoCloseable, SuddenChangeListener {
     var name: String
     @Transient
@@ -164,6 +168,7 @@ interface AudioProcessor: Restorable, AutoCloseable, SuddenChangeListener {
     val parameters: List<IAudioProcessorParameter>
     val lastModifiedParameter: IAudioProcessorParameter?
     var isBypassed: Boolean
+    val state: AudioProcessorState
     suspend fun processBlock(buffers: Array<FloatArray>, position: CurrentPosition, midiBuffer: ArrayList<Int>) { }
     fun prepareToPlay(sampleRate: Int, bufferSize: Int) { }
     fun onClick() { }
@@ -179,7 +184,8 @@ interface AudioProcessorEditor : AudioProcessor {
 abstract class AbstractAudioProcessor(
     description: AudioProcessorDescription,
     override val factory: AudioProcessorFactory<*>,
-    private val saveParameters: Boolean = true
+    private val saveParameters: Boolean = true,
+    private val initialState: AudioProcessorState = AudioProcessorState.Ready
 ): AudioProcessor, JsonSerializable {
     override val inputChannelsCount = 2
     override val outputChannelsCount = 2
@@ -195,6 +201,8 @@ abstract class AbstractAudioProcessor(
     private val _listeners = WeakHashMap<AudioProcessorListener, Unit>()
     protected val listeners get() = _listeners.keys
     protected open val storeFileName = "processor.json"
+    override var state by mutableStateOf(initialState)
+        protected set
 
     @Suppress("MemberVisibilityCanBePrivate")
     protected fun JsonObjectBuilder.buildBaseJson() {
@@ -228,12 +236,15 @@ abstract class AbstractAudioProcessor(
     }
     override suspend fun restore(path: Path) {
         fromJsonFile(path.resolve(storeFileName))
+        if (initialState == AudioProcessorState.Ready) state = AudioProcessorState.Ready
     }
 
     override fun addListener(listener: AudioProcessorListener) { _listeners[listener] = Unit }
     override fun removeListener(listener: AudioProcessorListener) { _listeners.remove(listener) }
 
-    override fun close() { }
+    override fun close() {
+        state = AudioProcessorState.Unloaded
+    }
     override fun onSuddenChange() { }
 }
 

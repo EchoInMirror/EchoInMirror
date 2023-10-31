@@ -8,7 +8,7 @@ A open source DAW (Digital Audio Workstation) written in pure Kotlin.
 
 ## Features
 
-- [x] VST/VST3 support
+- [x] VST/VST3/AU plugin support
 - [x] Audio effects
 - [x] ASIO support
 - [x] MIDI edit
@@ -16,7 +16,9 @@ A open source DAW (Digital Audio Workstation) written in pure Kotlin.
 - [ ] Audio recording
 - [ ] Midi input
 - [ ] Plugin api
+- [ ] CLAP and ARA plugin support
 - [ ] Android support
+- [ ] iOS support
 
 ## Requirement
 
