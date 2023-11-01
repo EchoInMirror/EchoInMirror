@@ -2,7 +2,7 @@ import org.jetbrains.compose.ComposeBuildConfig
 
 plugins {
     kotlin("multiplatform")
-    kotlin("plugin.serialization") version "1.9.10"
+    kotlin("plugin.serialization") version "1.9.20"
     id("org.jetbrains.compose")
 }
 
