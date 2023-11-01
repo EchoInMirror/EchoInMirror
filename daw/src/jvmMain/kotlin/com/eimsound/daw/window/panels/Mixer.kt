@@ -199,17 +199,21 @@ private fun MixerProcessorButtons(isLoading: MutableState<Boolean>, list: Mutabl
 }
 
 @Composable
-private fun TrackName(track: Track, trackColor: Color, index: String) {
+private fun TrackName(track: Track, parentTrack: Track?, trackColor: Color, indexStr: String, index: Int) {
     val floatingLayerProvider = LocalFloatingLayerProvider.current
     val trackValue by rememberUpdatedState(track)
+    val parentTrackValue by rememberUpdatedState(parentTrack)
+    val indexValue by rememberUpdatedState(index)
     Row(Modifier.background(trackColor).height(24.dp)
-        .onRightClickOrLongPress { floatingLayerProvider.openTrackMenu(it, trackValue) }
+        .onRightClickOrLongPress {
+            floatingLayerProvider.openTrackMenu(it, trackValue, parentTrackValue?.subTracks, indexValue)
+        }
         .clickableWithIcon { EchoInMirror.selectedTrack = track }
         .padding(vertical = 2.5.dp).zIndex(2f)
     ) {
         val color = trackColor.toOnSurfaceColor()
         Text(
-            index,
+            indexStr,
             Modifier.padding(start = 5.dp, end = 3.dp),
             color = color,
             fontSize = MaterialTheme.typography.labelLarge.fontSize,
@@ -268,18 +272,18 @@ private fun TrackLevels(track: Track) {
 }
 
 @Composable
-private fun SubTracksButton(track: Track, index: String, containerColor: Color, depth: Int) {
+private fun SubTracks(track: Track, index: String, containerColor: Color, depth: Int) {
     if (track.subTracks.isNotEmpty()) Row(Modifier.padding(horizontal = 7.dp)) {
         track.subTracks.forEachIndexed { i, it ->
             key(it) {
-                MixerTrack(it, "$index.${i + 1}", containerColor, depth + 1)
+                MixerTrack(it, track, "$index.${i + 1}", i, containerColor, depth + 1)
             }
         }
     }
 }
 
 @Composable
-private fun TrackCard(track: Track, containerColor: Color, index: String) {
+private fun TrackCard(track: Track, parentTrack: Track?, containerColor: Color, indexStr: String, index: Int) {
     val trackColor = if (track is Bus) MaterialTheme.colorScheme.primary else track.color
     val isSelected = EchoInMirror.selectedTrack == track
     var curModifier = Modifier.width(TRACK_WIDTH)
@@ -288,7 +292,7 @@ private fun TrackCard(track: Track, containerColor: Color, index: String) {
         .background(containerColor, MaterialTheme.shapes.medium)
         .clip(MaterialTheme.shapes.medium)
     ) {
-        TrackName(track, trackColor, index)
+        TrackName(track, parentTrack, trackColor, indexStr, index)
 
         Column(Modifier.padding(4.dp)) {
             PanSlider(track)
@@ -317,15 +321,18 @@ private fun TrackCard(track: Track, containerColor: Color, index: String) {
 }
 
 @Composable
-private fun MixerTrack(track: Track, index: String, containerColor: Color = MaterialTheme.colorScheme.surface,
-                       depth: Int = 0, renderChildren: Boolean = true) {
+private fun MixerTrack(
+    track: Track, parentTrack: Track?, indexStr: String, index: Int,
+    containerColor: Color = MaterialTheme.colorScheme.surface,
+    depth: Int = 0, renderChildren: Boolean = true
+) {
     Row(Modifier.padding(7.dp, 14.dp, 7.dp, 14.dp)
         .shadow(1.dp, MaterialTheme.shapes.medium, clip = false)
         .background(MaterialTheme.colorScheme.surfaceColorAtElevation(((depth + 2) * 2).dp))
         .clip(MaterialTheme.shapes.medium)) {
         Layout({
-            TrackCard(track, containerColor, index)
-            if (renderChildren) SubTracksButton(track, index, containerColor, depth)
+            TrackCard(track, parentTrack, containerColor, indexStr, index)
+            if (renderChildren) SubTracks(track, indexStr, containerColor, depth)
         }) { measurables, constraints ->
             if (measurables.size > 1) {
                 val content = measurables[1].measure(constraints)
@@ -362,10 +369,10 @@ object Mixer: Panel {
                 val bus = EchoInMirror.bus!!
                 val trackColor = if (EchoInMirror.windowManager.isDarkTheme)
                     MaterialTheme.colorScheme.surfaceColorAtElevation(20.dp) else MaterialTheme.colorScheme.surface
-                MixerTrack(bus, "0", trackColor, renderChildren = false)
+                MixerTrack(bus, null, "0", 0, trackColor, renderChildren = false)
                 bus.subTracks.forEachIndexed { i, it ->
                     key(it) {
-                        MixerTrack(it, (i + 1).toString(), trackColor)
+                        MixerTrack(it, bus, (i + 1).toString(), i, trackColor)
                     }
                 }
             }

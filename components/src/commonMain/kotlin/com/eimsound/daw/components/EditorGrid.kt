@@ -55,11 +55,16 @@ fun EditorGrid(
         for (i in (horizontalScrollValue / horizontalDrawWidth).toInt()..
                 ((horizontalScrollValue + size.width) / horizontalDrawWidth).toInt()) {
             val x = i * horizontalDrawWidth - horizontalScrollState.value
-            drawLine(if (i % highlightBarsWidth == 0) {
-                if (i % eightBarsWidth == 0) eightBarsOutlineColor else barsOutlineColor
-            } else
-                if (i % highlightStepsWidth == 0) beatsOutlineColor else stepsOutlineColor, Offset(x, 0F),
-                Offset(x, size.height), 1F)
+            drawLine(
+                if (i % highlightBarsWidth == 0) {
+                    if (i % eightBarsWidth == 0) eightBarsOutlineColor else barsOutlineColor
+                } else {
+                    if (i % highlightStepsWidth == 0) beatsOutlineColor else stepsOutlineColor
+                },
+                Offset(x, 0F),
+                Offset(x, size.height),
+                density / 2
+            )
         }
     }
 }

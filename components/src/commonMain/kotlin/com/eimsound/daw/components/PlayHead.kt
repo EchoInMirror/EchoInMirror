@@ -2,6 +2,7 @@
 
 package com.eimsound.daw.components
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
@@ -75,11 +76,14 @@ fun Timeline(modifier: Modifier = Modifier, noteWidth: MutableState<Dp>, scrollS
         val obj = remember { arrayOf(range) }
         obj[0] = range
 
+        val rangeHandleWidth by animateFloatAsState(if (isInRange) 4F else 2F)
+
         Canvas(Modifier.fillMaxSize().pointerInput(Unit) {
             awaitEachGesture {
                 var event: PointerEvent
                 do {
                     event = awaitPointerEvent(PointerEventPass.Main)
+                    val width = 2 * density
                     val range0 = obj[0]
                     if (range0 != null) when (event.type) {
                         PointerEventType.Enter, PointerEventType.Move -> {
@@ -87,7 +91,7 @@ fun Timeline(modifier: Modifier = Modifier, noteWidth: MutableState<Dp>, scrollS
                             val noteWidthPx = noteWidth.value.toPx()
                             val start = range0.first * noteWidthPx
                             val end = range0.last * noteWidthPx
-                            isInRange = x in (start - 2)..(start + 2) || x in (end - 2)..(end + 2)
+                            isInRange = x in (start - width)..(start + width) || x in (end - width)..(end + width)
                         }
 
                         PointerEventType.Exit -> isInRange = false
@@ -137,8 +141,8 @@ fun Timeline(modifier: Modifier = Modifier, noteWidth: MutableState<Dp>, scrollS
             for (i in startBar..endBar) {
                 val x = i * barWidth - scrollState.value
                 if (x < 0) continue
-                drawLine(outlineColor, Offset(offsetXValue + x, 26f),
-                    Offset(offsetXValue + x, size.height), 1F)
+                drawLine(outlineColor, Offset(offsetXValue + x, 26f * density),
+                    Offset(offsetXValue + x, size.height), density)
                 if (shouldSkipBars && i % 4 != 0) continue
                 val result = textMeasurer.measure(AnnotatedString("${i + 1}", if (i % 4 == 0) boldText else normalText, BOTTOM),
                     maxLines = 1)
@@ -154,7 +158,7 @@ fun Timeline(modifier: Modifier = Modifier, noteWidth: MutableState<Dp>, scrollS
                     Size(range.range * noteWidthPx, size.height))
 
                 // draw two 2px lines in above rect start and end with primaryColor
-                val width = if (isInRange) 4F else 2F
+                val width = rangeHandleWidth * density
                 drawLine(primaryColor, Offset(start, 0F), Offset(start, size.height), width)
                 drawLine(primaryColor, Offset(end, 0F), Offset(end, size.height), width)
             }

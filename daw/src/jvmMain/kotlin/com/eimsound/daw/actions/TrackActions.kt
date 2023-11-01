@@ -17,14 +17,15 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
 class AddOrRemoveTrackAction(track: Track, target: MutableList<Track>,
-                             isDelete: Boolean): ListAddOrRemoveAction<Track>(track, target, isDelete) {
+                             isDelete: Boolean, index: Int): ListAddOrRemoveAction<Track>(track, target, isDelete, index) {
     override val name = if (isDelete) "删除轨道" else "添加轨道"
     override val icon = if (isDelete) Icons.Filled.PlaylistAdd else Icons.Filled.Reorder
 }
 
-fun Track.doAddOrRemoveTrackAction(target: MutableList<Track>, isDelete: Boolean = false) {
-    runBlocking { EchoInMirror.undoManager.execute(AddOrRemoveTrackAction(this@doAddOrRemoveTrackAction,
-        target, isDelete)) }
+fun MutableList<Track>.doAddOrRemoveTrackAction(target: Track, isDelete: Boolean = false, index: Int = -1) {
+    runBlocking {
+        EchoInMirror.undoManager.execute(AddOrRemoveTrackAction(target, this@doAddOrRemoveTrackAction, isDelete, index))
+    }
 }
 
 class ReorderTrackAction(private val target: Track, private val sourceTracks: MutableList<Track>,

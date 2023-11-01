@@ -229,12 +229,12 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
             if (clips.isNotEmpty()) {
                 val clipsDir = path.resolve("clips")
                 if (!Files.exists(clipsDir)) Files.createDirectory(clipsDir)
-                clips.fastForEach {
+                clips.map {
                     launch {
                         @Suppress("TYPE_MISMATCH")
                         it.clip.factory.save(it.clip, clipsDir.resolve(it.clip.id))
                     }
-                }
+                }.joinAll()
             }
 
             if (subTracks.isNotEmpty()) {
@@ -255,13 +255,13 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
 
     private suspend fun storeProcessors(processors: List<TrackAudioProcessorWrapper>, dir: Path) {
         withContext(Dispatchers.IO) {
-            processors.fastForEach {
+            processors.map {
                 launch {
-                    val processDIr = dir.resolve(it.id)
-                    Files.createDirectories(processDIr)
-                    it.store(processDIr)
+                    val processDir = dir.resolve(it.id)
+                    Files.createDirectories(processDir)
+                    it.store(processDir)
                 }
-            }
+            }.joinAll()
         }
     }
 
@@ -270,9 +270,12 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         val processors = hashSetOf<String>()
         preProcessorsChain.fastForEach { processors.add(it.id) }
         postProcessorsChain.fastForEach { processors.add(it.id) }
-        cleanAudioProcessors(processorsDir, processors)
-        cleanAudioProcessors(processorsDir, processors)
-        cleanAudioProcessors(path.resolve("tracks"), subTracks.mapTo(HashSet()) { it.id })
+        if (Files.exists(processorsDir)) {
+            cleanAudioProcessors(processorsDir, processors)
+            cleanAudioProcessors(processorsDir, processors)
+        }
+        val tracksDir = path.resolve("tracks")
+        if (Files.exists(tracksDir)) cleanAudioProcessors(tracksDir, subTracks.mapTo(HashSet()) { it.id })
     }
 
     @OptIn(ExperimentalPathApi::class)
@@ -280,8 +283,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         withContext(Dispatchers.IO) {
             try {
                 launch {
-                    if (Files.exists(dir)) Files.walk(dir).forEach {
-                        if (it == dir) return@forEach
+                    Files.list(dir).forEach {
                         if (it.fileName.toString() !in names) {
                             tryOrNull(trackLogger, "Failed to delete audio processor: $it") {
                                 it.deleteRecursively()

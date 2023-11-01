@@ -210,7 +210,7 @@ internal fun TrackItems(playlist: Playlist) {
             }
             TextButton({
                 runBlocking {
-                    TrackManager.instance.createTrack().doAddOrRemoveTrackAction(EchoInMirror.bus!!.subTracks)
+                    EchoInMirror.bus!!.subTracks.doAddOrRemoveTrackAction(TrackManager.instance.createTrack())
                 }
             }, Modifier.fillMaxWidth()) {
                 Text("创建轨道")
