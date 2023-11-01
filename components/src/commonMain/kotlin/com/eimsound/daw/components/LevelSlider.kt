@@ -14,23 +14,23 @@ val levelSliderRange = 0f..140f
 val levelMarksPercentage = levelMarks.map { it.first / levelSliderRange.endInclusive }
 
 @Composable
-fun VolumeSlider(volume: Volume, modifier: Modifier = Modifier.height(150.dp), isVertical: Boolean = true) {
+fun VolumeSlider(volume: Volume, modifier: Modifier = Modifier.height(150.dp), isVertical: Boolean = true, enabled: Boolean = true) {
     Slider(
         (sqrt(volume.volume) * 100F).let { if (isVertical) levelSliderRange.endInclusive - it else it },
         { volume.volume = ((if (isVertical) levelSliderRange.endInclusive - it else it) / 100F).pow(2) },
+        enabled = enabled,
         tickFractions = levelMarksPercentage,
         valueRange = levelSliderRange,
         useTickFractions = false,
         modifier = modifier,
         isVertical = isVertical,
         onValueReset = { volume.volume = 1F },
-        track = { m, progress, interactionSource, tickFractions, enabled, i ->
+        track = { m, progress, interactionSource, tickFractions, i ->
             DefaultTrack(
                 m,
                 progress,
                 interactionSource,
                 tickFractions,
-                enabled,
                 i,
                 startPoint = if (isVertical) 1f else 0f,
                 stroke = 3.dp

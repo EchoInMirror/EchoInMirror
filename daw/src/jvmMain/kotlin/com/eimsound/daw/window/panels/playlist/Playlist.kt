@@ -33,6 +33,7 @@ import com.eimsound.daw.components.dragdrop.GlobalDropTarget
 import com.eimsound.daw.components.utils.EditAction
 import com.eimsound.daw.dawutils.openMaxValue
 import com.eimsound.daw.utils.*
+import java.util.*
 
 val playListExtensions: MutableList<EditorExtension> = mutableStateListOf()
 
@@ -41,7 +42,7 @@ class Playlist : Panel, MultiSelectableEditor {
     override val direction = PanelDirection.Horizontal
     val selectedClips = mutableStateSetOf<TrackClip<*>>()
     var noteWidth = mutableStateOf(0.2.dp)
-    var trackHeight by mutableStateOf(70.dp)
+    var trackHeight by mutableStateOf(50.dp)
     val verticalScrollState = ScrollState(0)
     val horizontalScrollState = ScrollState(0).apply {
         openMaxValue = (noteWidth.value * EchoInMirror.currentPosition.projectDisplayPPQ).value.toInt()
@@ -57,6 +58,7 @@ class Playlist : Panel, MultiSelectableEditor {
     internal var deltaY by mutableStateOf(0)
     internal var trackHeights = emptyList<TrackToHeight>()
     internal val deletionList = mutableStateSetOf<TrackClip<*>>()
+    internal val trackMovingFlags = WeakHashMap<Track, TrackMoveFlags>()
 
     companion object {
         var copiedClips: List<TrackClip<*>>? = null
@@ -83,7 +85,7 @@ class Playlist : Panel, MultiSelectableEditor {
             EchoInMirror.windowManager.activePanel = this@Playlist
             focusManager.clearFocus(true)
         }) {
-            Surface(Modifier.width(200.dp).fillMaxHeight().zIndex(5f), shadowElevation = 2.dp, tonalElevation = 2.dp) {
+            Surface(Modifier.width(260.dp).fillMaxHeight().zIndex(5f), shadowElevation = 2.dp, tonalElevation = 2.dp) {
                 Column {
                     Surface(shadowElevation = 2.dp, tonalElevation = 4.dp) {
                         Row(Modifier.height(TIMELINE_HEIGHT).fillMaxWidth().padding(horizontal = 10.dp),

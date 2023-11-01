@@ -9,18 +9,23 @@ import androidx.compose.foundation.gestures.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.VolumeOff
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.eimsound.daw.actions.doAddOrRemoveTrackAction
@@ -28,24 +33,25 @@ import com.eimsound.daw.actions.doReorderAction
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.api.processor.TrackManager
-import com.eimsound.daw.components.*
+import com.eimsound.daw.components.LocalFloatingLayerProvider
+import com.eimsound.daw.components.IconButton
+import com.eimsound.daw.components.VolumeSlider
 import com.eimsound.daw.components.icons.Crown
-import com.eimsound.daw.components.icons.DebugStepOver
+import com.eimsound.daw.components.menus.openTrackMenu
 import com.eimsound.daw.components.utils.clickableWithIcon
+import com.eimsound.daw.components.utils.onRightClickOrLongPress
+import com.eimsound.daw.components.utils.toOnSurfaceColor
+import com.eimsound.daw.components.utils.warning
 import com.eimsound.daw.utils.binarySearch
 import com.eimsound.daw.window.dialogs.openColorPicker
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.util.*
 
-private val TRACK_ITEM_ICON_SIZE = Modifier.size(16.dp)
-private val TRACK_COLOR_WIDTH = 8.dp
-
-private class TrackMoveFlags(val parent: Track) {
+internal class TrackMoveFlags(val parent: Track) {
     var isAbove by mutableStateOf(false)
     var isChild by mutableStateOf(false)
 }
-private val trackMovingFlags = WeakHashMap<Track, TrackMoveFlags>()
 internal data class TrackToHeight(val track: Track, val height: Float)
 private fun getTrackHeights(list: ArrayList<TrackToHeight>, track: Track, defaultHeight: Float, density: Float) {
     list.add(TrackToHeight(track, density + (list.lastOrNull()?.height ?: 0F) +
@@ -112,21 +118,102 @@ private suspend fun AwaitPointerEventScope.handleDrag(playlist: Playlist, track:
     }
 }
 
+@Composable
+private fun TrackLevel(track: Track) {
+    val primaryColor = MaterialTheme.colorScheme.primary
+    Canvas(Modifier.fillMaxHeight().width(5.dp).graphicsLayer {  }) {
+        val y = size.height * (1F - track.levelMeter.maxLevel.toPercentage())
+        drawRect(primaryColor, Offset(0F, y), Size(size.width, size.height - y))
+        // drawLine(outlineColor, Offset(size.width / 2, y), Offset(size.width / 2, size.height), 0.5F)
+        // drawLine(outlineColor, Offset.Zero, Offset(0F, size.height), 0.5F)
+    }
+}
+
+private val TRACK_ITEM_INDEX_WIDTH = 20.dp
+
+@Composable
+private fun SubTracks(track: Track, playlist: Playlist, depth: Int) {
+    if (!track.collapsed && track.subTracks.isNotEmpty()) track.subTracks.forEachIndexed { i, it -> key(it.id) {
+        Divider(Modifier.offset(TRACK_ITEM_INDEX_WIDTH * (depth + 1)))
+        TrackItem(playlist, it, track, i, depth + 1)
+    } }
+}
+
+@Composable
+private fun TrackIndex(track: Track, parentTrack: Track, index: Int) {
+    val color = track.color
+    val localFloatingLayerProvider = LocalFloatingLayerProvider.current
+
+    Box(Modifier.fillMaxHeight().width(TRACK_ITEM_INDEX_WIDTH).background(color)
+        .onRightClickOrLongPress {
+            localFloatingLayerProvider.openTrackMenu(it, track, parentTrack.subTracks, index)
+        }
+        .clickableWithIcon {
+            localFloatingLayerProvider.openColorPicker(color) { track.color = it }
+        }
+    ) {
+        Text((index + 1).toString(),
+            Modifier.align(Alignment.Center),
+            color.toOnSurfaceColor(),
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1
+        )
+    }
+}
+
+@Composable
+private fun TrackItemControllers(track: Track) {
+    Row(Modifier.fillMaxWidth().offset((-4).dp), verticalAlignment = Alignment.CenterVertically) {
+        IconButton({ track.isSolo = !track.isSolo }, 24.dp) {
+            Icon(
+                Crown,
+                null, Modifier.size(18.dp),
+                if (track.isSolo) MaterialTheme.colorScheme.warning else MaterialTheme.colorScheme.primary.copy(0.5F)
+            )
+        }
+        IconButton({ track.isBypassed = !track.isBypassed }, 24.dp) {
+            Icon(
+                if (track.isBypassed) Icons.Filled.VolumeOff else Icons.Filled.VolumeUp,
+                null, Modifier.size(18.dp),
+                if (track.isBypassed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+            )
+        }
+        VolumeSlider(track, Modifier.weight(1F), false, !track.isBypassed)
+    }
+}
+
+@Composable
+private fun RowScope.TrackCollapsedButton(track: Track) {
+    IconButton({
+        track.collapsed = !track.collapsed
+    }, 28.dp, Modifier.align(Alignment.CenterVertically).offset((-4).dp), track.subTracks.isNotEmpty()) {
+        val deg by animateFloatAsState(if (track.collapsed) 0F else 180F)
+        if (track.subTracks.isNotEmpty()) Icon(
+            Icons.Filled.ExpandLess, null,
+            Modifier.rotate(deg),
+            MaterialTheme.colorScheme.primary.copy(0.4F)
+        )
+    }
+}
+
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun TrackItem(playlist: Playlist, track: Track, parentTrack: Track, index: Int, depth: Int = 0) {
     val isDragging = remember { mutableStateOf(false) }
     val primaryColor = MaterialTheme.colorScheme.primary
-    val flags = trackMovingFlags[track]
+    val flags = playlist.trackMovingFlags[track]
     val alpha by animateFloatAsState(flags?.let { if (it.isAbove || it.isChild) 0.4F else 0F } ?: 0F)
+    val color = track.color
+
     playlist.apply {
-        Row(Modifier.height(trackHeight).padding(start = TRACK_COLOR_WIDTH * depth)
-            .background(track.color.copy(animateFloatAsState(if (EchoInMirror.selectedTrack == track) 0.1F else 0F).value))
+        Row(Modifier.height(trackHeight).padding(start = TRACK_ITEM_INDEX_WIDTH * depth)
+            .background(color.copy(animateFloatAsState(if (EchoInMirror.selectedTrack == track) 0.1F else 0F).value))
             .onPointerEvent(PointerEventType.Press) { EchoInMirror.selectedTrack = track }
             .drawWithContent {
                 drawContent()
                 if (flags == null || !(flags.isChild || flags.isAbove)) return@drawWithContent
-                val left = TRACK_COLOR_WIDTH.toPx()
+                val left = TRACK_ITEM_INDEX_WIDTH.toPx()
                 if (flags.isChild) drawRect(
                     primaryColor,
                     Offset(left, 0F),
@@ -146,47 +233,24 @@ private fun TrackItem(playlist: Playlist, track: Track, parentTrack: Track, inde
             }
             .alpha(animateFloatAsState(if (isDragging.value) 0.3F else 1F).value)
         ) {
-            val localFloatingLayerProvider = LocalFloatingLayerProvider.current
-            Spacer(Modifier.fillMaxHeight().width(8.dp).background(track.color).clickableWithIcon {
-                localFloatingLayerProvider.openColorPicker(track.color) { track.color = it }
-            })
-            Row(Modifier.weight(1F).padding(8.dp, 4.dp)) {
-                Text(index.toString(),
-                    Modifier.width(20.dp),
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1
+            TrackIndex(track, parentTrack, index)
+            Column(Modifier.weight(1F).fillMaxHeight().padding(8.dp, 5.dp, 2.dp, 5.dp), Arrangement.SpaceBetween) {
+                Text(
+                    track.name,
+                    color = if (track.isBypassed) LocalContentColor.current.copy(alpha = 0.5F) else LocalContentColor.current,
+                    style = MaterialTheme.typography.labelLarge,
+                    overflow = TextOverflow.Ellipsis, maxLines = 1,
+                    textDecoration = if (track.isBypassed) TextDecoration.LineThrough else null
                 )
-                Column(Modifier.fillMaxHeight(), Arrangement.SpaceBetween) {
-                    Text(track.name, style = MaterialTheme.typography.labelLarge, overflow = TextOverflow.Ellipsis, maxLines = 1)
-                    if (trackHeight.value > 54) SegmentedButtons {
-                        SegmentedButton({ track.isBypassed = !track.isBypassed }, track.isBypassed, false) {
-                            Icon(if (track.isBypassed) Icons.Filled.VolumeOff else Icons.Filled.VolumeUp, null, TRACK_ITEM_ICON_SIZE)
-                        }
-                        SegmentedDivider()
-                        SegmentedButton({ track.isSolo = !track.isSolo }, track.isSolo, false) {
-                            Icon(Crown, null, TRACK_ITEM_ICON_SIZE)
-                        }
-                        SegmentedDivider()
-                        SegmentedButton({ track.isDisabled = !track.isDisabled }, track.isDisabled, false) {
-                            Icon(DebugStepOver, null, TRACK_ITEM_ICON_SIZE)
-                        }
-                    }
-                    if (trackHeight.value > 40) VolumeSlider(track, Modifier.fillMaxWidth().offset((-4).dp), false)
-                }
+
+                if (trackHeight.value > 40) TrackItemControllers(track)
             }
 
-            Canvas(Modifier.fillMaxHeight().width(5.dp)) {
-                val y = size.height * (1F - track.levelMeter.maxLevel.toPercentage())
-                drawRect(primaryColor, Offset(0F, y), Size(size.width, size.height - y))
-                // drawLine(outlineColor, Offset(size.width / 2, y), Offset(size.width / 2, size.height), 0.5F)
-                // drawLine(outlineColor, Offset.Zero, Offset(0F, size.height), 0.5F)
-            }
+            TrackCollapsedButton(track)
+            TrackLevel(track)
         }
-        track.subTracks.forEachIndexed { i, it -> key(it.id) {
-            Divider(Modifier.offset(8.dp * (depth + 1)))
-            TrackItem(playlist, it, track, i + 1, depth + 1)
-        } }
+
+        SubTracks(track, playlist, depth)
     }
 }
 
@@ -204,7 +268,7 @@ internal fun TrackItems(playlist: Playlist) {
             val bus = EchoInMirror.bus!!
             bus.subTracks.forEachIndexed { i, it ->
                 key(it.id) {
-                    TrackItem(playlist, it, bus, i + 1)
+                    TrackItem(playlist, it, bus, i)
                     Divider()
                 }
             }

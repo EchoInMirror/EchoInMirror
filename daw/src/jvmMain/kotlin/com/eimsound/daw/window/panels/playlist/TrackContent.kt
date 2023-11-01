@@ -20,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.*
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
@@ -214,13 +215,14 @@ private fun Playlist.ClipItem(density: Density, it: TrackClip<*>, track: Track, 
                     }
                 ) {
                     if (!deletionList.contains(it)) {
-                        val trackColor = (if (isSelected && action0 == EditAction.MOVE && trackHeights.isNotEmpty())
+                        val curTrack = if (isSelected && action0 == EditAction.MOVE && trackHeights.isNotEmpty())
                             trackHeights[(deltaY + index).coerceAtMost(trackHeights.size - 1)].track
-                        else track).color
+                            else track
+                        val trackColor = curTrack.color
                         Column(
                             Modifier
                                 .fillMaxSize()
-                                .background(trackColor.copy(0.7F), MaterialTheme.shapes.extraSmall)
+                                .background(trackColor.copy(if (curTrack.isBypassed) 0.4F else 0.7F), MaterialTheme.shapes.extraSmall)
                                 .run {
                                     if (isSelected) border(
                                         2.dp, MaterialTheme.colorScheme.primary,
@@ -235,9 +237,12 @@ private fun Playlist.ClipItem(density: Density, it: TrackClip<*>, track: Track, 
                             if (trackHeight > 40.dp) {
                                 Text(
                                     it.clip.name.ifEmpty { track.name },
-                                    Modifier.fillMaxWidth().background(trackColor).padding(horizontal = 4.dp),
+                                    Modifier.fillMaxWidth()
+                                        .background(if (curTrack.isBypassed) trackColor.copy(0.5F) else trackColor)
+                                        .padding(horizontal = 4.dp),
                                     contentColor, style = MaterialTheme.typography.labelMedium,
-                                    maxLines = 1, overflow = TextOverflow.Ellipsis
+                                    maxLines = 1, overflow = TextOverflow.Ellipsis,
+                                    textDecoration = if (curTrack.isBypassed) TextDecoration.LineThrough else null
                                 )
                             }
                             @Suppress("TYPE_MISMATCH")
@@ -256,6 +261,16 @@ private fun Playlist.ClipItem(density: Density, it: TrackClip<*>, track: Track, 
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun Playlist.TrackItems(track: Track, density: Density, index: Int) {
+    track.clips.read()
+    track.clips.fastForEach {
+        key(it) {
+            ClipItem(density, it, track, index)
         }
     }
 }
@@ -285,17 +300,12 @@ internal fun TrackContent(playlist: Playlist, track: Track, index: Int, density:
                     }
                 }
             })
-            track.clips.read()
-            track.clips.fastForEach {
-                key(it) {
-                    ClipItem(density, it, track, index)
-                }
-            }
+            TrackItems(track, density, index)
         }
     }
     Divider()
     var i = index + 1
-    track.subTracks.forEach { i += TrackContent(playlist, it, i, density) }
+    if (!track.collapsed) track.subTracks.forEach { i += TrackContent(playlist, it, i, density) }
     return i - index
 }
 

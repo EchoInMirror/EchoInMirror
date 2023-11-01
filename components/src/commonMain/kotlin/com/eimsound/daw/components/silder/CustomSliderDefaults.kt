@@ -30,7 +30,6 @@ fun DefaultTrack(
     progress: Float,
     @Suppress("UNUSED_PARAMETER") interactionSource: MutableInteractionSource,
     tickFractions: List<Float>,
-    enabled: Boolean,
     isVertical: Boolean = false,
     colorProgress: Color = MaterialTheme.colorScheme.primary,
     colorTrack: Color = colorProgress.copy(alpha = 0.3f),
@@ -67,8 +66,7 @@ fun DefaultTrack(
                     sliderLeft,
                     sliderRight,
                     stroke0,
-                    StrokeCap.Round,
-                    alpha = if (enabled) 1f else ALPHA_WHEN_DISABLED
+                    StrokeCap.Round
                 )
 
                 drawLine(
@@ -76,14 +74,13 @@ fun DefaultTrack(
                     sliderValueStart,
                     sliderValueEnd,
                     stroke0,
-                    StrokeCap.Round,
-                    alpha = if (enabled) 1f else ALPHA_WHEN_DISABLED
+                    StrokeCap.Round
                 )
 
                 if (afterFractions.isNotEmpty()) drawPoints(afterFractions, PointMode.Points, colorTickTrack,
-                    stroke0, StrokeCap.Round, alpha = if (enabled) 1f else ALPHA_WHEN_DISABLED)
+                    stroke0, StrokeCap.Round)
                 if (beforeFractions.isNotEmpty()) drawPoints(beforeFractions, PointMode.Points, colorTickProgress,
-                    stroke0, StrokeCap.Round, alpha = if (enabled) 1f else ALPHA_WHEN_DISABLED)
+                    stroke0, StrokeCap.Round)
             }
         }
     )
@@ -118,7 +115,6 @@ fun MutableInteractionSource.ListenOnPressed(onPressChange: (Boolean) -> Unit) {
 fun DefaultThumb(
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource,
-    enabled: Boolean,
     color: Color = MaterialTheme.colorScheme.primary,
     scaleOnPress: Float = 1.3f,
     animationSpec: AnimationSpec<Float> = SpringSpec(0.3f)
@@ -137,13 +133,9 @@ fun DefaultThumb(
 
     Spacer(modifier
         .graphicsLayer(scaleX = scale, scaleY = scale)
-        .background(
-            if (enabled) color else
-                color.copy(alpha = ALPHA_WHEN_DISABLED), CircleShape
-        )
+        .background(color, CircleShape)
     )
 }
 
 
 internal val DEFAULT_THUMB_SIZE = DpSize(14.dp, 14.dp)
-private const val ALPHA_WHEN_DISABLED = 0.6f

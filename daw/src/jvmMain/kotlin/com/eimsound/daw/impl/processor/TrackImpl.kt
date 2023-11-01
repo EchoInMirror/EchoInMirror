@@ -41,6 +41,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
     override var name by mutableStateOf("NewTrack")
     override var color by mutableStateOf(randomColor(true))
     override var height by mutableStateOf(0)
+    override var collapsed by mutableStateOf(false)
 
     override val levelMeter = LevelMeterImpl()
 
@@ -59,7 +60,6 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
     override var isRendering by mutableStateOf(false)
     override var isBypassed by observableMutableStateOf(false, ::stateChange)
     override var isSolo by observableMutableStateOf(false, ::stateChange)
-    override var isDisabled by observableMutableStateOf(false, ::stateChange)
 
     private val panParameter = audioProcessorParameterOf("pan", "声相", PAN_RANGE, 0F)
     private val volumeParameter = audioProcessorParameterOf("volume", "电平", VOLUME_RANGE, 1F)
@@ -76,7 +76,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         position: CurrentPosition,
         midiBuffer: ArrayList<Int>
     ) = withContext(Dispatchers.Default) {
-        if (isBypassed || isDisabled) return@withContext
+        if (isBypassed) return@withContext
         if (pendingMidiBuffer.isNotEmpty()) {
             midiBuffer.addAll(pendingMidiBuffer)
             pendingMidiBuffer.clear()
@@ -112,7 +112,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
             tempBuffer[1].fill(0F)
             val bus = EchoInMirror.bus
             subTracks.mapNotNull {
-                if (it.isBypassed || it.isDisabled || it.isRendering) return@mapNotNull null
+                if (it.isBypassed || it.isRendering) return@mapNotNull null
                 launch {
                     val buffer = if (it is TrackImpl) it.tempBuffer2.apply {
                         this[0].fill(0F)
@@ -213,7 +213,6 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         putNotDefault("height", height)
         putNotDefault("isBypassed", isBypassed)
         putNotDefault("isSolo", isSolo)
-        putNotDefault("isDisabled", isDisabled)
         putNotDefault("subTracks", subTracks.map { it.id })
         putNotDefault("preProcessorsChain", preProcessorsChain.map { it.id })
         putNotDefault("postProcessorsChain", postProcessorsChain.map { it.id })
@@ -305,7 +304,6 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         json["height"]?.asInt()?.let { height = it }
         json["isBypassed"]?.asBoolean()?.let { isBypassed = it }
         json["isSolo"]?.asBoolean()?.let { isSolo = it }
-        json["isDisabled"]?.asBoolean()?.let { isDisabled = it }
     }
 
     override suspend fun restore(path: Path) {

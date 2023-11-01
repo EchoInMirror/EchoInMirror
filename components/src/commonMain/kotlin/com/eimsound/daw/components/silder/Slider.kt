@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.semantics
@@ -20,6 +21,8 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.abs
+
+private const val ALPHA_WHEN_DISABLED = 0.6f
 
 /**
  * Horizontal slider that allows to specify custom track and thumb
@@ -67,15 +70,13 @@ fun Slider(
         fraction: Float,
         interactionSource: MutableInteractionSource,
         tickFractions: List<Float>,
-        enabled: Boolean,
         isVertical: Boolean
-    ) -> Unit = { p1, p2, p3, p4, p5, p6 -> DefaultTrack(p1, p2, p3, p4, p5, p6) },
+    ) -> Unit = { p1, p2, p3, p4, p5 -> DefaultTrack(p1, p2, p3, p4, p5) },
 
     thumb: @Composable (
         modifier: Modifier,
-        interactionSource: MutableInteractionSource,
-        enabled: Boolean
-    ) -> Unit = { p1, p2, p3 -> DefaultThumb(p1, p2, p3) }
+        interactionSource: MutableInteractionSource
+    ) -> Unit = { p1, p2 -> DefaultThumb(p1, p2) }
 ) {
     require(steps >= 0) { "steps should be >= 0" }
 
@@ -100,7 +101,10 @@ fun Slider(
             .sliderSemantics(value, tickFractions, enabled, onValueChange, valueRange, steps)
             //interactionSource - MutableInteractionSource that will be used to emit FocusInteraction.
             // Focus when this element is being focused.
-            .focusable(enabled, interactionSource),
+            .focusable(enabled, interactionSource)
+            .let {
+                 if (enabled) it else it.alpha(ALPHA_WHEN_DISABLED)
+            },
 
         contentAlignment = if (isVertical) Alignment.TopCenter else Alignment.CenterStart
 
@@ -178,7 +182,6 @@ fun Slider(
             fraction,
             interactionSource,
             tickFractions,
-            enabled,
             isVertical
         )
 
@@ -204,8 +207,7 @@ fun Slider(
             thumb(
                 (if (isVertical) Modifier.padding(top = offset) else Modifier.padding(start = offset))
                     .size(thumbSize).hoverable(interactionSource = interactionSource),
-                interactionSource,
-                enabled
+                interactionSource
             )
         }
     }

@@ -225,7 +225,7 @@ private fun EventHints(editor: DefaultMidiClipEditor) {
                     Offset(size.width - 14 - result.size.width, (lineSize * i - result.size.height / 2)
                         .coerceAtMost(size.height - result.size.height)))
             }
-            val result = measurer.measure(AnnotatedString(if (isInteger) last.toString() else "$last.00"), style)
+            val result = measurer.measure(AnnotatedString(if (isInteger) last.roundToInt().toString() else "$last.00"), style)
             drawText(result, lineColor, Offset(size.width - 14 - result.size.width, 0F))
         }
     }
