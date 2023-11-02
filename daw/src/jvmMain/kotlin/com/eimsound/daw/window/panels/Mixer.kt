@@ -1,9 +1,11 @@
 package com.eimsound.daw.window.panels
 
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Piano
@@ -328,8 +330,9 @@ private fun MixerTrack(
 ) {
     Row(Modifier.padding(7.dp, 14.dp, 7.dp, 14.dp)
         .shadow(1.dp, MaterialTheme.shapes.medium, clip = false)
+        .clip(MaterialTheme.shapes.medium)
         .background(MaterialTheme.colorScheme.surfaceColorAtElevation(((depth + 2) * 2).dp))
-        .clip(MaterialTheme.shapes.medium)) {
+    ) {
         Layout({
             TrackCard(track, parentTrack, containerColor, indexStr, index)
             if (renderChildren) SubTracks(track, indexStr, containerColor, depth)
@@ -364,18 +367,25 @@ object Mixer: Panel {
 
     @Composable
     override fun Content() {
-        Scrollable {
-            Row {
-                val bus = EchoInMirror.bus!!
-                val trackColor = if (EchoInMirror.windowManager.isDarkTheme)
-                    MaterialTheme.colorScheme.surfaceColorAtElevation(20.dp) else MaterialTheme.colorScheme.surface
-                MixerTrack(bus, null, "0", 0, trackColor, renderChildren = false)
-                bus.subTracks.forEachIndexed { i, it ->
-                    key(it) {
+        Box {
+            val bus = EchoInMirror.bus!!
+            val trackColor = if (EchoInMirror.windowManager.isDarkTheme)
+                MaterialTheme.colorScheme.surfaceColorAtElevation(20.dp) else MaterialTheme.colorScheme.surface
+            val scrollState = rememberLazyListState()
+            Scrollable(horizontal = false) {
+                LazyRow(state = scrollState) {
+                    item {
+                        MixerTrack(bus, null, "0", 0, trackColor, renderChildren = false)
+                    }
+                    itemsIndexed(bus.subTracks, { _, it -> it }) { i, it ->
                         MixerTrack(it, bus, (i + 1).toString(), i, trackColor)
                     }
                 }
             }
+            HorizontalScrollbar(
+                rememberScrollbarAdapter(scrollState),
+                Modifier.align(Alignment.BottomStart).fillMaxWidth()
+            )
         }
     }
 }

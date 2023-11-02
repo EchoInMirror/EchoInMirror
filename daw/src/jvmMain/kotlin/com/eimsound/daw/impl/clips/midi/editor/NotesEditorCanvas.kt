@@ -258,7 +258,7 @@ internal fun NotesEditorCanvas(editor: DefaultMidiClipEditor) {
                         }
                         if (size.height <= 0 || size.width <= 0) return@forEach
                         drawRoundRect(trackColor.saturate(it.colorSaturation), offset, size, borderCornerRadius2PX)
-                        drawRoundRect(primaryColor, offset, size, borderCornerRadius2PX, Stroke(1.5f * density))
+                        drawRoundRect(primaryColor, offset, size, borderCornerRadius2PX, Stroke(2f * density))
                         if (shouldDrawNoteName && size.width > MIN_NOTE_WIDTH_WITH_KEY_NAME) {
                             drawText(it.getLayoutResult(offsetNote), keyNameTextColor, Offset(offset.x + 3 * density, y))
                         }

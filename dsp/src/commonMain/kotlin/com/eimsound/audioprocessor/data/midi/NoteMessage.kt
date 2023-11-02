@@ -2,21 +2,16 @@ package com.eimsound.audioprocessor.data.midi
 
 import androidx.compose.runtime.mutableStateOf
 import com.eimsound.daw.utils.IManualState
+import com.eimsound.daw.utils.JsonSerializable
 import com.eimsound.daw.utils.mapValue
-import kotlinx.serialization.*
-import kotlinx.serialization.builtins.ListSerializer
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
-import kotlinx.serialization.json.JsonDecoder
-import kotlinx.serialization.json.jsonArray
+import com.eimsound.daw.utils.putNotDefault
+import kotlinx.serialization.json.*
 
 /**
  * Consider make this class open.
  * @see [DefaultNoteMessage]
  */
-@Serializable
-sealed interface NoteMessage {
+interface NoteMessage : JsonSerializable {
     var note: Int
     var velocity: Int
     var time: Int
@@ -29,31 +24,58 @@ sealed interface NoteMessage {
 
 val NoteMessage.colorSaturation get() = 0.4F + 0.6F * if (disabled) 0F else mapValue(velocity, 0, 127)
 
-@Serializable
-data class SerializableNoteMessages(val ppq: Int, val notes: Collection<NoteMessage>) {
-    @OptIn(ExperimentalSerializationApi::class)
-    @Suppress("unused")
-    @EncodeDefault
-    val className = "NoteMessages"
+class SerializableNoteMessages(var ppq: Int = 96, notes: List<NoteMessage>? = null) : JsonSerializable {
+    private val notesP = arrayListOf<NoteMessage>().apply { if (notes != null) addAll(notes) }
+    val notes: List<NoteMessage> = notesP
+
+    override fun toJson() = buildJsonObject {
+        put("ppq", ppq)
+        putNotDefault("notes", notes)
+    }
+
+    override fun fromJson(json: JsonElement) {
+        json as JsonObject
+        ppq = json["ppq"]!!.jsonPrimitive.int
+        notesP.clear()
+        json["notes"]?.jsonArray?.forEach { notesP.add(DefaultNoteMessage().apply { fromJson(it) }) }
+    }
 }
 
 fun defaultNoteMessage(note: Int, time: Int, duration: Int = 0, velocity: Int = 70, disabled: Boolean = false) =
     DefaultNoteMessage(note, time, duration, velocity, disabled)
 
-@Serializable
 open class DefaultNoteMessage(
-    @Transient private val initNote: Int = 0, override var time: Int,
-    @Transient private val initDuration: Int = 0, override var velocity: Int = 70,
+    initNote: Int = 0, override var time: Int = 0,
+    initDuration: Int = 0, override var velocity: Int = 70,
     override var disabled: Boolean = false,
 ): NoteMessage {
     override var note = initNote.coerceIn(0, 127)
         set(value) { field = value.coerceIn(0, 127) }
     override var duration = initDuration.coerceAtLeast(0)
         set(value) { field = value.coerceAtLeast(0) }
-    override var extraData: MutableMap<String, @Contextual Any>? = null
+    override var extraData: MutableMap<String, Any>? = null
 
     override fun copy(note: Int, velocity: Int, time: Int, duration: Int, disabled: Boolean) =
         DefaultNoteMessage(note, time, duration, velocity, disabled)
+
+    override fun toJson() = buildJsonObject {
+        put("note", note)
+        put("time", time)
+        put("duration", duration)
+        put("velocity", velocity)
+        putNotDefault("disabled", disabled)
+        if (extraData != null) putNotDefault("extraData", Json.encodeToJsonElement(extraData!!))
+    }
+
+    override fun fromJson(json: JsonElement) {
+        json as JsonObject
+        note = json["note"]!!.jsonPrimitive.int
+        time = json["time"]!!.jsonPrimitive.int
+        duration = json["duration"]!!.jsonPrimitive.int
+        velocity = json["velocity"]!!.jsonPrimitive.int
+        disabled = json["disabled"]?.jsonPrimitive?.boolean ?: false
+        extraData = json["extraData"]?.jsonObject?.let { Json.decodeFromJsonElement(it) }
+    }
 
     override fun toString(): String {
         return "DefaultNoteMessage(note=$note, time=$time, duration=$duration, velocity=$velocity, disabled=$disabled)"
@@ -67,12 +89,10 @@ fun NoteMessage.toNoteOffEvent(channel: Int = 0) = noteOff(channel, note)
 fun NoteMessage.toNoteOnRawData(channel: Int = 0) = 0x90 or channel or (note shl 8) or (velocity shl 16)
 fun NoteMessage.toNoteOffRawData(channel: Int = 0) = 0x80 or (70 shl 16) or channel or (note shl 8)
 
-@Serializable(NoteMessageListSerializer::class)
 interface NoteMessageList : MutableList<NoteMessage>, IManualState {
     fun sort()
 }
 
-@Serializable
 open class DefaultNoteMessageList : NoteMessageList, ArrayList<NoteMessage>() {
     @Transient
     private var modification = mutableStateOf(0)
@@ -83,21 +103,4 @@ open class DefaultNoteMessageList : NoteMessageList, ArrayList<NoteMessage>() {
     }
     override fun update() { modification.value++ }
     override fun read() { modification.value }
-}
-
-object NoteMessageListSerializer : KSerializer<NoteMessageList> {
-    private val serializer = NoteMessage.serializer()
-    private val listSerializer = ListSerializer(serializer)
-    override val descriptor: SerialDescriptor = listSerializer.descriptor
-
-    override fun serialize(encoder: Encoder, value: NoteMessageList) {
-        listSerializer.serialize(encoder, value)
-    }
-
-    override fun deserialize(decoder: Decoder) = DefaultNoteMessageList().apply {
-        val v = decoder.decodeSerializableValue(listSerializer)
-        addAll(if (decoder is JsonDecoder) {
-            decoder.decodeJsonElement().jsonArray.map { decoder.json.decodeFromJsonElement(serializer, it) }
-        } else v)
-    }
 }

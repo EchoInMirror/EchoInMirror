@@ -47,7 +47,7 @@ class MidiClipImpl(json: JsonObject?, factory: ClipFactory<MidiClip>) : Abstract
     override fun toJson() = buildJsonObject {
         put("id", id)
         put("factory", factory.name)
-        putNotDefault("notes", Json.encodeToJsonElement<List<NoteMessage>>(notes))
+        putNotDefault("notes", notes)
         putNotDefault("events", Json.encodeToJsonElement<MidiCCEvents>(events))
     }
 
@@ -57,7 +57,7 @@ class MidiClipImpl(json: JsonObject?, factory: ClipFactory<MidiClip>) : Abstract
         events.clear()
         json as JsonObject
         json["notes"]?.let {
-            notes.addAll(Json.decodeFromJsonElement<List<NoteMessage>>(it))
+            it.jsonArray.fastForEach { notes.add(DefaultNoteMessage().apply { fromJson(it) }) }
             notes.update()
         }
         json["events"]?.let {

@@ -141,7 +141,7 @@ class DefaultMidiClipEditor(override val clip: TrackClip<MidiClip>, override val
         val editor = selectedEvent
         return if (isEventPanelActive && editor is SerializableEditor) editor.copyAsString()
         else if (selectedNotes.isEmpty()) "" else JsonIgnoreDefaults.encodeToString(
-            SerializableNoteMessages(EchoInMirror.currentPosition.ppq, copyAsObject().toSet())
+            SerializableNoteMessages(EchoInMirror.currentPosition.ppq, copyAsObject())
         )
     }
 
@@ -181,7 +181,7 @@ class DefaultMidiClipEditor(override val clip: TrackClip<MidiClip>, override val
         }
         if (!value.contains("NoteMessages")) return
         try {
-            val data = Json.decodeFromString<SerializableNoteMessages>(value)
+            val data = SerializableNoteMessages().apply { fromJson(Json.parseToJsonElement(value)) }
             val scale = EchoInMirror.currentPosition.ppq.toDouble() / data.ppq
             data.notes.forEach {
                 it.time = (it.time * scale).roundToInt()
