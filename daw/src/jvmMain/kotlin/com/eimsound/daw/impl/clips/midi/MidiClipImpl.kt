@@ -3,20 +3,19 @@ package com.eimsound.daw.impl.clips.midi
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateMapOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.util.fastForEach
 import com.eimsound.audioprocessor.CurrentPosition
 import com.eimsound.audioprocessor.convertPPQToSamples
 import com.eimsound.audioprocessor.convertSamplesToPPQ
 import com.eimsound.audioprocessor.data.DefaultEnvelopePointList
 import com.eimsound.audioprocessor.data.EnvelopePoint
+import com.eimsound.audioprocessor.data.EnvelopePointList
 import com.eimsound.audioprocessor.data.MIDI_CC_RANGE
 import com.eimsound.audioprocessor.data.midi.*
 import com.eimsound.daw.api.*
@@ -141,29 +140,11 @@ class MidiClipFactoryImpl : MidiClipFactory {
     override fun PlaylistContent(clip: TrackClip<MidiClip>, track: Track, contentColor: Color,
                                  noteWidth: MutableState<Dp>, startPPQ: Float, widthPPQ: Float) {
         Box {
-            clip.clip.notes.read()
-            Canvas(Modifier.fillMaxSize().graphicsLayer { }) {
-                val noteWidthPx = noteWidth.value.toPx()
-                val trackHeightPx = size.height
-                val height = (trackHeightPx / 128).coerceAtLeast(1F)
-                val startId = clip.clip.notes.binarySearch { it.time <= startPPQ }
-                val endTime = startPPQ + widthPPQ
-                for (i in startId..clip.clip.notes.lastIndex) {
-                    val note = clip.clip.notes[i]
-                    if (note.time > endTime) break
-                    val y = trackHeightPx - trackHeightPx / 128 * note.note
-                    drawLine(
-                        contentColor, Offset(noteWidthPx * (note.time - startPPQ), y),
-                        Offset(noteWidthPx * (note.time + note.duration - startPPQ), y),
-                        height
-                    )
-                }
-            }
+            MidiClipContents(clip, noteWidth, startPPQ, widthPPQ, contentColor)
             clip.clip.events.forEach { (_, points) ->
-                points.read()
-                remember(points) {
-                    EnvelopeEditor(points, MIDI_CC_RANGE)
-                }.Editor(startPPQ, contentColor, noteWidth, false, clipStartTime = clip.start, stroke = 0.5F)
+                key(points) {
+                    MidiClipEnvelopes(points, startPPQ, contentColor, noteWidth, clip)
+                }
             }
         }
     }
@@ -171,4 +152,46 @@ class MidiClipFactoryImpl : MidiClipFactory {
     override fun toString(): String {
         return "MidiClipFactoryImpl(name='$name')"
     }
+}
+
+@Composable
+private fun MidiClipContents(
+    clip: TrackClip<MidiClip>, noteWidth: MutableState<Dp>, startPPQ: Float, widthPPQ: Float, contentColor: Color
+) {
+    val notes = clip.clip.notes
+    notes.read()
+    var top = 0
+    var bottom = 128
+    if (notes.size < 256) notes.fastForEach {
+        if (it.note > top) top = it.note
+        if (it.note < bottom) bottom = it.note
+    }
+    Canvas(Modifier.fillMaxSize().graphicsLayer { }) {
+        val noteWidthPx = noteWidth.value.toPx()
+        val trackHeightPx = size.height - density * 4F
+        val height = (trackHeightPx / 128).coerceAtLeast(density * 1.5F)
+        val startId = notes.binarySearch { it.time <= startPPQ }
+        val endTime = startPPQ + widthPPQ
+        val noteHeight = trackHeightPx / (top - bottom + 2)
+        for (i in startId..notes.lastIndex) {
+            val note = notes[i]
+            if (note.time > endTime) break
+            val y = trackHeightPx - noteHeight * (note.note - bottom + 1) + density * 2
+            drawLine(
+                contentColor, Offset(noteWidthPx * (note.time - startPPQ), y),
+                Offset(noteWidthPx * (note.time - startPPQ + note.duration), y),
+                height
+            )
+        }
+    }
+}
+
+@Composable
+private fun MidiClipEnvelopes(
+    points: EnvelopePointList, startPPQ: Float, contentColor: Color, noteWidth: MutableState<Dp>, clip: TrackClip<MidiClip>
+) {
+    points.read()
+    remember(points) {
+        EnvelopeEditor(points, MIDI_CC_RANGE)
+    }.Editor(startPPQ, contentColor, noteWidth, false, clipStartTime = clip.start, stroke = 0.5F)
 }

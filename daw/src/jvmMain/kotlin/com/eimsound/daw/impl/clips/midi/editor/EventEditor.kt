@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -243,17 +244,21 @@ private fun EventsList(editor: DefaultMidiClipEditor) {
                     editor.selectedEvent = VelocityEvent(editor)
                 }.padding(4.dp, 2.dp), style = MaterialTheme.typography.labelLarge)
             editor.clip.clip.events.forEach { (id, points) ->
-                Text("CC:${id}", (
-                        if (editor.selectedEvent?.name == "CC:${id}")
-                            Modifier.background(MaterialTheme.colorScheme.primary.copy(0.2F))
-                        else Modifier).height(eventSelectorHeight).clickableWithIcon {
-                    editor.selectedEvent = CCEvent(editor, id, points)
-                }.padding(4.dp, 2.dp), style = MaterialTheme.typography.labelLarge)
+                key(id) {
+                    Text("CC:${id}", (
+                            if (editor.selectedEvent?.name == "CC:${id}")
+                                Modifier.background(MaterialTheme.colorScheme.primary.copy(0.2F))
+                            else Modifier).height(eventSelectorHeight).clickableWithIcon {
+                        editor.selectedEvent = CCEvent(editor, id, points)
+                    }.padding(4.dp, 2.dp), style = MaterialTheme.typography.labelLarge)
+                }
             }
             val floatingLayerProvider = LocalFloatingLayerProvider.current
-            Icon(Icons.Default.Add, "添加", Modifier.size(eventSelectorHeight).clickableWithIcon {
+            Box(Modifier.size(eventSelectorHeight).clickableWithIcon {
                 floatingLayerProvider.openEventSelectorDialog(editor.clip.clip.events)
-            })
+            }) {
+                Icon(Icons.Default.Add, "添加", Modifier.padding(2.dp).align(Alignment.Center))
+            }
         }
     }
 }

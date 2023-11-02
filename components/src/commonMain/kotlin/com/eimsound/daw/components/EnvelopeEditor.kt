@@ -112,7 +112,7 @@ private fun PointerInputScope.getSelectedPoint(position: Offset, points: Envelop
     val pointIndex = points.binarySearch { it.time <= targetX }
     val point = points[pointIndex]
     fun checkIsSelectedPoint(point: EnvelopePoint?) = point != null && (point.time - targetX).absoluteValue < 8F / noteWidthPx &&
-            (size.height * (1 - point.value.coerceIn(valueRange) / valueRange.range) - position.y).absoluteValue < 8
+            (size.height * (1 - point.value.coerceIn(valueRange) / valueRange.range) - position.y).absoluteValue < 8 * density
     return (if (point.time < targetX) pointIndex else pointIndex - 1) to if (checkIsSelectedPoint(point)) pointIndex else
         if (checkIsSelectedPoint(points.getOrNull(pointIndex - 1))) pointIndex - 1 else -1
 }
