@@ -26,6 +26,8 @@ import com.eimsound.daw.components.splitpane.VerticalSplitPane
 import com.eimsound.daw.components.splitpane.rememberSplitPaneState
 import com.eimsound.daw.dawutils.openMaxValue
 import com.eimsound.daw.utils.*
+import com.eimsound.daw.window.panels.playlist.playlistTrackControllerMinWidth
+import com.eimsound.daw.window.panels.playlist.playlistTrackControllerPanelState
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.util.*
@@ -110,7 +112,10 @@ class DefaultMidiClipEditor(override val clip: TrackClip<MidiClip>, override val
     @Composable
     override fun Editor() {
         Row(Modifier.fillMaxSize()) {
-            Column(Modifier.width(200.dp)) { EditorControls(this@DefaultMidiClipEditor) }
+            Column(Modifier.width((playlistTrackControllerPanelState.position / LocalDensity.current.density).dp
+                .coerceAtLeast(playlistTrackControllerMinWidth))) {
+                EditorControls(this@DefaultMidiClipEditor)
+            }
             Surface(Modifier.fillMaxSize(), shadowElevation = 2.dp) {
                 Box {
                     Column(Modifier.fillMaxSize()) { EditorContent(this@DefaultMidiClipEditor) }
