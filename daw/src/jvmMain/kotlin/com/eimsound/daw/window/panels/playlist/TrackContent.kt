@@ -276,6 +276,13 @@ private fun Playlist.TrackItems(track: Track, density: Density, index: Int) {
 }
 
 @Composable
+private fun SubTrackContents(index: Int, track: Track, density: Density, playlist: Playlist): Int {
+    var i = index + 1
+    if (!track.collapsed) track.subTracks.fastForEach { key(it) { i += TrackContent(playlist, it, i, density) } }
+    return i - index
+}
+
+@Composable
 internal fun TrackContent(playlist: Playlist, track: Track, index: Int, density: Density): Int {
     playlist.apply {
         Box(Modifier.fillMaxWidth().height(trackHeight)) {
@@ -304,9 +311,7 @@ internal fun TrackContent(playlist: Playlist, track: Track, index: Int, density:
         }
     }
     Divider()
-    var i = index + 1
-    if (!track.collapsed) track.subTracks.forEach { i += TrackContent(playlist, it, i, density) }
-    return i - index
+    return SubTrackContents(index, track, density, playlist)
 }
 
 @Composable

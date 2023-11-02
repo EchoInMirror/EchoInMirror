@@ -107,59 +107,7 @@ class Playlist : Panel, MultiSelectableEditor {
             }
 
             second {
-                Box(Modifier.fillMaxSize().clipToBounds().scalableNoteWidth(noteWidth, horizontalScrollState)) {
-                    Column {
-                        val localDensity = LocalDensity.current
-                        Timeline(Modifier.zIndex(3f), noteWidth, horizontalScrollState, EchoInMirror.currentPosition.projectRange,
-                            editUnit = EchoInMirror.editUnit, barPPQ = EchoInMirror.currentPosition.oneBarPPQ,
-                            onTimeChange = EchoInMirror.currentPosition::setCurrentTime
-                        ) {
-                            EchoInMirror.currentPosition.projectRange = it
-                        }
-                        val coroutineScope = rememberCoroutineScope()
-                        Box(Modifier.weight(1f).pointerInput(coroutineScope) {
-                            handleMouseEvent(this@Playlist, coroutineScope)
-                        }.onGloballyPositioned { with(localDensity) { contentWidth = it.size.width.toDp() } }) {
-                            EchoInMirror.currentPosition.apply {
-                                EditorGrid(noteWidth, horizontalScrollState, projectRange, ppq, timeSigDenominator, timeSigNumerator)
-                            }
-                            val width = (noteWidth.value * EchoInMirror.currentPosition.projectDisplayPPQ)
-                                .coerceAtLeast(contentWidth)
-                            remember(width, localDensity) {
-                                with (localDensity) { horizontalScrollState.openMaxValue = width.toPx().toInt() }
-                            }
-                            playListExtensions.EditorExtensions(true)
-                            Column(Modifier.verticalScroll(verticalScrollState).fillMaxSize()) {
-                                Divider()
-                                var i = 0
-                                EchoInMirror.bus!!.subTracks.forEach {
-                                    key(it.id) { i += TrackContent(this@Playlist, it, i, localDensity) }
-                                }
-                            }
-                            playListExtensions.EditorExtensions(false)
-                            GlobalDropTarget({ _, _ ->
-//                            if (data.extension.lowercase() == "mid") {
-                                // TODO: 导入midi
-//                                println(data)
-//                            }
-                            }) {
-//                            println(it)
-//                            println(LocalGlobalDragAndDrop.current.dataTransfer)
-                                Spacer(Modifier.fillMaxSize())
-                            }
-                            TrackSelection(this@Playlist, localDensity, horizontalScrollState, verticalScrollState)
-                            PlaylistPlayHead()
-                            VerticalScrollbar(
-                                rememberScrollbarAdapter(verticalScrollState),
-                                Modifier.align(Alignment.TopEnd).fillMaxHeight()
-                            )
-                        }
-                    }
-                    HorizontalScrollbar(
-                        rememberScrollbarAdapter(horizontalScrollState),
-                        Modifier.align(Alignment.TopStart).fillMaxWidth()
-                    )
-                }
+                PlaylistContents()
             }
         }
     }
@@ -190,6 +138,69 @@ class Playlist : Panel, MultiSelectableEditor {
     private fun selectAllClipsInTrack(track: Track) {
         selectedClips.addAll(track.clips)
         track.subTracks.forEach(::selectAllClipsInTrack)
+    }
+
+    @Composable
+    private fun PlaylistContents() {
+        Box(Modifier.fillMaxSize().clipToBounds().scalableNoteWidth(noteWidth, horizontalScrollState)) {
+            Column {
+                val localDensity = LocalDensity.current
+                Timeline(Modifier.zIndex(3f), noteWidth, horizontalScrollState, EchoInMirror.currentPosition.projectRange,
+                    editUnit = EchoInMirror.editUnit, barPPQ = EchoInMirror.currentPosition.oneBarPPQ,
+                    onTimeChange = EchoInMirror.currentPosition::setCurrentTime
+                ) {
+                    EchoInMirror.currentPosition.projectRange = it
+                }
+                val coroutineScope = rememberCoroutineScope()
+                Box(Modifier.weight(1f).pointerInput(coroutineScope) {
+                    handleMouseEvent(this@Playlist, coroutineScope)
+                }.onGloballyPositioned { with(localDensity) { contentWidth = it.size.width.toDp() } }) {
+                    EchoInMirror.currentPosition.apply {
+                        EditorGrid(noteWidth, horizontalScrollState, projectRange, ppq, timeSigDenominator, timeSigNumerator)
+                    }
+                    val width = (noteWidth.value * EchoInMirror.currentPosition.projectDisplayPPQ)
+                        .coerceAtLeast(contentWidth)
+                    remember(width, localDensity) {
+                        with (localDensity) { horizontalScrollState.openMaxValue = width.toPx().toInt() }
+                    }
+                    playListExtensions.EditorExtensions(true)
+                    TrackContents()
+                    playListExtensions.EditorExtensions(false)
+                    GlobalDropTarget({ _, _ ->
+//                            if (data.extension.lowercase() == "mid") {
+                        // TODO: 导入midi
+//                                println(data)
+//                            }
+                    }) {
+//                            println(it)
+//                            println(LocalGlobalDragAndDrop.current.dataTransfer)
+                        Spacer(Modifier.fillMaxSize())
+                    }
+                    TrackSelection(this@Playlist, localDensity, horizontalScrollState, verticalScrollState)
+                    PlaylistPlayHead()
+                    VerticalScrollbar(
+                        rememberScrollbarAdapter(verticalScrollState),
+                        Modifier.align(Alignment.TopEnd).fillMaxHeight()
+                    )
+                }
+            }
+            HorizontalScrollbar(
+                rememberScrollbarAdapter(horizontalScrollState),
+                Modifier.align(Alignment.TopStart).fillMaxWidth()
+            )
+        }
+    }
+
+    @Composable
+    private fun TrackContents() {
+        Column(Modifier.verticalScroll(verticalScrollState).fillMaxSize()) {
+            val localDensity = LocalDensity.current
+            Divider()
+            var i = 0
+            EchoInMirror.bus!!.subTracks.forEach {
+                key(it) { i += TrackContent(this@Playlist, it, i, localDensity) }
+            }
+        }
     }
 }
 

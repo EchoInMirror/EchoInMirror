@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastForEachIndexed
 import com.eimsound.daw.actions.doNoteDisabledAction
 import com.eimsound.daw.actions.doNoteVelocityAction
 import com.eimsound.daw.api.EchoInMirror
@@ -46,10 +47,19 @@ private fun TrackItem(track: Track, backingTracks: IManualStateValue<WeakHashMap
     ) {
         Spacer(Modifier.width(6.dp * depth))
         Spacer(Modifier.width(6.dp).fillMaxHeight().background(track.color))
-        Text(index + " " + track.name, Modifier.fillMaxWidth().padding(start = 6.dp, end = 12.dp), maxLines = 1,
-            style = MaterialTheme.typography.labelLarge, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal)
+        Box(Modifier.fillMaxSize().background(track.color.copy(0.1F))) {
+            Text(
+                index + " " + track.name,
+                Modifier.fillMaxWidth().align(Alignment.CenterStart).padding(start = 6.dp, end = 12.dp),
+                maxLines = 1,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+            )
+        }
     }
-    track.subTracks.forEachIndexed { i, it -> TrackItem(it, backingTracks, index + "." + (i + 1), depth + 1) }
+    if (!track.collapsed) track.subTracks.fastForEachIndexed { i, it ->
+        TrackItem(it, backingTracks, index + "." + (i + 1), depth + 1)
+    }
 }
 
 @Composable
@@ -60,7 +70,9 @@ internal fun EditorControls(editor: DefaultMidiClipEditor) {
             tonalElevation = 5.dp, shadowElevation = 5.dp) {
             val stateVertical = rememberScrollState(0)
             Column(Modifier.verticalScroll(stateVertical).padding(vertical = 4.dp)) {
-                EchoInMirror.bus!!.subTracks.forEachIndexed { index, it -> TrackItem(it, editor.backingTracks, (index + 1).toString()) }
+                EchoInMirror.bus!!.subTracks.fastForEachIndexed { index, it ->
+                    TrackItem(it, editor.backingTracks, (index + 1).toString())
+                }
             }
         }
     }) {
