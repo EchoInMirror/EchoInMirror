@@ -28,6 +28,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastAll
+import androidx.compose.ui.util.fastForEach
 import com.eimsound.daw.actions.doAddOrRemoveTrackAction
 import com.eimsound.daw.actions.doReorderAction
 import com.eimsound.daw.api.EchoInMirror
@@ -38,15 +40,13 @@ import com.eimsound.daw.components.IconButton
 import com.eimsound.daw.components.VolumeSlider
 import com.eimsound.daw.components.icons.Crown
 import com.eimsound.daw.components.menus.openTrackMenu
-import com.eimsound.daw.components.utils.clickableWithIcon
-import com.eimsound.daw.components.utils.onRightClickOrLongPress
-import com.eimsound.daw.components.utils.toOnSurfaceColor
-import com.eimsound.daw.components.utils.warning
+import com.eimsound.daw.components.utils.*
 import com.eimsound.daw.utils.binarySearch
 import com.eimsound.daw.window.dialogs.openColorPicker
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.util.*
+import kotlin.math.roundToInt
 
 internal class TrackMoveFlags(val parent: Track) {
     var isAbove by mutableStateOf(false)
@@ -55,12 +55,12 @@ internal class TrackMoveFlags(val parent: Track) {
 internal data class TrackToHeight(val track: Track, val height: Float)
 private fun getTrackHeights(list: ArrayList<TrackToHeight>, track: Track, defaultHeight: Float, density: Float) {
     list.add(TrackToHeight(track, density + (list.lastOrNull()?.height ?: 0F) +
-            (if (track.height == 0) defaultHeight else track.height.toFloat())))
-    track.subTracks.forEach { getTrackHeights(list, it, defaultHeight, density) }
+            (if (track.height == 0) defaultHeight else track.height * density)))
+    track.subTracks.fastForEach { getTrackHeights(list, it, defaultHeight, density) }
 }
 internal fun getAllTrackHeights(defaultHeight: Float, density: Float): List<TrackToHeight> {
     val trackHeights = ArrayList<TrackToHeight>()
-    EchoInMirror.bus!!.subTracks.forEach { getTrackHeights(trackHeights, it, defaultHeight, density) }
+    EchoInMirror.bus!!.subTracks.fastForEach { getTrackHeights(trackHeights, it, defaultHeight, density) }
     return trackHeights
 }
 
@@ -68,11 +68,32 @@ internal fun getAllTrackHeights(defaultHeight: Float, density: Float): List<Trac
 internal fun binarySearchTrackByHeight(trackHeights: List<TrackToHeight>, y: Float) =
     trackHeights.binarySearch { it.height <= y }
 
+private var pointerIcon by mutableStateOf<PointerIcon?>(null)
+
+private const val MIN_TRACK_HEIGHT = 30
 private suspend fun AwaitPointerEventScope.handleDrag(playlist: Playlist, track: Track, parentTrack: Track,
                                                       isDragging: MutableState<Boolean>) {
-    val down = awaitFirstDown(false, PointerEventPass.Final)
+    var event: PointerEvent
+    do {
+        event = awaitPointerEvent(PointerEventPass.Final)
+        val primaryButtonCausesDown = event.changes.fastAll { it.type == PointerType.Mouse }
+        val changedToDown = event.changes.fastAll { it.changedToDownIgnoreConsumed() }
+        val curHeight = if (track.height == 0) playlist.trackHeight.value else track.height.toFloat()
+        if (event.changes.first().position.y / density > curHeight - 4) {
+            if (pointerIcon == null) pointerIcon = PointerIcon.VerticalResize
+        } else if (pointerIcon != null) pointerIcon = null
+    } while (!(changedToDown && (event.buttons.isPrimaryPressed || !primaryButtonCausesDown)))
+    val down = event.changes[0]
     awaitPointerSlopOrCancellation(down.id, down.type, triggerOnMainAxisSlop = false) { change, _ ->
         playlist.apply {
+            val curHeight = if (track.height == 0) trackHeight.value else track.height.toFloat()
+            if (change.position.y / density > curHeight - 4) {
+                drag(down.id) {
+                    track.height = (curHeight + (it.position.y - change.position.y) / density)
+                        .roundToInt().coerceAtLeast(MIN_TRACK_HEIGHT)
+                }
+                return
+            }
             trackHeights = getAllTrackHeights(trackHeight.toPx(), density)
             isDragging.value = true
             var lastTrack: Track? = null
@@ -207,7 +228,9 @@ private fun TrackItem(playlist: Playlist, track: Track, parentTrack: Track, inde
     val color = track.color
 
     playlist.apply {
-        Row(Modifier.height(trackHeight).padding(start = TRACK_ITEM_INDEX_WIDTH * depth)
+        val curHeight = if (track.height == 0) trackHeight else track.height.dp
+        Row(Modifier.height(curHeight)
+            .padding(start = TRACK_ITEM_INDEX_WIDTH * depth)
             .background(color.copy(animateFloatAsState(if (EchoInMirror.selectedTrack == track) 0.1F else 0F).value))
             .onPointerEvent(PointerEventType.Press) { EchoInMirror.selectedTrack = track }
             .drawWithContent {
@@ -234,7 +257,10 @@ private fun TrackItem(playlist: Playlist, track: Track, parentTrack: Track, inde
             .alpha(animateFloatAsState(if (isDragging.value) 0.3F else 1F).value)
         ) {
             TrackIndex(track, parentTrack, index)
-            Column(Modifier.weight(1F).fillMaxHeight().padding(8.dp, 5.dp, 2.dp, 5.dp), Arrangement.SpaceBetween) {
+            Column(
+                Modifier.weight(1F).fillMaxHeight().padding(8.dp, 5.dp, 2.dp, 5.dp),
+                if (curHeight.value >= 50) Arrangement.SpaceBetween else Arrangement.Center
+            ) {
                 Text(
                     track.name,
                     color = if (track.isBypassed) LocalContentColor.current.copy(alpha = 0.5F) else LocalContentColor.current,
@@ -243,7 +269,7 @@ private fun TrackItem(playlist: Playlist, track: Track, parentTrack: Track, inde
                     textDecoration = if (track.isBypassed) TextDecoration.LineThrough else null
                 )
 
-                if (trackHeight.value > 40) TrackItemControllers(track)
+                if (curHeight.value >= 50) TrackItemControllers(track)
             }
 
             TrackCollapsedButton(track)
@@ -255,6 +281,24 @@ private fun TrackItem(playlist: Playlist, track: Track, parentTrack: Track, inde
 }
 
 @Composable
+private fun TrackItemsContent(playlist: Playlist) {
+    Divider()
+    val bus = EchoInMirror.bus!!
+    bus.subTracks.forEachIndexed { i, it ->
+        key(it.id) {
+            TrackItem(playlist, it, bus, i)
+            Divider()
+        }
+    }
+    TextButton({
+        runBlocking {
+            EchoInMirror.bus!!.subTracks.doAddOrRemoveTrackAction(TrackManager.instance.createTrack())
+        }
+    }, Modifier.fillMaxWidth()) {
+        Text("创建轨道")
+    }
+}
+@Composable
 internal fun TrackItems(playlist: Playlist) {
     val scope = rememberCoroutineScope()
     playlist.apply {
@@ -263,22 +307,10 @@ internal fun TrackItems(playlist: Playlist) {
                 if (change.position.y < 10) scope.launch { verticalScrollState.scrollBy(-3F) }
                 else if (change.position.y > size.height - 10) scope.launch { verticalScrollState.scrollBy(3F) }
             }
-        }.verticalScroll(verticalScrollState)) {
-            Divider()
-            val bus = EchoInMirror.bus!!
-            bus.subTracks.forEachIndexed { i, it ->
-                key(it.id) {
-                    TrackItem(playlist, it, bus, i)
-                    Divider()
-                }
-            }
-            TextButton({
-                runBlocking {
-                    EchoInMirror.bus!!.subTracks.doAddOrRemoveTrackAction(TrackManager.instance.createTrack())
-                }
-            }, Modifier.fillMaxWidth()) {
-                Text("创建轨道")
-            }
+        }.verticalScroll(verticalScrollState).let {
+            if (pointerIcon == null) it else it.pointerHoverIcon(pointerIcon!!)
+        }) {
+            TrackItemsContent(playlist)
         }
     }
 }

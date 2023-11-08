@@ -128,7 +128,7 @@ internal fun NotesEditorCanvas(editor: DefaultMidiClipEditor) {
                 0, (16 * localDensity.density).toInt())
             val keyNameLayerResults = remember(localDensity) { arrayOfNulls<TextLayoutResult>(127) }
             val disabledKeyNameLayerResults = remember(localDensity) { arrayOfNulls<TextLayoutResult>(127) }
-            val trackColor = track.color
+            val trackColor = clip.track?.color ?: primaryColor
             val keyNameTextColor = trackColor.toOnSurfaceColor().copy(0.9F)
             val disabledKeyNameTextStyle = labelMediumStyle.copy(textDecoration = TextDecoration.LineThrough)
 

@@ -125,7 +125,7 @@ fun ApplicationScope.MainWindow() {
         else exitApp()
     }, mainWindowState, icon = Logo, title = "Echo In Mirror (v$VERSION)", onKeyEvent = {
         if (it.type != KeyEventType.KeyUp) return@Window false
-        var keys = it.key.keyCode.toString()
+        var keys = (if (it.key == Key.Backspace) Key.Delete.keyCode else it.key.keyCode).toString()
         if (it.isCrossPlatformCtrlPressed) keys = "${Key.CtrlLeft.keyCode} $keys"
         if (it.isShiftPressed) keys = "${Key.ShiftLeft.keyCode} $keys"
         if (it.isCrossPlatformAltPressed) keys = "${Key.AltLeft.keyCode} $keys"

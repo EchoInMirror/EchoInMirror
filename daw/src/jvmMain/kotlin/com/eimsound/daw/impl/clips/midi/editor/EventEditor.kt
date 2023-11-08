@@ -68,6 +68,7 @@ class VelocityEvent(private val editor: MidiClipEditor) : EventType {
         var delta by remember { mutableStateOf(0) }
         var selectedNote by remember { mutableStateOf<NoteMessage?>(null) }
         editor.apply {
+            val trackColor = clip.track?.color ?: MaterialTheme.colorScheme.primary
             Spacer(Modifier.fillMaxSize().drawBehind {
                 if (size.height < 1) return@drawBehind
                 val noteWidthPx = noteWidth.value.toPx()
@@ -75,7 +76,6 @@ class VelocityEvent(private val editor: MidiClipEditor) : EventType {
                 val offsetX = if (action == EditAction.MOVE) deltaX * noteWidthPx else 0f
                 val scrollX = horizontalScrollState.value
                 val startTime = clip.time - clip.start
-                val trackColor = track.color
                 val circleRadius = 4 * density
                 notesInView.fastForEach {
                     val isSelected = selectedNotes.contains(it)

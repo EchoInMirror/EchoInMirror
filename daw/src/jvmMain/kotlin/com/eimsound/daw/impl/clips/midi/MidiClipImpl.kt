@@ -84,7 +84,7 @@ class MidiClipFactoryImpl : MidiClipFactory {
         logger.info { "Creating clip ${json["id"]} in $path" }
         return MidiClipImpl(json, this)
     }
-    override fun getEditor(clip: TrackClip<MidiClip>, track: Track) = DefaultMidiClipEditor(clip, track)
+    override fun getEditor(clip: TrackClip<MidiClip>) = DefaultMidiClipEditor(clip)
 
     override fun processBlock(clip: TrackClip<MidiClip>, buffers: Array<FloatArray>, position: CurrentPosition,
                               midiBuffer: ArrayList<Int>, noteRecorder: MidiNoteRecorder, pendingNoteOns: LongArray) {

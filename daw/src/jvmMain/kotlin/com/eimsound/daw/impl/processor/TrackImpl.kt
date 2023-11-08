@@ -359,7 +359,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
 
     override fun toString(): String {
         return "TrackImpl(name='$name', preProcessorsChain=${preProcessorsChain.size}, " +
-        "postProcessorsChain=${postProcessorsChain.size}, subTracks=${subTracks.size}, clips=${clips.size})"
+        "postProcessorsChain=${postProcessorsChain.size}, subTracks=${subTracks.size}, clips=${clips.size}, height=$height)"
     }
 }
 

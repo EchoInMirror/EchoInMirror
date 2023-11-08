@@ -15,10 +15,12 @@ import kotlinx.serialization.json.buildJsonObject
 
 private val logger = KotlinLogging.logger {  }
 class TrackClipImpl <T: Clip> (override val clip: T, time: Int = 0, duration: Int = 0, start: Int = 0,
-                               override var track: Track? = null) : TrackClip<T> {
+                               track: Track? = null) : TrackClip<T> {
     override var time by mutableStateOf(time)
     override var duration by mutableStateOf(duration)
     private var _start by mutableStateOf(start)
+    override var track by mutableStateOf(track)
+
     override var start: Int
         get() = _start
         set(value) {

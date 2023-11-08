@@ -37,11 +37,9 @@ object Editor: Panel, MultiSelectableEditor {
             EchoInMirror.windowManager.activePanel = Editor
         }) {
             val clip = EchoInMirror.selectedClip
-            val track = EchoInMirror.selectedTrack
-            val editor = remember(track, clip) {
+            val editor = remember(clip) {
                 @Suppress("TYPE_MISMATCH")
-                val res = if (clip != null && track != null) clip.clip.factory.getEditor(clip, track)
-                else null
+                val res = clip?.clip?.factory?.getEditor(clip)
                 editor = res
                 res
             }

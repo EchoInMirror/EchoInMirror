@@ -2,6 +2,7 @@ package com.eimsound.daw.actions
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.ui.util.fastForEach
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.TrackClip
 import com.eimsound.daw.api.processor.Track
@@ -52,7 +53,7 @@ class ClipsAmountAction(private val clips: Collection<TrackClip<*>>, isDelete: B
 }
 
 class ClipsEditAction(
-    private val clips: Collection<TrackClip<*>>,
+    private val clips: List<TrackClip<*>>,
     private val deltaX: Int, private val deltaDuration: Int, private val deltaStart: Int = 0,
     private val newTracks: List<Track>? = null
 ) : ReversibleAction() {
@@ -74,7 +75,7 @@ class ClipsEditAction(
             val x = if (isForward) deltaX else -deltaX
             val duration = if (isForward) deltaDuration else -deltaDuration
             val start = if (isForward) deltaStart else -deltaStart
-            clips.forEach {
+            clips.fastForEach {
                 if (x != 0) it.time += x
                 if (duration != 0) it.duration += duration
                 if (start != 0) it.start += start
@@ -84,9 +85,11 @@ class ClipsEditAction(
             if (isForward) clips.forEachIndexed { i, it ->
                 it.track?.clips?.remove(it)
                 newTracks[i].clips.add(it)
+                it.track = newTracks[i]
             } else clips.forEachIndexed { i, it ->
                 it.track?.clips?.remove(it)
                 originTracks[i]?.clips?.add(it)
+                it.track = originTracks[i]
             }
         }
         tracks.forEach {

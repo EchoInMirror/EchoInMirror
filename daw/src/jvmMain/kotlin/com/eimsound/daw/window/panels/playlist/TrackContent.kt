@@ -139,6 +139,7 @@ private suspend fun AwaitPointerEventScope.handleDragEvent(playlist: Playlist, c
                                 null
                             }
                         )
+                        EchoInMirror.selectedTrack = trackHeights[(index + y).coerceAtMost(trackHeights.size - 1)].track
                     }
                     trackHeights = emptyList()
                 }
@@ -185,12 +186,20 @@ private fun Playlist.ClipItem(density: Density, it: TrackClip<*>, track: Track, 
                 var clipStartPPQOnMove = clipStartPPQ
                 var clipEndPPQOnMove = clipEndPPQ
                 var y = 0.dp
+                val currentMoveObj = if (isSelected && action0 == EditAction.MOVE && trackHeights.isNotEmpty())
+                    trackHeights[(deltaY + index).coerceAtMost(trackHeights.size - 1)] else null
+                var currentMoveTrackHeight = currentMoveObj?.track?.height?.dp ?: 0.dp
+                if (currentMoveTrackHeight == 0.dp) currentMoveTrackHeight = trackHeight
+                val curTrackHeight = if (track.height == 0) trackHeight else track.height.dp
                 if (isSelected) {
-                    if (action0 == EditAction.MOVE) {
+                    if (currentMoveObj != null) {
                         clipStartPPQOnMove += deltaX
                         clipEndPPQOnMove += deltaX
-                        if (deltaY != 0) y = (trackHeights[(deltaY + index).coerceAtMost(trackHeights.size - 1)]
-                            .height - trackHeights[index].height).toDp()
+                        if (deltaY != 0) {
+                            y = (currentMoveObj.height - trackHeights[index].height).toDp() -
+                                    currentMoveTrackHeight + curTrackHeight +
+                                    ((currentMoveTrackHeight - curTrackHeight).coerceAtLeast(0.dp) / 2)
+                        }
                     } else if (action0 == EditAction.RESIZE) {
                         if (resizeDirectionRight) clipEndPPQOnMove += deltaX
                         else clipStartPPQOnMove += deltaX
@@ -198,12 +207,15 @@ private fun Playlist.ClipItem(density: Density, it: TrackClip<*>, track: Track, 
                 }
                 val widthInPPQ = clipEndPPQOnMove.toFloat().coerceAtMost(scrollXPPQ + contentPPQ) -
                         clipStartPPQOnMove.toFloat().coerceAtLeast(scrollXPPQ)
+                val curTrack = currentMoveObj?.track ?: track
+                val curOrMovingTrackHeight = if (curTrack.height == 0) trackHeight else curTrack.height.dp
                 Box(Modifier
                     .absoluteOffset(noteWidth.value * (clipStartPPQ - scrollXPPQ).coerceAtLeast(0F))
                     .pointerInput(it, track, index) {
                         awaitEachGesture { handleDragEvent(this@ClipItem, it, index, track) }
                     }
-                    .size(noteWidth.value * widthInPPQ, trackHeight)
+                    .width(noteWidth.value * widthInPPQ)
+                    .requiredHeight(curOrMovingTrackHeight)
                     .run {
                         if (clipStartPPQ != clipStartPPQOnMove) {
                             absoluteOffset(noteWidth.value * (
@@ -215,9 +227,6 @@ private fun Playlist.ClipItem(density: Density, it: TrackClip<*>, track: Track, 
                     }
                 ) {
                     if (!deletionList.contains(it)) {
-                        val curTrack = if (isSelected && action0 == EditAction.MOVE && trackHeights.isNotEmpty())
-                            trackHeights[(deltaY + index).coerceAtMost(trackHeights.size - 1)].track
-                            else track
                         val trackColor = curTrack.color
                         Column(
                             Modifier
@@ -234,7 +243,7 @@ private fun Playlist.ClipItem(density: Density, it: TrackClip<*>, track: Track, 
                                 .pointerHoverIcon(action0.toPointerIcon(PointerIcon.Hand))
                         ) {
                             val contentColor = trackColor.toOnSurfaceColor()
-                            if (trackHeight > 40.dp) {
+                            if (curOrMovingTrackHeight.value >= 40) {
                                 Text(
                                     it.clip.name.ifEmpty { track.name },
                                     Modifier.fillMaxWidth()
@@ -285,7 +294,7 @@ private fun SubTrackContents(index: Int, track: Track, density: Density, playlis
 @Composable
 internal fun TrackContent(playlist: Playlist, track: Track, index: Int, density: Density): Int {
     playlist.apply {
-        Box(Modifier.fillMaxWidth().height(trackHeight)) {
+        Box(Modifier.fillMaxWidth().height(if (track.height == 0) trackHeight else track.height.dp)) {
             Box(Modifier.fillMaxSize().pointerInput(track) {
                 awaitPointerEventScope {
                     var time = 0L

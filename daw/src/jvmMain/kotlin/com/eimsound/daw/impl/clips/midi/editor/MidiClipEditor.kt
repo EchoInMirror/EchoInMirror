@@ -48,7 +48,7 @@ private fun EditorContent(editor: DefaultMidiClipEditor) {
                     ) {
                         clip.time = it.first
                         clip.duration = it.range
-                        editor.track.clips.update()
+                        editor.clip.track?.clips?.update()
                     }
                     Box(Modifier.weight(1F).onGloballyPositioned {
                         with(localDensity) { contentWidth = it.size.width.toDp() }
@@ -82,7 +82,7 @@ private fun EditorContent(editor: DefaultMidiClipEditor) {
     }
 }
 
-class DefaultMidiClipEditor(override val clip: TrackClip<MidiClip>, override val track: Track) : MidiClipEditor {
+class DefaultMidiClipEditor(override val clip: TrackClip<MidiClip>) : MidiClipEditor {
     val selectedNotes = mutableStateSetOf<NoteMessage>()
     var noteHeight by mutableStateOf(16.dp)
     var noteWidth = mutableStateOf(0.4.dp)

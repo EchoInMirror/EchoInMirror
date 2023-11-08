@@ -52,12 +52,13 @@ private fun playNote(note: NoteMessage, editor: DefaultMidiClipEditor) {
     if (!DefaultMidiClipEditor.playOnEdit) return
     if (EchoInMirror.currentPosition.isPlaying) return
     editor.playingNotes.add(note.toNoteOffEvent())
-    editor.track.playMidiEvent(note.toNoteOnEvent())
+    editor.clip.track?.playMidiEvent(note.toNoteOnEvent())
 }
 
 private fun stopAllNotes(editor: DefaultMidiClipEditor) {
     if (editor.playingNotes.isNotEmpty()) {
-        if (!EchoInMirror.currentPosition.isPlaying) editor.playingNotes.fastForEach { editor.track.playMidiEvent(it) }
+        if (!EchoInMirror.currentPosition.isPlaying)
+            editor.playingNotes.fastForEach { editor.clip.track?.playMidiEvent(it) }
         editor.playingNotes.clear()
     }
 }

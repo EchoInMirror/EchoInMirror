@@ -22,9 +22,13 @@ fun EditorGrid(
     timeSigNumerator: Int = 4,
     modifier: Modifier = Modifier.fillMaxSize(),
 ) {
-    val beatsOutlineColor = MaterialTheme.colorScheme.surfaceVariant
-    val stepsOutlineColor = beatsOutlineColor.copy(0.5F)
+    var beatsOutlineColor = MaterialTheme.colorScheme.surfaceVariant
     val barsOutlineColor = MaterialTheme.colorScheme.outlineVariant
+    var stepsOutlineColor = beatsOutlineColor.copy(0.5F)
+    if (barsOutlineColor == beatsOutlineColor) {
+        beatsOutlineColor = stepsOutlineColor
+        stepsOutlineColor = stepsOutlineColor.copy(0.2F)
+    }
     val eightBarsOutlineColor = MaterialTheme.colorScheme.outline.copy(0.7F)
     val rangeColor = MaterialTheme.colorScheme.primary.copy(0.07F)
     Canvas(modifier.graphicsLayer {  }) {

@@ -25,14 +25,13 @@ import com.eimsound.daw.actions.GlobalEnvelopeEditorEventHandler
 import com.eimsound.daw.api.AudioClip
 import com.eimsound.daw.api.ClipEditor
 import com.eimsound.daw.api.TrackClip
-import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.components.*
 import com.eimsound.daw.components.utils.toOnSurfaceColor
 import com.eimsound.daw.components.NoteWidthSlider
 import com.eimsound.daw.dawutils.openMaxValue
 import com.eimsound.daw.utils.range
 
-class AudioClipEditor(private val clip: TrackClip<AudioClip>, private val track: Track) : ClipEditor {
+class AudioClipEditor(private val clip: TrackClip<AudioClip>) : ClipEditor {
     val noteWidth = mutableStateOf(0.4.dp)
     @Suppress("MemberVisibilityCanBePrivate")
     val horizontalScrollState = ScrollState(0)
@@ -58,7 +57,7 @@ class AudioClipEditor(private val clip: TrackClip<AudioClip>, private val track:
     @Composable
     private fun EditorControls() {
         Column(Modifier.width(200.dp)) {
-            val color by animateColorAsState(track.color, tween(100))
+            val color by animateColorAsState(clip.track?.color ?: MaterialTheme.colorScheme.primary, tween(100))
             Surface(Modifier.fillMaxWidth().height(TIMELINE_HEIGHT), shadowElevation = 2.dp, tonalElevation = 4.dp, color = color) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     val textColor by animateColorAsState(color.toOnSurfaceColor(), tween(80))
@@ -83,7 +82,7 @@ class AudioClipEditor(private val clip: TrackClip<AudioClip>, private val track:
                     .convertSecondsToPPQ(clip.clip.audioSource.timeInSeconds).toInt()
                 clip.start = it.first.coerceIn(0, maxPPQ)
                 clip.duration = it.range.coerceIn(0, maxPPQ)
-                track.clips.update()
+                clip.track?.clips?.update()
             }
             var contentWidth by remember { mutableStateOf(0.dp) }
             Box(Modifier.fillMaxSize().onGloballyPositioned { contentWidth = it.size.width.dp }) {
@@ -100,14 +99,15 @@ class AudioClipEditor(private val clip: TrackClip<AudioClip>, private val track:
                     EchoInMirror.currentPosition.apply {
                         EditorGrid(noteWidth, horizontalScrollState, range, ppq, timeSigDenominator, timeSigNumerator)
                     }
+                    val color = clip.track?.color ?: MaterialTheme.colorScheme.primary
                     Waveform(
                         clip.clip.thumbnail,
                         EchoInMirror.currentPosition,
                         scrollXPPQ, widthPPQ,
                         clip.clip.volumeEnvelope,
-                        track.color, modifier = Modifier.width(noteWidthValue * widthPPQ)
+                        color, modifier = Modifier.width(noteWidthValue * widthPPQ)
                     )
-                    envelopeEditor.Editor(0F, track.color, noteWidth, true, clipStartTime = clip.start)
+                    envelopeEditor.Editor(0F, color, noteWidth, true, clipStartTime = clip.start)
                     Box {
                         PlayHead(noteWidth, horizontalScrollState,
                             (EchoInMirror.currentPosition.ppqPosition * EchoInMirror.currentPosition.ppq).toFloat(),

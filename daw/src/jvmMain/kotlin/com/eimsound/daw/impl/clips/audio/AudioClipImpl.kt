@@ -78,7 +78,7 @@ class AudioClipFactoryImpl: AudioClipFactory {
         logger.info { "Creating clip ${json["id"]} in $path" }
         return AudioClipImpl(json, this)
     }
-    override fun getEditor(clip: TrackClip<AudioClip>, track: Track) = AudioClipEditor(clip, track)
+    override fun getEditor(clip: TrackClip<AudioClip>) = AudioClipEditor(clip)
 
     override fun processBlock(clip: TrackClip<AudioClip>, buffers: Array<FloatArray>, position: CurrentPosition,
                               midiBuffer: ArrayList<Int>, noteRecorder: MidiNoteRecorder, pendingNoteOns: LongArray) {

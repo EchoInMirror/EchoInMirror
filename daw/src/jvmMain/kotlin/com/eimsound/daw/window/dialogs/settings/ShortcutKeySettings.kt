@@ -114,6 +114,7 @@ internal object ShortcutKeySettings : SettingTab {
                                 Key.CtrlLeft, Key.CtrlRight -> if (SystemUtils.IS_OS_MAC) pressKey = Key.MetaLeft
                                 Key.ShiftRight -> pressKey = Key.ShiftLeft
                                 Key.AltRight -> pressKey = Key.AltLeft
+                                Key.Backspace -> pressKey = Key.Delete
                             }
                             if (it.type == KeyEventType.KeyDown) {
                                 when (pressKey) {

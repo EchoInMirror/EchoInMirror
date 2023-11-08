@@ -33,7 +33,6 @@ interface ClipEditor : MultiSelectableEditor {
 
 interface MidiClipEditor: ClipEditor, SerializableEditor, MultiSelectableEditor {
     val clip: TrackClip<MidiClip>
-    val track: Track
 }
 
 @Serializable(with = ClipFactoryNameSerializer::class)
@@ -44,7 +43,7 @@ interface ClipFactory<T: Clip> {
     fun processBlock(clip: TrackClip<T>, buffers: Array<FloatArray>, position: CurrentPosition,
                      midiBuffer: ArrayList<Int>, noteRecorder: MidiNoteRecorder, pendingNoteOns: LongArray)
     fun save(clip: T, path: Path) { }
-    fun getEditor(clip: TrackClip<T>, track: Track): ClipEditor?
+    fun getEditor(clip: TrackClip<T>): ClipEditor?
     @Composable
     fun PlaylistContent(clip: TrackClip<T>, track: Track, contentColor: Color,
                         noteWidth: MutableState<Dp>, startPPQ: Float, widthPPQ: Float
