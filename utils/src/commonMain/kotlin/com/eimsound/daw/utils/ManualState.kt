@@ -3,7 +3,6 @@
 package com.eimsound.daw.utils
 
 import androidx.compose.runtime.mutableStateOf
-import kotlinx.serialization.Transient
 import kotlin.reflect.KProperty
 
 interface IManualState {

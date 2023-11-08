@@ -13,7 +13,7 @@ import com.eimsound.audioprocessor.AudioProcessorManager
 import com.eimsound.daw.actions.doAddOrRemoveAudioProcessorAction
 import com.eimsound.daw.api.processor.TrackAudioProcessorWrapper
 import com.eimsound.daw.components.*
-import com.eimsound.daw.utils.BasicEditor
+import com.eimsound.daw.commons.BasicEditor
 import com.eimsound.daw.utils.createTempDirectory
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*

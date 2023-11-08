@@ -7,8 +7,8 @@ import com.eimsound.daw.api.Command
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.commands.*
 import com.eimsound.daw.dawutils.CLIPBOARD_MANAGER
-import com.eimsound.daw.utils.MultiSelectableEditor
-import com.eimsound.daw.utils.SerializableEditor
+import com.eimsound.daw.commons.MultiSelectableEditor
+import com.eimsound.daw.commons.SerializableEditor
 
 @Composable
 fun CommandMenuItem(command: Command, showIcon: Boolean, enabled: Boolean = true, iconModifier: Modifier = DEFAULT_ICON_MODIFIER, onClick: () -> Unit) {

@@ -28,6 +28,7 @@ import com.eimsound.daw.api.window.EditorExtension
 import com.eimsound.daw.api.window.EditorExtensions
 import com.eimsound.daw.api.window.Panel
 import com.eimsound.daw.api.window.PanelDirection
+import com.eimsound.daw.commons.MultiSelectableEditor
 import com.eimsound.daw.components.*
 import com.eimsound.daw.components.dragdrop.GlobalDropTarget
 import com.eimsound.daw.components.splitpane.HorizontalSplitPane

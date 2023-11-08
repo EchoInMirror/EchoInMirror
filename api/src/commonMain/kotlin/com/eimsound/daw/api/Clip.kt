@@ -14,6 +14,8 @@ import com.eimsound.audioprocessor.data.EnvelopePointList
 import com.eimsound.audioprocessor.data.midi.MidiNoteRecorder
 import com.eimsound.audioprocessor.data.midi.NoteMessageList
 import com.eimsound.daw.api.processor.Track
+import com.eimsound.daw.commons.*
+import com.eimsound.daw.commons.json.*
 import com.eimsound.daw.utils.*
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
@@ -99,10 +101,17 @@ interface Clip : JsonSerializable {
 typealias MidiCCEvents = Map<Int, BaseEnvelopePointList>
 typealias MutableMidiCCEvents = MutableMap<Int, EnvelopePointList>
 
+/**
+ * @see com.eimsound.daw.impl.clips.midi.MidiClipImpl
+ */
 interface MidiClip : Clip {
     val notes: NoteMessageList
     val events: MutableMidiCCEvents
 }
+
+/**
+ * @see com.eimsound.daw.impl.clips.audio.AudioClipImpl
+ */
 interface AudioClip : Clip, AutoCloseable {
     var target: AudioSource
     @Transient
@@ -110,6 +119,13 @@ interface AudioClip : Clip, AutoCloseable {
     @Transient
     val thumbnail: AudioThumbnail
     val volumeEnvelope: EnvelopePointList
+}
+
+/**
+ * @see com.eimsound.daw.impl.clips.midi.MidiClipImpl
+ */
+interface EnvelopeClip : Clip {
+    val envelopes: MutableMidiCCEvents
 }
 
 abstract class AbstractClip<T: Clip>(json: JsonObject?, override val factory: ClipFactory<T>) : Clip {

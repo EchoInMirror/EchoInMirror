@@ -3,7 +3,7 @@ package com.eimsound.daw.api
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.eimsound.daw.utils.*
+import com.eimsound.daw.commons.json.*
 import kotlinx.serialization.Transient
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject

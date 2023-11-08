@@ -16,8 +16,8 @@ import androidx.compose.ui.text.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.eimsound.daw.components.utils.warning
-import com.eimsound.daw.utils.ExperimentalEIMApi
-import com.eimsound.daw.utils.LevelMeter
+import com.eimsound.daw.commons.ExperimentalEIMApi
+import com.eimsound.daw.api.LevelMeter
 
 @OptIn(ExperimentalEIMApi::class)
 @Composable

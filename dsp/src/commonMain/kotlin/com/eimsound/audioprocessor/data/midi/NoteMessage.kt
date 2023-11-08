@@ -2,9 +2,8 @@ package com.eimsound.audioprocessor.data.midi
 
 import androidx.compose.runtime.mutableStateOf
 import com.eimsound.daw.utils.IManualState
-import com.eimsound.daw.utils.JsonSerializable
 import com.eimsound.daw.utils.mapValue
-import com.eimsound.daw.utils.putNotDefault
+import com.eimsound.daw.commons.json.*
 import kotlinx.serialization.json.*
 
 /**

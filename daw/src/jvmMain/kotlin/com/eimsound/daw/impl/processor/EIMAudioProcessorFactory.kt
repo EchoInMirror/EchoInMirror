@@ -6,8 +6,8 @@ import com.eimsound.daw.processor.synthesizer.KarplusStrongSynthesizer
 import com.eimsound.daw.processor.synthesizer.KarplusStrongSynthesizerDescription
 import com.eimsound.daw.processor.synthesizer.SineWaveSynthesizer
 import com.eimsound.daw.processor.synthesizer.SineWaveSynthesizerDescription
-import com.eimsound.daw.utils.asString
-import com.eimsound.daw.utils.toJsonElement
+import com.eimsound.daw.commons.json.asString
+import com.eimsound.daw.commons.json.toJsonElement
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.json.JsonObject
 import java.nio.file.Path

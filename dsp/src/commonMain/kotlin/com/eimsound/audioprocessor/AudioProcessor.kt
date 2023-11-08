@@ -4,10 +4,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.eimsound.daw.utils.*
+import com.eimsound.daw.commons.Restorable
+import com.eimsound.daw.commons.json.*
+import com.eimsound.daw.utils.randomId
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.Transient
 import kotlinx.serialization.json.*
 import java.nio.file.Path
 import java.util.*
@@ -18,11 +19,8 @@ enum class AudioProcessorState {
 
 interface AudioProcessor: Restorable, AutoCloseable, SuddenChangeListener {
     var name: String
-    @Transient
     val description: AudioProcessorDescription
-    @Transient
     val inputChannelsCount: Int
-    @Transient
     val outputChannelsCount: Int
     val factory: AudioProcessorFactory<*>
     val id: String

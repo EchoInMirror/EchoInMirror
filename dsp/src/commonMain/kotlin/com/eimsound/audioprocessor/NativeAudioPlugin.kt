@@ -1,6 +1,6 @@
 package com.eimsound.audioprocessor
 
-import com.eimsound.daw.utils.JsonSerializable
+import com.eimsound.daw.commons.json.JsonSerializable
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 

@@ -31,6 +31,7 @@ kotlin {
     sourceSets {
         named("jvmMain") {
             dependencies {
+                api(project(":commons"))
                 api(project(":components"))
                 api(project(":utils"))
                 api(project(":api"))

@@ -9,8 +9,8 @@ import com.eimsound.daw.api.MidiClip
 import com.eimsound.daw.api.TrackClip
 import com.eimsound.daw.components.icons.PencilMinus
 import com.eimsound.daw.components.icons.PencilPlus
-import com.eimsound.daw.utils.ReversibleAction
-import com.eimsound.daw.utils.UndoableAction
+import com.eimsound.daw.commons.ReversibleAction
+import com.eimsound.daw.commons.UndoableAction
 import kotlinx.coroutines.runBlocking
 
 fun TrackClip<MidiClip>.doNoteAmountAction(noteMessage: Collection<NoteMessage>, isDelete: Boolean = false) {

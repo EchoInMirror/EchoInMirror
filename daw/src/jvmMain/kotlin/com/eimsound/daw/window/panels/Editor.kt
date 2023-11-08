@@ -18,7 +18,7 @@ import com.eimsound.daw.api.ClipEditor
 import com.eimsound.daw.api.window.Panel
 import com.eimsound.daw.api.window.PanelDirection
 import com.eimsound.daw.components.Gap
-import com.eimsound.daw.utils.MultiSelectableEditor
+import com.eimsound.daw.commons.MultiSelectableEditor
 
 object Editor: Panel, MultiSelectableEditor {
     override val name = "编辑器"

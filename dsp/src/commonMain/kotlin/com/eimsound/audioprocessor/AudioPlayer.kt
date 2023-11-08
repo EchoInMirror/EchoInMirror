@@ -4,7 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.eimsound.daw.utils.Reloadable
+import com.eimsound.daw.commons.Reloadable
 import java.util.*
 
 interface AudioPlayer : AutoCloseable {

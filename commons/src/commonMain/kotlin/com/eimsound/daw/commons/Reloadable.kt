@@ -1,4 +1,4 @@
-package com.eimsound.daw.utils
+package com.eimsound.daw.commons
 
 interface Reloadable {
     fun reload()

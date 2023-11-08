@@ -2,7 +2,7 @@ package com.eimsound.audioprocessor.impl
 
 import androidx.compose.runtime.mutableStateMapOf
 import com.eimsound.audioprocessor.*
-import com.eimsound.daw.utils.NoSuchFactoryException
+import com.eimsound.daw.commons.NoSuchFactoryException
 import java.util.*
 
 class AudioPlayerManagerImpl : AudioPlayerManager {

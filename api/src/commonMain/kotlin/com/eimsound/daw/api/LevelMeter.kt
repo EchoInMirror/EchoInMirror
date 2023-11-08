@@ -1,11 +1,13 @@
 @file:Suppress("unused")
 
-package com.eimsound.daw.utils
+package com.eimsound.daw.api
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
+import com.eimsound.daw.commons.ExperimentalEIMApi
+import com.eimsound.daw.utils.mapValue
 import kotlin.math.log10
 import kotlin.math.pow
 import kotlin.math.sqrt

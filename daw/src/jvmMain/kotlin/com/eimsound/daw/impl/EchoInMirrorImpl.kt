@@ -18,8 +18,7 @@ import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.api.processor.TrackManager
 import com.eimsound.daw.components.GlobalSnackbarProvider
 import com.eimsound.daw.plugin.EIMPluginManager
-import com.eimsound.daw.utils.ExperimentalEIMApi
-import com.eimsound.daw.utils.impl.DefaultUndoManager
+import com.eimsound.daw.commons.ExperimentalEIMApi
 import com.eimsound.daw.window.dialogs.settings.settingsTabsLoader
 import com.microsoft.appcenter.crashes.Crashes
 import kotlinx.coroutines.runBlocking

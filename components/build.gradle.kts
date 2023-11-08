@@ -20,6 +20,7 @@ kotlin {
             dependencies {
                 compileOnly(project(":dsp"))
                 compileOnly(project(":api"))
+                compileOnly(project(":commons"))
                 compileOnly(compose.runtime)
                 compileOnly(compose.preview)
                 compileOnly(compose.ui)

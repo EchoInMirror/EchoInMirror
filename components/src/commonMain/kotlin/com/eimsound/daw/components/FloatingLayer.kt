@@ -21,7 +21,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.unit.*
 import androidx.compose.ui.util.fastForEach
-import com.eimsound.daw.utils.BasicEditor
+import com.eimsound.daw.commons.BasicEditor
 
 private data class FloatingLayer(val key: Any, val onClose: ((Any) -> Unit)?, val position: Offset?,
                                  val hasOverlay: Boolean, val overflow: Boolean, val content: @Composable () -> Unit) {

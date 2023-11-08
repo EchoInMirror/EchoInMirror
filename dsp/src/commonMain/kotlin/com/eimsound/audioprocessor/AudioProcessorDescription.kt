@@ -1,6 +1,6 @@
 package com.eimsound.audioprocessor
 
-import com.eimsound.daw.utils.IDisplayName
+import com.eimsound.daw.commons.IDisplayName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 

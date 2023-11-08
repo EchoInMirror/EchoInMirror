@@ -43,8 +43,8 @@ import com.eimsound.daw.components.IconButton
 import com.eimsound.daw.components.utils.EditAction
 import com.eimsound.daw.components.utils.clickableWithIcon
 import com.eimsound.daw.utils.FloatRange
-import com.eimsound.daw.utils.MultiSelectableEditor
-import com.eimsound.daw.utils.SerializableEditor
+import com.eimsound.daw.commons.MultiSelectableEditor
+import com.eimsound.daw.commons.SerializableEditor
 import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
 

@@ -21,6 +21,8 @@ import com.eimsound.daw.api.MidiClip
 import com.eimsound.daw.api.MidiClipEditor
 import com.eimsound.daw.api.TrackClip
 import com.eimsound.daw.api.processor.Track
+import com.eimsound.daw.commons.json.JsonIgnoreDefaults
+import com.eimsound.daw.commons.SerializableEditor
 import com.eimsound.daw.components.*
 import com.eimsound.daw.components.splitpane.VerticalSplitPane
 import com.eimsound.daw.components.splitpane.rememberSplitPaneState

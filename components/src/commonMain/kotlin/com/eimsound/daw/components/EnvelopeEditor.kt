@@ -32,6 +32,9 @@ import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.util.fastForEach
 import com.eimsound.audioprocessor.data.*
 import com.eimsound.daw.api.EchoInMirror
+import com.eimsound.daw.commons.json.JsonIgnoreDefaults
+import com.eimsound.daw.commons.MultiSelectableEditor
+import com.eimsound.daw.commons.SerializableEditor
 import com.eimsound.daw.components.utils.EditAction
 import com.eimsound.daw.utils.*
 import kotlinx.coroutines.launch
@@ -126,9 +129,11 @@ interface EnvelopeEditorEventHandler {
     fun onTypeChanged(editor: EnvelopeEditor, points: BaseEnvelopePointList, type: EnvelopeType)
 }
 
-class EnvelopeEditor(val points: EnvelopePointList, val valueRange: FloatRange,
-                     private val defaultValue: Float = valueRange.start, private val isFloat: Boolean = false,
-                     private val eventHandler: EnvelopeEditorEventHandler? = null): SerializableEditor, MultiSelectableEditor {
+class EnvelopeEditor(
+    val points: EnvelopePointList, val valueRange: FloatRange,
+    private val defaultValue: Float = valueRange.start, private val isFloat: Boolean = false,
+    private val eventHandler: EnvelopeEditorEventHandler? = null
+): SerializableEditor, MultiSelectableEditor {
     @Suppress("MemberVisibilityCanBePrivate")
     val selectedPoints = mutableStateSetOf<EnvelopePoint>()
     private var selectionStartX by mutableStateOf(0F)

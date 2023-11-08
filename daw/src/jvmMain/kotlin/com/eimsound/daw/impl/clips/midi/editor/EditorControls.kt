@@ -13,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEachIndexed
@@ -38,11 +39,12 @@ private fun dfsTrackIndex(track: Track, target: Track, index: String): String? {
 
 @Composable
 private fun TrackItem(track: Track, backingTracks: IManualStateValue<WeakHashMap<Track, Unit>>, index: String, depth: Int = 0) {
-    val isSelected = EchoInMirror.selectedClip?.clip == track
+    val isSelected = EchoInMirror.selectedClip?.track == track
+    val isBackingTrack = backingTracks.readValue().contains(track)
     MenuItem({
         if (backingTracks.value.remove(track) == null) backingTracks.value[track] = Unit
         backingTracks.update()
-    }, isSelected || backingTracks.readValue().contains(track),
+    }, isSelected || isBackingTrack,
         minHeight = 28.dp, padding = PaddingValues(), modifier = Modifier.height(IntrinsicSize.Min)
     ) {
         Spacer(Modifier.width(6.dp * depth))
@@ -53,7 +55,8 @@ private fun TrackItem(track: Track, backingTracks: IManualStateValue<WeakHashMap
                 Modifier.fillMaxWidth().align(Alignment.CenterStart).padding(start = 6.dp, end = 12.dp),
                 maxLines = 1,
                 style = MaterialTheme.typography.labelLarge,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                fontWeight = if (isSelected) FontWeight.Bold else null,
+                textDecoration = if (isBackingTrack) TextDecoration.Underline else null
             )
         }
     }

@@ -12,11 +12,9 @@ import com.eimsound.audioprocessor.data.midi.noteOff
 import com.eimsound.audioprocessor.dsp.calcPanLeftChannel
 import com.eimsound.audioprocessor.dsp.calcPanRightChannel
 import com.eimsound.daw.Configuration
-import com.eimsound.daw.api.ClipManager
-import com.eimsound.daw.api.DefaultTrackClipList
-import com.eimsound.daw.api.EchoInMirror
-import com.eimsound.daw.api.ProjectInformation
+import com.eimsound.daw.api.*
 import com.eimsound.daw.api.processor.*
+import com.eimsound.daw.commons.json.*
 import com.eimsound.daw.components.utils.randomColor
 import com.eimsound.daw.utils.*
 import com.eimsound.daw.window.panels.fileBrowserPreviewer

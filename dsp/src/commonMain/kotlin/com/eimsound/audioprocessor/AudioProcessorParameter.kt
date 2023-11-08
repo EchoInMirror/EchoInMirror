@@ -3,7 +3,7 @@ package com.eimsound.audioprocessor
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.eimsound.daw.utils.ExperimentalEIMApi
+import com.eimsound.daw.commons.ExperimentalEIMApi
 import com.eimsound.daw.utils.FloatRange
 import kotlin.reflect.KProperty
 

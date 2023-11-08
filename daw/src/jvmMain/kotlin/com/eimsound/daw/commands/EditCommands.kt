@@ -6,10 +6,10 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.text.AnnotatedString
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.AbstractCommand
-import com.eimsound.daw.utils.BasicEditor
+import com.eimsound.daw.commons.BasicEditor
 import com.eimsound.daw.dawutils.CLIPBOARD_MANAGER
-import com.eimsound.daw.utils.MultiSelectableEditor
-import com.eimsound.daw.utils.SerializableEditor
+import com.eimsound.daw.commons.MultiSelectableEditor
+import com.eimsound.daw.commons.SerializableEditor
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch

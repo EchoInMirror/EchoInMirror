@@ -3,8 +3,8 @@ package com.eimsound.daw.api.processor
 import com.eimsound.audioprocessor.AudioProcessorFactory
 import com.eimsound.audioprocessor.DefaultAudioProcessorDescription
 import com.eimsound.daw.api.ProjectInformation
-import com.eimsound.daw.utils.NoSuchFactoryException
-import com.eimsound.daw.utils.Reloadable
+import com.eimsound.daw.commons.NoSuchFactoryException
+import com.eimsound.daw.commons.Reloadable
 import java.nio.file.Path
 import java.util.*
 

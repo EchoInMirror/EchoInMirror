@@ -1,8 +1,8 @@
 package com.eimsound.audioprocessor
 
-import com.eimsound.daw.utils.IDisplayName
-import com.eimsound.daw.utils.NoSuchFactoryException
-import com.eimsound.daw.utils.Reloadable
+import com.eimsound.daw.commons.IDisplayName
+import com.eimsound.daw.commons.NoSuchFactoryException
+import com.eimsound.daw.commons.Reloadable
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable

@@ -15,6 +15,7 @@ kotlin {
     sourceSets {
         named("commonMain") {
             dependencies {
+                api(project(":commons"))
                 api(project(":utils"))
                 implementation(compose.runtime)
                 implementation("com.github.albfernandez:juniversalchardet:2.4.0")

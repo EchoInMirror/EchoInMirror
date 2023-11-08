@@ -7,7 +7,7 @@ import com.eimsound.audioprocessor.data.Quantification
 import com.eimsound.daw.api.processor.Bus
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.api.window.WindowManager
-import com.eimsound.daw.utils.UndoManager
+import com.eimsound.daw.commons.UndoManager
 import org.pf4j.PluginManager
 import java.util.*
 

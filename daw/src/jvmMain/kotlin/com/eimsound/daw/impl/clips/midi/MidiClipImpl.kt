@@ -23,7 +23,7 @@ import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.components.EnvelopeEditor
 import com.eimsound.daw.impl.clips.midi.editor.DefaultMidiClipEditor
 import com.eimsound.daw.utils.binarySearch
-import com.eimsound.daw.utils.putNotDefault
+import com.eimsound.daw.commons.json.putNotDefault
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.json.*
 import java.nio.file.Path

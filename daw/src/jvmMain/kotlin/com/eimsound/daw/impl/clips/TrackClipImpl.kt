@@ -6,8 +6,8 @@ import androidx.compose.runtime.setValue
 import com.eimsound.daw.api.Clip
 import com.eimsound.daw.api.TrackClip
 import com.eimsound.daw.api.processor.Track
-import com.eimsound.daw.utils.asInt
-import com.eimsound.daw.utils.putNotDefault
+import com.eimsound.daw.commons.json.asInt
+import com.eimsound.daw.commons.json.putNotDefault
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject

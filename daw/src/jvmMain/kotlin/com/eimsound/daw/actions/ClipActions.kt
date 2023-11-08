@@ -8,7 +8,7 @@ import com.eimsound.daw.api.TrackClip
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.components.icons.PencilMinus
 import com.eimsound.daw.components.icons.PencilPlus
-import com.eimsound.daw.utils.ReversibleAction
+import com.eimsound.daw.commons.ReversibleAction
 import kotlinx.coroutines.runBlocking
 
 fun doClipsAmountAction(clips: Collection<TrackClip<*>>, isDelete: Boolean) {

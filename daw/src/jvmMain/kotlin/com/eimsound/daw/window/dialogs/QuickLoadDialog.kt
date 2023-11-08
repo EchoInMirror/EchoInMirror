@@ -28,9 +28,9 @@ import com.eimsound.daw.FAVORITE_AUDIO_PROCESSORS_PATH
 import com.eimsound.daw.components.*
 import com.eimsound.daw.components.dragdrop.GlobalDraggable
 import com.eimsound.daw.components.utils.warning
-import com.eimsound.daw.utils.IDisplayName
+import com.eimsound.daw.commons.IDisplayName
 import com.eimsound.daw.utils.mutableStateSetOf
-import com.eimsound.daw.utils.toJson
+import com.eimsound.daw.commons.json.toJson
 import kotlinx.coroutines.*
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json

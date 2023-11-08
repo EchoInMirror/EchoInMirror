@@ -1,12 +1,16 @@
 @file:Suppress("DuplicatedCode")
 
-package com.eimsound.daw.utils
+package com.eimsound.daw.commons
 
 import androidx.compose.ui.graphics.vector.ImageVector
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.nio.file.Files
 import java.nio.file.Path
+
+private fun createTempDirectory(): Path = Files.createTempDirectory(
+    System.getProperty("eim.tempfiles.prefix", "EchoInMirror") + "-undo"
+).apply { Files.createDirectories(this) }
 
 interface UndoableAction {
     suspend fun undo(): Boolean
@@ -76,9 +80,7 @@ abstract class ListAddOrRemoveAction<T>(private val target: T, private val list:
     private suspend fun remove() {
         list.remove(target)
         if (target is Restorable) withContext(Dispatchers.IO) {
-            if (restorablePath == null) restorablePath = createTempDirectory("undo").apply {
-                Files.createDirectories(this)
-            }
+            if (restorablePath == null) restorablePath = createTempDirectory()
             target.store(restorablePath!!)
         }
         if (target is AutoCloseable) target.close()
@@ -113,9 +115,7 @@ abstract class ListReplaceAction<T>(private val target: T, private val list: Mut
 
     private suspend fun store(it: T) {
         if (it is Restorable) withContext(Dispatchers.IO) {
-            if (restorablePath == null) restorablePath = createTempDirectory("undo").apply {
-                Files.createDirectories(this)
-            }
+            if (restorablePath == null) restorablePath = createTempDirectory()
             it.store(restorablePath!!)
         }
         if (it is AutoCloseable) it.close()
@@ -124,6 +124,9 @@ abstract class ListReplaceAction<T>(private val target: T, private val list: Mut
 
 class UndoableActionExecuteException(message: String, cause: Throwable? = null) : Exception(message, cause)
 
+/**
+ * @see com.eimsound.daw.impl.DefaultUndoManager
+ */
 interface UndoManager {
     val actions: List<UndoableAction>
     val limit: Int

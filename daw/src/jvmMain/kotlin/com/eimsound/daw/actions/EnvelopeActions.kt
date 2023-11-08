@@ -9,6 +9,8 @@ import com.eimsound.audioprocessor.data.EnvelopePoint
 import com.eimsound.audioprocessor.data.EnvelopePointList
 import com.eimsound.audioprocessor.data.EnvelopeType
 import com.eimsound.daw.api.EchoInMirror
+import com.eimsound.daw.commons.ReversibleAction
+import com.eimsound.daw.commons.UndoableAction
 import com.eimsound.daw.components.EnvelopeEditor
 import com.eimsound.daw.components.EnvelopeEditorEventHandler
 import com.eimsound.daw.components.icons.PencilMinus

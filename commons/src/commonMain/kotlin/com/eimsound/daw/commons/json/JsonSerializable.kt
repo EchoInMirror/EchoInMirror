@@ -1,6 +1,6 @@
 @file:Suppress("NOTHING_TO_INLINE", "unused")
 
-package com.eimsound.daw.utils
+package com.eimsound.daw.commons.json
 
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.encodeToString

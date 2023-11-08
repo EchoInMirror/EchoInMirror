@@ -1,12 +1,10 @@
-package com.eimsound.daw.utils.impl
+package com.eimsound.daw.impl
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
+import com.eimsound.daw.commons.UndoManager
+import com.eimsound.daw.commons.UndoableAction
+import com.eimsound.daw.commons.UndoableActionExecuteException
 import com.eimsound.daw.utils.ManualState
-import com.eimsound.daw.utils.UndoManager
-import com.eimsound.daw.utils.UndoableAction
-import com.eimsound.daw.utils.UndoableActionExecuteException
 import io.github.oshai.kotlinlogging.KotlinLogging
 
 private val logger = KotlinLogging.logger { }
