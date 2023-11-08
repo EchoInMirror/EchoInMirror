@@ -77,6 +77,8 @@ fun Timeline(modifier: Modifier = Modifier, noteWidth: MutableState<Dp>, scrollS
         obj[0] = range
 
         val rangeHandleWidth by animateFloatAsState(if (isInRange) 4F else 2F)
+        val onRangeChangeValue by rememberUpdatedState(onRangeChange)
+        val onTimeChangeValue by rememberUpdatedState(onTimeChange)
 
         Canvas(Modifier.fillMaxSize().pointerInput(Unit) {
             awaitEachGesture {
@@ -111,13 +113,13 @@ fun Timeline(modifier: Modifier = Modifier, noteWidth: MutableState<Dp>, scrollS
                 if (obj[0] != null && event.buttons.isSecondaryPressed) isInRange = true
                 calcDrag(
                     down.position.x + scrollState.value - offsetX.toPx(), noteWidth.value.toPx(),
-                    tmpArr[0], if (isInRange) obj[0] else null, onRangeChange, onTimeChange
+                    tmpArr[0], if (isInRange) obj[0] else null, onRangeChangeValue, onTimeChange
                 )
                 if (drag != null) {
                     !drag(drag.id) {
                         calcDrag(
                             it.position.x + scrollState.value - offsetX.toPx(), noteWidth.value.toPx(),
-                            tmpArr[0], if (isInRange) obj[0] else null, onRangeChange, onTimeChange
+                            tmpArr[0], if (isInRange) obj[0] else null, onRangeChangeValue, onTimeChange
                         )
                         it.consume()
                     }
@@ -126,7 +128,7 @@ fun Timeline(modifier: Modifier = Modifier, noteWidth: MutableState<Dp>, scrollS
             }
             detectDragGestures { change, _ ->
                 change.consume()
-                onTimeChange?.invoke(((change.position.x + scrollState.value - offsetX.value) / noteWidth.value.toPx()).toInt())
+                onTimeChangeValue?.invoke(((change.position.x + scrollState.value - offsetX.value) / noteWidth.value.toPx()).toInt())
             }
         }) {
             val offsetXValue = offsetX.toPx()
