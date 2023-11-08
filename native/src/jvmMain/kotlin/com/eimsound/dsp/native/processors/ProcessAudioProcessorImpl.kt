@@ -249,9 +249,13 @@ open class ProcessAudioProcessorImpl(
                 val flags = input.read()
                 val initialValue = input.readFloat()
                 input.readInt() // category
+                val steps = input.readInt().coerceAtMost(65536)
                 val name = input.readString()
                 val label = input.readString()
-                val valueStrings = input.readStringArray()
+                var valueStrings = input.readStringArray()
+                if (valueStrings.isEmpty() && flags and PARAMETER_IS_DISCRETE != 0) {
+                    valueStrings = Array(steps) { s -> "${(s.toFloat() / steps * 100).toInt()}%" }
+                }
 
                 val isAutomatable = flags and PARAMETER_IS_AUTOMATABLE != 0
                 val id = it.toString()
