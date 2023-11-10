@@ -24,6 +24,7 @@ interface AudioProcessor: Restorable, AutoCloseable, SuddenChangeListener {
     val outputChannelsCount: Int
     val factory: AudioProcessorFactory<*>
     val id: String
+    val uuid: UUID
     val parameters: List<IAudioProcessorParameter>
     val lastModifiedParameter: IAudioProcessorParameter?
     var isBypassed: Boolean
@@ -50,6 +51,8 @@ abstract class AbstractAudioProcessor(
     override val outputChannelsCount = 2
     override var id = randomId()
         protected set
+    override var uuid: UUID = UUID.randomUUID()
+        protected set
     @Suppress("CanBePrimaryConstructorProperty")
     override val description = description
     override var name = description.name
@@ -68,6 +71,7 @@ abstract class AbstractAudioProcessor(
         put("factory", factory.name)
         put("name", name)
         put("id", id)
+        put("uuid", uuid.toString())
         put("identifier", description.identifier)
         putNotDefault("isBypassed", isBypassed)
         if (saveParameters) put("parameters", buildJsonObject {
@@ -80,6 +84,7 @@ abstract class AbstractAudioProcessor(
         json as JsonObject
         name = json["name"]?.asString() ?: ""
         json["id"]?.asString()?.let { if (it.isNotEmpty()) id = it }
+        json["uuid"]?.asString()?.let { if (it.isNotEmpty()) uuid = UUID.fromString(it) }
         isBypassed = json["isBypassed"]?.jsonPrimitive?.boolean ?: false
         if (saveParameters) json["parameters"]?.jsonObject?.let { obj ->
             val params = parameters.associateBy { it.id }

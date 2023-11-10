@@ -28,7 +28,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.json.*
 import java.nio.file.Path
 
-class MidiClipImpl(json: JsonObject?, factory: ClipFactory<MidiClip>) : AbstractClip<MidiClip>(json, factory), MidiClip {
+class MidiClipImpl(factory: ClipFactory<MidiClip>) : AbstractClip<MidiClip>(factory), MidiClip {
     override val notes = DefaultNoteMessageList()
     override val events: MutableMidiCCEvents = mutableStateMapOf(
         1 to DefaultEnvelopePointList().apply {
@@ -39,10 +39,6 @@ class MidiClipImpl(json: JsonObject?, factory: ClipFactory<MidiClip>) : Abstract
     override val isExpandable = true
 
     val ccPrevValues = ByteArray(128)
-
-    init {
-        if (json != null) fromJson(json)
-    }
 
     override fun toJson() = buildJsonObject {
         put("id", id)
@@ -77,17 +73,21 @@ class MidiClipImpl(json: JsonObject?, factory: ClipFactory<MidiClip>) : Abstract
 private val logger = KotlinLogging.logger { }
 class MidiClipFactoryImpl : MidiClipFactory {
     override val name = "MIDIClip"
-    override fun createClip() = MidiClipImpl(null, this).apply {
+    override fun createClip() = MidiClipImpl(this).apply {
         logger.info { "Creating clip \"${this.id}\"" }
     }
     override fun createClip(path: Path, json: JsonObject): MidiClipImpl {
-        logger.info { "Creating clip ${json["id"]} in $path" }
-        return MidiClipImpl(json, this)
+        return MidiClipImpl(this).apply {
+            logger.info { "Creating clip ${json["id"]} in $path" }
+            fromJson(json)
+        }
     }
     override fun getEditor(clip: TrackClip<MidiClip>) = DefaultMidiClipEditor(clip)
 
-    override fun processBlock(clip: TrackClip<MidiClip>, buffers: Array<FloatArray>, position: CurrentPosition,
-                              midiBuffer: ArrayList<Int>, noteRecorder: MidiNoteRecorder, pendingNoteOns: LongArray) {
+    override fun processBlock(
+        clip: TrackClip<MidiClip>, buffers: Array<FloatArray>, position: CurrentPosition,
+        midiBuffer: ArrayList<Int>, noteRecorder: MidiNoteRecorder, pendingNoteOns: LongArray
+    ) {
         val c = clip.clip as MidiClipImpl
         val timeInSamples = position.timeInSamples
         val blockEndSample = timeInSamples + position.bufferSize
@@ -137,8 +137,10 @@ class MidiClipFactoryImpl : MidiClipFactory {
     }
 
     @Composable
-    override fun PlaylistContent(clip: TrackClip<MidiClip>, track: Track, contentColor: Color,
-                                 noteWidth: MutableState<Dp>, startPPQ: Float, widthPPQ: Float) {
+    override fun PlaylistContent(
+        clip: TrackClip<MidiClip>, track: Track, contentColor: Color,
+        noteWidth: MutableState<Dp>, startPPQ: Float, widthPPQ: Float
+    ) {
         Box {
             MidiClipContents(clip, noteWidth, startPPQ, widthPPQ, contentColor)
             clip.clip.events.forEach { (_, points) ->

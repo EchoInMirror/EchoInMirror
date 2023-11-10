@@ -18,6 +18,7 @@ import com.eimsound.daw.api.TrackClipList
 import com.eimsound.daw.commons.json.*
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
+import java.util.UUID
 
 enum class ChannelType {
     STEREO, LEFT, RIGHT, MONO, SIDE
@@ -51,6 +52,8 @@ interface Bus : Track {
     var channelType: ChannelType
     val lastSaveTime: Long
     suspend fun save()
+    fun findProcessor(uuid: UUID): TrackAudioProcessorWrapper?
+    fun onLoaded(callback: () -> Unit)
 }
 
 interface HandledParameter : JsonSerializable {

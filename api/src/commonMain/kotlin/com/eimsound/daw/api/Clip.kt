@@ -13,6 +13,7 @@ import com.eimsound.audioprocessor.data.BaseEnvelopePointList
 import com.eimsound.audioprocessor.data.EnvelopePointList
 import com.eimsound.audioprocessor.data.midi.MidiNoteRecorder
 import com.eimsound.audioprocessor.data.midi.NoteMessageList
+import com.eimsound.daw.api.controllers.ParameterController
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.commons.*
 import com.eimsound.daw.commons.json.*
@@ -42,13 +43,16 @@ interface ClipFactory<T: Clip> {
     val name: String
     fun createClip(): T
     fun createClip(path: Path, json: JsonObject): T
-    fun processBlock(clip: TrackClip<T>, buffers: Array<FloatArray>, position: CurrentPosition,
-                     midiBuffer: ArrayList<Int>, noteRecorder: MidiNoteRecorder, pendingNoteOns: LongArray)
+    fun processBlock(
+        clip: TrackClip<T>, buffers: Array<FloatArray>, position: CurrentPosition,
+        midiBuffer: ArrayList<Int>, noteRecorder: MidiNoteRecorder, pendingNoteOns: LongArray
+    )
     fun save(clip: T, path: Path) { }
     fun getEditor(clip: TrackClip<T>): ClipEditor?
     @Composable
-    fun PlaylistContent(clip: TrackClip<T>, track: Track, contentColor: Color,
-                        noteWidth: MutableState<Dp>, startPPQ: Float, widthPPQ: Float
+    fun PlaylistContent(
+        clip: TrackClip<T>, track: Track, contentColor: Color,
+        noteWidth: MutableState<Dp>, startPPQ: Float, widthPPQ: Float
     )
 }
 
@@ -63,6 +67,11 @@ interface MidiClipFactory: ClipFactory<MidiClip>
 interface AudioClipFactory: ClipFactory<AudioClip> {
     fun createClip(path: Path): AudioClip
 }
+
+/**
+ * @see com.eimsound.daw.impl.clips.envelope.EnvelopeClipFactoryImpl
+ */
+interface EnvelopeClipFactory: ClipFactory<EnvelopeClip>
 
 /**
  * @see com.eimsound.daw.impl.clips.ClipManagerImpl
@@ -122,14 +131,15 @@ interface AudioClip : Clip, AutoCloseable {
 }
 
 /**
- * @see com.eimsound.daw.impl.clips.midi.MidiClipImpl
+ * @see com.eimsound.daw.impl.clips.envelope.EnvelopeClipImpl
  */
 interface EnvelopeClip : Clip {
-    val envelopes: MutableMidiCCEvents
+    val envelope: EnvelopePointList
+    val controllers: MutableList<ParameterController>
 }
 
-abstract class AbstractClip<T: Clip>(json: JsonObject?, override val factory: ClipFactory<T>) : Clip {
-    override var id = json?.get("id")?.asString() ?: randomId()
+abstract class AbstractClip<T: Clip>(override val factory: ClipFactory<T>) : Clip {
+    override var id = randomId()
     override val name: String = ""
     override val isExpandable = false
     override val defaultDuration = -1

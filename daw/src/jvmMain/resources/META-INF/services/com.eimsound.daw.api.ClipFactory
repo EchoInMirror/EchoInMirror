@@ -1,2 +1,3 @@
 com.eimsound.daw.impl.clips.midi.MidiClipFactoryImpl
 com.eimsound.daw.impl.clips.audio.AudioClipFactoryImpl
+com.eimsound.daw.impl.clips.envelope.EnvelopeClipFactoryImpl

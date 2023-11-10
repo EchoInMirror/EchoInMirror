@@ -19,16 +19,18 @@ import kotlinx.serialization.json.put
 import java.nio.file.Path
 import kotlin.io.path.name
 
-class AudioClipImpl(json: JsonObject?, factory: ClipFactory<AudioClip>, target: AudioSource? = null):
-    AbstractClip<AudioClip>(json, factory), AudioClip {
-    override var target: AudioSource = target ?:
-    AudioSourceManager.instance.createAudioSource(json?.get("target") as? JsonObject ?: throw IllegalStateException("No target"))
+class AudioClipImpl(
+    factory: ClipFactory<AudioClip>, target: AudioSource? = null
+): AbstractClip<AudioClip>(factory), AudioClip {
+    private var _target = target
+    override var target: AudioSource
+        get() = _target ?: throw IllegalStateException("Target is not set")
         set(value) {
-            if (field == value) return
+            if (_target == value) return
             close()
-            field = value
+            _target = value
             audioSource = AudioSourceManager.instance.createResampledSource(value)
-            audioSource.factor = EchoInMirror.currentPosition.sampleRate.toDouble() / target.sampleRate
+            audioSource.factor = EchoInMirror.currentPosition.sampleRate.toDouble() / value.sampleRate
             thumbnail = AudioThumbnail(audioSource)
         }
     override var audioSource = AudioSourceManager.instance.createResampledSource(this.target).apply {
@@ -37,7 +39,7 @@ class AudioClipImpl(json: JsonObject?, factory: ClipFactory<AudioClip>, target: 
     override val defaultDuration get() = EchoInMirror.currentPosition.convertSamplesToPPQ(audioSource.length)
     override val maxDuration get() = defaultDuration
     override var thumbnail by mutableStateOf(AudioThumbnail(this.audioSource))
-    override val volumeEnvelope = DefaultEnvelopePointList().apply { fromJson(json?.get("volumeEnvelope")) }
+    override val volumeEnvelope = DefaultEnvelopePointList()
     override val name: String
         get() {
             var source: AudioSource? = target
@@ -47,6 +49,10 @@ class AudioClipImpl(json: JsonObject?, factory: ClipFactory<AudioClip>, target: 
             }
             return ""
         }
+
+    init {
+        if (target != null) this.target = target
+    }
 
     override fun close() { target.close() }
 
@@ -61,27 +67,28 @@ class AudioClipImpl(json: JsonObject?, factory: ClipFactory<AudioClip>, target: 
         super.fromJson(json)
         json as JsonObject
         json["target"]?.let { target = AudioSourceManager.instance.createAudioSource(it as JsonObject) }
-        volumeEnvelope.fromJson(json["volumeEnvelope"])
+        json["volumeEnvelope"]?.let { volumeEnvelope.fromJson(it) }
     }
 }
 
 private val logger = KotlinLogging.logger { }
 class AudioClipFactoryImpl: AudioClipFactory {
     override val name = "AudioClip"
-    override fun createClip(path: Path) = AudioClipImpl(null, this,
-        AudioSourceManager.instance.createAudioSource(path))
+    override fun createClip(path: Path) = AudioClipImpl(this, AudioSourceManager.instance.createAudioSource(path))
 
-    override fun createClip() = AudioClipImpl(null, this).apply {
+    override fun createClip() = AudioClipImpl(this).apply {
         logger.info { "Creating clip \"${this.id}\"" }
     }
-    override fun createClip(path: Path, json: JsonObject): AudioClipImpl {
+    override fun createClip(path: Path, json: JsonObject) = AudioClipImpl(this).apply {
         logger.info { "Creating clip ${json["id"]} in $path" }
-        return AudioClipImpl(json, this)
+        fromJson(json)
     }
     override fun getEditor(clip: TrackClip<AudioClip>) = AudioClipEditor(clip)
 
-    override fun processBlock(clip: TrackClip<AudioClip>, buffers: Array<FloatArray>, position: CurrentPosition,
-                              midiBuffer: ArrayList<Int>, noteRecorder: MidiNoteRecorder, pendingNoteOns: LongArray) {
+    override fun processBlock(
+        clip: TrackClip<AudioClip>, buffers: Array<FloatArray>, position: CurrentPosition,
+        midiBuffer: ArrayList<Int>, noteRecorder: MidiNoteRecorder, pendingNoteOns: LongArray
+    ) {
         clip.clip.audioSource.factor = position.sampleRate.toDouble() / clip.clip.audioSource.source!!.sampleRate
         val clipTime = clip.time - clip.start
         clip.clip.audioSource.getSamples(
@@ -97,8 +104,10 @@ class AudioClipFactoryImpl: AudioClipFactory {
     }
 
     @Composable
-    override fun PlaylistContent(clip: TrackClip<AudioClip>, track: Track, contentColor: Color,
-                                 noteWidth: MutableState<Dp>, startPPQ: Float, widthPPQ: Float) {
+    override fun PlaylistContent(
+        clip: TrackClip<AudioClip>, track: Track, contentColor: Color,
+        noteWidth: MutableState<Dp>, startPPQ: Float, widthPPQ: Float
+    ) {
         val isDrawMinAndMax = noteWidth.value.value < 1
         Box {
             Waveform(clip.clip.thumbnail, EchoInMirror.currentPosition, startPPQ, widthPPQ, clip.clip.volumeEnvelope, contentColor, isDrawMinAndMax)
