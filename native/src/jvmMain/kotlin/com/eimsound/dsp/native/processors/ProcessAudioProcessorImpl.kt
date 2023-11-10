@@ -46,7 +46,7 @@ open class ProcessAudioProcessorImpl(
     override var isLaunched = false
         protected set
     override var name = "ProcessAudioProcessor"
-    final override var parameters = emptyList<AudioProcessorParameter>()
+    final override var parameters = emptyList<SimpleAudioProcessorParameter>()
         private set
     private var process: Process? = null
     private var prepared = false
@@ -58,8 +58,8 @@ open class ProcessAudioProcessorImpl(
     protected var inputStream: ByteBufInputStream? = null
     protected var outputStream: ByteBufOutputStream? = null
     protected val mutex = Mutex()
-    private val parametersToId = hashMapOf<IAudioProcessorParameter, Int>()
-    private val modifiedParameter = hashSetOf<IAudioProcessorParameter>()
+    private val parametersToId = hashMapOf<AudioProcessorParameter, Int>()
+    private val modifiedParameter = hashSetOf<AudioProcessorParameter>()
 
     override suspend fun processBlock(buffers: Array<FloatArray>, position: CurrentPosition, midiBuffer: ArrayList<Int>) {
         withContext(Dispatchers.IO) {
@@ -247,6 +247,7 @@ open class ProcessAudioProcessorImpl(
             parametersToId.clear()
             parameters = List(len) {
                 val flags = input.read()
+                val value = input.readFloat()
                 val initialValue = input.readFloat()
                 input.readInt() // category
                 val steps = input.readInt().coerceAtMost(65536)
@@ -269,7 +270,10 @@ open class ProcessAudioProcessorImpl(
                 } else {
                     audioProcessorParameterOf(id, name, initialValue = initialValue, label = label,
                         isAutomatable = isAutomatable, onChange = ::handleParameterChange)
-                }.apply { parametersToId[this] = it }
+                }.apply {
+                    parametersToId[this] = it
+                    setValue(value, false)
+                }
             }
         }
     }
@@ -298,18 +302,22 @@ open class ProcessAudioProcessorImpl(
         when (id) {
             2 -> position.isPlaying = input.readBoolean() // transport play
             3 -> { // parameter change
-                val index = input.readVarInt()
-                val value = input.readFloat()
-                if (index > 0 && index < parameters.size) {
-                    val cur = parameters[index]
-                    lastModifiedParameter = cur
-                    cur.doChangeAction(value, false)
+                val list = mutableListOf<Pair<AudioProcessorParameter, Float>>()
+                repeat(input.readVarInt()) {
+                    val index = input.readVarInt()
+                    val value = input.readFloat()
+                    if (index > 0 && index < parameters.size) {
+                        val cur = parameters[index]
+                        lastModifiedParameter = cur
+                        list.add(Pair(cur, value))
+                    }
                 }
+                list.doChangeAction(false)
             }
         }
     }
 
-    private fun handleParameterChange(p: IAudioProcessorParameter) { modifiedParameter.add(p) }
+    private fun handleParameterChange(p: AudioProcessorParameter) { modifiedParameter.add(p) }
 
     override suspend fun restore(path: Path) {
         super.restore(path)

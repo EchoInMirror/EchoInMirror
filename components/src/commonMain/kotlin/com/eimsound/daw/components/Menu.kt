@@ -5,10 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.LocalContentColor
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
@@ -16,10 +13,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.UiComposable
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -146,5 +147,26 @@ fun Selector(
         CustomTextField(filter.value ?: selected, {
             filter.value = it.ifEmpty { null }
         }, Modifier.fillMaxWidth().pointerHoverIcon(PointerIcon.Hand))
+    }
+}
+
+@Composable
+fun MenuHeader(
+    title: String, enable: Boolean = true, icon: ImageVector? = null, content: @Composable (RowScope.() -> Unit)? = null
+) {
+    Row(
+        Modifier.padding(start = 12.dp).fillMaxWidth().heightIn(32.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (icon != null) {
+            Icon(icon, null, Modifier.size(18.dp))
+        }
+        Text(title, Modifier.weight(1F).padding(4.dp, end = 16.dp), style = MaterialTheme.typography.titleSmall,
+            maxLines = 1, overflow = TextOverflow.Ellipsis,
+            textDecoration = if (enable) null else TextDecoration.LineThrough,
+            color = LocalContentColor.current.copy(alpha = if (enable) 1F else 0.7F),
+            fontWeight = FontWeight.ExtraBold
+        )
+        content?.invoke(this)
     }
 }

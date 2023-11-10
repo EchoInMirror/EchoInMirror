@@ -10,6 +10,7 @@ interface BasicEditor {
     fun paste() { }
     val hasSelected get() = true
     val canPaste get() = true
+    val canDelete get() = true
 }
 
 interface MultiSelectableEditor : BasicEditor {

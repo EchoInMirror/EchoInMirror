@@ -15,9 +15,14 @@ import com.eimsound.daw.api.Colorable
 import com.eimsound.daw.api.LevelMeter
 import com.eimsound.daw.api.ProjectInformation
 import com.eimsound.daw.api.TrackClipList
+import com.eimsound.daw.commons.Restorable
 import com.eimsound.daw.commons.json.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
+import java.nio.file.Files
+import java.nio.file.Path
 import java.util.UUID
 
 enum class ChannelType {
@@ -57,13 +62,13 @@ interface Bus : Track {
 }
 
 interface HandledParameter : JsonSerializable {
-    val parameter: IAudioProcessorParameter
+    val parameter: AudioProcessorParameter
     val points: EnvelopePointList
 }
 
 @Serializable
 data class DefaultHandledParameter(
-    override val parameter: IAudioProcessorParameter,
+    override val parameter: AudioProcessorParameter,
     override val points: EnvelopePointList = DefaultEnvelopePointList()
 ) : HandledParameter {
     override fun toJson() = buildJsonObject {
@@ -77,17 +82,22 @@ data class DefaultHandledParameter(
     }
 }
 
-interface TrackAudioProcessorWrapper : JsonSerializable, AudioProcessor {
+interface TrackAudioProcessorWrapper : JsonSerializable, Restorable, AutoCloseable {
     var handledParameters: List<HandledParameter>
+    val processor: AudioProcessor
+
+    override fun close() {
+        processor.close()
+    }
 }
 
 class DefaultTrackAudioProcessorWrapper(
-    val processor: AudioProcessor
-) : TrackAudioProcessorWrapper, AudioProcessor by processor {
+    override val processor: AudioProcessor
+) : TrackAudioProcessorWrapper {
     override var handledParameters by mutableStateOf(emptyList<HandledParameter>())
+    private var inited = false
 
     override fun toJson() = buildJsonObject {
-        put("processor", if (processor is JsonSerializable) processor.toJson() else JsonPrimitive(processor.id))
         putNotDefault("handledParameters", handledParameters)
     }
 
@@ -102,6 +112,22 @@ class DefaultTrackAudioProcessorWrapper(
                 ).apply { fromJson(elm) }
             }
         } ?: emptyList()
+    }
+
+    override suspend fun restore(path: Path) {
+        withContext(Dispatchers.IO) {
+            val file = path.resolve("wrapper.json")
+            if (Files.exists(file)) fromJsonFile(file)
+            if (inited) processor.restore(path)
+            else inited = true
+        }
+    }
+
+    override suspend fun store(path: Path) {
+        withContext(Dispatchers.IO) {
+            encodeJsonFile(path.resolve("wrapper.json"), true)
+            processor.store(path)
+        }
     }
 
     override fun toString(): String {

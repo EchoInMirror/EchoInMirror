@@ -3,6 +3,7 @@ package com.eimsound.daw.impl.processor
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.util.fastMap
 import com.eimsound.audioprocessor.*
 import com.eimsound.audioprocessor.data.PAN_RANGE
 import com.eimsound.audioprocessor.data.VOLUME_RANGE
@@ -98,7 +99,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
                 clip.clip.factory.processBlock(clip, buffers, position, midiBuffer, noteRecorder, pendingNoteOns)
             }
         }
-        preProcessorsChain.forEach { if (!it.isBypassed) it.processBlock(buffers, position, midiBuffer) }
+        preProcessorsChain.forEach { if (!it.processor.isBypassed) it.processor.processBlock(buffers, position, midiBuffer) }
         if (subTracks.isNotEmpty()) {
             tempBuffer[0].fill(0F)
             tempBuffer[1].fill(0F)
@@ -121,7 +122,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         }
 
         if (position.isRealtime) internalProcessorsChain.fastForEach { it.processBlock(buffers, position, midiBuffer) }
-        postProcessorsChain.forEach { if (!it.isBypassed) it.processBlock(buffers, position, midiBuffer) }
+        postProcessorsChain.forEach { if (!it.processor.isBypassed) it.processor.processBlock(buffers, position, midiBuffer) }
 
         var leftPeak = 0F
         var rightPeak = 0F
@@ -149,17 +150,17 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
     override fun prepareToPlay(sampleRate: Int, bufferSize: Int) {
         tempBuffer = arrayOf(FloatArray(bufferSize), FloatArray(bufferSize))
         tempBuffer2 = arrayOf(FloatArray(bufferSize), FloatArray(bufferSize))
-        preProcessorsChain.forEach { it.prepareToPlay(sampleRate, bufferSize) }
-        subTracks.forEach { it.prepareToPlay(sampleRate, bufferSize) }
-        postProcessorsChain.forEach { it.prepareToPlay(sampleRate, bufferSize) }
+        preProcessorsChain.fastForEach { it.processor.prepareToPlay(sampleRate, bufferSize) }
+        subTracks.fastForEach { it.prepareToPlay(sampleRate, bufferSize) }
+        postProcessorsChain.fastForEach { it.processor.prepareToPlay(sampleRate, bufferSize) }
         internalProcessorsChain.fastForEach { it.prepareToPlay(sampleRate, bufferSize) }
     }
 
     override fun close() {
         if (EchoInMirror.selectedTrack == this) EchoInMirror.selectedTrack = null
-        preProcessorsChain.forEach { it.close() }
-        subTracks.forEach(AutoCloseable::close)
-        postProcessorsChain.forEach { it.close() }
+        preProcessorsChain.fastForEach { it.close() }
+        subTracks.fastForEach(AutoCloseable::close)
+        postProcessorsChain.fastForEach { it.close() }
         internalProcessorsChain.fastForEach(AutoCloseable::close)
         clips.fastForEach { (it.clip as? AutoCloseable)?.close() }
     }
@@ -175,9 +176,9 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         pendingNoteOns.fill(0L)
         noteRecorder.reset()
         clips.fastForEach { it.reset() }
-        preProcessorsChain.forEach { it.onSuddenChange() }
-        subTracks.forEach(Track::onSuddenChange)
-        postProcessorsChain.forEach { it.onSuddenChange() }
+        preProcessorsChain.fastForEach { it.processor.onSuddenChange() }
+        subTracks.fastForEach(Track::onSuddenChange)
+        postProcessorsChain.fastForEach { it.processor.onSuddenChange() }
         internalProcessorsChain.fastForEach(AudioProcessor::onSuddenChange)
     }
 
@@ -205,9 +206,9 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         putNotDefault("height", height)
         putNotDefault("isBypassed", isBypassed)
         putNotDefault("isSolo", isSolo)
-        putNotDefault("subTracks", subTracks.map { it.id })
-        putNotDefault("preProcessorsChain", preProcessorsChain.map { it.id })
-        putNotDefault("postProcessorsChain", postProcessorsChain.map { it.id })
+        putNotDefault("subTracks", subTracks.fastMap { it.id })
+        putNotDefault("preProcessorsChain", preProcessorsChain.fastMap { it.processor.id })
+        putNotDefault("postProcessorsChain", postProcessorsChain.fastMap { it.processor.id })
         putNotDefault("clips", clips)
     }
     override fun toJson() = buildJsonObject { buildJson() }
@@ -248,7 +249,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         withContext(Dispatchers.IO) {
             processors.map {
                 launch {
-                    val processDir = dir.resolve(it.id)
+                    val processDir = dir.resolve(it.processor.id)
                     Files.createDirectories(processDir)
                     it.store(processDir)
                 }
@@ -259,8 +260,8 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
     private suspend fun clean(path: Path) {
         val processorsDir = path.resolve("processors")
         val processors = hashSetOf<String>()
-        preProcessorsChain.fastForEach { processors.add(it.id) }
-        postProcessorsChain.fastForEach { processors.add(it.id) }
+        preProcessorsChain.fastForEach { processors.add(it.processor.id) }
+        postProcessorsChain.fastForEach { processors.add(it.processor.id) }
         if (Files.exists(processorsDir)) {
             cleanAudioProcessors(processorsDir, processors)
             cleanAudioProcessors(processorsDir, processors)
@@ -342,7 +343,9 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
                         val dir = processorsDir.resolve(id)
                         DefaultTrackAudioProcessorWrapper(
                             AudioProcessorManager.instance.createAudioProcessor(dir)
-                        )
+                        ).apply {
+                            restore(dir)
+                        }
                     }
                 }
             }.awaitAll().filterNotNull())

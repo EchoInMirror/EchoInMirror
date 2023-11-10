@@ -29,8 +29,8 @@ import kotlin.io.path.pathString
 import kotlin.system.measureTimeMillis
 
 private fun findProcessor(track: Track, uuid: UUID): TrackAudioProcessorWrapper? {
-    var p = track.preProcessorsChain.find { it.uuid == uuid }
-        ?: track.postProcessorsChain.find { it.uuid == uuid }
+    var p = track.preProcessorsChain.find { it.processor.uuid == uuid }
+        ?: track.postProcessorsChain.find { it.processor.uuid == uuid }
     if (p != null) return p
 
     for (sub in track.subTracks) {

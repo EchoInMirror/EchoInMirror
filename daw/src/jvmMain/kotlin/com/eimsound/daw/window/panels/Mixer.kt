@@ -142,7 +142,7 @@ private fun MixerProcessorButton(isLoading: MutableState<Boolean>, list: Mutable
                 }
             }
             TextButton(onClick, modifier, contentPadding = BUTTON_PADDINGS) {
-                if (wrapper?.description?.isInstrument == true) {
+                if (wrapper?.processor?.description?.isInstrument == true) {
                     Icon(Icons.Default.Piano, null, Modifier.size(16.dp))
                     Gap(2)
                 }
@@ -152,11 +152,11 @@ private fun MixerProcessorButton(isLoading: MutableState<Boolean>, list: Mutable
                 )
                 else Marquee {
                     Text(
-                        wrapper.name, Modifier.fillMaxWidth(),
+                        wrapper.processor.name, Modifier.fillMaxWidth(),
                         fontSize = MaterialTheme.typography.labelSmall.fontSize, maxLines = 1, lineHeight = 7.sp,
                         textAlign = TextAlign.Center, fontStyle = fontStyle, fontWeight = fontWeight,
-                        textDecoration = if (wrapper.isBypassed) TextDecoration.LineThrough else null,
-                        color = if (wrapper.isBypassed) LocalContentColor.current.copy(alpha = 0.5f)
+                        textDecoration = if (wrapper.processor.isBypassed) TextDecoration.LineThrough else null,
+                        color = if (wrapper.processor.isBypassed) LocalContentColor.current.copy(alpha = 0.5f)
                         else LocalContentColor.current
                     )
                 }
@@ -174,7 +174,7 @@ private fun MixerProcessorButtons(isLoading: MutableState<Boolean>, list: Mutabl
     }
     list.forEachIndexed { i, it ->
         key(it) {
-            MixerProcessorButton(isLoading, list, it, i, onClick = it::onClick)
+            MixerProcessorButton(isLoading, list, it, i, onClick = it.processor::onClick)
             MixerProcessorDropTarget(isLoading, list, i + 1,
                 { list.doAddOrRemoveAudioProcessorAction(it, index = i + 1) }) {
                 Divider(Modifier.padding(8.dp, 2.dp))

@@ -25,8 +25,8 @@ interface AudioProcessor: Restorable, AutoCloseable, SuddenChangeListener {
     val factory: AudioProcessorFactory<*>
     val id: String
     val uuid: UUID
-    val parameters: List<IAudioProcessorParameter>
-    val lastModifiedParameter: IAudioProcessorParameter?
+    val parameters: List<AudioProcessorParameter>
+    val lastModifiedParameter: AudioProcessorParameter?
     var isBypassed: Boolean
     val state: AudioProcessorState
     suspend fun processBlock(buffers: Array<FloatArray>, position: CurrentPosition, midiBuffer: ArrayList<Int>) { }
@@ -56,8 +56,8 @@ abstract class AbstractAudioProcessor(
     @Suppress("CanBePrimaryConstructorProperty")
     override val description = description
     override var name = description.name
-    override val parameters = emptyList<IAudioProcessorParameter>()
-    override var lastModifiedParameter: IAudioProcessorParameter? = null
+    override val parameters = emptyList<AudioProcessorParameter>()
+    override var lastModifiedParameter: AudioProcessorParameter? = null
         protected set
     override var isBypassed by mutableStateOf(false)
     private val _listeners = WeakHashMap<AudioProcessorListener, Unit>()

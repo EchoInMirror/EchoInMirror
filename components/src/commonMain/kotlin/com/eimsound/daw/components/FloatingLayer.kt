@@ -23,8 +23,10 @@ import androidx.compose.ui.unit.*
 import androidx.compose.ui.util.fastForEach
 import com.eimsound.daw.commons.BasicEditor
 
-private data class FloatingLayer(val key: Any, val onClose: ((Any) -> Unit)?, val position: Offset?,
-                                 val hasOverlay: Boolean, val overflow: Boolean, val content: @Composable () -> Unit) {
+private data class FloatingLayer(
+    val key: Any, val onClose: ((Any) -> Unit)?, val position: Offset?,
+    val hasOverlay: Boolean, val overflow: Boolean, val content: @Composable () -> Unit
+) {
     var isClosed by mutableStateOf(false)
     var isShow by mutableStateOf(false)
 }
@@ -54,72 +56,76 @@ class FloatingLayerProvider {
 
     @OptIn(ExperimentalComposeUiApi::class)
     @Composable
-    fun FloatingLayers() {
-        floatingLayers.fastForEach { layer ->
-            key(layer) { Box {
-                val alpha by animateFloatAsState(if (layer.isClosed || !layer.isShow) 0F else 1F, tween(300)) {
-                    if (layer.isClosed) floatingLayers = floatingLayers.filter { it.key != layer.key }
-                }
-                var modifier = if (layer.hasOverlay) Modifier.fillMaxSize().background(Color.Black.copy(alpha * 0.26F))
-                else Modifier
-                if (layer.onClose != null) modifier = modifier.fillMaxSize()
-                    .onPointerEvent(PointerEventType.Press) { layer.onClose.invoke(layer.key) }
-                Box(modifier)
-                if (layer.position == null)
-                    Box(Modifier.fillMaxSize().graphicsLayer(alpha = alpha), contentAlignment = Alignment.Center) { layer.content() }
-                else Layout({
-                    Box(Modifier.graphicsLayer(alpha = alpha, shadowElevation = if (alpha == 1F) 0F else 5F)) { layer.content() }
-                }) { measurables, constraints ->
-                    if (layer.overflow) {
-                        val width = constraints.maxWidth - (12 * density).toInt()
-                        val height = constraints.maxHeight - (26 * density).toInt()
-                        val placeable = measurables.firstOrNull()?.measure(Constraints(0, width, 0, height))
-                        val pw = placeable?.width ?: 0
-                        val ph = placeable?.height ?: 0
-                        layout(pw, ph) {
-                            placeable?.place(if (layer.position.x + pw > width) width - pw else layer.position.x.toInt(),
-                                if (layer.position.y + ph > height) height - ph else layer.position.y.toInt(), 5F)
-                        }
-                    } else {
-                        var height = (constraints.maxHeight - layer.position.y - 25 * density).toInt()
-                        var width = (constraints.maxWidth - layer.position.x - 12 * density).toInt()
-                        val isTooSmall = height < 40 * density
-                        val isTooRight = width < 100 * density
-                        if (isTooSmall) height = constraints.maxHeight - (50 * density).toInt()
-                        if (isTooRight) width = constraints.maxWidth - (100 * density).toInt()
-                        val c = Constraints(0, width, 0, height)
-                        val placeable = measurables.firstOrNull()?.measure(c)
-                        layout(c.maxWidth, c.maxHeight) {
-                            placeable?.place(layer.position.x.toInt() - (if (isTooRight) placeable.width else 0),
-                                layer.position.y.toInt() - (if (isTooSmall) placeable.height + 25 * density else 0).toInt(), 5F)
-                        }
+    private fun FloatingSingleLayer(layer: FloatingLayer) {
+        Box {
+            val alpha by animateFloatAsState(if (layer.isClosed || !layer.isShow) 0F else 1F, tween(300)) {
+                if (layer.isClosed) floatingLayers = floatingLayers.filter { it.key != layer.key }
+            }
+            var modifier = if (layer.hasOverlay) Modifier.fillMaxSize().background(Color.Black.copy(alpha * 0.26F))
+            else Modifier
+            if (layer.onClose != null) modifier = modifier.fillMaxSize()
+                .onPointerEvent(PointerEventType.Press) { layer.onClose.invoke(layer.key) }
+            Box(modifier)
+            if (layer.position == null)
+                Box(Modifier.fillMaxSize().graphicsLayer(alpha = alpha), contentAlignment = Alignment.Center) { layer.content() }
+            else Layout({
+                Box(Modifier.graphicsLayer(alpha = alpha, shadowElevation = if (alpha == 1F) 0F else 5F)) { layer.content() }
+            }) { measurables, constraints ->
+                if (layer.overflow) {
+                    val width = constraints.maxWidth - (12 * density).toInt()
+                    val height = constraints.maxHeight - (26 * density).toInt()
+                    val placeable = measurables.firstOrNull()?.measure(Constraints(0, width, 0, height))
+                    val pw = placeable?.width ?: 0
+                    val ph = placeable?.height ?: 0
+                    layout(pw, ph) {
+                        placeable?.place(if (layer.position.x + pw > width) width - pw else layer.position.x.toInt(),
+                            if (layer.position.y + ph > height) height - ph else layer.position.y.toInt(), 5F)
+                    }
+                } else {
+                    var height = (constraints.maxHeight - layer.position.y - 25 * density).toInt()
+                    var width = (constraints.maxWidth - layer.position.x - 12 * density).toInt()
+                    val isTooSmall = height < 40 * density
+                    val isTooRight = width < 100 * density
+                    if (isTooSmall) height = constraints.maxHeight - (50 * density).toInt()
+                    if (isTooRight) width = constraints.maxWidth - (100 * density).toInt()
+                    val c = Constraints(0, width, 0, height)
+                    val placeable = measurables.firstOrNull()?.measure(c)
+                    layout(c.maxWidth, c.maxHeight) {
+                        placeable?.place(layer.position.x.toInt() - (if (isTooRight) placeable.width else 0),
+                            layer.position.y.toInt() - (if (isTooSmall) placeable.height + 25 * density else 0).toInt(), 5F)
                     }
                 }
-                remember { layer.isShow = true }
             }
-        } }
+            remember { layer.isShow = true }
+        }
+    }
+
+    @Composable
+    fun FloatingLayers() {
+        floatingLayers.fastForEach { layer ->
+            key(layer) { FloatingSingleLayer(layer) }
+        }
     }
 }
 
 val LocalFloatingLayerProvider = staticCompositionLocalOf { FloatingLayerProvider() }
 
 @Composable
-fun FloatingLayer(layerContent: @Composable (DpSize, () -> Unit) -> Unit,
-                  modifier: Modifier = Modifier, enabled: Boolean = true,
-                  hasOverlay: Boolean = false, isCentral: Boolean = false,
-                  content: @Composable BoxScope.() -> Unit) {
+fun FloatingLayer(
+    layerContent: @Composable (DpSize, () -> Unit) -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true,
+    hasOverlay: Boolean = false, isCentral: Boolean = false, content: @Composable BoxScope.() -> Unit
+) {
     @OptIn(ExperimentalFoundationApi::class)
     FloatingLayer(layerContent, modifier, enabled, hasOverlay, isCentral, PointerMatcher.Primary, content = content)
 }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun FloatingLayer(layerContent: @Composable (DpSize, () -> Unit) -> Unit,
-                  modifier: Modifier = Modifier, enabled: Boolean = true,
-                  hasOverlay: Boolean = false, isCentral: Boolean = false,
-                  matcher: PointerMatcher = PointerMatcher.Primary,
-                  pass: PointerEventPass = PointerEventPass.Main,
-                  content: @Composable BoxScope.() -> Unit) {
+fun FloatingLayer(
+    layerContent: @Composable (DpSize, () -> Unit) -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true,
+    hasOverlay: Boolean = false, isCentral: Boolean = false, matcher: PointerMatcher = PointerMatcher.Primary,
+    pass: PointerEventPass = PointerEventPass.Main, content: @Composable BoxScope.() -> Unit
+) {
     val id = remember { Any() }
     val localFloatingLayerProvider = LocalFloatingLayerProvider.current
     val closeLayer = remember { { localFloatingLayerProvider.closeFloatingLayer(id) } }
@@ -144,9 +150,10 @@ fun FloatingLayer(layerContent: @Composable (DpSize, () -> Unit) -> Unit,
 }
 
 @Composable
-fun Dialog(onOk: (() -> Unit)? = null, onCancel: (() -> Unit)? = null,
-           hasPadding: Boolean = true, minWidth: Dp = 250.dp,
-           modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+fun Dialog(
+    onOk: (() -> Unit)? = null, onCancel: (() -> Unit)? = null, hasPadding: Boolean = true, minWidth: Dp = 250.dp,
+    modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit
+) {
     val flag = onOk != null || onCancel != null
     Dialog(modifier.widthIn(min = minWidth).width(IntrinsicSize.Max),
         if (hasPadding) Modifier.padding(16.dp, 16.dp, 16.dp, if (flag) 0.dp else 16.dp) else Modifier) {
@@ -164,8 +171,10 @@ fun Dialog(onOk: (() -> Unit)? = null, onCancel: (() -> Unit)? = null,
 }
 
 @Composable
-fun Dialog(modifier: Modifier = Modifier.width(IntrinsicSize.Min),
-           columnModifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+fun Dialog(
+    modifier: Modifier = Modifier.width(IntrinsicSize.Min),
+    columnModifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit
+) {
     Surface(modifier.heightIn(8.dp), MaterialTheme.shapes.extraSmall, tonalElevation = 5.dp, shadowElevation = 5.dp) {
         Column(columnModifier, content = content)
     }

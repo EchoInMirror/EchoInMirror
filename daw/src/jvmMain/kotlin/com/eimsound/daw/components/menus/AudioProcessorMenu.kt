@@ -39,7 +39,7 @@ fun FloatingLayerProvider.openAudioProcessorMenu(
                 val dir = createTempDirectory("copy")
                 Files.createDirectories(dir)
                 try {
-                    p.store(dir)
+                    p.processor.store(dir)
                     copiedAudioProcessorPath = dir
                 } catch (e: Exception) {
                     logger.error(e) { "Failed to copy audio processor: $p" }
@@ -66,10 +66,10 @@ fun FloatingLayerProvider.openAudioProcessorMenu(
 
         override val canPaste get() = copiedAudioProcessorPath != null
     }, false) {
-        MenuHeader(p.name, !p.isBypassed,
-            if (p.description.isInstrument) Icons.Default.Piano else Icons.Default.SettingsInputHdmi
+        MenuHeader(p.processor.name, !p.processor.isBypassed,
+            if (p.processor.description.isInstrument) Icons.Default.Piano else Icons.Default.SettingsInputHdmi
         ) {
-            CustomCheckbox(!p.isBypassed, { p.isBypassed = !it }, Modifier.padding(start = 8.dp))
+            CustomCheckbox(!p.processor.isBypassed, { p.processor.isBypassed = !it }, Modifier.padding(start = 8.dp))
         }
         Divider()
     }

@@ -30,17 +30,21 @@ fun initEditorMenuItems() {
                 editor.selectAll()
             }
         }
-        CommandMenuItem(DeleteCommand, showIcon, hasSelected) {
-            close()
-            editor.delete()
+        if (editor.canDelete) {
+            CommandMenuItem(DeleteCommand, showIcon, hasSelected) {
+                close()
+                editor.delete()
+            }
         }
         CommandMenuItem(CopyCommand, showIcon, hasSelected) {
             close()
             editor.copy()
         }
-        CommandMenuItem(CutCommand, showIcon, hasSelected) {
-            close()
-            editor.cut()
+        if (editor.canDelete) {
+            CommandMenuItem(CutCommand, showIcon, hasSelected) {
+                close()
+                editor.cut()
+            }
         }
         CommandMenuItem(PasteCommand, showIcon, editor.canPaste) {
             close()

@@ -18,7 +18,7 @@ object DeleteCommand : AbstractCommand("EIM:Delete", "删除", arrayOf(Key.Delet
     override fun execute() {
         super.execute()
         val panel = EchoInMirror.windowManager.activePanel
-        if (panel is BasicEditor) panel.delete()
+        if (panel is BasicEditor && panel.canDelete) panel.delete()
     }
 }
 object CopyCommand : AbstractCommand("EIM:Copy", "复制", arrayOf(Key.CtrlLeft, Key.C), Icons.Filled.ContentCopy) {

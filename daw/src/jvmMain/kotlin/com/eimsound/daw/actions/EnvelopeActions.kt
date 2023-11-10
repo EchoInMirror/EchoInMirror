@@ -3,7 +3,10 @@ package com.eimsound.daw.actions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Tune
-import com.eimsound.audioprocessor.IAudioProcessorParameter
+import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.util.fastForEachIndexed
+import androidx.compose.ui.util.fastMap
+import com.eimsound.audioprocessor.AudioProcessorParameter
 import com.eimsound.audioprocessor.data.BaseEnvelopePointList
 import com.eimsound.audioprocessor.data.EnvelopePoint
 import com.eimsound.audioprocessor.data.EnvelopePointList
@@ -163,19 +166,19 @@ object GlobalEnvelopeEditorEventHandler : EnvelopeEditorEventHandler {
 }
 
 class AudioProcessorParameterChangeAction(
-    private val parameter: IAudioProcessorParameter, private val value: Float, private val emitEvent: Boolean = true
+    private val list: List<Pair<AudioProcessorParameter, Float>>, private val emitEvent: Boolean = true
 ): UndoableAction {
-    private val oldValue = parameter.value
-    override val name = "参数修改 (${parameter.name})"
+    private val oldValues = list.fastMap { it.first.value }
+    override val name = "参数修改 (${if (list.size > 4) "${list.size} 个" else list.fastMap { it.first.name }.joinToString(", ")})"
     override val icon = Icons.Default.Tune
     private var isExecuted = false
     override suspend fun undo(): Boolean {
-        parameter.value = oldValue
+        list.fastForEachIndexed { index, pair -> pair.first.setValue(oldValues[index], emitEvent || isExecuted) }
         return true
     }
 
     override suspend fun execute(): Boolean {
-        parameter.setValue(value, emitEvent || isExecuted)
+        list.fastForEach { it.first.setValue(it.second, emitEvent || isExecuted) }
         isExecuted = true
         return true
     }

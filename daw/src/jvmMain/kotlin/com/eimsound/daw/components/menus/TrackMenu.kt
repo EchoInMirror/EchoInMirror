@@ -11,11 +11,8 @@ import com.eimsound.daw.actions.doAddOrRemoveTrackAction
 import com.eimsound.daw.api.processor.Bus
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.api.processor.TrackManager
-import com.eimsound.daw.components.CustomCheckbox
-import com.eimsound.daw.components.FloatingLayerProvider
-import com.eimsound.daw.components.SnackbarProvider
-import com.eimsound.daw.components.openEditorMenu
 import com.eimsound.daw.commons.BasicEditor
+import com.eimsound.daw.components.*
 import com.eimsound.daw.utils.createTempDirectory
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.DelicateCoroutinesApi
