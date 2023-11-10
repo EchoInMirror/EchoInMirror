@@ -123,14 +123,14 @@ class Playlist : Panel, MultiSelectableEditor {
         if (copiedClips?.isEmpty() == true) return
         val startTime = EchoInMirror.currentPosition.timeInPPQ.fitInUnitCeil(EchoInMirror.editUnit)
         val clips = copiedClips!!.map { it.copy(time = it.time + startTime) }
-        doClipsAmountAction(clips, false)
+        clips.doClipsAmountAction(false)
         selectedClips.clear()
         selectedClips.addAll(clips)
     }
 
     override fun delete() {
         if (selectedClips.isEmpty()) return
-        doClipsAmountAction(selectedClips, true)
+        selectedClips.doClipsAmountAction(true)
         selectedClips.clear()
     }
 

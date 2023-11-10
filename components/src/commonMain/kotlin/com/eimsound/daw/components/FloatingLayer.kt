@@ -186,6 +186,7 @@ fun Dialog(
 internal var editorMenuComposable: @Composable (BasicEditor, Boolean, () -> Unit) -> Unit = { _, _, _ -> }
 fun FloatingLayerProvider.openEditorMenu(
     position: Offset, editor: BasicEditor, showIcon: Boolean = true,
+    footer: @Composable ((() -> Unit) -> Unit)? = null,
     content: @Composable ((() -> Unit) -> Unit)? = null
 ) {
     val key = Any()
@@ -195,6 +196,7 @@ fun FloatingLayerProvider.openEditorMenu(
         Dialog {
             content?.invoke(close)
             editorMenuComposable(editor, showIcon, close)
+            footer?.invoke(close)
         }
     }
 }

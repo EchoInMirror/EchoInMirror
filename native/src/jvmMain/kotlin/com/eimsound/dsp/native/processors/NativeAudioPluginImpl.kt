@@ -154,9 +154,7 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
         val description = descriptions.find { it.identifier == json["identifier"]!!.asString() }
             ?: throw NoSuchAudioProcessorException(path.toString(), name)
         logger.info { "Creating native audio plugin: $description in $path" }
-        return NativeAudioPluginImpl(description, this).apply {
-            launch(getNativeHostPath(description), "$path/state.bin")
-        }
+        return NativeAudioPluginImpl(description, this).apply { restore(path) }
     }
 
     override suspend fun save() { encodeJsonFile(configFile) }

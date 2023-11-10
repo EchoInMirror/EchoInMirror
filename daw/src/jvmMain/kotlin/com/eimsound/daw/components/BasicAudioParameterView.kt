@@ -16,13 +16,14 @@ import com.eimsound.audioprocessor.AudioProcessorParameter
 import com.eimsound.daw.api.processor.DefaultHandledParameter
 import com.eimsound.daw.api.processor.TrackAudioProcessorWrapper
 import com.eimsound.daw.components.controllers.ParameterControllerComponent
+import java.util.UUID
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun BasicAudioParameterView(parameters: List<AudioProcessorParameter>) {
+fun BasicAudioParameterView(parameters: List<AudioProcessorParameter>, uuid: UUID) {
     FlowRow(Modifier.fillMaxWidth().padding(8.dp, 4.dp, 8.dp), Arrangement.SpaceEvenly, maxItemsInEachRow = 3) {
         parameters.fastForEach { p ->
-            key(p) { ParameterControllerComponent(p) }
+            key(p) { ParameterControllerComponent(p, uuid) }
         }
     }
 }
@@ -86,7 +87,7 @@ private fun FloatingLayerProvider.openParameterSelector(processor: TrackAudioPro
 @Composable
 fun BasicAudioParameterView(processor: TrackAudioProcessorWrapper) {
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        BasicAudioParameterView(processor.handledParameters.fastMap { it.parameter })
+        BasicAudioParameterView(processor.handledParameters.fastMap { it.parameter }, processor.processor.uuid)
         val floatingLayerProvider = LocalFloatingLayerProvider.current
         CustomButton({
             floatingLayerProvider.openParameterSelector(processor)

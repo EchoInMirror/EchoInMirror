@@ -11,14 +11,14 @@ import com.eimsound.daw.components.icons.PencilPlus
 import com.eimsound.daw.commons.ReversibleAction
 import kotlinx.coroutines.runBlocking
 
-fun doClipsAmountAction(clips: Collection<TrackClip<*>>, isDelete: Boolean) {
-    runBlocking { EchoInMirror.undoManager.execute(ClipsAmountAction(clips.toList(), isDelete)) }
+fun Collection<TrackClip<*>>.doClipsAmountAction(isDelete: Boolean) {
+    runBlocking { EchoInMirror.undoManager.execute(ClipsAmountAction(toList(), isDelete)) }
 }
 
-fun doClipsEditActionAction(clips: Collection<TrackClip<*>>, deltaX: Int = 0, deltaDuration: Int = 0,
+fun Collection<TrackClip<*>>.doClipsEditActionAction(deltaX: Int = 0, deltaDuration: Int = 0,
                             deltaStart: Int = 0, newTracks: List<Track>? = null) {
     if (deltaX == 0 && deltaDuration == 0 && deltaStart == 0 && newTracks == null) return
-    runBlocking { EchoInMirror.undoManager.execute(ClipsEditAction(clips.toList(), deltaX, deltaDuration, deltaStart, newTracks)) }
+    runBlocking { EchoInMirror.undoManager.execute(ClipsEditAction(toList(), deltaX, deltaDuration, deltaStart, newTracks)) }
 }
 
 class ClipsAmountAction(private val clips: Collection<TrackClip<*>>, isDelete: Boolean) :

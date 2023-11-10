@@ -11,6 +11,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.nativeKeyCode
 import androidx.compose.ui.unit.dp
@@ -40,6 +41,18 @@ fun KeysHint(keys: Array<Key>, iconModifier: Modifier = DEFAULT_ICON_MODIFIER) {
     if (hasShift) Icon(KeyboardShift, "Shift", iconModifier)
     if (hasAlt) Icon(Icons.Filled.KeyboardOptionKey, "Alt", iconModifier)
     list.fastForEachIndexed { index, key -> Text((if (index == 0) "" else "+") + KeyEvent.getKeyText(key.nativeKeyCode)) }
+}
+
+@Composable
+fun CommandMenuItem(
+    onClick: () -> Unit, icon: ImageVector? = null, enabled: Boolean = true,
+    iconModifier: Modifier = DEFAULT_ICON_MODIFIER, content: @Composable () -> Unit
+) {
+    MenuItem(onClick, enabled = enabled, modifier = Modifier.fillMaxWidth()) {
+        icon?.let { Icon(it, it.name, iconModifier) }
+        Gap(4)
+        content()
+    }
 }
 
 @Composable

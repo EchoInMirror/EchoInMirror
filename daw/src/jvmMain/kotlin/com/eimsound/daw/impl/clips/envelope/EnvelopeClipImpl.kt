@@ -7,6 +7,7 @@ import androidx.compose.ui.util.fastForEach
 import com.eimsound.audioprocessor.*
 import com.eimsound.audioprocessor.data.*
 import com.eimsound.audioprocessor.data.midi.MidiNoteRecorder
+import com.eimsound.daw.actions.GlobalEnvelopeEditorEventHandler
 import com.eimsound.daw.api.*
 import com.eimsound.daw.api.controllers.DefaultParameterControllerFactory
 import com.eimsound.daw.api.controllers.ParameterController
@@ -18,6 +19,9 @@ import kotlinx.serialization.json.*
 import java.nio.file.Path
 
 class EnvelopeClipImpl(factory: ClipFactory<EnvelopeClip>): AbstractClip<EnvelopeClip>(factory), EnvelopeClip {
+    override val name
+        get() = "包络 (${if (controllers.size > 4) "${controllers.size}个控制器"
+            else controllers.joinToString(", ") { it.parameter.name }})"
     override val envelope = DefaultEnvelopePointList()
     override val controllers = mutableStateListOf<ParameterController>()
 
@@ -45,7 +49,7 @@ class EnvelopeClipImpl(factory: ClipFactory<EnvelopeClip>): AbstractClip<Envelop
 
 private val logger = KotlinLogging.logger { }
 class EnvelopeClipFactoryImpl: EnvelopeClipFactory {
-    override val name = "AudioClip"
+    override val name = "EnvelopeClip"
 
     override fun createClip() = EnvelopeClipImpl(this).apply {
         logger.info { "Creating clip \"${this.id}\"" }
@@ -60,6 +64,9 @@ class EnvelopeClipFactoryImpl: EnvelopeClipFactory {
         clip: TrackClip<EnvelopeClip>, buffers: Array<FloatArray>, position: CurrentPosition,
         midiBuffer: ArrayList<Int>, noteRecorder: MidiNoteRecorder, pendingNoteOns: LongArray
     ) {
+        val clipTime = clip.time - clip.start
+        val value = clip.clip.envelope.getValue(position.timeInPPQ - clipTime, 1F)
+        clip.clip.controllers.fastForEach { it.parameter.value = value }
     }
 
     @Composable
@@ -67,14 +74,16 @@ class EnvelopeClipFactoryImpl: EnvelopeClipFactory {
         clip: TrackClip<EnvelopeClip>, track: Track, contentColor: Color,
         noteWidth: MutableState<Dp>, startPPQ: Float, widthPPQ: Float
     ) {
-        remember(clip) {
-            EnvelopeEditor(clip.clip.envelope, VOLUME_RANGE, 1F, true)
-        }.Editor(startPPQ, contentColor, noteWidth, false, clipStartTime = clip.start, stroke = 0.5F)
+        val ctrl = clip.clip.controllers.firstOrNull()?.parameter
+        remember(clip, ctrl) {
+            if (ctrl == null) return@remember null
+            EnvelopeEditor(clip.clip.envelope, ctrl.range, ctrl.initialValue, ctrl.isFloat, GlobalEnvelopeEditorEventHandler)
+        }?.Editor(startPPQ, contentColor, noteWidth, true, clipStartTime = clip.start, stroke = 1F)
     }
 
     override fun save(clip: EnvelopeClip, path: Path) { }
 
     override fun toString(): String {
-        return "MidiClipFactoryImpl(name='$name')"
+        return "EnvelopeClipFactoryImpl"
     }
 }

@@ -201,6 +201,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
     protected fun JsonObjectBuilder.buildJson() {
         put("factory", factory.name)
         put("id", id)
+        put("uuid", uuid.toString())
         putNotDefault("name", name)
         put("color", color.value.toLong())
         putNotDefault("height", height)
@@ -292,6 +293,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
     override fun fromJson(json: JsonElement) {
         json as JsonObject
         id = json["id"]!!.asString()
+        uuid = UUID.fromString(json["uuid"]!!.asString())
         json["name"]?.asString()?.let { name = it }
         json["color"]?.asLong()?.let { color = Color(it.toULong()) }
         json["height"]?.asInt()?.let { height = it }

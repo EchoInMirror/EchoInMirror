@@ -152,7 +152,7 @@ class MidiClipFactoryImpl : MidiClipFactory {
     }
 
     override fun toString(): String {
-        return "MidiClipFactoryImpl(name='$name')"
+        return "MidiClipFactoryImpl"
     }
 }
 

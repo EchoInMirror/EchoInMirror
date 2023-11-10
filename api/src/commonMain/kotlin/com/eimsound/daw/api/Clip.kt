@@ -94,6 +94,7 @@ interface ClipManager : Reloadable {
 
 val ClipManager.defaultMidiClipFactory get() = factories["MIDIClip"] as MidiClipFactory
 val ClipManager.defaultAudioClipFactory get() = factories["AudioClip"] as AudioClipFactory
+val ClipManager.defaultEnvelopeClipFactory get() = factories["EnvelopeClip"] as EnvelopeClipFactory
 
 interface Clip : JsonSerializable {
     val id: String

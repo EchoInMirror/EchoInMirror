@@ -10,7 +10,14 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.application
+import com.eimsound.audioprocessor.oneBarPPQ
+import com.eimsound.daw.actions.doClipsAmountAction
+import com.eimsound.daw.api.ClipManager
 import com.eimsound.daw.api.EchoInMirror
+import com.eimsound.daw.api.controllers.DefaultParameterControllerFactory
+import com.eimsound.daw.api.defaultEnvelopeClipFactory
+import com.eimsound.daw.commons.ExperimentalEIMApi
+import com.eimsound.daw.components.controllers.parameterControllerCreateClipHandler
 import com.eimsound.daw.components.icons.EIMLogo
 import com.eimsound.daw.window.CrashWindow
 import com.eimsound.daw.window.MainWindow
@@ -63,6 +70,22 @@ fun main() {
 
     if (!File("test_project").exists()) File("test_project").mkdir()
     windowManager.openProject(Paths.get("test_project"))
+
+    @OptIn(ExperimentalEIMApi::class)
+    parameterControllerCreateClipHandler = { p, id -> // TODO: remove this
+        if (EchoInMirror.selectedTrack != null && id != null) {
+            val clip = ClipManager.instance.createTrackClip(
+                ClipManager.instance.defaultEnvelopeClipFactory.createClip().apply {
+                    controllers.add(DefaultParameterControllerFactory.createAudioProcessorParameterController(p, id))
+                },
+                0,
+                EchoInMirror.currentPosition.oneBarPPQ,
+                0,
+                EchoInMirror.selectedTrack
+            )
+            listOf(clip).doClipsAmountAction(false)
+        }
+    }
 
     application {
         MaterialTheme(if (windowManager.isDarkTheme) darkColorScheme() else lightColorScheme()) {

@@ -130,7 +130,7 @@ private suspend fun AwaitPointerEventScope.handleDragEvent(playlist: Playlist, c
                         val x = deltaX
                         deltaY = 0
                         deltaX = 0
-                        doClipsEditActionAction(selectedClips.toList(), x, 0, 0,
+                        selectedClips.toList().doClipsEditActionAction(x, 0, 0,
                             if (y == 0) null
                             else try {
                                 selectedClips.map { trackHeights[trackToIndex!![it.track]!! + y].track }
@@ -162,8 +162,8 @@ private suspend fun AwaitPointerEventScope.handleDragEvent(playlist: Playlist, c
                         action = EditAction.NONE
                         val x = deltaX
                         deltaX = 0
-                        if (resizeDirectionRight) doClipsEditActionAction(selectedClips.toList(), deltaDuration = x)
-                        else doClipsEditActionAction(selectedClips.toList(), x, -x, x)
+                        if (resizeDirectionRight) selectedClips.toList().doClipsEditActionAction(deltaDuration = x)
+                        else selectedClips.toList().doClipsEditActionAction(x, -x, x)
                     }
                 }
                 else -> { }
@@ -310,7 +310,7 @@ internal fun TrackContent(playlist: Playlist, track: Track, index: Int, density:
                                 0,
                                 track
                             )
-                            doClipsAmountAction(listOf(clip), false)
+                            listOf(clip).doClipsAmountAction(false)
                             0L
                         } else event.previousUptimeMillis
                     }

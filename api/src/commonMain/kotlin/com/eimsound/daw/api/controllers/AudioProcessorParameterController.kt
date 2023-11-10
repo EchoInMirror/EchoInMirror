@@ -1,5 +1,8 @@
 package com.eimsound.daw.api.controllers
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import com.eimsound.audioprocessor.AudioProcessorParameter
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.commons.json.asString
@@ -15,11 +18,12 @@ internal class AudioProcessorParameterController(
     parameter: AudioProcessorParameter? = null,
     audioProcessor: UUID? = null
 ) : ParameterController {
-    override lateinit var parameter: AudioProcessorParameter
+    private var _parameter by mutableStateOf(parameter)
+    override val parameter: AudioProcessorParameter
+        get() = _parameter!!
     private lateinit var audioProcessor: UUID
 
     init {
-        if (parameter != null) this.parameter = parameter
         if (audioProcessor != null) this.audioProcessor = audioProcessor
     }
 
@@ -46,6 +50,8 @@ internal class AudioProcessorParameterController(
             logger.warn { "Parameter with id $parameterId not found." }
             return
         }
+
+        _parameter = pa
     }
 
     override fun hashCode() = parameter.hashCode() + audioProcessor.hashCode() * 31
