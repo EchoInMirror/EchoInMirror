@@ -11,6 +11,7 @@ interface BasicEditor {
     val hasSelected get() = true
     val canPaste get() = true
     val canDelete get() = true
+    val pasteValue: String? get() = null
 }
 
 interface MultiSelectableEditor : BasicEditor {

@@ -41,17 +41,16 @@ fun FloatingLayerProvider.openParameterControllerMenu(
         }
 
         override fun paste() {
-            if (clipboardManager == null) {
-                p.value = copiedValue
-                return
-            }
-            p.value = clipboardManager.getText()?.text?.toFloatOrNull() ?: return
+            p.value = if (clipboardManager == null) copiedValue
+                else clipboardManager.getText()?.text?.toFloatOrNull() ?: return
         }
 
         override val canPaste
             get() = clipboardManager == null || clipboardManager.getText()?.text?.toFloatOrNull() != null
 
         override val canDelete = false
+        override val pasteValue
+            get() = clipboardManager?.getText()?.text?.toFloatOrNull()?.toString()
     }, false, { close ->
         CommandMenuItem({
             close()

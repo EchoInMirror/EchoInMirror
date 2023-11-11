@@ -28,6 +28,7 @@ import com.eimsound.daw.api.window.Panel
 import com.eimsound.daw.api.window.PanelDirection
 import com.eimsound.daw.components.BasicAudioParameterView
 import com.eimsound.daw.components.CustomCheckbox
+import com.eimsound.daw.components.TIMELINE_HEIGHT
 import com.eimsound.daw.components.utils.clickableWithIcon
 import com.eimsound.daw.components.utils.toOnSurfaceColor
 
@@ -76,10 +77,12 @@ private fun TrackName() {
     val track = EchoInMirror.selectedTrack
     val color by animateColorAsState(if (track is Bus) MaterialTheme.colorScheme.primary
         else track?.color ?: MaterialTheme.colorScheme.surface, tween(100))
-    Surface(Modifier.fillMaxWidth(), shadowElevation = 2.dp, tonalElevation = 4.dp, color = color) {
-        Text(track?.name ?: "未选择", color = color.toOnSurfaceColor(), style = MaterialTheme.typography.labelLarge,
-            maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(8.dp, 6.dp),
-            textAlign = TextAlign.Center)
+    Surface(shadowElevation = 2.dp, tonalElevation = 4.dp, color = color) {
+        Box(Modifier.fillMaxWidth().height(TIMELINE_HEIGHT)) {
+            Text(track?.name ?: "未选择", color = color.toOnSurfaceColor(), style = MaterialTheme.typography.labelLarge,
+                maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(8.dp, 0.dp).align(Alignment.Center),
+                textAlign = TextAlign.Center)
+        }
     }
 }
 

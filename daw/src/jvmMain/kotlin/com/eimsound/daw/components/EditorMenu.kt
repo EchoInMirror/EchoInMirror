@@ -1,5 +1,7 @@
 package com.eimsound.daw.components
 
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.AnnotatedString
@@ -11,10 +13,14 @@ import com.eimsound.daw.commons.MultiSelectableEditor
 import com.eimsound.daw.commons.SerializableEditor
 
 @Composable
-fun CommandMenuItem(command: Command, showIcon: Boolean, enabled: Boolean = true, iconModifier: Modifier = DEFAULT_ICON_MODIFIER, onClick: () -> Unit) {
+fun CommandMenuItem(
+    command: Command, showIcon: Boolean, enabled: Boolean = true, iconModifier: Modifier = DEFAULT_ICON_MODIFIER,
+    suffix: @Composable (() -> Unit)? = null, onClick: () -> Unit
+) {
     CommandMenuItem(command,
         if (showIcon) EchoInMirror.commandManager.getKeysOfCommand(command)
-        else emptyArray(), enabled, iconModifier, onClick)
+        else emptyArray(), enabled, iconModifier, suffix, onClick
+    )
 }
 
 /**
@@ -46,7 +52,9 @@ fun initEditorMenuItems() {
                 editor.cut()
             }
         }
-        CommandMenuItem(PasteCommand, showIcon, editor.canPaste) {
+        CommandMenuItem(PasteCommand, showIcon, editor.canPaste, suffix = {
+            editor.pasteValue?.let { Text(" ($it)", color = LocalContentColor.current.copy(0.4F)) }
+        }) {
             close()
             editor.paste()
         }

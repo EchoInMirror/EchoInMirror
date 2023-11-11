@@ -60,7 +60,7 @@ class EnvelopeClipFactoryImpl: EnvelopeClipFactory {
         logger.info { "Creating clip ${json["id"]} in $path" }
         fromJson(json)
     }
-    override fun getEditor(clip: TrackClip<EnvelopeClip>) = EnvelopeClipEditor()
+    override fun getEditor(clip: TrackClip<EnvelopeClip>) = EnvelopeClipEditor(clip)
 
     override fun processBlock(
         clip: TrackClip<EnvelopeClip>, buffers: Array<FloatArray>, position: CurrentPosition,

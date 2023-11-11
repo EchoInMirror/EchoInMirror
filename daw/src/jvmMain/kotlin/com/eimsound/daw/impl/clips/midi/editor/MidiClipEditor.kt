@@ -50,7 +50,7 @@ private fun EditorContent(editor: DefaultMidiClipEditor) {
                     ) {
                         clip.time = it.first
                         clip.duration = it.range
-                        editor.clip.track?.clips?.update()
+                        clip.track?.clips?.update()
                     }
                     Box(Modifier.weight(1F).onGloballyPositioned {
                         with(localDensity) { contentWidth = it.size.width.toDp() }

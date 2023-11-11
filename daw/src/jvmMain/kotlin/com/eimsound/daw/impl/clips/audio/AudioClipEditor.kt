@@ -1,14 +1,11 @@
 package com.eimsound.daw.impl.clips.audio
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.HorizontalScrollbar
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,9 +23,8 @@ import com.eimsound.daw.api.AudioClip
 import com.eimsound.daw.api.ClipEditor
 import com.eimsound.daw.api.TrackClip
 import com.eimsound.daw.components.*
-import com.eimsound.daw.components.utils.toOnSurfaceColor
-import com.eimsound.daw.components.NoteWidthSlider
 import com.eimsound.daw.dawutils.openMaxValue
+import com.eimsound.daw.impl.clips.EditorControls
 import com.eimsound.daw.utils.range
 
 class AudioClipEditor(private val clip: TrackClip<AudioClip>) : ClipEditor {
@@ -41,7 +37,7 @@ class AudioClipEditor(private val clip: TrackClip<AudioClip>) : ClipEditor {
     @Composable
     override fun Editor() {
         Row(Modifier.fillMaxSize()) {
-            EditorControls()
+            EditorControls(clip, noteWidth) { }
             Surface(shadowElevation = 2.dp) {
                 Box(Modifier.fillMaxSize()) {
                     EditorContent()
@@ -50,22 +46,6 @@ class AudioClipEditor(private val clip: TrackClip<AudioClip>) : ClipEditor {
                         Modifier.align(Alignment.TopStart).fillMaxWidth()
                     )
                 }
-            }
-        }
-    }
-
-    @Composable
-    private fun EditorControls() {
-        Column(Modifier.width(200.dp)) {
-            val color by animateColorAsState(clip.track?.color ?: MaterialTheme.colorScheme.primary, tween(100))
-            Surface(Modifier.fillMaxWidth().height(TIMELINE_HEIGHT), shadowElevation = 2.dp, tonalElevation = 4.dp, color = color) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    val textColor by animateColorAsState(color.toOnSurfaceColor(), tween(80))
-                    Text(clip.clip.name, Modifier.padding(horizontal = 8.dp), textColor, style = MaterialTheme.typography.labelLarge)
-                }
-            }
-            Column(Modifier.padding(10.dp)) {
-                NoteWidthSlider(noteWidth)
             }
         }
     }

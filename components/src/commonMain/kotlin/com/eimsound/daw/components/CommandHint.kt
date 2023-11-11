@@ -56,11 +56,15 @@ fun CommandMenuItem(
 }
 
 @Composable
-fun CommandMenuItem(command: Command, keys: Array<Key> = command.keyBindings, enabled: Boolean = true,
-                    iconModifier: Modifier = DEFAULT_ICON_MODIFIER, onClick: () -> Unit) {
+fun CommandMenuItem(
+    command: Command, keys: Array<Key> = command.keyBindings, enabled: Boolean = true,
+    iconModifier: Modifier = DEFAULT_ICON_MODIFIER, suffix: @Composable (() -> Unit)? = null,
+    onClick: () -> Unit
+) {
     MenuItem(onClick, enabled = enabled, modifier = Modifier.fillMaxWidth()) {
         command.icon?.let { Icon(it, it.name, iconModifier) }
         Text(command.displayName, DEFAULT_COMMAND_NAME_MODIFIER)
+        suffix?.invoke()
         Filled(Modifier.widthIn(12.dp))
         KeysHint(keys, iconModifier)
     }

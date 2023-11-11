@@ -195,13 +195,14 @@ class EnvelopeEditor(
     fun Editor(
         start: Float, color: Color, noteWidth: MutableState<Dp>, showThumb: Boolean = true, editUnit: Int = 24,
         horizontalScrollState: ScrollState? = null, clipStartTime: Int = 0, stroke: Float = 2F,
-        backgroundColor: Color = Color.Transparent
+        backgroundColor: Color? = null
     ) {
         val scope = rememberCoroutineScope()
         val measurer = rememberTextMeasurer(50)
         val floatingLayerProvider = LocalFloatingLayerProvider.current
         var primaryColor = MaterialTheme.colorScheme.primary
-        if (backgroundColor.calculateContrastRatio(primaryColor) < 0.3F) primaryColor = MaterialTheme.colorScheme.inversePrimary
+        if (backgroundColor != null && backgroundColor.calculateContrastRatio(primaryColor) < 0.3F)
+            primaryColor = MaterialTheme.colorScheme.inversePrimary
         val textStyle = MaterialTheme.typography.labelMedium
         val fillColor = verticalGradient(
             0F to color.copy(0.4F),
@@ -461,15 +462,19 @@ class EnvelopeEditor(
                     if (showThumb && (lastTextX + 34 < startX || (lastTextY - currentY).absoluteValue > 30)) {
                         lastTextX = startX
                         lastTextY = currentY
+                        val result = measurer.measure(
+                            AnnotatedString(if (isFloat) "%.2f".format(curValue) else curValue.toInt().toString()),
+                            textStyle,
+                            maxLines = 1,
+                            constraints = maxTextSize
+                        )
                         drawText(
-                            measurer.measure(
-                                AnnotatedString(if (isFloat) "%.2f".format(curValue) else curValue.toInt().toString()),
-                                textStyle,
-                                maxLines = 1,
-                                constraints = maxTextSize
-                            ),
+                            result,
                             curColor,
-                            Offset(startX + 6, if (currentY + 20 > size.height) currentY - 20 else currentY + 2)
+                            Offset(
+                                startX + 6 * density,
+                                if (currentY + result.size.height > size.height) currentY - result.size.height else currentY + density
+                            )
                         )
                     }
                     val path = cur.type.toPath(
@@ -512,15 +517,19 @@ class EnvelopeEditor(
                     if (showThumb && (lastTextX + 34 < startX || (lastTextY - currentY).absoluteValue > 30)) {
                         lastTextX = startX
                         lastTextY = currentY
+                        val result = measurer.measure(
+                            AnnotatedString(if (isFloat) "%.2f".format(cur.value) else cur.value.toInt().toString()),
+                            textStyle,
+                            maxLines = 1,
+                            constraints = maxTextSize
+                        )
                         drawText(
-                            measurer.measure(
-                                AnnotatedString(if (isFloat) "%.2f".format(cur.value) else cur.value.toInt().toString()),
-                                textStyle,
-                                maxLines = 1,
-                                constraints = maxTextSize
-                            ),
+                            result,
                             curColor,
-                            Offset(startX + 6, if (currentY + 20 > size.height) currentY - 20 else currentY + 2)
+                            Offset(
+                                startX + 6 * density,
+                                if (currentY + result.size.height > size.height) currentY - result.size.height else currentY + density
+                            )
                         )
                     }
                     val path = cur.type.toPath(
