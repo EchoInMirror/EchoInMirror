@@ -36,6 +36,7 @@ import com.eimsound.daw.commons.json.JsonIgnoreDefaults
 import com.eimsound.daw.commons.MultiSelectableEditor
 import com.eimsound.daw.commons.SerializableEditor
 import com.eimsound.daw.components.utils.EditAction
+import com.eimsound.daw.components.utils.calculateContrastRatio
 import com.eimsound.daw.utils.*
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
@@ -191,12 +192,16 @@ class EnvelopeEditor(
 
     @Suppress("DuplicatedCode")
     @Composable
-    fun Editor(start: Float, color: Color, noteWidth: MutableState<Dp>, showThumb: Boolean = true, editUnit: Int = 24,
-               horizontalScrollState: ScrollState? = null, clipStartTime: Int = 0, stroke: Float = 2F) {
+    fun Editor(
+        start: Float, color: Color, noteWidth: MutableState<Dp>, showThumb: Boolean = true, editUnit: Int = 24,
+        horizontalScrollState: ScrollState? = null, clipStartTime: Int = 0, stroke: Float = 2F,
+        backgroundColor: Color = Color.Transparent
+    ) {
         val scope = rememberCoroutineScope()
         val measurer = rememberTextMeasurer(50)
         val floatingLayerProvider = LocalFloatingLayerProvider.current
-        val primaryColor = MaterialTheme.colorScheme.primary
+        var primaryColor = MaterialTheme.colorScheme.primary
+        if (backgroundColor.calculateContrastRatio(primaryColor) < 0.3F) primaryColor = MaterialTheme.colorScheme.inversePrimary
         val textStyle = MaterialTheme.typography.labelMedium
         val fillColor = verticalGradient(
             0F to color.copy(0.4F),

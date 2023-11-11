@@ -9,6 +9,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.util.lerp
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.math.sqrt
 
 val lightColors = arrayListOf<Color>()
 val darkColors = arrayListOf<Color>()
@@ -62,3 +65,25 @@ fun Color.inverts() = Color(1 - red, 1 - green, 1 - blue, alpha)
 @Suppress("unused")
 @Composable
 fun getSurfaceColor(elevation: Dp) = MaterialTheme.colorScheme.surfaceColorAtElevation(LocalAbsoluteTonalElevation.current + elevation)
+
+/**
+ * @see <a href="https://www.compuphase.com/cmetric.htm">Color difference</a>
+ *
+ * @param other The other color
+ * @return The distance between two colors in [0, 1]
+ */
+@Suppress("unused")
+fun Color.distanceTo(other: Color): Float {
+    val rmean = (red + other.red) / 2F
+    val r = red - other.red
+    val g = green - other.green
+    val b = blue - other.blue
+    return sqrt((2 + rmean) * r * r + 4 * g * g + (3 - rmean) * b * b).coerceIn(0F, 3F) / 3F
+}
+
+fun Color.calculateContrastRatio(other: Color): Float {
+    val foregroundLuminance = luminance() + 0.05f
+    val backgroundLuminance = other.luminance() + 0.05f
+
+    return max(foregroundLuminance, backgroundLuminance) / min(foregroundLuminance, backgroundLuminance) / 21
+}

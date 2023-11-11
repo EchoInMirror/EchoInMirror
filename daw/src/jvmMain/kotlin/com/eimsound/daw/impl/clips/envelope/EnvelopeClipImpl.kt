@@ -1,7 +1,9 @@
 package com.eimsound.daw.impl.clips.envelope
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.util.fastForEach
 import com.eimsound.audioprocessor.*
@@ -78,7 +80,10 @@ class EnvelopeClipFactoryImpl: EnvelopeClipFactory {
         remember(clip, ctrl) {
             if (ctrl == null) return@remember null
             EnvelopeEditor(clip.clip.envelope, ctrl.range, ctrl.initialValue, ctrl.isFloat, GlobalEnvelopeEditorEventHandler)
-        }?.Editor(startPPQ, contentColor, noteWidth, true, clipStartTime = clip.start, stroke = 1F)
+        }?.Editor(
+            startPPQ, contentColor, noteWidth, true, clipStartTime = clip.start, stroke = 1F,
+            backgroundColor = track.color.copy(0.7F).compositeOver(MaterialTheme.colorScheme.background)
+        )
     }
 
     override fun save(clip: EnvelopeClip, path: Path) { }
