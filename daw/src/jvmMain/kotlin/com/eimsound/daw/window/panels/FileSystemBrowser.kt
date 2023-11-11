@@ -28,6 +28,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastForEach
 import com.eimsound.audioprocessor.AudioProcessorManager
 import com.eimsound.audioprocessor.AudioSourceManager
 import com.eimsound.audioprocessor.data.midi.getNotes
@@ -51,7 +52,7 @@ val fileBrowserPreviewer = PreviewerAudioProcessor(AudioProcessorManager.instanc
 object FileSystemBrowser : Panel {
     override val name = "文件浏览"
     override val direction = PanelDirection.Vertical
-    private val filePath = SystemUtils.getUserDir()
+    private val roots by mutableStateOf(File.listRoots().toList() + SystemUtils.getUserDir())
     private var component: (@Composable BoxScope.() -> Unit)? by mutableStateOf(null)
     private var nodeName: String? by mutableStateOf(null)
 
@@ -64,7 +65,7 @@ object FileSystemBrowser : Panel {
     override fun Content() {
         Column {
             Tree(Modifier.weight(1F), { if (it is File) createPreviewerComponent(it) }) {
-                FileNode(filePath)
+                roots.fastForEach { key(it) { FileNode(it) } }
             }
             Previewer()
         }
@@ -161,7 +162,7 @@ object FileSystemBrowser : Panel {
             try {
                 if (ext == "mid") {
                     val notes = withContext(Dispatchers.IO) {
-                        MidiSystem.getSequence(file).toMidiTracks().getNotes()
+                        MidiSystem.getSequence(file).toMidiTracks(EchoInMirror.currentPosition.ppq).getNotes()
                     }
                     component = { MidiView(notes) }
                     nodeName = file.name

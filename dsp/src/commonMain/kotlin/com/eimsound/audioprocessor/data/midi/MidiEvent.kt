@@ -245,6 +245,10 @@ fun Sequence.toMidiEvents(track: Int? = null, destPPQ: Int? = null): List<MidiEv
 
 fun Sequence.toMidiTracks(scale: Double = 1.0): List<MidiTrack> =
     tracks.map { it.toMidiEventList().toMidiTrack(scale) }
+fun Sequence.toMidiTracks(destPPQ: Int): List<MidiTrack> {
+    val scale = destPPQ.toDouble() / resolution
+    return tracks.map { it.toMidiEventList().toMidiTrack(scale) }
+}
 
 fun Sequence.getAllEvent(): List<JMidiEvent> = tracks.flatMap { it.toMidiEventList() }
 fun Sequence.toOneMidiTrack(): MidiTrack = this.getAllEvent().toMidiTrack()

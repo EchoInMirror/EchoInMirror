@@ -1,19 +1,28 @@
 package com.eimsound.daw.processor.synthesizer
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import com.eimsound.audioprocessor.AbstractAudioProcessor
 import com.eimsound.audioprocessor.AudioProcessorFactory
 import com.eimsound.audioprocessor.CurrentPosition
 import com.eimsound.audioprocessor.data.midi.MidiEvent
+import com.eimsound.audioprocessor.dsp.Volume
 import com.eimsound.daw.impl.processor.EIMAudioProcessorDescription
 
 val KarplusStrongSynthesizerDescription = EIMAudioProcessorDescription("KarplusStrongSynthesizer", isInstrument = true)
 
-class KarplusStrongSynthesizer(factory: AudioProcessorFactory<*>):
-    AbstractAudioProcessor(KarplusStrongSynthesizerDescription, factory) {
+class KarplusStrongSynthesizer(factory: AudioProcessorFactory<*>, volume: Float = 1F):
+    AbstractAudioProcessor(KarplusStrongSynthesizerDescription, factory), Volume {
     private val cacheBuffers = FloatArray(1024000)
     private var cacheSize = 0
     private val alpha = 0.995
     private val release = 8.0
+
+    private var _volume by mutableStateOf(volume.coerceAtLeast(0F))
+    override var volume: Float
+        get() = _volume
+        set(value) { _volume = value.coerceAtLeast(0F) }
 
     override suspend fun processBlock(buffers: Array<FloatArray>, position: CurrentPosition, midiBuffer: ArrayList<Int>) {
         if (cacheSize > 0) {

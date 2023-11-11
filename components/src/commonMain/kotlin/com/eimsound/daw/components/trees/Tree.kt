@@ -95,7 +95,7 @@ fun DictionaryNode(file: File, depth: Int = 0) {
     var expanded by remember { mutableStateOf(false) }
     val list = remember(file) {
         try {
-            file.listFiles()!!.sortedWith(compareBy({ !it.isDirectory }, { it.name }))
+            file.listFiles()?.sortedWith(compareBy({ !it.isDirectory }, { it.name }))
         } catch (e: Exception) {
             logger.error(e) { "Failed to list files in $file" }
             null
@@ -103,7 +103,9 @@ fun DictionaryNode(file: File, depth: Int = 0) {
     }
     val isExpandable = !list.isNullOrEmpty()
     TreeItem(
-        file.name,
+        file.name.ifEmpty {
+            if (depth == 0) "根目录" else "未命名"
+        },
         file,
         if (expanded) Icons.Filled.FolderOpen else Icons.Outlined.Folder,
         if (isExpandable) expanded else null,
