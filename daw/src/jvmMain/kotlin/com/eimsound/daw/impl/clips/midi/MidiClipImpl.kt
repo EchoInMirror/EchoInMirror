@@ -14,7 +14,6 @@ import com.eimsound.audioprocessor.CurrentPosition
 import com.eimsound.audioprocessor.convertPPQToSamples
 import com.eimsound.audioprocessor.convertSamplesToPPQ
 import com.eimsound.audioprocessor.data.DefaultEnvelopePointList
-import com.eimsound.audioprocessor.data.EnvelopePoint
 import com.eimsound.audioprocessor.data.EnvelopePointList
 import com.eimsound.audioprocessor.data.MIDI_CC_RANGE
 import com.eimsound.audioprocessor.data.midi.*
@@ -30,12 +29,7 @@ import java.nio.file.Path
 
 class MidiClipImpl(factory: ClipFactory<MidiClip>) : AbstractClip<MidiClip>(factory), MidiClip {
     override val notes = DefaultNoteMessageList()
-    override val events: MutableMidiCCEvents = mutableStateMapOf(
-        1 to DefaultEnvelopePointList().apply {
-            add(EnvelopePoint(96, 0.2F))
-            add(EnvelopePoint(96 * 6, 0.8F))
-        },
-    )
+    override val events: MutableMidiCCEvents = mutableStateMapOf()
     override val isExpandable = true
 
     val ccPrevValues = ByteArray(128)

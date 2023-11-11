@@ -66,7 +66,8 @@ fun FloatingLayerProvider.openAudioProcessorMenu(
 
         override val canPaste get() = copiedAudioProcessorPath != null
     }, false) {
-        MenuHeader(p.processor.name, !p.processor.isBypassed,
+        MenuHeader(
+            p.processor.name, !p.processor.isBypassed,
             if (p.processor.description.isInstrument) Icons.Default.Piano else Icons.Default.SettingsInputHdmi
         ) {
             CustomCheckbox(!p.processor.isBypassed, { p.processor.isBypassed = !it }, Modifier.padding(start = 8.dp))

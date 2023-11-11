@@ -57,7 +57,8 @@ open class ProcessAudioProcessorImpl(
         get() = if (enabledSharedMemory) "EIM-$shmId-$id" else ""
     protected var inputStream: ByteBufInputStream? = null
     protected var outputStream: ByteBufOutputStream? = null
-    protected val mutex = Mutex()
+    protected val writeMutex = Mutex()
+    protected val modifiedParameterMutex = Mutex()
     private val parametersToId = hashMapOf<AudioProcessorParameter, Int>()
     private val modifiedParameter = hashSetOf<AudioProcessorParameter>()
 
@@ -66,13 +67,12 @@ open class ProcessAudioProcessorImpl(
             val output = outputStream
             if (!isLaunched || output == null) return@withContext
             if (!prepared) prepareToPlay(position.sampleRate, position.bufferSize)
-            mutex.withLock {
+            writeMutex.withLock {
                 val bufferSize = position.bufferSize
                 output.write(1) // action
                 output.write(position.toFlags()) // flags
                 output.writeDouble(position.bpm) // bpm
                 output.writeShort((midiBuffer.size / 2).toShort()) // midi event count
-                output.writeShort(modifiedParameter.size.toShort()) // parameter count
                 output.writeVarLong(position.timeInSamples) // time in samples
                 val inputChannels = inputChannelsCount.coerceAtMost(buffers.size)
                 val outputChannels = outputChannelsCount.coerceAtMost(buffers.size)
@@ -93,11 +93,19 @@ open class ProcessAudioProcessorImpl(
                     output.writeVarInt(midiBuffer[i])
                     output.writeShort(midiBuffer[i + 1].toShort())
                 }
-                modifiedParameter.forEach { p ->
-                    output.writeVarInt(parametersToId[p] ?: 9999999)
-                    output.writeFloat(p.value)
+
+                modifiedParameterMutex.withLock {
+                    val size = modifiedParameter.size
+                    output.writeVarInt(size)
+                    if (size > 0) {
+                        modifiedParameter.forEach { p ->
+                            output.writeVarInt(parametersToId[p] ?: 9999999)
+                            output.writeFloat(p.value)
+                        }
+                        modifiedParameter.clear()
+                    }
                 }
-                modifiedParameter.clear()
+
                 output.flush()
                 midiBuffer.clear()
 
@@ -124,7 +132,7 @@ open class ProcessAudioProcessorImpl(
     override fun onClick() {
         if (!isLaunched) return
         GlobalScope.launch(Dispatchers.IO) {
-            mutex.withLock {
+            writeMutex.withLock {
                 outputStream?.apply {
                     write(2)
                     flush()
@@ -133,35 +141,40 @@ open class ProcessAudioProcessorImpl(
         }
     }
 
+    @OptIn(DelicateCoroutinesApi::class)
     override fun prepareToPlay(sampleRate: Int, bufferSize: Int) {
-        prepared = true
-        val output = outputStream ?: return
-        output.write(0)
-        output.writeInt(sampleRate)
-        output.writeInt(bufferSize)
-        var newSize = 0
-        if (enabledSharedMemory && IS_SHM_SUPPORTED) {
-            val size = bufferSize * inputChannelsCount.coerceAtLeast(outputChannelsCount) * 4
-            if (sharedMemory?.size != size) {
-                sharedMemory?.close()
-                try {
-                    sharedMemory = SharedMemory.create(shmName, size)
-                    byteBuffer = sharedMemory!!.toByteBuffer()
-                    newSize = size
-                } catch (e: Throwable) {
-                    logger.warn(e) { "Failed to create shared memory: $shmName" }
-                    sharedMemory = null
-                    byteBuffer = null
+        GlobalScope.launch(Dispatchers.IO) {
+            writeMutex.withLock {
+                prepared = true
+                val output = outputStream ?: return@withLock
+                output.write(0)
+                output.writeInt(sampleRate)
+                output.writeInt(bufferSize)
+                var newSize = 0
+                if (enabledSharedMemory && IS_SHM_SUPPORTED) {
+                    val size = bufferSize * inputChannelsCount.coerceAtLeast(outputChannelsCount) * 4
+                    if (sharedMemory?.size != size) {
+                        sharedMemory?.close()
+                        try {
+                            sharedMemory = SharedMemory.create(shmName, size)
+                            byteBuffer = sharedMemory!!.toByteBuffer()
+                            newSize = size
+                        } catch (e: Throwable) {
+                            logger.warn(e) { "Failed to create shared memory: $shmName" }
+                            sharedMemory = null
+                            byteBuffer = null
+                        }
+                    }
                 }
+                if (sharedMemory == null) output.write(0)
+                else {
+                    output.write(1)
+                    output.writeString(shmName)
+                    output.writeInt(newSize)
+                }
+                output.flush()
             }
         }
-        if (sharedMemory == null) output.write(0)
-        else {
-            output.write(1)
-            output.writeString(shmName)
-            output.writeInt(newSize)
-        }
-        output.flush()
     }
 
     override suspend fun launch(execFile: String, preset: String?, vararg commands: String): Boolean = coroutineScope {
@@ -317,7 +330,14 @@ open class ProcessAudioProcessorImpl(
         }
     }
 
-    private fun handleParameterChange(p: AudioProcessorParameter) { modifiedParameter.add(p) }
+    @OptIn(DelicateCoroutinesApi::class)
+    private fun handleParameterChange(p: AudioProcessorParameter) {
+        GlobalScope.launch(Dispatchers.IO) {
+            modifiedParameterMutex.withLock {
+                modifiedParameter.add(p)
+            }
+        }
+    }
 
     override suspend fun restore(path: Path) {
         super.restore(path)
@@ -331,7 +351,7 @@ open class ProcessAudioProcessorImpl(
             select {
                 onTimeout(5000) { close() }
                 launch {
-                    mutex.withLock {
+                    writeMutex.withLock {
                         outputStream?.apply {
                             write(3)
                             writeString("$path/state.bin")
