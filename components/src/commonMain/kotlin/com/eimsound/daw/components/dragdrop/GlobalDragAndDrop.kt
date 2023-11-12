@@ -18,6 +18,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import java.awt.datatransfer.DataFlavor
 import java.io.File
+import java.nio.file.Path
 
 class GlobalDragAndDrop {
     var dataTransfer: Any? by mutableStateOf(null)
@@ -94,14 +95,16 @@ fun GlobalDropTarget(onDrop: ((Any, Offset) -> Unit)?, modifier: Modifier = Modi
     Box(modifier.onGloballyPositioned { currentPos = it.boundsInRoot() }) {
         val globalDragAndDrop = LocalGlobalDragAndDrop.current
         if (globalDragAndDrop.dataTransfer != null && currentPos.contains(globalDragAndDrop.currentPosition)) {
-            globalDragAndDrop.dropCallback = onDrop
+            globalDragAndDrop.dropCallback = onDrop?.let {
+                { obj, _ -> onDrop(obj, globalDragAndDrop.currentPosition - currentPos.topLeft) }
+            }
             content(globalDragAndDrop.currentPosition - currentPos.topLeft)
         } else content(null)
     }
 }
 
 @Composable
-fun FileDraggable(file: File, modifier: Modifier = Modifier, draggingComponent: (@Composable () -> Unit)? = null, content: @Composable () -> Unit) {
+fun FileDraggable(file: Path, modifier: Modifier = Modifier, draggingComponent: (@Composable () -> Unit)? = null, content: @Composable () -> Unit) {
     GlobalDraggable({ file }, modifier = modifier, draggingComponent = draggingComponent, content = content)
 }
 

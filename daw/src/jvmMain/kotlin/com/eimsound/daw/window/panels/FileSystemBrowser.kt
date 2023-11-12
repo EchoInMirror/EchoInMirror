@@ -45,14 +45,28 @@ import com.eimsound.daw.processor.PreviewerAudioProcessor
 import kotlinx.coroutines.*
 import org.apache.commons.lang3.SystemUtils
 import java.io.File
+import java.nio.file.Path
 import javax.sound.midi.MidiSystem
+import kotlin.io.path.extension
+import kotlin.io.path.inputStream
+import kotlin.io.path.isDirectory
+import kotlin.io.path.name
 
 val fileBrowserPreviewer = PreviewerAudioProcessor(AudioProcessorManager.instance.eimAudioProcessorFactory)
 
 object FileSystemBrowser : Panel {
     override val name = "文件浏览"
     override val direction = PanelDirection.Vertical
-    private val roots by mutableStateOf(File.listRoots().toList() + SystemUtils.getUserDir())
+    private val roots by mutableStateOf(run {
+        val roots = File.listRoots().toMutableList()
+        roots += SystemUtils.getUserDir()
+        if (SystemUtils.IS_OS_MAC) {
+            val home = SystemUtils.getUserHome()
+            if (home != null) roots += home
+            roots += File("/Volumes")
+        }
+        roots.map { it.toPath() }
+    })
     private var component: (@Composable BoxScope.() -> Unit)? by mutableStateOf(null)
     private var nodeName: String? by mutableStateOf(null)
 
@@ -64,7 +78,7 @@ object FileSystemBrowser : Panel {
     @Composable
     override fun Content() {
         Column {
-            Tree(Modifier.weight(1F), { if (it is File) createPreviewerComponent(it) }) {
+            Tree(Modifier.weight(1F), { if (it is Path) createPreviewerComponent(it) }) {
                 roots.fastForEach { key(it) { FileNode(it) } }
             }
             Previewer()
@@ -154,22 +168,22 @@ object FileSystemBrowser : Panel {
     }
 
     @OptIn(DelicateCoroutinesApi::class)
-    private fun createPreviewerComponent(file: File) {
+    private fun createPreviewerComponent(file: Path) {
         GlobalScope.launch {
-            if (file.isDirectory) return@launch
+            if (file.isDirectory()) return@launch
             val ext = file.extension.lowercase()
             var hasContent = false
             try {
                 if (ext == "mid") {
                     val notes = withContext(Dispatchers.IO) {
-                        MidiSystem.getSequence(file).toMidiTracks(EchoInMirror.currentPosition.ppq).getNotes()
+                        MidiSystem.getSequence(file.inputStream()).toMidiTracks(EchoInMirror.currentPosition.ppq).getNotes()
                     }
                     component = { MidiView(notes) }
                     nodeName = file.name
                     fileBrowserPreviewer.setPreviewTarget(notes)
                     hasContent = true
                 } else if (AudioSourceManager.instance.supportedFormats.contains(ext)) {
-                    val audioSource = AudioSourceManager.instance.createAudioSource(file.toPath())
+                    val audioSource = AudioSourceManager.instance.createAudioSource(file)
                     EchoInMirror.audioThumbnailCache[file, audioSource]?.let {
                         component = { Waveform(it) }
                         nodeName = file.name

@@ -1,0 +1,2 @@
+com.eimsound.daw.impl.clips.audio.AudioFileExtensionHandler
+com.eimsound.daw.impl.clips.midi.MidiFileExtensionHandler

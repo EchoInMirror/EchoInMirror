@@ -21,14 +21,16 @@ import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachIndexed
 import com.eimsound.audioprocessor.data.midi.MidiTrack
 import com.eimsound.audioprocessor.data.midi.toMidiTracks
-import com.eimsound.audioprocessor.data.midi.toOneMidiTrack
+import com.eimsound.daw.api.FileExtensionManager
 import com.eimsound.daw.components.dragdrop.FileDraggable
 import com.eimsound.daw.components.dragdrop.GlobalDraggable
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.io.File
+import java.nio.file.Files
+import java.nio.file.Path
 import javax.sound.midi.MidiSystem
+import kotlin.io.path.*
 
 private val logger by lazy { KotlinLogging.logger("com.eimsound.daw.components.trees.FileTree") }
 
@@ -36,13 +38,6 @@ private val fileIcon = Icons.Outlined.InsertDriveFile
 private val midiFileIcon = Icons.Outlined.Piano
 private val midiTrackIcon = Icons.Outlined.Audiotrack
 val FileExtensionIcons = mapOf(
-    "mid" to midiFileIcon,
-    "wav" to Icons.Outlined.MusicNote,
-    "mp3" to Icons.Outlined.MusicNote,
-    "ogg" to Icons.Outlined.MusicNote,
-    "flac" to Icons.Outlined.MusicNote,
-    "aiff" to Icons.Outlined.MusicNote,
-    "aif" to Icons.Outlined.MusicNote,
     "jpg" to Icons.Outlined.Image,
     "jpeg" to Icons.Outlined.Image,
     "png" to Icons.Outlined.Image,
@@ -91,11 +86,11 @@ fun TreeItem(
 }
 
 @Composable
-fun DictionaryNode(file: File, depth: Int = 0) {
+fun DictionaryNode(file: Path, depth: Int = 0) {
     var expanded by remember { mutableStateOf(false) }
     val list = remember(file) {
         try {
-            file.listFiles()?.sortedWith(compareBy({ !it.isDirectory }, { it.name }))
+            file.listDirectoryEntries().sortedWith(compareBy({ !it.isDirectory() }, { it.name }))
         } catch (e: Exception) {
             logger.error(e) { "Failed to list files in $file" }
             null
@@ -118,10 +113,10 @@ fun DictionaryNode(file: File, depth: Int = 0) {
 }
 
 @Composable
-fun MidiNode(file: File, depth: Int) {
+fun MidiNode(file: Path, depth: Int) {
     var expanded by remember { mutableStateOf(false) }
     GlobalDraggable({
-        withContext(Dispatchers.IO) { MidiSystem.getSequence(file) }.toOneMidiTrack()
+        file
     }) {
         TreeItem(file.name, file, midiFileIcon, expanded, depth) { expanded = !expanded }
     }
@@ -130,11 +125,11 @@ fun MidiNode(file: File, depth: Int) {
         var midiTracks by remember { mutableStateOf<List<MidiTrack>?>(null) }
         LaunchedEffect(file) {
             midiTracks = withContext(Dispatchers.IO) {
-                MidiSystem.getSequence(file)
+                MidiSystem.getSequence(Files.newInputStream(file))
             }.toMidiTracks()
         }
         midiTracks?.fastForEachIndexed { index, midiTrack ->
-            GlobalDraggable({ midiTrack }) {
+            GlobalDraggable({ file to index }) {
                 TreeItem(
                     midiTrack.name ?: "轨道 $index",
                     midiTrack,
@@ -148,8 +143,9 @@ fun MidiNode(file: File, depth: Int) {
 
 @Composable
 fun DefaultFileNode(
-    file: File,
-    icon: ImageVector = FileExtensionIcons.getOrDefault(file.extension, fileIcon),
+    file: Path,
+    icon: ImageVector = FileExtensionManager.getHandler(file)?.icon
+        ?: FileExtensionIcons.getOrDefault(file.extension.lowercase(), fileIcon),
     expanded: Boolean? = null,
     depth: Int = 0,
     onClick: (() -> Unit)? = null,
@@ -160,11 +156,13 @@ fun DefaultFileNode(
 }
 
 @Composable
-fun FileNode(file: File, depth: Int = 0) {
-    if (file.isDirectory) DictionaryNode(file, depth)
-    else when (file.extension) {
-        "mid" -> MidiNode(file, depth)
-        else -> DefaultFileNode(file, depth = depth)
+fun FileNode(file: Path, depth: Int = 0) {
+    if (file.isDirectory()) DictionaryNode(file, depth)
+    else {
+        val ext = FileExtensionManager.handlers
+            .firstOrNull { it.isCustomFileBrowserNode && it.extensions.containsMatchIn(file.name) }
+        if (ext == null) DefaultFileNode(file, depth = depth)
+        else ext.FileBrowserNode(file, depth)
     }
 }
 

@@ -58,7 +58,8 @@ class EchoInMirrorImpl : IEchoInMirror {
             try {
                 ret = AudioPlayerManager.instance.create(
                     Configuration.audioDeviceFactoryName,
-                    Configuration.audioDeviceName, currentPosition, bus!!)
+                    Configuration.audioDeviceName, currentPosition, bus!!
+                )
             } catch (e: Exception) {
                 e.printStackTrace()
             }

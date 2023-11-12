@@ -1,6 +1,8 @@
 package com.eimsound.daw.impl.clips.audio
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.MusicNote
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
@@ -122,4 +124,12 @@ class AudioClipFactoryImpl: AudioClipFactory {
     override fun toString(): String {
         return "AudioClipFactoryImpl"
     }
+}
+
+class AudioFileExtensionHandler : AbstractFileExtensionHandler() {
+    override val icon = Icons.Outlined.MusicNote
+    // wav, mp3, ogg, flac, aiff, aif
+    override val extensions = Regex("\\.(wav|mp3|ogg|flac|aiff|aif)$", RegexOption.IGNORE_CASE)
+
+    override suspend fun createClip(file: Path, data: Any?) = ClipManager.instance.defaultAudioClipFactory.createClip(file)
 }

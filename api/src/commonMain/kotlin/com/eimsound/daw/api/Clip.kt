@@ -106,6 +106,8 @@ interface Clip : JsonSerializable {
     val isExpandable: Boolean
     @Transient
     val maxDuration: Int
+    @Transient
+    val duration: Int
 }
 
 typealias MidiCCEvents = Map<Int, BaseEnvelopePointList>
@@ -145,6 +147,7 @@ abstract class AbstractClip<T: Clip>(override val factory: ClipFactory<T>) : Cli
     override val isExpandable = false
     override val defaultDuration = -1
     override val maxDuration = -1
+    override val duration get() = maxDuration
 
     override fun toString(): String {
         return "MidiClipImpl(factory=$factory, id='$id')"

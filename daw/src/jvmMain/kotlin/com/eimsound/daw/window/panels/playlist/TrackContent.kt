@@ -98,7 +98,7 @@ private suspend fun AwaitPointerEventScope.handleDragEvent(playlist: Playlist, c
                     EditAction.RESIZE
                 } else {
                     trackToIndex = hashMapOf()
-                    trackHeights = getAllTrackHeights(trackHeight.toPx(), density)
+                    getAllTrackHeights(density)
                     trackHeights.forEachIndexed { index, (track) -> trackToIndex[track] = index }
                     var selectedClipsTop = Int.MAX_VALUE
                     var selectedClipsBottom = 0
@@ -118,7 +118,7 @@ private suspend fun AwaitPointerEventScope.handleDragEvent(playlist: Playlist, c
                     change.consume()
                     drag(down.id) {
                         val currentY = dragStartY + it.position.y - change.position.y
-                        val cur = binarySearchTrackByHeight(trackHeights, currentY)
+                        val cur = binarySearchTrackByHeight(currentY)
                         deltaY = (cur - index).coerceIn(yAllowRange!!)
                         deltaX = ((it.position.x - change.position.x) / noteWidth.value.toPx())
                             .fitInUnit(EchoInMirror.editUnit).coerceAtLeast(-selectedClipsLeft)
@@ -141,7 +141,7 @@ private suspend fun AwaitPointerEventScope.handleDragEvent(playlist: Playlist, c
                         )
                         EchoInMirror.selectedTrack = trackHeights[(index + y).coerceAtMost(trackHeights.size - 1)].track
                     }
-                    trackHeights = emptyList()
+                    trackHeights.clear()
                 }
                 EditAction.RESIZE -> {
                     change.consume()

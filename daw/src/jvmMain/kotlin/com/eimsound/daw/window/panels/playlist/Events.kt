@@ -68,7 +68,6 @@ internal suspend fun PointerInputScope.handleMouseEvent(playlist: Playlist, scop
             } while (drag != null && !drag.isConsumed)
             if (drag == null) return@awaitEachGesture
 
-            var trackHeights: List<TrackToHeight>? = null
             when (action) {
                 EditAction.SELECT -> {
                     selectionStartX = downX
@@ -77,7 +76,7 @@ internal suspend fun PointerInputScope.handleMouseEvent(playlist: Playlist, scop
                     selectionY = dragStartY
                 }
                 EditAction.DELETE -> {
-                    trackHeights = getAllTrackHeights(trackHeight.toPx(), density)
+                    getAllTrackHeights(density)
                 }
                 else -> { }
             }
@@ -93,8 +92,7 @@ internal suspend fun PointerInputScope.handleMouseEvent(playlist: Playlist, scop
                     EditAction.DELETE -> {
                         val y = it.position.y + verticalScrollState.value
                         val x = it.position.x + horizontalScrollState.value / noteWidth.value.toPx()
-                        val heights = trackHeights!!
-                        val track = heights[binarySearchTrackByHeight(heights, y)].track
+                        val track = trackHeights[binarySearchTrackByHeight(y)].track
                         for (j in track.clips.indices) {
                             val clip = track.clips[j]
                             if (clip.time <= x && x <= clip.time + clip.duration) deletionList.add(clip)
@@ -117,8 +115,8 @@ internal suspend fun PointerInputScope.handleMouseEvent(playlist: Playlist, scop
                     val minY = minOf(selectionStartY, selectionY)
                     val maxY = maxOf(selectionStartY, selectionY)
 
-                    trackHeights = getAllTrackHeights(trackHeight.toPx(), density)
-                    val cur = binarySearchTrackByHeight(trackHeights, minY)
+                    getAllTrackHeights(density)
+                    val cur = binarySearchTrackByHeight(minY)
                     val list = arrayListOf<TrackClip<*>>()
                     for (i in cur..trackHeights.lastIndex) {
                         val track = trackHeights[i].track

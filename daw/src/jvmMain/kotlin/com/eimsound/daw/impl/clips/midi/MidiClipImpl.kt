@@ -3,6 +3,8 @@ package com.eimsound.daw.impl.clips.midi
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Piano
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -23,14 +25,19 @@ import com.eimsound.daw.components.EnvelopeEditor
 import com.eimsound.daw.impl.clips.midi.editor.DefaultMidiClipEditor
 import com.eimsound.daw.utils.binarySearch
 import com.eimsound.daw.commons.json.putNotDefault
+import com.eimsound.daw.components.trees.MidiNode
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.*
 import kotlinx.serialization.json.*
+import java.nio.file.Files
 import java.nio.file.Path
+import javax.sound.midi.MidiSystem
 
 class MidiClipImpl(factory: ClipFactory<MidiClip>) : AbstractClip<MidiClip>(factory), MidiClip {
     override val notes = DefaultNoteMessageList()
     override val events: MutableMidiCCEvents = mutableStateMapOf()
     override val isExpandable = true
+    override val duration get() = notes.lastOrNull()?.run { time + duration } ?: 0
 
     val ccPrevValues = ByteArray(128)
 
@@ -190,4 +197,29 @@ private fun MidiClipEnvelopes(
     remember(points) {
         EnvelopeEditor(points, MIDI_CC_RANGE)
     }.Editor(startPPQ, contentColor, noteWidth, false, clipStartTime = clip.start, stroke = 0.5F)
+}
+
+class MidiFileExtensionHandler : AbstractFileExtensionHandler() {
+    override val icon = Icons.Outlined.Piano
+    override val extensions = Regex("\\.mid$", RegexOption.IGNORE_CASE)
+    override val isCustomFileBrowserNode = true
+
+    override suspend fun createClip(file: Path, data: Any?): MidiClip { // TODO: import midi file as clip
+        val clip = ClipManager.instance.defaultMidiClipFactory.createClip()
+        if (data is Int) { // track index
+            println(data)
+        }
+        clip.notes.addAll(
+            withContext(Dispatchers.IO) {
+                MidiSystem.getSequence(Files.newInputStream(file)).toMidiTracks(EchoInMirror.currentPosition.ppq).getNotes()
+            }
+        )
+        clip.notes.sort()
+        return clip
+    }
+
+    @Composable
+    override fun FileBrowserNode(file: Path, depth: Int) {
+        MidiNode(file, depth)
+    }
 }

@@ -11,16 +11,17 @@ import com.eimsound.audioprocessor.CurrentPosition
 import com.eimsound.daw.utils.ByteBufInputStream
 import com.eimsound.daw.utils.ByteBufOutputStream
 import com.eimsound.dsp.native.IS_SHM_SUPPORTED
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.EOFException
-import java.io.IOException
 import java.nio.ByteBuffer
 import java.util.*
 
+private val logger = KotlinLogging.logger {  }
 class NativeAudioPlayer(
     factory: NativeAudioPlayerFactory,
     type: String, name: String,
@@ -54,6 +55,7 @@ class NativeAudioPlayer(
                     currentPosition.bufferSize * channels * 4)
                 byteBuffer = sharedMemory!!.toByteBuffer()
             } catch (ignored: Throwable) { }
+            logger.info { "Opening audio player: $name" }
             val pb = ProcessBuilder(arrayListOf(execFile).apply {
                 addAll(commands)
                 add("-O")
@@ -101,13 +103,10 @@ class NativeAudioPlayer(
     }
 
     override fun close() {
+        logger.info { "Closing audio player: $name" }
         if (process != null) {
             process!!.destroy()
             process = null
-        }
-        if (thread != null) {
-            thread!!.interrupt()
-            thread = null
         }
         if (sharedMemory != null) {
             byteBuffer = null
@@ -139,12 +138,12 @@ class NativeAudioPlayer(
     @Suppress("DuplicatedCode")
     override fun run() {
         val bufferSize = buffers[0].size
-        try {
-            while (thread?.isAlive == true && process != null) {
+        use {
+            while (process != null) {
                 enterProcessBlock()
                 buffers.forEach { it.fill(0F) }
 
-                runBlocking {
+                runBlocking(Dispatchers.IO + CoroutineName("NativeAudioPlayer")) {
                     try {
                         processor.processBlock(buffers, currentPosition, ArrayList(0))
                     } catch (e: Throwable) {
@@ -171,6 +170,7 @@ class NativeAudioPlayer(
                                 }
                                 outputStream.flush()
                             }
+
                             1 -> readDeviceInfo()
                             else -> throw EOFException()
                         }
@@ -179,8 +179,6 @@ class NativeAudioPlayer(
 
                 if (currentPosition.isPlaying) currentPosition.update(currentPosition.timeInSamples + bufferSize)
             }
-        } catch (ignored: EOFException) { } catch (ignored: IOException) { } catch (ignored: InterruptedException) { } finally {
-            close()
         }
     }
 

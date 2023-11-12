@@ -29,7 +29,6 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAll
-import androidx.compose.ui.util.fastForEach
 import com.eimsound.daw.actions.doAddOrRemoveTrackAction
 import com.eimsound.daw.actions.doReorderAction
 import com.eimsound.daw.api.EchoInMirror
@@ -41,11 +40,9 @@ import com.eimsound.daw.components.VolumeSlider
 import com.eimsound.daw.components.icons.Crown
 import com.eimsound.daw.components.menus.openTrackMenu
 import com.eimsound.daw.components.utils.*
-import com.eimsound.daw.utils.binarySearch
 import com.eimsound.daw.window.dialogs.openColorPicker
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import java.util.*
 import kotlin.math.roundToInt
 
 internal class TrackMoveFlags(val parent: Track) {
@@ -53,20 +50,6 @@ internal class TrackMoveFlags(val parent: Track) {
     var isChild by mutableStateOf(false)
 }
 internal data class TrackToHeight(val track: Track, val height: Float)
-private fun getTrackHeights(list: ArrayList<TrackToHeight>, track: Track, defaultHeight: Float, density: Float) {
-    list.add(TrackToHeight(track, density + (list.lastOrNull()?.height ?: 0F) +
-            (if (track.height == 0) defaultHeight else track.height * density)))
-    track.subTracks.fastForEach { getTrackHeights(list, it, defaultHeight, density) }
-}
-internal fun getAllTrackHeights(defaultHeight: Float, density: Float): List<TrackToHeight> {
-    val trackHeights = ArrayList<TrackToHeight>()
-    EchoInMirror.bus!!.subTracks.fastForEach { getTrackHeights(trackHeights, it, defaultHeight, density) }
-    return trackHeights
-}
-
-// binary search drop track by trackHeights and currentY
-internal fun binarySearchTrackByHeight(trackHeights: List<TrackToHeight>, y: Float) =
-    trackHeights.binarySearch { it.height <= y }
 
 private var pointerIcon by mutableStateOf<PointerIcon?>(null)
 
@@ -94,7 +77,7 @@ private suspend fun AwaitPointerEventScope.handleDrag(playlist: Playlist, track:
                 }
                 return
             }
-            trackHeights = getAllTrackHeights(trackHeight.toPx(), density)
+            getAllTrackHeights(density)
             isDragging.value = true
             var lastTrack: Track? = null
             var lastFlags: TrackMoveFlags? = null
@@ -102,7 +85,7 @@ private suspend fun AwaitPointerEventScope.handleDrag(playlist: Playlist, track:
             drag(down.id) {
                 currentY = dragStartY + it.position.y - change.position.y
                 // binary search drop track by trackHeights and currentY
-                val cur = binarySearchTrackByHeight(trackHeights, currentY)
+                val cur = binarySearchTrackByHeight(currentY)
                 val dropTrack = trackHeights[cur].track
                 lastFlags?.isAbove = false
                 lastFlags?.isChild = false

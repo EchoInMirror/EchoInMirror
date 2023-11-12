@@ -62,7 +62,6 @@ fun FloatingLayerProvider.openTrackMenu(
                     return@launch
                 }
             }
-//                .invokeOnCompletion { isLoading?.value = false }
         }
 
         override val canPaste get() = copiedTrackPath != null

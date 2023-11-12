@@ -24,6 +24,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.*
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.*
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineHeightStyle
@@ -169,9 +170,11 @@ fun Timeline(modifier: Modifier = Modifier, noteWidth: MutableState<Dp>, scrollS
 }
 
 @Composable
-fun PlayHead(noteWidth: MutableState<Dp>, scrollState: ScrollState, position: Float, width: Dp? = null, offsetX: Dp = 0.dp,
-             color: Color = MaterialTheme.colorScheme.onBackground) {
-    var playHeadPosition = noteWidth.value * position - scrollState.value.dp
+fun PlayHead(
+    noteWidth: MutableState<Dp>, scrollState: ScrollState, position: Float, width: Dp? = null,
+    offsetX: Dp = 0.dp, color: Color = MaterialTheme.colorScheme.onBackground
+) {
+    var playHeadPosition = noteWidth.value * position - with (LocalDensity.current) { scrollState.value.toDp() }
     if (playHeadPosition.value < 0 || (width != null && playHeadPosition > width)) return
     playHeadPosition += offsetX
     Box(Modifier.fillMaxHeight().width(1.dp).offset(playHeadPosition).background(color))

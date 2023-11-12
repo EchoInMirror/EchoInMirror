@@ -13,8 +13,10 @@ import com.eimsound.daw.Configuration
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.components.*
 import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import org.apache.commons.lang3.SystemUtils
 import kotlin.math.roundToInt
 
 @Composable
@@ -25,6 +27,14 @@ private fun Latency(title: String, latency: Int) {
             "${(latency * 1000.0 / EchoInMirror.currentPosition.sampleRate).roundToInt()} 毫秒 / $latency 个采样",
             Modifier.weight(1f)
         )
+    }
+}
+
+@OptIn(DelicateCoroutinesApi::class)
+private fun reopenAudioDevice() {
+    GlobalScope.launch(Dispatchers.IO) {
+        Configuration.save()
+        EchoInMirror.player = EchoInMirror.createAudioPlayer()
     }
 }
 
@@ -39,7 +49,6 @@ internal object AudioSettings : SettingTab {
         Icon(Icons.Filled.SettingsInputComponent, "Audio Settings")
     }
 
-    @OptIn(DelicateCoroutinesApi::class)
     @Composable
     override fun content() {
         Column {
@@ -48,16 +57,13 @@ internal object AudioSettings : SettingTab {
                 Menu({ close ->
                     AudioPlayerManager.instance.factories.forEach { (name, _) ->
                         MenuItem({
+                            close()
                             if (Configuration.audioDeviceFactoryName == name) return@MenuItem
                             EchoInMirror.player?.close()
                             Configuration.audioDeviceName = ""
                             Configuration.audioDeviceFactoryName = name
-                            Configuration.save()
-                            close()
 
-                            GlobalScope.launch {
-                                EchoInMirror.player = EchoInMirror.createAudioPlayer()
-                            }
+                            reopenAudioDevice()
                         }, Configuration.audioDeviceFactoryName == name, modifier = Modifier.fillMaxWidth()) {
                             Text(name)
                         }
@@ -77,15 +83,12 @@ internal object AudioSettings : SettingTab {
                     }
                     playerNames.fastForEach { playerName ->
                         MenuItem({
+                            close()
                             if (Configuration.audioDeviceName == playerName) return@MenuItem
                             EchoInMirror.player?.close()
                             Configuration.audioDeviceName = playerName
-                            Configuration.save()
-                            close()
 
-                            GlobalScope.launch {
-                                EchoInMirror.player = EchoInMirror.createAudioPlayer()
-                            }
+                            reopenAudioDevice()
                         }, Configuration.audioDeviceName == playerName, modifier = Modifier.fillMaxWidth()) {
                             Text(playerName)
                         }
@@ -100,17 +103,14 @@ internal object AudioSettings : SettingTab {
                 Menu({ close ->
                     EchoInMirror.player?.availableBufferSizes?.forEach {
                         MenuItem({
+                            close()
                             EchoInMirror.player?.close()
                             EchoInMirror.currentPosition.setSampleRateAndBufferSize(
                                 EchoInMirror.currentPosition.sampleRate,
                                 it
                             )
-                            Configuration.save()
-                            close()
 
-                            GlobalScope.launch {
-                                EchoInMirror.player = EchoInMirror.createAudioPlayer()
-                            }
+                            reopenAudioDevice()
                         }, EchoInMirror.currentPosition.bufferSize == it, modifier = Modifier.fillMaxWidth()) {
                             Text("$it 个采样")
                         }
@@ -127,18 +127,15 @@ internal object AudioSettings : SettingTab {
                 Menu({ close ->
                     EchoInMirror.player?.availableSampleRates?.forEach {
                         MenuItem({
+                            close()
                             sampleRate = it
                             EchoInMirror.player?.close()
                             EchoInMirror.currentPosition.setSampleRateAndBufferSize(
                                 it,
                                 EchoInMirror.currentPosition.bufferSize
                             )
-                            Configuration.save()
-                            close()
 
-                            GlobalScope.launch {
-                                EchoInMirror.player = EchoInMirror.createAudioPlayer()
-                            }
+                            reopenAudioDevice()
                         }, sampleRate == it, modifier = Modifier.fillMaxWidth()) {
                             Text(it.toString())
                         }
@@ -148,7 +145,7 @@ internal object AudioSettings : SettingTab {
                 }
             }
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            if (SystemUtils.IS_OS_WINDOWS) Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("后台共享音频设备")
                 Checkbox(
                     Configuration.stopAudioOutputOnBlur,
