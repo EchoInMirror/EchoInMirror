@@ -24,7 +24,7 @@ import kotlin.io.path.name
 class AudioClipImpl(
     factory: ClipFactory<AudioClip>, target: AudioSource? = null
 ): AbstractClip<AudioClip>(factory), AudioClip {
-    private var _target = target
+    private var _target: AudioSource? = null
     override var target: AudioSource
         get() = _target ?: throw IllegalStateException("Target is not set")
         set(value) {
@@ -57,7 +57,7 @@ class AudioClipImpl(
         if (target != null) this.target = target
     }
 
-    override fun close() { target.close() }
+    override fun close() { _target?.close() }
 
     override fun toJson() = buildJsonObject {
         put("id", id)

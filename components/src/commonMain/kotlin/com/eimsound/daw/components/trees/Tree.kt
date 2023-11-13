@@ -1,5 +1,3 @@
-@file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
-
 package com.eimsound.daw.components.trees
 
 import androidx.compose.foundation.*
@@ -24,15 +22,12 @@ import com.eimsound.audioprocessor.data.midi.toMidiTracks
 import com.eimsound.daw.api.FileExtensionManager
 import com.eimsound.daw.components.dragdrop.FileDraggable
 import com.eimsound.daw.components.dragdrop.GlobalDraggable
-import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.nio.file.Files
 import java.nio.file.Path
 import javax.sound.midi.MidiSystem
 import kotlin.io.path.*
-
-private val logger by lazy { KotlinLogging.logger("com.eimsound.daw.components.trees.FileTree") }
 
 private val fileIcon = Icons.Outlined.InsertDriveFile
 private val midiFileIcon = Icons.Outlined.Piano
@@ -90,9 +85,10 @@ fun DictionaryNode(file: Path, depth: Int = 0) {
     var expanded by remember { mutableStateOf(false) }
     val list = remember(file) {
         try {
-            file.listDirectoryEntries().sortedWith(compareBy({ !it.isDirectory() }, { it.name }))
-        } catch (e: Exception) {
-            logger.error(e) { "Failed to list files in $file" }
+            file.listDirectoryEntries()
+                .filter { !it.isHidden() }
+                .sortedWith(compareBy({ !it.isDirectory() }, { it.name }))
+        } catch (ignored: Throwable) {
             null
         }
     }

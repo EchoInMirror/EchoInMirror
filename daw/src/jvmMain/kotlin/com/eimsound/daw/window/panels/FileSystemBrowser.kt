@@ -69,6 +69,7 @@ object FileSystemBrowser : Panel {
     })
     private var component: (@Composable BoxScope.() -> Unit)? by mutableStateOf(null)
     private var nodeName: String? by mutableStateOf(null)
+    private var autoPlay by mutableStateOf(true)
 
     @Composable
     override fun Icon() {
@@ -110,13 +111,14 @@ object FileSystemBrowser : Panel {
             @OptIn(ExperimentalFoundationApi::class)
             DropdownMenu({ close ->
                 MenuItem({
-                    fileBrowserPreviewer.position.isPlaying = !fileBrowserPreviewer.position.isPlaying
+                    autoPlay = !autoPlay
+                    fileBrowserPreviewer.position.isPlaying = autoPlay
                     close()
                 }) {
                     Text("自动播放")
                     Filled()
                     Icon(
-                        if (fileBrowserPreviewer.position.isPlaying) Icons.Outlined.CheckBox
+                        if (autoPlay) Icons.Outlined.CheckBox
                         else Icons.Outlined.CheckBoxOutlineBlank, "自动播放"
                     )
                 }
@@ -128,7 +130,7 @@ object FileSystemBrowser : Panel {
                     Filled()
                     Icon(
                         if (fileBrowserPreviewer.position.isProjectLooping) Icons.Outlined.CheckBox
-                        else Icons.Outlined.CheckBoxOutlineBlank, "自动播放"
+                        else Icons.Outlined.CheckBoxOutlineBlank, "循环播放"
                     )
                 }
                 MenuItem {
@@ -195,7 +197,9 @@ object FileSystemBrowser : Panel {
                 hasContent = false
                 e.printStackTrace()
             }
-            if (!hasContent) {
+            if (hasContent) {
+                if (autoPlay) fileBrowserPreviewer.position.isPlaying = true
+            } else {
                 component = null
                 nodeName = null
                 fileBrowserPreviewer.clear()

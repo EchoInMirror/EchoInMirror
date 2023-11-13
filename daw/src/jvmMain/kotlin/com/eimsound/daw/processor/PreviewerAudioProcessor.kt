@@ -25,7 +25,10 @@ class PreviewerAudioProcessor(factory: AudioProcessorFactory<*>) : AbstractAudio
     private var tempBuffers = Array(2) { FloatArray(1024) }
 
     var volume by sineWaveSynthesizer::volume
-    val position: CurrentPosition = CurrentPositionImpl(this).apply { isPlaying = true }
+    val position: CurrentPosition = CurrentPositionImpl(this).apply {
+        isPlaying = true
+        isProjectLooping = false
+    }
     var playPosition
         get() = position.timeInPPQ.toDouble() / position.projectRange.last
         set(value) { position.setCurrentTime((value * position.projectRange.last).toInt()) }
@@ -52,6 +55,7 @@ class PreviewerAudioProcessor(factory: AudioProcessorFactory<*>) : AbstractAudio
                 val startPPQ = this.position.timeInPPQ
                 currentIndex = notes.binarySearch { it.time <= startPPQ }
             }
+            if (currentIndex > 0) currentIndex--
             for (i in currentIndex..notes.lastIndex) {
                 val note = notes[i]
                 val startTimeInSamples = this.position.convertPPQToSamples(note.time)

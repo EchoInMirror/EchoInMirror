@@ -130,6 +130,17 @@ interface EnvelopeEditorEventHandler {
     fun onTypeChanged(editor: EnvelopeEditor, points: BaseEnvelopePointList, type: EnvelopeType)
 }
 
+private fun floatToFixed(value: Float): String {
+    val n = (value * 100).roundToInt()
+    val f = n / 100
+    val str = f.toString()
+    val end = (n % 100).absoluteValue
+    if (end == 0) return str
+    if (end < 0) return "$str.0$end"
+    val g = end % 10
+    return "$str.${if (g == 0) end / 10 else end}"
+}
+
 class EnvelopeEditor(
     val points: EnvelopePointList, val valueRange: FloatRange,
     private val defaultValue: Float = valueRange.start, private val isFloat: Boolean = false,
@@ -463,7 +474,7 @@ class EnvelopeEditor(
                         lastTextX = startX
                         lastTextY = currentY
                         val result = measurer.measure(
-                            AnnotatedString(if (isFloat) "%.2f".format(curValue) else curValue.toInt().toString()),
+                            AnnotatedString(if (isFloat) floatToFixed(curValue) else curValue.toInt().toString()),
                             textStyle,
                             maxLines = 1,
                             constraints = maxTextSize
@@ -518,7 +529,7 @@ class EnvelopeEditor(
                         lastTextX = startX
                         lastTextY = currentY
                         val result = measurer.measure(
-                            AnnotatedString(if (isFloat) "%.2f".format(cur.value) else cur.value.toInt().toString()),
+                            AnnotatedString(if (isFloat) floatToFixed(cur.value) else cur.value.toInt().toString()),
                             textStyle,
                             maxLines = 1,
                             constraints = maxTextSize
@@ -575,7 +586,7 @@ class EnvelopeEditor(
             MenuItem(padding = PaddingValues(12.dp, 12.dp, 12.dp, 0.dp)) {
                 Text("值:")
                 Filled()
-                CustomTextField(if (isFloat) "%.2f".format(currentPoint.value) else currentPoint.value.toInt().toString(), {
+                CustomTextField(if (isFloat) floatToFixed(currentPoint.value) else currentPoint.value.toInt().toString(), {
                     val value = it.toFloatOrNull()?.coerceIn(valueRange) ?: return@CustomTextField
                     eventHandler?.onMovePoints(this@EnvelopeEditor, selectedPoints.toList(), 0,
                         (if (isFloat) value else round(value)) - currentPoint.value)
