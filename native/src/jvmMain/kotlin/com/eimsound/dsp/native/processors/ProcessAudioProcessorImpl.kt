@@ -59,8 +59,7 @@ open class ProcessAudioProcessorImpl(
     protected var outputStream: ByteBufOutputStream? = null
     protected val writeMutex = Mutex()
     protected val modifiedParameterMutex = Mutex()
-    private val parametersToId = hashMapOf<AudioProcessorParameter, Int>()
-    private val modifiedParameter = hashSetOf<AudioProcessorParameter>()
+    private val modifiedParameter = hashSetOf<Int>()
 
     override suspend fun processBlock(buffers: Array<FloatArray>, position: CurrentPosition, midiBuffer: ArrayList<Int>) {
         withContext(Dispatchers.IO) {
@@ -98,9 +97,14 @@ open class ProcessAudioProcessorImpl(
                     val size = modifiedParameter.size
                     output.writeVarInt(size)
                     if (size > 0) {
-                        modifiedParameter.forEach { p ->
-                            output.writeVarInt(parametersToId[p] ?: 9999999)
-                            output.writeFloat(p.value)
+                        modifiedParameter.forEach { id ->
+                            if (id in parameters.indices) {
+                                output.writeVarInt(id)
+                                output.writeFloat(parameters[id].value)
+                            } else {
+                                output.writeVarInt(9999999)
+                                output.writeFloat(0F)
+                            }
                         }
                         modifiedParameter.clear()
                     }
@@ -255,10 +259,10 @@ open class ProcessAudioProcessorImpl(
         withContext(Dispatchers.IO) {
             inputChannelsCount = input.read()
             outputChannelsCount = input.read()
+            latency = input.readInt()
             val len = input.readVarInt()
 
-            parametersToId.clear()
-            parameters = List(len) {
+            val newList = List(len) {
                 val flags = input.read()
                 val value = input.readFloat()
                 val initialValue = input.readFloat()
@@ -284,10 +288,11 @@ open class ProcessAudioProcessorImpl(
                     audioProcessorParameterOf(id, name, initialValue = initialValue, label = label,
                         isAutomatable = isAutomatable, onChange = ::handleParameterChange)
                 }.apply {
-                    parametersToId[this] = it
                     setValue(value, false)
                 }
             }
+
+            if (parameters.isEmpty()) parameters = newList // TODO: replace this in the future
         }
     }
 
@@ -327,6 +332,7 @@ open class ProcessAudioProcessorImpl(
                 }
                 list.doChangeAction(false)
             }
+            4 -> latency = input.readInt() // latency
         }
     }
 
@@ -334,7 +340,7 @@ open class ProcessAudioProcessorImpl(
     private fun handleParameterChange(p: AudioProcessorParameter) {
         GlobalScope.launch(Dispatchers.IO) {
             modifiedParameterMutex.withLock {
-                modifiedParameter.add(p)
+                modifiedParameter.add(p.id.toInt())
             }
         }
     }

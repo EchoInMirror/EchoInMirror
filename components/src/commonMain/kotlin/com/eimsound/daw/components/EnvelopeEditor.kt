@@ -459,7 +459,7 @@ class EnvelopeEditor(
                     val nextPoint = next ?: cur
                     val currentY = size.height * (1 - curValue.coerceIn(valueRange) / range)
                     val curColor = if (isSelected) primaryColor else color
-                    if (showThumb && (lastTextX + 34 < startX || (lastTextY - currentY).absoluteValue > 30)) {
+                    if (showThumb && (lastTextX + 34 * density < startX || (lastTextY - currentY).absoluteValue > 30 * density)) {
                         lastTextX = startX
                         lastTextY = currentY
                         val result = measurer.measure(
@@ -514,7 +514,7 @@ class EnvelopeEditor(
                     val isSelected = selectedPoints.contains(cur)
                     val currentY = size.height * (1 - cur.value.coerceIn(valueRange) / range)
                     val curColor = if (isSelected) primaryColor else color
-                    if (showThumb && (lastTextX + 34 < startX || (lastTextY - currentY).absoluteValue > 30)) {
+                    if (showThumb && (lastTextX + 34 * density < startX || (lastTextY - currentY).absoluteValue > 30 * density)) {
                         lastTextX = startX
                         lastTextY = currentY
                         val result = measurer.measure(

@@ -29,6 +29,7 @@ interface AudioProcessor: Restorable, AutoCloseable, SuddenChangeListener {
     val lastModifiedParameter: AudioProcessorParameter?
     var isBypassed: Boolean
     val state: AudioProcessorState
+    val latency: Int
     suspend fun processBlock(buffers: Array<FloatArray>, position: CurrentPosition, midiBuffer: ArrayList<Int>) { }
     fun prepareToPlay(sampleRate: Int, bufferSize: Int) { }
     fun onClick() { }
@@ -64,6 +65,8 @@ abstract class AbstractAudioProcessor(
     protected val listeners get() = _listeners.keys
     protected open val storeFileName = "processor.json"
     override var state by mutableStateOf(initialState)
+        protected set
+    override var latency = 0
         protected set
 
     @Suppress("MemberVisibilityCanBePrivate")

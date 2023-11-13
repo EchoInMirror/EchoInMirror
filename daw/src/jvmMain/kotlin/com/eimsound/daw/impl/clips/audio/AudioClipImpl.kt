@@ -31,16 +31,17 @@ class AudioClipImpl(
             if (_target == value) return
             close()
             _target = value
-            audioSource = AudioSourceManager.instance.createResampledSource(value)
-            audioSource.factor = EchoInMirror.currentPosition.sampleRate.toDouble() / value.sampleRate
-            thumbnail = AudioThumbnail(audioSource)
+            resampledAudioSource = AudioSourceManager.instance.createResampledSource(value).apply {
+                factor = EchoInMirror.currentPosition.sampleRate.toDouble() / value.sampleRate
+            }
+            _thumbnail = AudioThumbnail(audioSource)
         }
-    override var audioSource = AudioSourceManager.instance.createResampledSource(this.target).apply {
-        factor = EchoInMirror.currentPosition.sampleRate.toDouble() / this@AudioClipImpl.target.sampleRate
-    }
+    private var resampledAudioSource: ResampledAudioSource? = null
+    override val audioSource get() = resampledAudioSource ?: throw IllegalStateException("Audio source is not set")
     override val defaultDuration get() = EchoInMirror.currentPosition.convertSamplesToPPQ(audioSource.length)
     override val maxDuration get() = defaultDuration
-    override var thumbnail by mutableStateOf(AudioThumbnail(this.audioSource))
+    private var _thumbnail by mutableStateOf<AudioThumbnail?>(null)
+    override val thumbnail get() = _thumbnail ?: throw IllegalStateException("Thumbnail is not set")
     override val volumeEnvelope = DefaultEnvelopePointList()
     override val name: String
         get() {

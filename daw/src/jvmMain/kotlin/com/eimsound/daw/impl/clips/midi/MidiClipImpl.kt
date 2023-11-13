@@ -111,6 +111,7 @@ class MidiClipFactoryImpl : MidiClipFactory {
                 midiBuffer.add(i)
             }
         }
+        if (clip.currentIndex > 0) clip.currentIndex--
         for (i in clip.currentIndex..notes.lastIndex) {
             val note = notes[i]
             val startTimeInSamples = position.convertPPQToSamples(startTime + note.time)
@@ -173,7 +174,8 @@ private fun MidiClipContents(
         val noteWidthPx = noteWidth.value.toPx()
         val trackHeightPx = size.height - density * 4F
         val height = (trackHeightPx / 128).coerceAtLeast(density * 1.5F)
-        val startId = notes.binarySearch { it.time <= startPPQ }
+        var startId = notes.binarySearch { it.time <= startPPQ }
+        if (startId > 0) startId--
         val endTime = startPPQ + widthPPQ
         val noteHeight = trackHeightPx / (top - bottom + 2)
         for (i in startId..notes.lastIndex) {

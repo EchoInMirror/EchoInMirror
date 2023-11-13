@@ -2,6 +2,8 @@ package com.eimsound.daw.impl.clips.envelope
 
 import androidx.compose.foundation.HorizontalScrollbar
 import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.material3.MaterialTheme
@@ -57,7 +59,9 @@ class EnvelopeClipEditor(private val clip: TrackClip<EnvelopeClip>) : ClipEditor
                 clip.track?.clips?.update()
             }
             var contentWidth by remember { mutableStateOf(0.dp) }
-            Box(Modifier.fillMaxSize().onGloballyPositioned { contentWidth = it.size.width.dp }) {
+            Box(Modifier.fillMaxSize().onGloballyPositioned { contentWidth = it.size.width.dp }
+                .scrollable(horizontalScrollState, Orientation.Horizontal, reverseDirection = true)
+            ) {
                 EchoInMirror.currentPosition.apply {
                     EditorGrid(noteWidth, horizontalScrollState, range, ppq, timeSigDenominator, timeSigNumerator)
                 }

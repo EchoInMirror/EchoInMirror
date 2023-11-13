@@ -25,16 +25,15 @@ interface AudioProcessorParameter: Comparable<SimpleAudioProcessorParameter> {
     fun setValue(value: Float, emitEvent: Boolean = true) { this.value = value }
 }
 
-open class SimpleAudioProcessorParameter(
-    override val id: String,
-    override val name: String,
-    final override val range: FloatRange = 0F..1F,
-    final override val initialValue: Float = range.start,
-    override val label: String = "",
-    override val isFloat: Boolean = true,
-    override val isSuggestion: Boolean = false,
-    override val isAutomatable: Boolean = true,
-    override val valueStrings: Array<String> = emptyArray(),
+interface AudioProcessorBooleanParameter: AudioProcessorParameter {
+    var booleanValue: Boolean
+}
+
+interface AudioProcessorIntParameter : AudioProcessorParameter {
+    var intValue: Int
+}
+
+abstract class AbstractAudioProcessorParameter(
     private val onChange: ((AudioProcessorParameter) -> Unit)? = null
 ): AudioProcessorParameter {
     // first compare by isSuggestion, then by isAutomatable, then by name
@@ -45,7 +44,8 @@ open class SimpleAudioProcessorParameter(
             if (isAutomatable) -1 else 1
         } else name.compareTo(other.name)
 
-    private var _value by mutableStateOf(initialValue.coerceIn(range))
+    @Suppress("PropertyName")
+    protected abstract var _value: Float
     override var value get() = _value
         set(value) {
             val newVal = value.coerceIn(range)
@@ -61,8 +61,23 @@ open class SimpleAudioProcessorParameter(
     }
 
     override fun toString(): String {
-        return "AbstractAudioProcessorParameter(name='$name', isSuggestion=$isSuggestion, isFloat=$isFloat, value=$value, range=$range)"
+        return "${this::class.simpleName}(name='$name', isSuggestion=$isSuggestion, isFloat=$isFloat, value=$value, range=$range)"
     }
+}
+
+open class SimpleAudioProcessorParameter(
+    override val id: String,
+    override val name: String,
+    final override val range: FloatRange = 0F..1F,
+    final override val initialValue: Float = range.start,
+    override val label: String = "",
+    override val isFloat: Boolean = true,
+    override val isSuggestion: Boolean = false,
+    override val isAutomatable: Boolean = true,
+    override val valueStrings: Array<String> = emptyArray(),
+    onChange: ((AudioProcessorParameter) -> Unit)? = null
+): AbstractAudioProcessorParameter(onChange) {
+    override var _value by mutableStateOf(initialValue.coerceIn(range))
 }
 
 @Suppress("NOTHING_TO_INLINE")
@@ -75,13 +90,14 @@ inline fun audioProcessorParameterOf(
 ) =
     SimpleAudioProcessorParameter(id, name, range, initialValue, label, isFloat, isSuggestion, isAutomatable, valueStrings, onChange)
 
-class AudioProcessorBooleanParameter(
+class DefaultAudioProcessorBooleanParameter(
     id: String, name: String, initialValue: Boolean = false, isSuggestion: Boolean = false,
     isAutomatable: Boolean = true, onChange: ((AudioProcessorParameter) -> Unit)? = null
-):
-    SimpleAudioProcessorParameter(id, name, 0F..1F, if (initialValue) 1F else 0F, isFloat = false,
-        isSuggestion = isSuggestion, isAutomatable = isAutomatable, onChange = onChange) {
-    var booleanValue get() = super.value == 1F
+): SimpleAudioProcessorParameter(
+    id, name, 0F..1F, if (initialValue) 1F else 0F, isFloat = false,
+    isSuggestion = isSuggestion, isAutomatable = isAutomatable, onChange = onChange
+), AudioProcessorBooleanParameter {
+    override var booleanValue get() = super.value == 1F
         set(value) { super.value = if (value) 1F else 0F }
 }
 
@@ -90,16 +106,17 @@ inline fun audioProcessorParameterOf(
     id: String, name: String, initialValue: Boolean = false, isSuggestion: Boolean = false,
     isAutomatable: Boolean = true, noinline onChange: ((AudioProcessorParameter) -> Unit)? = null
 ) =
-    AudioProcessorBooleanParameter(id, name, initialValue, isSuggestion, isAutomatable, onChange)
+    DefaultAudioProcessorBooleanParameter(id, name, initialValue, isSuggestion, isAutomatable, onChange)
 
-class AudioProcessorIntParameter(
+class DefaultAudioProcessorIntParameter(
     id: String, name: String, valueStrings: Array<String>, initialValue: Int = 0,
     label: String = "", isSuggestion: Boolean = false,
     isAutomatable: Boolean = true, onChange: ((AudioProcessorParameter) -> Unit)? = null
-):
-    SimpleAudioProcessorParameter(id, name, 0F..valueStrings.size.toFloat(), initialValue.toFloat(), label, false,
-        isSuggestion, isAutomatable, valueStrings, onChange) {
-    var intValue get() = super.value.toInt()
+): SimpleAudioProcessorParameter(
+    id, name, 0F..valueStrings.size.toFloat(), initialValue.toFloat(), label, false,
+    isSuggestion, isAutomatable, valueStrings, onChange
+), AudioProcessorIntParameter {
+    override var intValue get() = super.value.toInt()
         set(value) { super.value = value.toFloat() }
 }
 
@@ -109,7 +126,7 @@ inline fun audioProcessorParameterOf(
     label: String = "", isSuggestion: Boolean = false,
     isAutomatable: Boolean = true, noinline onChange: ((AudioProcessorParameter) -> Unit)? = null
 ) =
-    AudioProcessorIntParameter(id, name, valueStrings, initialValue, label, isSuggestion, isAutomatable, onChange)
+    DefaultAudioProcessorIntParameter(id, name, valueStrings, initialValue, label, isSuggestion, isAutomatable, onChange)
 
 @ExperimentalEIMApi
 var globalChangeHandler: (List<Pair<AudioProcessorParameter, Float>>, Boolean) -> Unit = { list, e ->
