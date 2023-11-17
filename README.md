@@ -10,8 +10,10 @@ A open source DAW (Digital Audio Workstation) written in pure Kotlin.
 
 - [x] VST/VST3/AU plugin support
 - [x] Audio effects
+- [x] Audio sample support
 - [x] ASIO support
 - [x] MIDI edit
+- [x] Latency compensation
 - [ ] Audio edit
 - [ ] Audio recording
 - [ ] Midi input

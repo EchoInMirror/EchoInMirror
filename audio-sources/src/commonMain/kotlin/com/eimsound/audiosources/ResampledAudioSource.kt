@@ -11,9 +11,10 @@ import kotlinx.serialization.json.put
 import kotlin.math.roundToInt
 import kotlin.math.roundToLong
 
-class DefaultResampledAudioSource(override val factory: ResampledAudioSourceFactory<ResampledAudioSource>,
-                                  override val source: AudioSource, override var factor: Double = 1.0):
-    ResampledAudioSource {
+class DefaultResampledAudioSource(
+    override val factory: ResampledAudioSourceFactory<ResampledAudioSource>,
+    override val source: AudioSource, override var factor: Double = 1.0
+): ResampledAudioSource {
     override val channels get() = source.channels
     override val sampleRate get() = (source.sampleRate * factor).toFloat()
     override val length get() = (source.length * factor).toLong()
@@ -21,9 +22,9 @@ class DefaultResampledAudioSource(override val factory: ResampledAudioSourceFact
     private var nextStart = 0L
     private var sourceBuffers = Array(channels) { FloatArray(1024) }
 
-    override fun getSamples(start: Long, buffers: Array<FloatArray>): Int {
+    override fun getSamples(start: Long, length: Int, buffers: Array<FloatArray>): Int {
         if (factor == 1.0) {
-            source.getSamples(start, buffers)
+            source.getSamples(start, length, buffers)
             return buffers[0].size
         }
         var sourceStart = (start / factor).roundToLong()
@@ -33,7 +34,7 @@ class DefaultResampledAudioSource(override val factory: ResampledAudioSourceFact
         val ch = channels.coerceAtMost(buffers.size)
         if (sourceBuffers[0].size < sourceLength || sourceBuffers.size < ch)
             sourceBuffers = Array(ch) { FloatArray(sourceLength) }
-        source.getSamples(sourceStart, sourceBuffers)
+        source.getSamples(sourceStart, sourceLength, sourceBuffers)
         var consumed = 0
         repeat(ch) {
             consumed = resamplers[it].process(factor, sourceBuffers[it], 0, sourceLength, false,

@@ -22,7 +22,7 @@ interface AudioSource : JsonSerializable {
     @Transient
     val length: Long // timeInSamples
     val factory: AudioSourceFactory<*>
-    fun getSamples(start: Long, buffers: Array<FloatArray>): Int
+    fun getSamples(start: Long, length: Int, buffers: Array<FloatArray>): Int
 }
 
 /**

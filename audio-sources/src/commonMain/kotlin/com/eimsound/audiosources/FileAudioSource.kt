@@ -12,9 +12,7 @@ import org.jflac.util.ByteData
 import org.jflac.util.RingBuffer
 import org.tritonus.sampled.file.WaveAudioFileReader
 import org.tritonus.share.sampled.FloatSampleTools
-import java.io.BufferedInputStream
-import java.io.FileInputStream
-import java.io.InputStream
+import java.io.*
 import java.nio.file.Path
 import java.nio.file.Paths
 import javax.sound.sampled.AudioFileFormat
@@ -24,6 +22,16 @@ import kotlin.io.path.pathString
 import kotlin.math.absoluteValue
 
 private const val MB500 = 500 * 1024 * 1024
+
+private class JFlacRandomFileInputStream(file: File) : org.jflac.io.RandomFileInputStream(file) {
+    private var markPos = 0L
+    @Synchronized
+    override fun reset() { randomFile.seek(markPos) }
+    @Synchronized
+    override fun mark(limit: Int) { markPos = randomFile.filePointer }
+    @Throws(IOException::class)
+    override fun seek(pos: Long) { randomFile.seek(pos) }
+}
 
 class DefaultFileAudioSource(override val factory: FileAudioSourceFactory<*>, override val file: Path) : FileAudioSource {
     private val format = AudioSystem.getAudioFileFormat(file.toFile())
@@ -51,7 +59,7 @@ class DefaultFileAudioSource(override val factory: FileAudioSourceFactory<*>, ov
         if (isWav) {
             stream = WaveAudioFileReader().getAudioInputStream(RandomFileInputStream(file.toFile())).apply { mark(0) }
         } else if (isFlac) {
-            stream = RandomFileInputStream(file.toFile())
+            stream = JFlacRandomFileInputStream(file.toFile())
             buffer = RingBuffer()
             buffer.resize(frameSize * 2)
             flacDecoder = FLACDecoder(stream).apply { readMetadata() }
@@ -65,20 +73,20 @@ class DefaultFileAudioSource(override val factory: FileAudioSourceFactory<*>, ov
         }
     }
 
-    override fun getSamples(start: Long, buffers: Array<FloatArray>): Int {
+    override fun getSamples(start: Long, length: Int, buffers: Array<FloatArray>): Int {
         val stream = stream ?: return 0
         val consumed: Int
         if (isFlac) {
-            if ((lastPos + buffers[0].size - start).absoluteValue > 4) {
-                flacDecoder.seek(start.coerceIn(0, length))
+            if ((lastPos + length - start).absoluteValue > 4) {
+                flacDecoder.seek(start.coerceIn(0, this.length))
                 buffer.empty()
             }
-            consumed = readFromByteArray(buffers)
+            consumed = readFromByteArray(buffers, length)
             lastPos = start
         } else {
-            val len = length
+            val len = this.length
             if (start > len) return 0
-            if (lastPos + buffers[0].size != start) {
+            if (lastPos + length != start) {
                 if (start > lastPos) {
                     stream.skip((start - lastPos) * frameSize)
                 } else {
@@ -86,7 +94,7 @@ class DefaultFileAudioSource(override val factory: FileAudioSourceFactory<*>, ov
                     stream.skip(start * frameSize)
                 }
             }
-            consumed = readFromByteArray(buffers)
+            consumed = readFromByteArray(buffers, length)
             lastPos = start
         }
         return consumed
@@ -135,9 +143,8 @@ class DefaultFileAudioSource(override val factory: FileAudioSourceFactory<*>, ov
         return if (bytesRead < 1) -1 else bytesRead
     }
 
-    private fun readFromByteArray(buffers: Array<FloatArray>): Int {
+    private fun readFromByteArray(buffers: Array<FloatArray>, sampleCount: Int): Int {
         // read into temporary byte buffer
-        val sampleCount = buffers[0].size
         var byteBufferSize = sampleCount * frameSize
         var lTempBuffer = tempBuffer
         if (lTempBuffer == null || byteBufferSize > lTempBuffer.size) {

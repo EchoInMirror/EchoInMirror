@@ -14,17 +14,17 @@ class DefaultMemoryAudioSource(override val factory: AudioSourceFactory<MemoryAu
     private var sampleBuffer = Array(channels) { FloatArray(length.toInt()) }
 
     init {
-        source.getSamples(0, sampleBuffer)
+        source.getSamples(0, length.toInt(), sampleBuffer)
         source.close()
     }
 
-    override fun getSamples(start: Long, buffers: Array<FloatArray>): Int {
-        val len = length
+    override fun getSamples(start: Long, length: Int, buffers: Array<FloatArray>): Int {
+        val len = this.length
         if (start > len || start < 0) return 0
         var consumed = 0
         for (i in 0 until channels.coerceAtMost(buffers.size)) {
             val buf = sampleBuffer[i]
-            consumed = buffers[i].size.coerceAtMost((len - start).toInt())
+            consumed = length.coerceAtMost((len - start).toInt())
             System.arraycopy(buf, start.toInt(), buffers[i], 0, consumed)
         }
         return consumed

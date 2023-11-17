@@ -46,8 +46,10 @@ class JvmAudioPlayer(
 
         if (sdl == null) throw le ?: LineUnavailableException("Failed to open audio player!")
 
-        thread = Thread(this, this::class.simpleName)
-        thread!!.start()
+        thread = Thread(this, this::class.simpleName).apply {
+            priority = Thread.MAX_PRIORITY
+            start()
+        }
     }
 
     override fun close() {

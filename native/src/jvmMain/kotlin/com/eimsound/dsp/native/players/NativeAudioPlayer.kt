@@ -94,8 +94,10 @@ class NativeAudioPlayer(
 
             readDeviceInfo()
 
-            thread = Thread(this, this::class.simpleName)
-            thread!!.start()
+            thread = Thread(this, this::class.simpleName).apply {
+                priority = Thread.MAX_PRIORITY
+                start()
+            }
         } catch (e: Throwable) {
             close()
             throw e

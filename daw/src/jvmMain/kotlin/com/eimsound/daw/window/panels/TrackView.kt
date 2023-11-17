@@ -40,7 +40,7 @@ private fun CardHeader(p: TrackAudioProcessorWrapper, index: Int) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             val isBypassed = p.processor.isBypassed
             Row(Modifier.weight(1F).padding(horizontal = 12.dp)) {
-                Text("$index.", Modifier.padding(end = 6.dp),
+                Text("${index + 1}.", Modifier.padding(end = 6.dp),
                     fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.titleSmall
                 )

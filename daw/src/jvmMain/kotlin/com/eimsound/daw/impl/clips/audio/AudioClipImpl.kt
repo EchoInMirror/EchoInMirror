@@ -96,6 +96,7 @@ class AudioClipFactoryImpl: AudioClipFactory {
         val clipTime = clip.time - clip.start
         clip.clip.audioSource.getSamples(
             position.timeInSamples - position.convertPPQToSamples(clipTime),
+            buffers[0].size,
             buffers
         )
         val volume = clip.clip.volumeEnvelope.getValue(position.timeInPPQ - clipTime, 1F)
