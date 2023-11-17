@@ -10,7 +10,9 @@ import com.eimsound.daw.utils.mutableStateSetOf
 import com.eimsound.dsp.native.isX86PEFile
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.serialization.json.*
 import org.apache.commons.lang3.SystemUtils
@@ -36,9 +38,11 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
     else setOf("dylib")
 
     private var loaded = false
+    private val loadMutex = Mutex()
     private val _descriptions: MutableSet<NativeAudioPluginDescription> = mutableStateSetOf()
     private val _scanPaths: MutableSet<String> = mutableStateSetOf()
     private val _skipList: MutableSet<String> = mutableStateSetOf()
+    private val pluginLoadingMutexes = mutableStateMapOf<String, Mutex>()
 
     var scannedCount by mutableStateOf(0)
     var allScanCount by mutableStateOf(0)
@@ -143,18 +147,23 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
     override suspend fun createAudioProcessor(description: AudioProcessorDescription): NativeAudioPlugin {
         if (description !is NativeAudioPluginDescription)
             throw NoSuchAudioProcessorException(description.identifier, name)
-        logger.info { "Creating native audio plugin: $description" }
-        return NativeAudioPluginImpl(description, this).apply {
-            launch(getNativeHostPath(description), null)
+        pluginLoadingMutexes.getOrPut(description.fileOrIdentifier) { Mutex() }.withLock {
+            logger.info { "Creating native audio plugin: $description" }
+            return NativeAudioPluginImpl(description, this).apply {
+                launch(getNativeHostPath(description), null)
+            }
         }
     }
 
     override suspend fun createAudioProcessor(path: Path): NativeAudioPlugin {
         val json = path.resolve("processor.json").toJsonElement() as JsonObject
+        println("${descriptions.size} ${json["identifier"]}")
         val description = descriptions.find { it.identifier == json["identifier"]!!.asString() }
             ?: throw NoSuchAudioProcessorException(path.toString(), name)
         logger.info { "Creating native audio plugin: $description in $path" }
-        return NativeAudioPluginImpl(description, this).apply { restore(path) }
+        return pluginLoadingMutexes.getOrPut(description.fileOrIdentifier) { Mutex() }.withLock {
+            NativeAudioPluginImpl(description, this).apply { restore(path) }
+        }
     }
 
     override suspend fun save() { encodeJsonFile(configFile) }
@@ -177,25 +186,30 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
 
     private fun checkLoad() {
         if (loaded) return
-        loaded = true
-        if (configFile.exists()) {
-            try {
-                runBlocking { fromJsonFile(configFile) }
-                return
-            } catch (e: Throwable) {
-                e.printStackTrace()
-                // Files.delete(NATIVE_AUDIO_PLUGIN_CONFIG)
+        runBlocking {
+            loadMutex.withLock {
+                if (loaded) return@runBlocking
+                loaded = true
+                if (configFile.exists()) {
+                    try {
+                        fromJsonFile(configFile)
+                        return@withLock
+                    } catch (e: Throwable) {
+                        e.printStackTrace()
+                        // Files.delete(NATIVE_AUDIO_PLUGIN_CONFIG)
+                    }
+                }
+                if (SystemUtils.IS_OS_WINDOWS) {
+                    scanPaths.add("C:\\Program Files\\Common Files\\VST3")
+                    scanPaths.add("C:\\Program Files\\Steinberg\\VSTPlugins")
+                    scanPaths.add("C:\\Program Files\\VstPlugins")
+                    scanPaths.add("C:\\Program Files\\Native Instruments\\VSTPlugins 64 bit")
+                } else if (SystemUtils.IS_OS_LINUX) {
+                    scanPaths.addAll(System.getenv("LADSPA_PATH")
+                        .ifEmpty { "/usr/lib/ladspa;/usr/local/lib/ladspa;~/.ladspa" }
+                        .replace(":", ";").split(";"))
+                }
             }
-        }
-        if (SystemUtils.IS_OS_WINDOWS) {
-            scanPaths.add("C:\\Program Files\\Common Files\\VST3")
-            scanPaths.add("C:\\Program Files\\Steinberg\\VSTPlugins")
-            scanPaths.add("C:\\Program Files\\VstPlugins")
-            scanPaths.add("C:\\Program Files\\Native Instruments\\VSTPlugins 64 bit")
-        } else if (SystemUtils.IS_OS_LINUX) {
-            scanPaths.addAll(System.getenv("LADSPA_PATH")
-                .ifEmpty { "/usr/lib/ladspa;/usr/local/lib/ladspa;~/.ladspa" }
-                .replace(":", ";").split(";"))
         }
     }
 

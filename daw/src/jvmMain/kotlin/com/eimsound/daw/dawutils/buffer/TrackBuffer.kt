@@ -5,6 +5,7 @@ class TrackBuffer(channels: Int, bufferSize: Int) {
     var buffers = Array(channels) { FloatArray(bufferSize) }
         private set
     private var latencyBuffers: Array<FloatArray> = emptyArray()
+    private var oldLatency = 0
 
     fun putBuffers(buffers: Array<FloatArray>, channels: Int, bufferSize: Int) {
         if (buffers.size != channels || buffers[0].size != bufferSize) {
@@ -21,10 +22,25 @@ class TrackBuffer(channels: Int, bufferSize: Int) {
         if (latencyBuffers.size < buffers.size || latencyBuffers[0].size < latency + bufferSize) {
             latencyBuffers = Array(buffers.size) { FloatArray(latency + bufferSize) }
             position = 0
+        } else if (oldLatency != latency) {
+            oldLatency = latency
+            position = 0
+            latencyBuffers.forEach { it.fill(0F) }
         }
 
         if (buffers.isEmpty()) return
         val latencyCacheSize = latencyBuffers[0].size
+
+        if (latency == 0) {
+            repeat(buffers.size.coerceAtMost(this.buffers.size)) { ch ->
+                val outBuffer = buffers[ch]
+                val buffer = this.buffers[ch]
+                repeat(bufferSize) { i ->
+                    outBuffer[i] += buffer[i]
+                }
+            }
+            return
+        }
 
         repeat(buffers.size.coerceAtMost(this.buffers.size)) { ch ->
             val buffer = buffers[ch]
@@ -37,15 +53,11 @@ class TrackBuffer(channels: Int, bufferSize: Int) {
                 buffer[i] += latencyBuffer[cur]
             }
 
-            // push this.buffers to latencyBuffers
-//            val pushRemains = (bufferSize - (latencyCacheSize - pushIndex)).coerceAtLeast(0)
-//            this.buffers[ch].copyInto(latencyBuffer, pushIndex, 0, bufferSize - pushRemains)
-//            this.buffers[ch].copyInto(latencyBuffer, 0, pushRemains, bufferSize)
             var pushIndex = position + latency
-            if (pushIndex > latencyCacheSize) pushIndex -= latencyCacheSize
+            if (pushIndex >= latencyCacheSize) pushIndex -= latencyCacheSize
             val pushRemains = (bufferSize - (latencyCacheSize - pushIndex)).coerceAtLeast(0)
             this.buffers[ch].copyInto(latencyBuffer, pushIndex, 0, bufferSize - pushRemains)
-            this.buffers[ch].copyInto(latencyBuffer, 0, pushRemains, bufferSize)
+            this.buffers[ch].copyInto(latencyBuffer, 0, bufferSize - pushRemains, bufferSize)
         }
 
         position += bufferSize
