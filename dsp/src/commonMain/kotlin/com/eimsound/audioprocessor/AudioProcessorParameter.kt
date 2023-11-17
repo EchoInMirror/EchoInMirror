@@ -80,6 +80,8 @@ open class SimpleAudioProcessorParameter(
     override var _value by mutableStateOf(initialValue.coerceIn(range))
 }
 
+val UNKNOWN_AUDIO_PROCESSOR_PARAMETER = SimpleAudioProcessorParameter("unknown", "Unknown")
+
 @Suppress("NOTHING_TO_INLINE")
 inline fun audioProcessorParameterOf(
     id: String, name: String, range: FloatRange = 0F..1F,

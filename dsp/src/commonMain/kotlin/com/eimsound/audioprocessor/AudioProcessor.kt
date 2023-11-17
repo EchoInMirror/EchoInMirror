@@ -31,7 +31,7 @@ interface AudioProcessor: Restorable, AutoCloseable, SuddenChangeListener {
     val state: AudioProcessorState
     val latency: Int
     suspend fun processBlock(buffers: Array<FloatArray>, position: CurrentPosition, midiBuffer: ArrayList<Int>) { }
-    fun prepareToPlay(sampleRate: Int, bufferSize: Int) { }
+    suspend fun prepareToPlay(sampleRate: Int, bufferSize: Int) { }
     fun onClick() { }
     fun addListener(listener: AudioProcessorListener)
     fun removeListener(listener: AudioProcessorListener)

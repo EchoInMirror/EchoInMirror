@@ -4,6 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.eimsound.audioprocessor.AudioProcessorParameter
+import com.eimsound.audioprocessor.UNKNOWN_AUDIO_PROCESSOR_PARAMETER
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.commons.json.asString
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -13,14 +14,14 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import java.util.*
 
+
 private val logger = KotlinLogging.logger { }
 internal class AudioProcessorParameterController(
     parameter: AudioProcessorParameter? = null,
     audioProcessor: UUID? = null
 ) : ParameterController {
-    private var _parameter by mutableStateOf(parameter)
-    override val parameter: AudioProcessorParameter
-        get() = _parameter!!
+    override var parameter by mutableStateOf(parameter ?: UNKNOWN_AUDIO_PROCESSOR_PARAMETER)
+        private set
     private lateinit var audioProcessor: UUID
 
     init {
@@ -51,7 +52,7 @@ internal class AudioProcessorParameterController(
             return
         }
 
-        _parameter = pa
+        parameter = pa
     }
 
     override fun hashCode() = parameter.hashCode() + audioProcessor.hashCode() * 31

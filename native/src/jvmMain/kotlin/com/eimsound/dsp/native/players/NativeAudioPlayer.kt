@@ -206,7 +206,7 @@ class NativeAudioPlayer(
             }
         }
         buffers = arrayOf(FloatArray(bufferSize), FloatArray(bufferSize))
-        processor.prepareToPlay(sampleRate, bufferSize)
+        runBlocking { processor.prepareToPlay(sampleRate, bufferSize) }
         outputStream.writeInt(outBufferSize)
         outputStream.flush()
     }

@@ -120,7 +120,7 @@ class JvmAudioPlayer(
         outputLatency = (bufferSize * 1.5).roundToInt()
         inputLatency = outputLatency
         outputBuffer = ByteArray(catchBufferSize)
-        processor.prepareToPlay(sampleRate, bufferSize)
+        runBlocking { processor.prepareToPlay(sampleRate, bufferSize) }
         if (currentPosition.sampleRate != sampleRate) currentPosition.setSampleRateAndBufferSize(sampleRate, bufferSize)
     }
 }

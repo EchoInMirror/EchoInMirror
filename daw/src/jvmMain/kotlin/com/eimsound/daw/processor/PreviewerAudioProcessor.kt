@@ -97,7 +97,7 @@ class PreviewerAudioProcessor(factory: AudioProcessorFactory<*>) : AbstractAudio
         sineWaveSynthesizer.onSuddenChange()
     }
 
-    override fun prepareToPlay(sampleRate: Int, bufferSize: Int) {
+    override suspend fun prepareToPlay(sampleRate: Int, bufferSize: Int) {
         tempBuffers = Array(2) { FloatArray(bufferSize) }
         position.setSampleRateAndBufferSize(sampleRate, bufferSize)
         position.setCurrentTime(0)

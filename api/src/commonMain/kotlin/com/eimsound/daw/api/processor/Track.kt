@@ -4,12 +4,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.eimsound.audioprocessor.*
-import com.eimsound.audioprocessor.data.DefaultEnvelopePointList
-import com.eimsound.audioprocessor.data.EnvelopePointList
-import com.eimsound.audioprocessor.data.fromJson
-import com.eimsound.audioprocessor.data.putNotDefault
+import com.eimsound.audioprocessor.data.*
 import com.eimsound.audioprocessor.dsp.Pan
-import com.eimsound.audioprocessor.dsp.Solo
 import com.eimsound.audioprocessor.dsp.Volume
 import com.eimsound.daw.api.Colorable
 import com.eimsound.daw.api.LevelMeter
@@ -32,7 +28,7 @@ enum class ChannelType {
 /**
  * @see com.eimsound.daw.impl.processor.TrackImpl
  */
-interface Track : AudioProcessor, Pan, Volume, Solo, MidiEventHandler, Colorable, Renderable {
+interface Track : AudioProcessor, Pan, Volume, MidiEventHandler, Colorable, Renderable {
     override var name: String
     val subTracks: MutableList<Track>
     val preProcessorsChain: MutableList<TrackAudioProcessorWrapper>
@@ -42,6 +38,8 @@ interface Track : AudioProcessor, Pan, Volume, Solo, MidiEventHandler, Colorable
     val clips: TrackClipList
     var height: Int
     var collapsed: Boolean
+    var isSolo: Boolean
+
     override suspend fun processBlock(
         buffers: Array<FloatArray>,
         position: CurrentPosition,

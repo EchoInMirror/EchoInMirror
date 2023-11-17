@@ -16,6 +16,7 @@ import com.eimsound.daw.api.*
 import com.eimsound.daw.api.processor.*
 import com.eimsound.daw.commons.json.*
 import com.eimsound.daw.components.utils.randomColor
+import com.eimsound.daw.dawutils.buffer.TrackBuffers
 import com.eimsound.daw.utils.*
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
@@ -24,6 +25,7 @@ import java.io.FileNotFoundException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.*
+import kotlin.collections.ArrayList
 import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.deleteRecursively
 
@@ -48,14 +50,14 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
     private val noteRecorder = MidiNoteRecorder()
     private var lastUpdateTime = 0L
 
-    private var tempBuffer = arrayOf(FloatArray(1024), FloatArray(1024))
-    private var tempBuffer2 = arrayOf(FloatArray(1024), FloatArray(1024))
+    private val trackBuffers = TrackBuffers()
     override var isRendering by mutableStateOf(false)
     override var isBypassed by observableMutableStateOf(false, ::stateChange)
     override var isSolo by observableMutableStateOf(false, ::stateChange)
 
     private val panParameter = audioProcessorParameterOf("pan", "声相", PAN_RANGE, 0F)
     private val volumeParameter = audioProcessorParameterOf("volume", "电平", VOLUME_RANGE, 1F)
+    private var asyncJobs: Array<Job?> = emptyArray()
     override var pan by panParameter
     override var volume by volumeParameter
     override val parameters = listOf(panParameter, volumeParameter)
@@ -100,30 +102,27 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
                 clip.clip.factory.processBlock(clip, buffers, position, midiBuffer, noteRecorder, pendingNoteOns)
             }
         }
-        preProcessorsChain.forEach { if (!it.processor.isBypassed) it.processor.processBlock(buffers, position, midiBuffer) }
-        if (subTracks.isNotEmpty()) {
-            tempBuffer[0].fill(0F)
-            tempBuffer[1].fill(0F)
-            val bus = EchoInMirror.bus
-            subTracks.mapNotNull {
-                if (it.isBypassed || it.isRendering) return@mapNotNull null
-                launch {
-                    val buffer = if (it is TrackImpl) it.tempBuffer2.apply {
-                        this[0].fill(0F)
-                        this[1].fill(0F)
-                    } else arrayOf(FloatArray(buffers[0].size), FloatArray(buffers[1].size))
-                    buffers[0].copyInto(buffer[0])
-                    buffers[1].copyInto(buffer[1])
-                    it.processBlock(buffer, position, ArrayList(midiBuffer))
-                    if (bus != null) tempBuffer.mixWith(buffer)
-                }
-            }.joinAll()
-            tempBuffer[0].copyInto(buffers[0])
-            tempBuffer[1].copyInto(buffers[1])
+        latency = 0
+        preProcessorsChain.fastForEach {
+            if (!it.processor.isBypassed) {
+                it.processor.processBlock(buffers, position, midiBuffer)
+                latency += it.processor.latency
+            }
         }
+        processSubTracks(position, buffers, midiBuffer)
 
-        if (position.isRealtime) internalProcessorsChain.fastForEach { it.processBlock(buffers, position, midiBuffer) }
-        postProcessorsChain.forEach { if (!it.processor.isBypassed) it.processor.processBlock(buffers, position, midiBuffer) }
+        if (position.isRealtime) {
+            internalProcessorsChain.fastForEach {
+                it.processBlock(buffers, position, midiBuffer)
+                latency += it.latency
+            }
+        }
+        postProcessorsChain.fastForEach {
+            if (!it.processor.isBypassed) {
+                it.processor.processBlock(buffers, position, midiBuffer)
+                latency += it.processor.latency
+            }
+        }
 
         var leftPeak = 0F
         var rightPeak = 0F
@@ -148,9 +147,46 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         }
     }
 
-    override fun prepareToPlay(sampleRate: Int, bufferSize: Int) {
-        tempBuffer = arrayOf(FloatArray(bufferSize), FloatArray(bufferSize))
-        tempBuffer2 = arrayOf(FloatArray(bufferSize), FloatArray(bufferSize))
+    private suspend fun processSubTracks(position: CurrentPosition, buffers: Array<FloatArray>, midiBuffer: ArrayList<Int>) {
+        withContext(Dispatchers.Default) {
+            if (subTracks.isEmpty()) return@withContext
+            trackBuffers.checkSize(subTracks.size, 2, position.bufferSize)
+
+            if (asyncJobs.size != subTracks.size) asyncJobs = arrayOfNulls(subTracks.size)
+            repeat(subTracks.size) { index ->
+                val it = subTracks[index]
+                asyncJobs[index] = if (it.isBypassed || it.isRendering) null
+                else launch {
+                    val trackBuffer = trackBuffers[index]
+                    trackBuffer.putBuffers(buffers, 2, buffers[0].size)
+                    it.processBlock(trackBuffer.buffers, position, ArrayList(midiBuffer))
+                }
+            }
+
+            var maxLatency = 0
+            repeat(subTracks.size) { index ->
+                asyncJobs[index]?.apply {
+                    join()
+                    subTracks[index].latency.let { l -> if (l > maxLatency) maxLatency = l }
+                }
+            }
+            latency += maxLatency
+
+            buffers[0].fill(0F)
+            buffers[1].fill(0F)
+
+            repeat(subTracks.size) { index ->
+                if (asyncJobs[index] == null) return@repeat
+//                buffers.mixWith(trackBuffers[index].buffers, 1F)
+                trackBuffers[index].popAndMixBuffersTo(buffers, (maxLatency - subTracks[index].latency).coerceAtLeast(0))
+            }
+
+            buffers[0].copyInto(buffers[0])
+            buffers[1].copyInto(buffers[1])
+        }
+    }
+
+    override suspend fun prepareToPlay(sampleRate: Int, bufferSize: Int) {
         preProcessorsChain.fastForEach { it.processor.prepareToPlay(sampleRate, bufferSize) }
         subTracks.fastForEach { it.prepareToPlay(sampleRate, bufferSize) }
         postProcessorsChain.fastForEach { it.processor.prepareToPlay(sampleRate, bufferSize) }
@@ -357,7 +393,6 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
 
     override fun toString(): String {
         return "TrackImpl(name='$name', preProcessorsChain=${preProcessorsChain.size}, " +
-        "postProcessorsChain=${postProcessorsChain.size}, subTracks=${subTracks.size}, clips=${clips.size}, height=$height)"
+                "postProcessorsChain=${postProcessorsChain.size}, subTracks=${subTracks.size}, clips=${clips.size}, height=$height)"
     }
 }
-

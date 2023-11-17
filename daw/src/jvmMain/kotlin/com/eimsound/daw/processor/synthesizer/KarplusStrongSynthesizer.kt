@@ -24,6 +24,8 @@ class KarplusStrongSynthesizer(factory: AudioProcessorFactory<*>, volume: Float 
         get() = _volume
         set(value) { _volume = value.coerceAtLeast(0F) }
 
+    override var latency = 44800 * 3
+
     override suspend fun processBlock(buffers: Array<FloatArray>, position: CurrentPosition, midiBuffer: ArrayList<Int>) {
         if (cacheSize > 0) {
             val size = cacheSize.coerceAtMost(buffers[0].size)

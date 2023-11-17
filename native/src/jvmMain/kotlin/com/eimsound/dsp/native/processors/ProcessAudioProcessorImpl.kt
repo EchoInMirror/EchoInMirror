@@ -116,6 +116,11 @@ open class ProcessAudioProcessorImpl(
                 val input = inputStream!!
                 do {
                     val id = input.read()
+                    if (id == -1) {
+                        close()
+                        logger.warn { "Native audio plugin $description has been closed" }
+                        return@withContext
+                    }
                     handleInput(id, position)
                 } while (id != 1)
                 if (bf == null) {
@@ -145,39 +150,36 @@ open class ProcessAudioProcessorImpl(
         }
     }
 
-    @OptIn(DelicateCoroutinesApi::class)
-    override fun prepareToPlay(sampleRate: Int, bufferSize: Int) {
-        GlobalScope.launch(Dispatchers.IO) {
-            writeMutex.withLock {
-                prepared = true
-                val output = outputStream ?: return@withLock
-                output.write(0)
-                output.writeInt(sampleRate)
-                output.writeInt(bufferSize)
-                var newSize = 0
-                if (enabledSharedMemory && IS_SHM_SUPPORTED) {
-                    val size = bufferSize * inputChannelsCount.coerceAtLeast(outputChannelsCount) * 4
-                    if (sharedMemory?.size != size) {
-                        sharedMemory?.close()
-                        try {
-                            sharedMemory = SharedMemory.create(shmName, size)
-                            byteBuffer = sharedMemory!!.toByteBuffer()
-                            newSize = size
-                        } catch (e: Throwable) {
-                            logger.warn(e) { "Failed to create shared memory: $shmName" }
-                            sharedMemory = null
-                            byteBuffer = null
-                        }
+    override suspend fun prepareToPlay(sampleRate: Int, bufferSize: Int) = withContext(Dispatchers.IO) {
+        writeMutex.withLock {
+            prepared = true
+            val output = outputStream ?: return@withLock
+            output.write(0)
+            output.writeInt(sampleRate)
+            output.writeInt(bufferSize)
+            var newSize = 0
+            if (enabledSharedMemory && IS_SHM_SUPPORTED) {
+                val size = bufferSize * inputChannelsCount.coerceAtLeast(outputChannelsCount) * 4
+                if (sharedMemory?.size != size) {
+                    sharedMemory?.close()
+                    try {
+                        sharedMemory = SharedMemory.create(shmName, size)
+                        byteBuffer = sharedMemory!!.toByteBuffer()
+                        newSize = size
+                    } catch (e: Throwable) {
+                        logger.warn(e) { "Failed to create shared memory: $shmName" }
+                        sharedMemory = null
+                        byteBuffer = null
                     }
                 }
-                if (sharedMemory == null) output.write(0)
-                else {
-                    output.write(1)
-                    output.writeString(shmName)
-                    output.writeInt(newSize)
-                }
-                output.flush()
             }
+            if (sharedMemory == null) output.write(0)
+            else {
+                output.write(1)
+                output.writeString(shmName)
+                output.writeInt(newSize)
+            }
+            output.flush()
         }
     }
 
@@ -354,21 +356,21 @@ open class ProcessAudioProcessorImpl(
     override suspend fun store(path: Path) = coroutineScope {
         super.store(path)
         if (!isLaunched) return@coroutineScope
-            select {
-                onTimeout(5000) { close() }
-                launch {
-                    writeMutex.withLock {
-                        outputStream?.apply {
-                            write(3)
-                            writeString("$path/state.bin")
-                            flush()
-                            if (inputStream?.read() != 1) {
-                                logger.warn { "Failed to store native audio plugin $description to $path/state.bin" }
-                            }
+        select {
+            onTimeout(5000) { close() }
+            launch {
+                writeMutex.withLock {
+                    outputStream?.apply {
+                        write(3)
+                        writeString("$path/state.bin")
+                        flush()
+                        if (inputStream?.read() != 1) {
+                            logger.warn { "Failed to store native audio plugin $description to $path/state.bin" }
                         }
                     }
-                }.onJoin { }
-            }
+                }
+            }.onJoin { }
+        }
         coroutineContext.cancelChildren()
     }
 }

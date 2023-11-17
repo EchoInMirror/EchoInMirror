@@ -226,28 +226,28 @@ class Playlist : Panel, MultiSelectableEditor {
             }
         }) {
             val globalDragAndDrop = LocalGlobalDragAndDrop.current
-            val isNotDroppable = remember(it == null) {
+            val isDroppable = remember(it == null) {
                 if (it == null) {
                     trackHeights.clear()
-                    return@remember false
+                    return@remember null
                 }
                 val obj = globalDragAndDrop.dataTransfer
                 var path = obj as? Path
                 if (path == null && obj is Pair<*, *>) path = obj.first as? Path
-                val result = FileExtensionManager.getHandler(path ?: return@remember false) == null
-                if (!result) getAllTrackHeights(density)
+                val result = FileExtensionManager.getHandler(path ?: return@remember null) != null
+                if (result) getAllTrackHeights(density)
                 result
             }
 
             Box(Modifier.fillMaxSize().run {
-                if (isNotDroppable) background(MaterialTheme.colorScheme.error.copy(0.3F)) else this
+                if (isDroppable == false) background(MaterialTheme.colorScheme.error.copy(0.3F)) else this
             }) {
-                if (isNotDroppable) {
+                if (isDroppable == false) {
                     Icon(
                         Icons.Filled.DoNotTouch, null, Modifier.align(Alignment.Center),
                         MaterialTheme.colorScheme.onError
                     )
-                } else if (it != null) {
+                } else if (isDroppable == true && it != null) {
                     val obj = trackHeights[binarySearchTrackByHeight(it.y).coerceAtMost(trackHeights.size - 1)]
                     val height = if (obj.track.height == 0) trackHeight else obj.track.height.dp
                     Box(Modifier
