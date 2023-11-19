@@ -4,6 +4,7 @@ import com.eimsound.audioprocessor.*
 import com.eimsound.daw.utils.ByteBufOutputStream
 import com.eimsound.daw.utils.CachedBufferInputStream
 import com.eimsound.daw.utils.range
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.runBlocking
@@ -21,6 +22,7 @@ private fun getJvmAudioFormat(format: RenderFormat) = when (format) {
     else -> null
 }
 
+private val logger = KotlinLogging.logger { }
 class JvmRenderer(private val renderTarget: Renderable) : Renderer {
     override suspend fun start(
         range: IntRange,
@@ -74,7 +76,7 @@ class JvmRenderer(private val renderTarget: Renderable) : Renderer {
                                 renderTarget.processBlock(buffers, position, ArrayList())
                             }
                         } catch (e: Throwable) {
-                            e.printStackTrace()
+                            logger.error(e) { "Error while rendering" }
                         }
 
                         for (i in 0 until position.bufferSize) {
@@ -93,7 +95,7 @@ class JvmRenderer(private val renderTarget: Renderable) : Renderer {
                         callback(((position.timeInPPQ - range.first).toFloat() / fullLengthInPPQ).coerceAtMost(0.9999F))
                     }
                 } catch (e: Throwable) {
-                    e.printStackTrace()
+                    logger
                     p.destroy()
                 }
             }
@@ -116,7 +118,7 @@ class JvmRenderer(private val renderTarget: Renderable) : Renderer {
                                 renderTarget.processBlock(buffers, position, ArrayList())
                             }
                         } catch (e: Throwable) {
-                            e.printStackTrace()
+                            logger.error(e) { "Error while rendering" }
                         }
 
                         for (j in 0 until channels) {

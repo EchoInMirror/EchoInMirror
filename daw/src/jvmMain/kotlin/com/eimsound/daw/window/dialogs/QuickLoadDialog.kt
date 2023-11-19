@@ -10,10 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontStyle
@@ -50,6 +47,7 @@ private var selectedCategory by mutableStateOf<String?>(null)
 private var selectedInstrument by mutableStateOf<Boolean?>(null)
 private val favoriteAudioProcessors = mutableStateSetOf<Pair<String, String>>()
 private var favoriteAudioProcessorsLoaded = false
+private var favoriteAudioProcessorsActuallyLoaded by mutableStateOf(false)
 
 private const val FAVORITE_TITLE = "已收藏"
 
@@ -64,6 +62,7 @@ private fun loadFavoriteAudioProcessors() {
                     favoriteAudioProcessors.addAll(FAVORITE_AUDIO_PROCESSORS_PATH.toFile()
                         .toJson<List<Pair<String, String>>>())
                 }
+                favoriteAudioProcessorsActuallyLoaded = true
             } catch (e: Exception) {
                 e.printStackTrace()
                 Files.delete(FAVORITE_AUDIO_PROCESSORS_PATH)
@@ -339,6 +338,9 @@ private fun <T: Any> DescList(
         AbsoluteElevationCard(Modifier.weight(1F)) {
             Box(Modifier.fillMaxSize()) {
                 val state = rememberLazyListState()
+                remember(favoriteAudioProcessorsActuallyLoaded) {
+                    if (favoriteAudioProcessorsActuallyLoaded) state.dispatchRawDelta(Float.NEGATIVE_INFINITY)
+                }
                 LazyColumn(state = state) {
                     if (defaultText != null) item {
                         MenuItem(
