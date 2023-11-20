@@ -117,7 +117,7 @@ class MidiClipFactoryImpl : MidiClipFactory {
             val startTimeInSamples = position.convertPPQToSamples(startTime + note.time)
             if (startTimeInSamples > blockEndSample) break
             clip.currentIndex = i + 1
-            if (startTimeInSamples < timeInSamples || note.disabled) continue
+            if (startTimeInSamples < timeInSamples || note.isDisabled) continue
             val noteOnTime = (startTimeInSamples - timeInSamples).toInt().coerceAtLeast(0)
             if (noteRecorder.isMarked(note.note)) {
                 noteRecorder.unmarkNote(note.note)

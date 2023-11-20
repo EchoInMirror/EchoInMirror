@@ -38,7 +38,7 @@ private fun CardHeader(p: TrackAudioProcessorWrapper, index: Int) {
 //    val backgroundColor = MaterialTheme.colorScheme.surfaceColorAtElevation(LocalAbsoluteTonalElevation.current)
     Surface(Modifier.clickableWithIcon(onClick = p.processor::onClick)) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            val isBypassed = p.processor.isBypassed
+            val isDisabled = p.processor.isDisabled
             Row(Modifier.weight(1F).padding(horizontal = 12.dp)) {
                 Text("${index + 1}.", Modifier.padding(end = 6.dp),
                     fontWeight = FontWeight.Bold,
@@ -46,10 +46,10 @@ private fun CardHeader(p: TrackAudioProcessorWrapper, index: Int) {
                 )
                 Text(p.processor.name, Modifier.weight(1F), style = MaterialTheme.typography.titleSmall,
                     maxLines = 1, overflow = TextOverflow.Ellipsis,
-                    textDecoration = if (isBypassed) TextDecoration.LineThrough else TextDecoration.None,
-                    color = LocalContentColor.current.copy(alpha = if (isBypassed) 0.7F else 1F))
+                    textDecoration = if (isDisabled) TextDecoration.LineThrough else TextDecoration.None,
+                    color = LocalContentColor.current.copy(alpha = if (isDisabled) 0.7F else 1F))
             }
-            CustomCheckbox(!isBypassed, { p.processor.isBypassed = !it }, Modifier.padding(start = 8.dp))
+            CustomCheckbox(!isDisabled, { p.processor.isDisabled = !it }, Modifier.padding(start = 8.dp))
         }
     }
 }

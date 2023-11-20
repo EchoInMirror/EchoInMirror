@@ -52,7 +52,7 @@ private fun CurrentTime() {
         CustomOutlinedTextField(
             "${a}:${b}:${c}", { },
             Modifier.width(110.dp),
-            textStyle = MaterialTheme.typography.labelLarge,
+            textStyle = MaterialTheme.typography.labelLarge.copy(LocalContentColor.current),
             suffix = {
                 Icon(Icons.Filled.ExpandMore, "Expand",
                     Modifier.size(20.dp).pointerHoverIcon(PointerIcon.Hand).clip(CircleShape).clickable { }
@@ -139,7 +139,7 @@ private fun BPM() {
             EchoInMirror.currentPosition.bpm = it.toDoubleOrNull()?.coerceIn(1.0, 600.0) ?: return@CustomOutlinedTextField
         },
         Modifier.width(100.dp),
-        textStyle = MaterialTheme.typography.labelLarge,
+        textStyle = MaterialTheme.typography.labelLarge.copy(LocalContentColor.current),
         prefix = {
             Icon(MetronomeTick, "BPM", modifier = Modifier.size(18.dp).offset())
         },

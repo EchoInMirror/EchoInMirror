@@ -155,8 +155,8 @@ private fun MixerProcessorButton(isLoading: MutableState<Boolean>, list: Mutable
                         wrapper.processor.name, Modifier.fillMaxWidth(),
                         fontSize = MaterialTheme.typography.labelSmall.fontSize, maxLines = 1, lineHeight = 7.sp,
                         textAlign = TextAlign.Center, fontStyle = fontStyle, fontWeight = fontWeight,
-                        textDecoration = if (wrapper.processor.isBypassed) TextDecoration.LineThrough else null,
-                        color = if (wrapper.processor.isBypassed) LocalContentColor.current.copy(alpha = 0.5f)
+                        textDecoration = if (wrapper.processor.isDisabled) TextDecoration.LineThrough else null,
+                        color = if (wrapper.processor.isDisabled) LocalContentColor.current.copy(alpha = 0.5f)
                         else LocalContentColor.current
                     )
                 }
@@ -225,9 +225,9 @@ private fun TrackName(track: Track, parentTrack: Track?, trackColor: Color, inde
         Marquee {
             Text(
                 track.name,
-                color = if (track.isBypassed) color.copy(alpha = 0.7f) else color,
+                color = if (track.isDisabled) color.copy(alpha = 0.7f) else color,
                 fontSize = MaterialTheme.typography.labelLarge.fontSize,
-                textDecoration = if (track.isBypassed) TextDecoration.LineThrough else null,
+                textDecoration = if (track.isDisabled) TextDecoration.LineThrough else null,
                 lineHeight = 18.0.sp,
             )
         }
@@ -303,8 +303,8 @@ private fun TrackCard(track: Track, parentTrack: Track?, containerColor: Color, 
                 Modifier.fillMaxWidth().padding(vertical = 4.dp),
                 horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton({ track.isBypassed = !track.isBypassed }, 20.dp) {
-                    if (track.isBypassed) Icon(Icons.Default.VolumeOff, null, tint = MaterialTheme.colorScheme.error)
+                IconButton({ track.isDisabled = !track.isDisabled }, 20.dp) {
+                    if (track.isDisabled) Icon(Icons.Default.VolumeOff, null, tint = MaterialTheme.colorScheme.error)
                     else Icon(Icons.Default.VolumeUp, null)
                 }
                 Gap(6)

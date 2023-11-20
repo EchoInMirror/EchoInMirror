@@ -45,6 +45,7 @@ import com.eimsound.daw.components.dragdrop.dropTarget
 import com.eimsound.daw.components.utils.EditAction
 import com.eimsound.daw.components.utils.saturate
 import com.eimsound.daw.components.utils.toOnSurfaceColor
+import com.eimsound.daw.dawutils.SHOULD_SCROLL_REVERSE
 import com.eimsound.daw.dawutils.openMaxValue
 import com.eimsound.daw.utils.mapValue
 import kotlin.math.absoluteValue
@@ -96,7 +97,7 @@ internal fun NotesEditorCanvas(editor: DefaultMidiClipEditor) {
     editor.apply {
         Box(
             Modifier.fillMaxSize().clipToBounds().background(MaterialTheme.colorScheme.background)
-                .scrollable(verticalScrollState, Orientation.Vertical, reverseDirection = true)
+                .scrollable(verticalScrollState, Orientation.Vertical, reverseDirection = SHOULD_SCROLL_REVERSE)
                 .onGloballyPositioned { offsetOfRoot = it.positionInRoot() }
                 .pointerInput(coroutineScope, editor) {
                     handleMouseEvent(coroutineScope, editor, floatingLayerProvider)
@@ -133,13 +134,13 @@ internal fun NotesEditorCanvas(editor: DefaultMidiClipEditor) {
             val disabledKeyNameTextStyle = labelMediumStyle.copy(textDecoration = TextDecoration.LineThrough)
 
             fun NoteMessage.getLayoutResult(offset: Int = 0): TextLayoutResult {
-                val results = if (disabled) disabledKeyNameLayerResults else keyNameLayerResults
+                val results = if (isDisabled) disabledKeyNameLayerResults else keyNameLayerResults
                 val curNote = note - offset
                 var layoutResult = if (curNote in 0..126) results[curNote] else null
                 if (layoutResult == null) {
                     layoutResult = measurer.measure(
                         AnnotatedString(getNoteName(curNote)),
-                        if (disabled) disabledKeyNameTextStyle else labelMediumStyle,
+                        if (isDisabled) disabledKeyNameTextStyle else labelMediumStyle,
                         constraints = maxKeyNameSize,
                         density = localDensity
                     )

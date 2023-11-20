@@ -4,6 +4,9 @@ import androidx.compose.foundation.gestures.*
 import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAll
+import com.eimsound.daw.actions.doClipsAmountAction
+import com.eimsound.daw.api.EchoInMirror
+import com.eimsound.daw.api.EditorTool
 import com.eimsound.daw.api.TrackClip
 import com.eimsound.daw.components.calcScroll
 import com.eimsound.daw.components.utils.EditAction
@@ -40,14 +43,24 @@ internal suspend fun PointerInputScope.handleMouseEvent(playlist: Playlist, scop
                     }
                     PointerEventType.Press -> {
                         if (event.buttons.isPrimaryPressed) {
-                            if (event.keyboardModifiers.isCrossPlatformCtrlPressed) action = EditAction.SELECT
-                            selectedClips.clear()
+                            if (event.keyboardModifiers.isCrossPlatformCtrlPressed) {
+                                action = EditAction.SELECT
+                                selectedClips.clear()
+                                break
+                            }
+                            when (EchoInMirror.editorTool) {
+                                EditorTool.ERASER -> {
+                                    selectedClips.clear()
+                                    action = EditAction.DELETE
+                                }
+                                else -> {}
+                            }
                             break
                         } else if (event.buttons.isForwardPressed) {
                             selectedClips.clear()
                             action = EditAction.SELECT
                             break
-                        } else if (event.buttons.isTertiaryPressed) {
+                        } else if (event.buttons.isBackPressed) {
                             selectedClips.clear()
                             action = EditAction.DELETE
                             break
@@ -91,7 +104,7 @@ internal suspend fun PointerInputScope.handleMouseEvent(playlist: Playlist, scop
                     }
                     EditAction.DELETE -> {
                         val y = it.position.y + verticalScrollState.value
-                        val x = it.position.x + horizontalScrollState.value / noteWidth.value.toPx()
+                        val x = (it.position.x + horizontalScrollState.value) / noteWidth.value.toPx()
                         val track = trackHeights[binarySearchTrackByHeight(y)].track
                         for (j in track.clips.indices) {
                             val clip = track.clips[j]
@@ -141,7 +154,10 @@ internal suspend fun PointerInputScope.handleMouseEvent(playlist: Playlist, scop
                     selectionX = 0F
                     selectionY = 0F
                 }
-                EditAction.DELETE -> deletionList.clear()
+                EditAction.DELETE -> {
+                    deletionList.toList().doClipsAmountAction(true)
+                    deletionList.clear()
+                }
                 else -> { }
             }
             action = EditAction.NONE

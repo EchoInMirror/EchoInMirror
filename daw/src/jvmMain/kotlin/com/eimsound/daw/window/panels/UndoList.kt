@@ -22,7 +22,7 @@ import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.window.Panel
 import com.eimsound.daw.api.window.PanelDirection
 import com.eimsound.daw.components.utils.clickableWithIcon
-import com.eimsound.daw.commons.UndoableAction
+import com.eimsound.daw.commons.actions.UndoableAction
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch

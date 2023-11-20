@@ -20,6 +20,7 @@ import com.eimsound.audioprocessor.projectDisplayPPQ
 import com.eimsound.daw.actions.GlobalEnvelopeEditorEventHandler
 import com.eimsound.daw.api.*
 import com.eimsound.daw.components.*
+import com.eimsound.daw.dawutils.SHOULD_SCROLL_REVERSE
 import com.eimsound.daw.dawutils.openMaxValue
 import com.eimsound.daw.impl.clips.EditorControls
 import com.eimsound.daw.utils.range
@@ -60,7 +61,7 @@ class EnvelopeClipEditor(private val clip: TrackClip<EnvelopeClip>) : ClipEditor
             }
             var contentWidth by remember { mutableStateOf(0.dp) }
             Box(Modifier.fillMaxSize().onGloballyPositioned { contentWidth = it.size.width.dp }
-                .scrollable(horizontalScrollState, Orientation.Horizontal, reverseDirection = true)
+                .scrollable(horizontalScrollState, Orientation.Horizontal, reverseDirection = SHOULD_SCROLL_REVERSE)
             ) {
                 EchoInMirror.currentPosition.apply {
                     EditorGrid(noteWidth, horizontalScrollState, range, ppq, timeSigDenominator, timeSigNumerator)

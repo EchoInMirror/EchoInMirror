@@ -11,6 +11,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.window.Panel
+import org.apache.commons.lang3.SystemUtils
 import org.ocpsoft.prettytime.PrettyTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -140,3 +141,5 @@ fun formatDuration(time: Long): String = DURATION_PRETTIER.formatDuration(Date(t
 fun randomColor() = com.eimsound.daw.components.utils.randomColor(!EchoInMirror.windowManager.isDarkTheme)
 
 fun Panel.isActive() = EchoInMirror.windowManager.activePanel == this
+
+val SHOULD_SCROLL_REVERSE = SystemUtils.IS_OS_MAC_OSX

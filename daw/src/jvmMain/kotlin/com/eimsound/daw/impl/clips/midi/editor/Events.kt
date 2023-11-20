@@ -32,8 +32,9 @@ import kotlin.math.roundToInt
 private var currentX = 0
 private var lastSelectedNoteDuration = 0
 
-private fun Density.getClickedNotes(x: Float, y: Float, editor: DefaultMidiClipEditor,
-                                    block: Density.(NoteMessage) -> Boolean = { true }): NoteMessage? {
+private fun Density.getClickedNotes(
+    x: Float, y: Float, editor: DefaultMidiClipEditor, block: Density.(NoteMessage) -> Boolean = { true }
+): NoteMessage? {
     editor.apply {
         currentNote = KEYBOARD_KEYS - ((y + verticalScrollState.value) / noteHeight.toPx()).toInt() - 1
         currentX = ((x + horizontalScrollState.value) / noteWidth.value.toPx() - clip.time).roundToInt()
@@ -64,9 +65,9 @@ private fun stopAllNotes(editor: DefaultMidiClipEditor) {
 }
 
 @Suppress("DuplicatedCode")
-internal suspend fun PointerInputScope.handleMouseEvent(coroutineScope: CoroutineScope,
-                                                        editor: DefaultMidiClipEditor,
-                                                        floatingLayerProvider: FloatingLayerProvider) {
+internal suspend fun PointerInputScope.handleMouseEvent(
+    coroutineScope: CoroutineScope, editor: DefaultMidiClipEditor, floatingLayerProvider: FloatingLayerProvider
+) {
     awaitEachGesture {
         editor.apply {
             var event: PointerEvent

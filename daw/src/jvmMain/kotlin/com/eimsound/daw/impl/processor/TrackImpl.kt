@@ -52,7 +52,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
 
     private val trackBuffers = TrackBuffers()
     override var isRendering by mutableStateOf(false)
-    override var isBypassed by observableMutableStateOf(false, ::stateChange)
+    override var isDisabled by observableMutableStateOf(false, ::stateChange)
     override var isSolo by observableMutableStateOf(false, ::stateChange)
 
     private val panParameter = audioProcessorParameterOf("pan", "声相", PAN_RANGE, 0F)
@@ -71,7 +71,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         position: CurrentPosition,
         midiBuffer: ArrayList<Int>
     ) = withContext(Dispatchers.Default) {
-        if (isBypassed) return@withContext
+        if (isDisabled) return@withContext
         if (pendingMidiBuffer.isNotEmpty()) {
             midiBuffer.addAll(pendingMidiBuffer)
             pendingMidiBuffer.clear()
@@ -97,6 +97,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
                     lastClipIndex = i + 1
                     continue
                 }
+                if (clip.isDisabled) continue
                 if (startTimeInSamples > blockEndSample) break
                 @Suppress("TYPE_MISMATCH")
                 clip.clip.factory.processBlock(clip, buffers, position, midiBuffer, noteRecorder, pendingNoteOns)
@@ -104,7 +105,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         }
         latency = 0
         preProcessorsChain.fastForEach {
-            if (!it.processor.isBypassed) {
+            if (!it.processor.isDisabled) {
                 it.processor.processBlock(buffers, position, midiBuffer)
                 latency += it.processor.latency
             }
@@ -118,7 +119,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
             }
         }
         postProcessorsChain.fastForEach {
-            if (!it.processor.isBypassed) {
+            if (!it.processor.isDisabled) {
                 it.processor.processBlock(buffers, position, midiBuffer)
                 latency += it.processor.latency
             }
@@ -155,7 +156,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
             if (asyncJobs.size != subTracks.size) asyncJobs = arrayOfNulls(subTracks.size)
             repeat(subTracks.size) { index ->
                 val it = subTracks[index]
-                asyncJobs[index] = if (it.isBypassed || it.isRendering) null
+                asyncJobs[index] = if (it.isDisabled || it.isRendering) null
                 else launch {
                     val trackBuffer = trackBuffers[index]
                     trackBuffer.putBuffers(buffers, 2, buffers[0].size)
@@ -242,7 +243,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         putNotDefault("name", name)
         put("color", color.value.toLong())
         putNotDefault("height", height)
-        putNotDefault("isBypassed", isBypassed)
+        putNotDefault("isDisabled", isDisabled)
         putNotDefault("isSolo", isSolo)
         putNotDefault("subTracks", subTracks.fastMap { it.id })
         putNotDefault("preProcessorsChain", preProcessorsChain.fastMap { it.processor.id })
@@ -259,7 +260,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
             if (clips.isNotEmpty()) {
                 val clipsDir = path.resolve("clips")
                 if (!Files.exists(clipsDir)) Files.createDirectory(clipsDir)
-                clips.map {
+                clips.fastMap {
                     launch {
                         @Suppress("TYPE_MISMATCH")
                         it.clip.factory.save(it.clip, clipsDir.resolve(it.clip.id))
@@ -270,7 +271,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
             if (subTracks.isNotEmpty()) {
                 val tracksDir = path.resolve("tracks")
                 if (!Files.exists(tracksDir)) Files.createDirectory(tracksDir)
-                subTracks.forEach { launch { it.store(tracksDir.resolve(it.id)) } }
+                subTracks.fastMap { launch { it.store(tracksDir.resolve(it.id)) } }.joinAll()
             }
 
             if (preProcessorsChain.isNotEmpty() || postProcessorsChain.isNotEmpty()) {
@@ -285,7 +286,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
 
     private suspend fun storeProcessors(processors: List<TrackAudioProcessorWrapper>, dir: Path) {
         withContext(Dispatchers.IO) {
-            processors.map {
+            processors.fastMap {
                 launch {
                     val processDir = dir.resolve(it.processor.id)
                     Files.createDirectories(processDir)
@@ -334,7 +335,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         json["name"]?.asString()?.let { name = it }
         json["color"]?.asLong()?.let { color = Color(it.toULong()) }
         json["height"]?.asInt()?.let { height = it }
-        json["isBypassed"]?.asBoolean()?.let { isBypassed = it }
+        json["isDisabled"]?.asBoolean()?.let { isDisabled = it }
         json["isSolo"]?.asBoolean()?.let { isSolo = it }
     }
 
@@ -346,7 +347,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
 
                 json["clips"]?.let { clipIds ->
                     val clipsDir = path.resolve("clips")
-                    clips.addAll(clipIds.jsonArray.map {
+                    clips.addAll(clipIds.jsonArray.fastMap {
                         async {
                             tryOrNull(trackLogger, "Failed to load clip: $it") {
                                 ClipManager.instance.createTrackClip(clipsDir, it as JsonObject)
@@ -357,7 +358,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
 
                 json["subTracks"]?.let { tracks ->
                     val tracksDir = path.resolve("tracks")
-                    subTracks.addAll(tracks.jsonArray.map {
+                    subTracks.addAll(tracks.jsonArray.fastMap {
                         async {
                             tryOrNull(trackLogger, "Failed to load track: $it") {
                                 TrackManager.instance.createTrack(tracksDir.resolve(it.asString()))
@@ -375,7 +376,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
     private suspend fun loadAudioProcessors(list: MutableList<TrackAudioProcessorWrapper>, json: JsonArray?, processorsDir: Path) {
         if (json == null) return
         withContext(Dispatchers.IO) {
-            list.addAll(json.jsonArray.map {
+            list.addAll(json.jsonArray.fastMap {
                 val id = it.asString()
                 async {
                     tryOrNull(trackLogger, "Failed to load audio processor: $id") {

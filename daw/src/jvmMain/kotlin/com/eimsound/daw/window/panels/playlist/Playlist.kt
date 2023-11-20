@@ -272,11 +272,10 @@ class Playlist : Panel, MultiSelectableEditor {
     @Composable
     private fun TrackContents() {
         Column(Modifier.verticalScroll(verticalScrollState).fillMaxSize()) {
-            val localDensity = LocalDensity.current
             Divider()
             var i = 0
-            EchoInMirror.bus!!.subTracks.forEach {
-                key(it) { i += TrackContent(this@Playlist, it, i, localDensity) }
+            EchoInMirror.bus!!.subTracks.fastForEach {
+                key(it) { i += TrackContent(this@Playlist, it, i) }
             }
         }
     }

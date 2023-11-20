@@ -4,7 +4,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.eimsound.daw.commons.Restorable
+import com.eimsound.daw.commons.Disabled
+import com.eimsound.daw.commons.actions.Restorable
 import com.eimsound.daw.commons.json.*
 import com.eimsound.daw.utils.randomId
 import kotlinx.coroutines.Dispatchers
@@ -17,7 +18,7 @@ enum class AudioProcessorState {
     Ready, Loading, Failed, Unloaded
 }
 
-interface AudioProcessor: Restorable, AutoCloseable, SuddenChangeListener {
+interface AudioProcessor: Restorable, AutoCloseable, SuddenChangeListener, Disabled {
     var name: String
     val description: AudioProcessorDescription
     val inputChannelsCount: Int
@@ -27,7 +28,6 @@ interface AudioProcessor: Restorable, AutoCloseable, SuddenChangeListener {
     val uuid: UUID
     val parameters: List<AudioProcessorParameter>
     val lastModifiedParameter: AudioProcessorParameter?
-    var isBypassed: Boolean
     val state: AudioProcessorState
     val latency: Int
     suspend fun processBlock(buffers: Array<FloatArray>, position: CurrentPosition, midiBuffer: ArrayList<Int>) { }
@@ -60,7 +60,7 @@ abstract class AbstractAudioProcessor(
     override val parameters = emptyList<AudioProcessorParameter>()
     override var lastModifiedParameter: AudioProcessorParameter? = null
         protected set
-    override var isBypassed by mutableStateOf(false)
+    override var isDisabled by mutableStateOf(false)
     private val _listeners = WeakHashMap<AudioProcessorListener, Unit>()
     protected val listeners get() = _listeners.keys
     protected open val storeFileName = "processor.json"
@@ -76,7 +76,7 @@ abstract class AbstractAudioProcessor(
         put("id", id)
         put("uuid", uuid.toString())
         put("identifier", description.identifier)
-        putNotDefault("isBypassed", isBypassed)
+        putNotDefault("isDisabled", isDisabled)
         if (saveParameters) put("parameters", buildJsonObject {
             parameters.forEach { if (it.value != it.initialValue) put(it.id, it.value) }
         })
@@ -88,7 +88,7 @@ abstract class AbstractAudioProcessor(
         name = json["name"]?.asString() ?: ""
         json["id"]?.asString()?.let { if (it.isNotEmpty()) id = it }
         json["uuid"]?.asString()?.let { if (it.isNotEmpty()) uuid = UUID.fromString(it) }
-        isBypassed = json["isBypassed"]?.jsonPrimitive?.boolean ?: false
+        isDisabled = json["isDisabled"]?.jsonPrimitive?.boolean ?: false
         if (saveParameters) json["parameters"]?.jsonObject?.let { obj ->
             val params = parameters.associateBy { it.id }
             obj.forEach { (id, value) ->

@@ -20,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.*
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Density
@@ -29,10 +30,7 @@ import androidx.compose.ui.util.fastForEach
 import com.eimsound.audioprocessor.oneBarPPQ
 import com.eimsound.daw.actions.doClipsAmountAction
 import com.eimsound.daw.actions.doClipsEditActionAction
-import com.eimsound.daw.api.ClipManager
-import com.eimsound.daw.api.EchoInMirror
-import com.eimsound.daw.api.TrackClip
-import com.eimsound.daw.api.defaultMidiClipFactory
+import com.eimsound.daw.api.*
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.components.utils.EditAction
 import com.eimsound.daw.components.utils.HorizontalResize
@@ -54,10 +52,20 @@ private suspend fun AwaitPointerEventScope.handleDragEvent(playlist: Playlist, c
             if (event.type == PointerEventType.Press) {
                 if (event.buttons.isPrimaryPressed) {
                     EchoInMirror.selectedTrack = track
-                    EchoInMirror.selectedClip = clip
-                    if (!selectedClips.contains(clip)) {
-                        selectedClips.clear()
-                        selectedClips.add(clip)
+                    when (EchoInMirror.editorTool) {
+                        EditorTool.ERASER -> {
+                            if (event.keyboardModifiers.isCrossPlatformCtrlPressed) continue
+                            selectedClips.clear()
+                            listOf(clip).doClipsAmountAction(true)
+                            continue
+                        }
+                        else -> {
+                            EchoInMirror.selectedClip = clip
+                            if (!selectedClips.contains(clip)) {
+                                selectedClips.clear()
+                                selectedClips.add(clip)
+                            }
+                        }
                     }
                     if (event.keyboardModifiers.isCrossPlatformCtrlPressed) continue
                     break
@@ -65,7 +73,7 @@ private suspend fun AwaitPointerEventScope.handleDragEvent(playlist: Playlist, c
                     selectedClips.clear()
                     action = EditAction.NONE
                     break
-                } else if (event.buttons.isTertiaryPressed) {
+                } else if (event.buttons.isBackPressed) {
                     deletionList.add(clip)
                     continue
                 }
@@ -173,9 +181,9 @@ private suspend fun AwaitPointerEventScope.handleDragEvent(playlist: Playlist, c
 }
 
 @Composable
-private fun Playlist.ClipItem(density: Density, it: TrackClip<*>, track: Track, index: Int) {
+private fun Playlist.ClipItem(it: TrackClip<*>, track: Track, index: Int) {
     Box {
-        with (density) {
+        with (LocalDensity.current) {
             val isSelected = selectedClips.contains(it)
             val scrollXPPQ = horizontalScrollState.value / noteWidth.value.toPx()
             val contentPPQ = contentWidth.value / noteWidth.value.value
@@ -228,10 +236,11 @@ private fun Playlist.ClipItem(density: Density, it: TrackClip<*>, track: Track, 
                 ) {
                     if (!deletionList.contains(it)) {
                         val trackColor = curTrack.color
+                        val isDisabled = curTrack.isDisabled || it.isDisabled
                         Column(
                             Modifier
                                 .fillMaxSize()
-                                .background(trackColor.copy(if (curTrack.isBypassed) 0.4F else 0.7F), MaterialTheme.shapes.extraSmall)
+                                .background(trackColor.copy(if (isDisabled) 0.4F else 0.7F), MaterialTheme.shapes.extraSmall)
                                 .run {
                                     if (isSelected) border(
                                         2.dp, MaterialTheme.colorScheme.primary,
@@ -247,11 +256,11 @@ private fun Playlist.ClipItem(density: Density, it: TrackClip<*>, track: Track, 
                                 Text(
                                     it.clip.name.ifEmpty { track.name },
                                     Modifier.fillMaxWidth()
-                                        .background(if (curTrack.isBypassed) trackColor.copy(0.5F) else trackColor)
+                                        .background(if (isDisabled) trackColor.copy(0.5F) else trackColor)
                                         .padding(horizontal = 4.dp),
                                     contentColor, style = MaterialTheme.typography.labelMedium,
                                     maxLines = 1, overflow = TextOverflow.Ellipsis,
-                                    textDecoration = if (curTrack.isBypassed) TextDecoration.LineThrough else null
+                                    textDecoration = if (isDisabled) TextDecoration.LineThrough else null
                                 )
                             }
                             @Suppress("TYPE_MISMATCH")
@@ -275,52 +284,64 @@ private fun Playlist.ClipItem(density: Density, it: TrackClip<*>, track: Track, 
 }
 
 @Composable
-private fun Playlist.TrackItems(track: Track, density: Density, index: Int) {
+private fun Playlist.TrackItems(track: Track, index: Int) {
     track.clips.read()
     track.clips.fastForEach {
         key(it) {
-            ClipItem(density, it, track, index)
+            ClipItem(it, track, index)
         }
     }
 }
 
 @Composable
-private fun SubTrackContents(index: Int, track: Track, density: Density, playlist: Playlist): Int {
+private fun SubTrackContents(index: Int, track: Track, playlist: Playlist): Int {
     var i = index + 1
-    if (!track.collapsed) track.subTracks.fastForEach { key(it) { i += TrackContent(playlist, it, i, density) } }
+    if (!track.collapsed) track.subTracks.fastForEach { key(it) { i += TrackContent(playlist, it, i) } }
     return i - index
 }
 
+private fun Density.createNewClip(playlist: Playlist, track: Track, x: Float) {
+    playlist.selectedClips.clear()
+    val len = EchoInMirror.currentPosition.oneBarPPQ
+    val clip = ClipManager.instance.createTrackClip(
+        ClipManager.instance.defaultMidiClipFactory.createClip(),
+        (x / playlist.noteWidth.value.toPx()).fitInUnit(len),
+        len,
+        0,
+        track
+    )
+    listOf(clip).doClipsAmountAction(false)
+}
+
 @Composable
-internal fun TrackContent(playlist: Playlist, track: Track, index: Int, density: Density): Int {
+internal fun TrackContent(playlist: Playlist, track: Track, index: Int): Int {
     playlist.apply {
         Box(Modifier.fillMaxWidth().height(if (track.height == 0) trackHeight else track.height.dp)) {
-            Box(Modifier.fillMaxSize().pointerInput(track) {
+            Box(Modifier.fillMaxSize().pointerInput(track) { // Double click
                 awaitPointerEventScope {
+                    this.density
                     var time = 0L
                     while (true) {
                         val event = awaitFirstDown(false)
                         if (action != EditAction.NONE) continue
-                        time = if (event.previousUptimeMillis - time < viewConfiguration.longPressTimeoutMillis) {
-                            val len = EchoInMirror.currentPosition.oneBarPPQ
-                            val clip = ClipManager.instance.createTrackClip(
-                                ClipManager.instance.defaultMidiClipFactory.createClip(),
-                                (event.position.x / noteWidth.value.toPx()).fitInUnit(len),
-                                len,
-                                0,
-                                track
-                            )
-                            listOf(clip).doClipsAmountAction(false)
-                            0L
-                        } else event.previousUptimeMillis
+                        when (EchoInMirror.editorTool) {
+                            EditorTool.CURSOR -> {
+                                time = if (event.previousUptimeMillis - time < viewConfiguration.longPressTimeoutMillis) {
+                                    createNewClip(playlist, track, event.position.x)
+                                    0L
+                                } else event.previousUptimeMillis
+                            }
+                            EditorTool.PENCIL -> createNewClip(playlist, track, event.position.x)
+                            else -> { }
+                        }
                     }
                 }
             })
-            TrackItems(track, density, index)
+            TrackItems(track, index)
         }
     }
     Divider()
-    return SubTrackContents(index, track, density, playlist)
+    return SubTrackContents(index, track, playlist)
 }
 
 @Composable

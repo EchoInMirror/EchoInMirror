@@ -1,6 +1,7 @@
 package com.eimsound.audioprocessor.data.midi
 
 import androidx.compose.runtime.mutableStateOf
+import com.eimsound.daw.commons.Disabled
 import com.eimsound.daw.utils.IManualState
 import com.eimsound.daw.utils.mapValue
 import com.eimsound.daw.commons.json.*
@@ -10,18 +11,17 @@ import kotlinx.serialization.json.*
  * Consider make this class open.
  * @see [DefaultNoteMessage]
  */
-interface NoteMessage : JsonSerializable {
+interface NoteMessage : JsonSerializable, Disabled {
     var note: Int
     var velocity: Int
     var time: Int
     var duration: Int
-    var disabled: Boolean
     var extraData: MutableMap<String, Any>?
     fun copy(note: Int = this.note, velocity: Int = this.velocity, time: Int = this.time,
-             duration: Int = this.duration, disabled: Boolean = this.disabled): NoteMessage
+             duration: Int = this.duration, disabled: Boolean = this.isDisabled): NoteMessage
 }
 
-val NoteMessage.colorSaturation get() = 0.4F + 0.6F * if (disabled) 0F else mapValue(velocity, 0, 127)
+val NoteMessage.colorSaturation get() = 0.4F + 0.6F * if (isDisabled) 0F else mapValue(velocity, 0, 127)
 
 class SerializableNoteMessages(var ppq: Int = 96, notes: List<NoteMessage>? = null) : JsonSerializable {
     private val notesP = arrayListOf<NoteMessage>().apply { if (notes != null) addAll(notes) }
@@ -46,7 +46,7 @@ fun defaultNoteMessage(note: Int, time: Int, duration: Int = 0, velocity: Int = 
 open class DefaultNoteMessage(
     initNote: Int = 0, override var time: Int = 0,
     initDuration: Int = 0, override var velocity: Int = 70,
-    override var disabled: Boolean = false,
+    override var isDisabled: Boolean = false,
 ): NoteMessage {
     override var note = initNote.coerceIn(0, 127)
         set(value) { field = value.coerceIn(0, 127) }
@@ -62,7 +62,7 @@ open class DefaultNoteMessage(
         put("time", time)
         put("duration", duration)
         put("velocity", velocity)
-        putNotDefault("disabled", disabled)
+        putNotDefault("isDisabled", isDisabled)
         if (extraData != null) putNotDefault("extraData", Json.encodeToJsonElement(extraData!!))
     }
 
@@ -72,12 +72,12 @@ open class DefaultNoteMessage(
         time = json["time"]!!.jsonPrimitive.int
         duration = json["duration"]!!.jsonPrimitive.int
         velocity = json["velocity"]!!.jsonPrimitive.int
-        disabled = json["disabled"]?.jsonPrimitive?.boolean ?: false
+        isDisabled = json["isDisabled"]?.jsonPrimitive?.boolean ?: false
         extraData = json["extraData"]?.jsonObject?.let { Json.decodeFromJsonElement(it) }
     }
 
     override fun toString(): String {
-        return "DefaultNoteMessage(note=$note, time=$time, duration=$duration, velocity=$velocity, disabled=$disabled)"
+        return "DefaultNoteMessage(note=$note, time=$time, duration=$duration, velocity=$velocity, isDisabled=$isDisabled)"
     }
 }
 
