@@ -1,19 +1,23 @@
 package com.eimsound.daw.components
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
@@ -54,10 +58,12 @@ fun CustomOutlinedTextField(
     paddingValues: PaddingValues = DEFAULT_PADDING
 ) {
     BasicTextField(value, onValueChange, modifier, enabled, readOnly, textStyle, keyboardOptions, keyboardActions,
-        singleLine, maxLines, minLines, visualTransformation, {}, interactionSource) {
-        TextFieldDefaults.DecorationBox(value, it, enabled, singleLine, visualTransformation, interactionSource,
-            isError, label, placeholder, leadingIcon, trailingIcon, prefix, suffix, supportingText, shape, colors, paddingValues) {
-            TextFieldDefaults.ContainerBox(
+        singleLine, maxLines, minLines, visualTransformation, {}, interactionSource
+    ) {
+        OutlinedTextFieldDefaults.DecorationBox(value, it, enabled, singleLine, visualTransformation, interactionSource,
+            isError, label, placeholder, leadingIcon, trailingIcon, prefix, suffix, supportingText, colors, paddingValues
+        ) {
+            OutlinedTextFieldDefaults.ContainerBox(
                 enabled,
                 isError,
                 interactionSource,
@@ -113,5 +119,15 @@ fun ReadonlyTextField(modifier: Modifier = Modifier, enabled: Boolean = false, c
             interactionSource = remember { MutableInteractionSource() },
             trailingIcon = { Icon(Icons.Filled.ExpandMore, null, Modifier.padding(horizontal = 8.dp)) }
         )
+    }
+}
+
+@Composable
+fun NumberInputArrows(onValueChange: (value: Int) -> Unit) {
+    Column(Modifier.height(IntrinsicSize.Max), Arrangement.SpaceAround) {
+        Icon(Icons.Filled.ExpandLess, "add", Modifier.size(14.dp).pointerHoverIcon(PointerIcon.Hand)
+            .clip(CircleShape).clickable { onValueChange(1) })
+        Icon(Icons.Filled.ExpandMore, "minus", Modifier.offset(y = (-4).dp).size(14.dp).
+        pointerHoverIcon(PointerIcon.Hand).clip(CircleShape).clickable { onValueChange(-1) })
     }
 }

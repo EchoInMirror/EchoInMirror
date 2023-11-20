@@ -27,14 +27,21 @@ interface IEchoInMirror {
     val windowManager: WindowManager
     val undoManager: UndoManager
     val audioThumbnailCache: AudioThumbnailCache
-    var quantification: Quantification
 
     var selectedTrack: Track?
     var selectedClip: TrackClip<*>?
+
+    var editorTool: EditorTool
+    var quantification: Quantification
 
     fun createAudioPlayer(): AudioPlayer
 
     fun reloadServices()
 
     val editUnit: Int
+}
+
+// Consider to make this extendable, if you want to add your own tool, you can open an issue on GitHub.
+enum class EditorTool {
+    CURSOR, PENCIL, ERASER, MUTE, CUT
 }

@@ -11,6 +11,7 @@ import com.eimsound.daw.AUDIO_THUMBNAIL_CACHE_PATH
 import com.eimsound.daw.Configuration
 import com.eimsound.daw.actions.AudioProcessorParameterChangeAction
 import com.eimsound.daw.api.ClipManager
+import com.eimsound.daw.api.EditorTool
 import com.eimsound.daw.api.IEchoInMirror
 import com.eimsound.daw.api.TrackClip
 import com.eimsound.daw.api.processor.Bus
@@ -34,6 +35,7 @@ class EchoInMirrorImpl : IEchoInMirror {
     override val windowManager = WindowManagerImpl()
     override val audioThumbnailCache by lazy { AudioThumbnailCache(AUDIO_THUMBNAIL_CACHE_PATH.toFile()) }
     override var quantification by mutableStateOf(defaultQuantification)
+    override var editorTool by mutableStateOf(EditorTool.CURSOR)
     override val undoManager = DefaultUndoManager().apply {
         errorHandlers.add(Crashes::trackError)
         errorHandlers.add { GlobalSnackbarProvider.enqueueSnackbar(it) }

@@ -22,7 +22,7 @@ fun SegmentedButtons(modifier: Modifier = Modifier, content: @Composable () -> U
         horizontalArrangement = Arrangement.Center,
         modifier = modifier
             .clip(RoundedCornerShape(percent = 100))
-            .height(20.dp)
+            .height(30.dp)
             .border(
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface),
                 shape = RoundedCornerShape(percent = 100)
@@ -46,7 +46,7 @@ fun SegmentedButton(
 ) {
     val fn = @Composable {
         ProvideTextStyle(value = MaterialTheme.typography.labelLarge) {
-            Row(Modifier.fillMaxHeight().padding(horizontal = 6.dp), Arrangement.Center, Alignment.CenterVertically) {
+            Row(Modifier.fillMaxHeight().padding(horizontal = 8.dp), Arrangement.Center, Alignment.CenterVertically) {
                 if (active && showIcon) Icon(Icons.Filled.Check, null)
                 content()
             }

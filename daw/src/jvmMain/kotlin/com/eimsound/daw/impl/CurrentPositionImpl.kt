@@ -26,7 +26,7 @@ class CurrentPositionImpl(
     override var projectRange by mutableStateOf(0..ppq * timeSigNumerator * 96)
     override val ppqCountOfBlock get() = (bufferSize / sampleRate / 60.0 * bpm * ppq).toInt()
 
-    override var isLooping by mutableStateOf(false)
+    override var isLooping by mutableStateOf(true)
     override var isRecording by mutableStateOf(false)
     override val isRealtime = true
     override var isProjectLooping by mutableStateOf(true)
