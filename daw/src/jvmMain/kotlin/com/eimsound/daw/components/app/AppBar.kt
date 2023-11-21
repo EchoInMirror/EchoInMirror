@@ -58,6 +58,10 @@ private fun CurrentTime() {
                     Modifier.size(20.dp).pointerHoverIcon(PointerIcon.Hand).clip(CircleShape).clickable { }
                 )
             },
+            colors = TextFieldDefaults.colors(
+                unfocusedIndicatorColor = MaterialTheme.colorScheme.outline,
+                focusedIndicatorColor = MaterialTheme.colorScheme.outline,
+            ),
             paddingValues = TextFieldDefaults.contentPaddingWithLabel(8.dp, 4.dp, 3.dp, 4.dp)
         )
     }) {
@@ -148,6 +152,10 @@ private fun BPM() {
                 EchoInMirror.currentPosition.bpm = (EchoInMirror.currentPosition.bpm + it).coerceIn(1.0, 600.0)
             }
         },
+        colors = TextFieldDefaults.colors(
+            unfocusedIndicatorColor = MaterialTheme.colorScheme.outline,
+            focusedIndicatorColor = MaterialTheme.colorScheme.outline,
+        ),
         keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
         paddingValues = TextFieldDefaults.contentPaddingWithLabel(6.dp, 6.dp, 3.dp, 4.dp)
     )
@@ -158,13 +166,15 @@ val EDITOR_TOOL_ICONS = arrayOf(Icons.Outlined.NearMe, Icons.Outlined.Edit, Eras
 
 val APP_BAR_ACTIONS_ICON_MODIFIER = Modifier.size(18.dp)
 private val LeftContent: @Composable RowScope.() -> Unit = {
-    SegmentedButtons {
+    SegmentedButtons(contentColor = MaterialTheme.colorScheme.outline) {
         EditorTool.entries.apply {
             forEachIndexed { index, tool ->
                 key(tool) {
-                    SegmentedButton({ EchoInMirror.editorTool = tool }, EchoInMirror.editorTool == tool, showIcon = false) {
+                    val selected = EchoInMirror.editorTool == tool
+                    SegmentedButton({ EchoInMirror.editorTool = tool }, selected, showIcon = false) {
                         if (index == 0) Spacer(Modifier.width(3.dp))
-                        Icon(EDITOR_TOOL_ICONS[index], tool.name, APP_BAR_ACTIONS_ICON_MODIFIER)
+                        Icon(EDITOR_TOOL_ICONS[index], tool.name, APP_BAR_ACTIONS_ICON_MODIFIER,
+                            if (selected) MaterialTheme.colorScheme.onBackground else LocalContentColor.current)
                         if (index == size - 1) Spacer(Modifier.width(3.dp))
                     }
                     if (index < size - 1) SegmentedDivider()

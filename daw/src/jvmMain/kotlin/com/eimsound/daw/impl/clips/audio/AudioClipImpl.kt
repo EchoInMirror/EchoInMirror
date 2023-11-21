@@ -121,6 +121,12 @@ class AudioClipFactoryImpl: AudioClipFactory {
         }
     }
 
+    override fun split(clip: TrackClip<AudioClip>, time: Int): AudioClip {
+        val newClip = createClip()
+        newClip.target = clip.clip.target
+        return newClip
+    }
+
     override fun save(clip: AudioClip, path: Path) { }
 
     override fun toString(): String {

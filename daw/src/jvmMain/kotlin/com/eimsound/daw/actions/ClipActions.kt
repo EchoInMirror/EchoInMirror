@@ -101,11 +101,12 @@ class ClipsEditAction(
     }
 }
 
-fun List<TrackClip<*>>.doClipsDisabledAction(isDisabled: Boolean = false) {
+fun List<TrackClip<*>>.doClipsDisabledAction(isDisabled: Boolean? = null) {
     runBlocking { EchoInMirror.undoManager.execute(ClipsDisabledAction(this@doClipsDisabledAction, isDisabled)) }
 }
 
-class ClipsDisabledAction(clips: List<TrackClip<*>>, isDisabled: Boolean = false) : ListDisabledAction(clips, isDisabled) {
-    override val name = if (isDisabled) "片段禁用 (${clips.size}个)" else "片段启用 (${clips.size}个)"
+class ClipsDisabledAction(clips: List<TrackClip<*>>, isDisabled: Boolean? = null) : ListDisabledAction(clips, isDisabled) {
+    override val name = if ((isDisabled ?: clips.firstOrNull()?.isDisabled?.let { !it }) != false)
+        "片段禁用 (${clips.size}个)" else "片段启用 (${clips.size}个)"
     override val icon = Icons.Default.Edit
 }

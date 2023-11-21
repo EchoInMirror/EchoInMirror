@@ -39,7 +39,7 @@ class MidiClipImpl(factory: ClipFactory<MidiClip>) : AbstractClip<MidiClip>(fact
     override val isExpandable = true
     override val duration get() = notes.lastOrNull()?.run { time + duration } ?: 0
 
-    val ccPrevValues = ByteArray(128)
+    internal val ccPrevValues = ByteArray(128)
 
     override fun toJson() = buildJsonObject {
         put("id", id)
@@ -136,6 +136,19 @@ class MidiClipFactoryImpl : MidiClipFactory {
                 midiBuffer.add((endTimeInSamples - timeInSamples).toInt().coerceAtLeast(0))
             }
         }
+    }
+
+    override fun split(clip: TrackClip<MidiClip>, time: Int): MidiClip {
+        val newClip = createClip()
+        clip.clip.notes.removeIf {
+            if (it.time + it.duration + clip.time <= time) return@removeIf false
+            it.time -= time
+            newClip.notes.add(it)
+            return@removeIf true
+        }
+        clip.clip.notes.update()
+        newClip.notes.sort()
+        return newClip
     }
 
     @Composable

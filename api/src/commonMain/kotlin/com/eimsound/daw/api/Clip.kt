@@ -49,6 +49,8 @@ interface ClipFactory<T: Clip> {
     )
     fun save(clip: T, path: Path) { }
     fun getEditor(clip: TrackClip<T>): ClipEditor?
+    fun split(clip: TrackClip<T>, time: Int): T
+
     @Composable
     fun PlaylistContent(
         clip: TrackClip<T>, track: Track, contentColor: Color,

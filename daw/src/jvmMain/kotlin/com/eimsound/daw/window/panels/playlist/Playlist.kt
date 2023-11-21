@@ -77,6 +77,7 @@ class Playlist : Panel, MultiSelectableEditor {
     internal var deltaY by mutableStateOf(0)
     internal val trackHeights = arrayListOf<TrackToHeight>()
     internal val deletionList = mutableStateSetOf<TrackClip<*>>()
+    internal val disableList = mutableStateSetOf<TrackClip<*>>()
     internal val trackMovingFlags = WeakHashMap<Track, TrackMoveFlags>()
 
     companion object {

@@ -29,6 +29,7 @@ import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.util.fastForEach
 import com.eimsound.audioprocessor.oneBarPPQ
 import com.eimsound.daw.actions.doClipsAmountAction
+import com.eimsound.daw.actions.doClipsDisabledAction
 import com.eimsound.daw.actions.doClipsEditActionAction
 import com.eimsound.daw.api.*
 import com.eimsound.daw.api.processor.Track
@@ -36,6 +37,7 @@ import com.eimsound.daw.components.utils.EditAction
 import com.eimsound.daw.components.utils.HorizontalResize
 import com.eimsound.daw.components.utils.toOnSurfaceColor
 import com.eimsound.daw.utils.fitInUnit
+import com.eimsound.daw.utils.fitInUnitFloor
 import com.eimsound.daw.utils.isCrossPlatformCtrlPressed
 import kotlin.math.absoluteValue
 
@@ -57,6 +59,29 @@ private suspend fun AwaitPointerEventScope.handleDragEvent(playlist: Playlist, c
                             if (event.keyboardModifiers.isCrossPlatformCtrlPressed) continue
                             selectedClips.clear()
                             listOf(clip).doClipsAmountAction(true)
+                            continue
+                        }
+                        EditorTool.MUTE -> {
+                            if (event.keyboardModifiers.isCrossPlatformCtrlPressed) continue
+                            selectedClips.clear()
+                            listOf(clip).doClipsDisabledAction()
+                            continue
+                        }
+                        EditorTool.CUT -> {
+                            if (event.keyboardModifiers.isCrossPlatformCtrlPressed) continue
+                            selectedClips.clear()
+                            val noteWidthPx = noteWidth.value.toPx()
+                            val start = (verticalScrollState.value / noteWidthPx - clip.time).coerceAtLeast(0F)
+                            val clickTime = (event.changes.first().position.x / noteWidthPx + start)
+                                .fitInUnit(EchoInMirror.editUnit)
+                            @Suppress("TYPE_MISMATCH")
+                            val newClip = clip.clip.factory.split(clip, clickTime)
+                            track.clips.add(ClipManager.instance.createTrackClip(
+                                newClip, clip.time + clickTime, clip.duration - clickTime, 0, track
+                            ))
+                            clip.duration -= clickTime
+                            track.clips.sort()
+                            track.clips.update()
                             continue
                         }
                         else -> {
@@ -236,7 +261,12 @@ private fun Playlist.ClipItem(it: TrackClip<*>, track: Track, index: Int) {
                 ) {
                     if (!deletionList.contains(it)) {
                         val trackColor = curTrack.color
-                        val isDisabled = curTrack.isDisabled || it.isDisabled
+                        var isDisabled = curTrack.isDisabled
+                        if (!isDisabled) {
+                            val tmp = it.isDisabled
+                            isDisabled = if (action0 == EditAction.DISABLE && disableList.contains(it)) !tmp
+                            else tmp
+                        }
                         Column(
                             Modifier
                                 .fillMaxSize()
@@ -305,7 +335,7 @@ private fun Density.createNewClip(playlist: Playlist, track: Track, x: Float) {
     val len = EchoInMirror.currentPosition.oneBarPPQ
     val clip = ClipManager.instance.createTrackClip(
         ClipManager.instance.defaultMidiClipFactory.createClip(),
-        (x / playlist.noteWidth.value.toPx()).fitInUnit(len),
+        (x / playlist.noteWidth.value.toPx()).fitInUnitFloor(len),
         len,
         0,
         track
