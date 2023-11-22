@@ -90,6 +90,11 @@ class EnvelopeClipFactoryImpl: EnvelopeClipFactory {
         TODO("Not yet implemented")
     }
 
+    override fun copy(clip: EnvelopeClip) = EnvelopeClipImpl(this).apply {
+//        envelope.copyFrom(clip.envelope)
+//        controllers.addAll(clip.controllers.map { it.copy() })
+    }
+
     override fun save(clip: EnvelopeClip, path: Path) { }
 
     override fun toString(): String {

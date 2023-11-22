@@ -50,6 +50,7 @@ interface ClipFactory<T: Clip> {
     fun save(clip: T, path: Path) { }
     fun getEditor(clip: TrackClip<T>): ClipEditor?
     fun split(clip: TrackClip<T>, time: Int): T
+    fun copy(clip: T): T
 
     @Composable
     fun PlaylistContent(
@@ -114,6 +115,8 @@ interface Clip : JsonSerializable {
 
 typealias MidiCCEvents = Map<Int, BaseEnvelopePointList>
 typealias MutableMidiCCEvents = MutableMap<Int, EnvelopePointList>
+
+fun MutableMidiCCEvents.copy() = hashMapOf<Int, EnvelopePointList>().apply { putAll(this@copy) }
 
 /**
  * @see com.eimsound.daw.impl.clips.midi.MidiClipImpl

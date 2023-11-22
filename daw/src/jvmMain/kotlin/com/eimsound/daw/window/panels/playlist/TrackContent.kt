@@ -293,9 +293,9 @@ private fun Playlist.ClipItem(it: TrackClip<*>, track: Track, index: Int) {
                                     textDecoration = if (isDisabled) TextDecoration.LineThrough else null
                                 )
                             }
-                            @Suppress("TYPE_MISMATCH")
-                            it.clip.factory.PlaylistContent(
-                                it, track,
+                            @Suppress("UNCHECKED_CAST")
+                            (it.clip.factory as ClipFactory<Clip>).PlaylistContent(
+                                it as TrackClip<Clip>, track,
                                 contentColor.copy(animateFloatAsState(if (isSelected) 1F else 0.8F).value),
                                 noteWidth,
                                 (scrollXPPQ - clipStartPPQOnMove).coerceAtLeast(0F) +

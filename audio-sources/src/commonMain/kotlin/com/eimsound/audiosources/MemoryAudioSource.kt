@@ -3,20 +3,25 @@ package com.eimsound.audiosources
 import com.eimsound.audioprocessor.*
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.put
 
-class DefaultMemoryAudioSource(override val factory: AudioSourceFactory<MemoryAudioSource>, override val source: AudioSource):
-    MemoryAudioSource {
-    override val length get() = source.length
-    override val channels get() = source.channels
-    override val sampleRate get() = source.sampleRate
+class DefaultMemoryAudioSource(
+    override val factory: MemoryAudioSourceFactory<MemoryAudioSource>,
+    private var samplesBuffer: Array<FloatArray>,
+    override val sampleRate: Float
+): MemoryAudioSource {
+    override val source: AudioSource? = null
+    override val length get() = samplesBuffer.firstOrNull()?.size?.toLong() ?: 0
+    override val channels get() = samplesBuffer.size
     private var sampleBuffer = Array(channels) { FloatArray(length.toInt()) }
 
-    init {
-        source.getSamples(0, length.toInt(), sampleBuffer)
-        source.close()
-    }
+    constructor(factory: MemoryAudioSourceFactory<MemoryAudioSource>, source: AudioSource):
+            this(factory, source.run {
+                val len = source.length.toInt()
+                val sampleBuffer = Array(source.channels) { FloatArray(len) }
+                source.getSamples(0, len, sampleBuffer)
+                source.close()
+                sampleBuffer
+            }, source.sampleRate)
 
     override fun getSamples(start: Long, length: Int, buffers: Array<FloatArray>): Int {
         val len = this.length
@@ -32,14 +37,13 @@ class DefaultMemoryAudioSource(override val factory: AudioSourceFactory<MemoryAu
 
     override fun close() { sampleBuffer = emptyArray() }
 
+    override fun copy() = DefaultMemoryAudioSource(factory, samplesBuffer, sampleRate)
+
     override fun toString(): String {
         return "DefaultMemoryAudioSource(source=$source, length=$length, channels=$channels, sampleRate=$sampleRate)"
     }
 
-    override fun toJson() = buildJsonObject {
-        put("factory", factory.name)
-        put("source", source.toJson())
-    }
+    override fun toJson() = source?.toJson() ?: throw IllegalStateException("No source")
 
     override fun fromJson(json: JsonElement) = throw UnsupportedOperationException()
 }

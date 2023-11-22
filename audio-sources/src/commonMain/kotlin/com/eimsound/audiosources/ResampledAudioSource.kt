@@ -48,6 +48,7 @@ class DefaultResampledAudioSource(
         put("source", source.toJson())
     }
     override fun fromJson(json: JsonElement) = throw UnsupportedOperationException()
+    override fun copy() = DefaultResampledAudioSource(factory, source.copy(), factor)
 
     override fun toString(): String {
         return "DefaultResampledAudioSource(source=$source, factor=$factor, channels=$channels, sampleRate=$sampleRate, length=$length)"

@@ -166,8 +166,11 @@ class MidiClipFactoryImpl : MidiClipFactory {
         }
     }
 
-    override fun toString(): String {
-        return "MidiClipFactoryImpl"
+    override fun toString() = "MidiClipFactoryImpl"
+
+    override fun copy(clip: MidiClip) = MidiClipImpl(this).apply {
+        notes.addAll(clip.notes)
+        events.putAll(clip.events)
     }
 }
 

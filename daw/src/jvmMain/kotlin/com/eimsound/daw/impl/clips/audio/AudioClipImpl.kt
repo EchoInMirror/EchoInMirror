@@ -5,6 +5,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.MusicNote
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import com.eimsound.audioprocessor.*
 import com.eimsound.audioprocessor.data.*
@@ -112,7 +113,7 @@ class AudioClipFactoryImpl: AudioClipFactory {
         clip: TrackClip<AudioClip>, track: Track, contentColor: Color,
         noteWidth: MutableState<Dp>, startPPQ: Float, widthPPQ: Float
     ) {
-        val isDrawMinAndMax = noteWidth.value.value < 1
+        val isDrawMinAndMax = noteWidth.value.value < LocalDensity.current.density
         Box {
             Waveform(clip.clip.thumbnail, EchoInMirror.currentPosition, startPPQ, widthPPQ, clip.clip.volumeEnvelope, contentColor, isDrawMinAndMax)
             remember(clip) {
@@ -121,16 +122,18 @@ class AudioClipFactoryImpl: AudioClipFactory {
         }
     }
 
-    override fun split(clip: TrackClip<AudioClip>, time: Int): AudioClip {
-        val newClip = createClip()
-        newClip.target = clip.clip.target
-        return newClip
-    }
+    override fun split(clip: TrackClip<AudioClip>, time: Int) = copy(clip.clip)
 
     override fun save(clip: AudioClip, path: Path) { }
 
     override fun toString(): String {
         return "AudioClipFactoryImpl"
+    }
+
+    override fun copy(clip: AudioClip): AudioClip {
+        return createClip().apply {
+            target = clip.target.copy()
+        }
     }
 }
 
@@ -141,3 +144,4 @@ class AudioFileExtensionHandler : AbstractFileExtensionHandler() {
 
     override suspend fun createClip(file: Path, data: Any?) = ClipManager.instance.defaultAudioClipFactory.createClip(file)
 }
+

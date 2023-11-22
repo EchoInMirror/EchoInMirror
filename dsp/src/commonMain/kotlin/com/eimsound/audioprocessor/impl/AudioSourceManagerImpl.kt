@@ -5,12 +5,13 @@ import com.eimsound.audioprocessor.*
 import com.eimsound.daw.commons.NoSuchFactoryException
 import com.eimsound.daw.commons.json.asString
 import kotlinx.serialization.json.JsonObject
+import java.lang.ref.WeakReference
 import java.nio.file.Path
 import java.util.*
 
-const val IN_MEMORY_FILE_SIZE = 64 * 1024 * 1024 // 64 MB
-
 class AudioSourceManagerImpl : AudioSourceManager {
+    override val cachedFileSize = 32 * 1024 * 1024 // 32MB
+    override val fileSourcesCache = mutableMapOf<Path, WeakReference<MemoryAudioSource>>()
     override val factories = mutableStateMapOf<String, AudioSourceFactory<*>>()
     override val supportedFormats get() = factories.values.mapNotNull { it as? FileAudioSourceFactory<*> }
         .flatMap { it.supportedFormats }.toSet()
@@ -53,10 +54,6 @@ class AudioSourceManagerImpl : AudioSourceManager {
             null
         }
     } ?: throw UnsupportedOperationException("No factory supports file $file")
-
-    override fun createAutoWrappedAudioSource(file: Path): AudioSource = createAudioSource(file).run {
-        if (length <= IN_MEMORY_FILE_SIZE) createMemorySource(this) else this
-    }
 
     override fun createResampledSource(source: AudioSource, factory: String?) =
         createAudioSource<ResampledAudioSource, ResampledAudioSourceFactory<ResampledAudioSource>>(source, factory)
