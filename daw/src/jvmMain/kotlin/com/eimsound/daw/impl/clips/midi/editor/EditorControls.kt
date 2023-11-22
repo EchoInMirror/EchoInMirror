@@ -132,12 +132,12 @@ internal fun EditorControls(editor: DefaultMidiClipEditor) {
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 editor.clip.clip.notes.read()
-                Text("禁用", Modifier.weight(1f), style = MaterialTheme.typography.labelLarge)
+                Text("启用", Modifier.weight(1f), style = MaterialTheme.typography.labelLarge)
                 val cur = currentSelectedNote ?: editor.selectedNotes.firstOrNull()
-                val curState = cur?.disabled ?: true
-                Checkbox(curState, {
+                val curState = cur?.isDisabled ?: false
+                Checkbox(!curState, {
                     if (cur == null) return@Checkbox
-                    editor.clip.clip.doNoteDisabledAction(editor.selectedNotes.toTypedArray(), !curState)
+                    editor.clip.clip.doNoteDisabledAction(editor.selectedNotes.toList(), !curState)
                 })
             }
         }

@@ -176,14 +176,14 @@ private fun TrackItemControllers(track: Track) {
                 if (track.isSolo) MaterialTheme.colorScheme.warning else MaterialTheme.colorScheme.primary.copy(0.5F)
             )
         }
-        IconButton({ track.isBypassed = !track.isBypassed }, 24.dp) {
+        IconButton({ track.isDisabled = !track.isDisabled }, 24.dp) {
             Icon(
-                if (track.isBypassed) Icons.Filled.VolumeOff else Icons.Filled.VolumeUp,
+                if (track.isDisabled) Icons.Filled.VolumeOff else Icons.Filled.VolumeUp,
                 null, Modifier.size(18.dp),
-                if (track.isBypassed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                if (track.isDisabled) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
             )
         }
-        VolumeSlider(track, Modifier.weight(1F), false, !track.isBypassed)
+        VolumeSlider(track, Modifier.weight(1F), false, !track.isDisabled)
     }
 }
 
@@ -246,10 +246,10 @@ private fun TrackItem(playlist: Playlist, track: Track, parentTrack: Track, inde
             ) {
                 Text(
                     track.name,
-                    color = if (track.isBypassed) LocalContentColor.current.copy(alpha = 0.5F) else LocalContentColor.current,
+                    color = if (track.isDisabled) LocalContentColor.current.copy(alpha = 0.5F) else LocalContentColor.current,
                     style = MaterialTheme.typography.labelLarge,
                     overflow = TextOverflow.Ellipsis, maxLines = 1,
-                    textDecoration = if (track.isBypassed) TextDecoration.LineThrough else null
+                    textDecoration = if (track.isDisabled) TextDecoration.LineThrough else null
                 )
 
                 if (curHeight.value >= 50) TrackItemControllers(track)

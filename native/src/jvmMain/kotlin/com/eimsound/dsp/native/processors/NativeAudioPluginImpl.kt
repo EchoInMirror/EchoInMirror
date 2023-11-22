@@ -147,22 +147,29 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
     override suspend fun createAudioProcessor(description: AudioProcessorDescription): NativeAudioPlugin {
         if (description !is NativeAudioPluginDescription)
             throw NoSuchAudioProcessorException(description.identifier, name)
-        pluginLoadingMutexes.getOrPut(description.fileOrIdentifier) { Mutex() }.withLock {
+        loadMutex.withLock {
+            pluginLoadingMutexes.getOrPut(description.fileOrIdentifier) { Mutex() }
+        }.withLock {
             logger.info { "Creating native audio plugin: $description" }
             return NativeAudioPluginImpl(description, this).apply {
                 launch(getNativeHostPath(description), null)
+                delay(20)
             }
         }
     }
 
     override suspend fun createAudioProcessor(path: Path): NativeAudioPlugin {
         val json = path.resolve("processor.json").toJsonElement() as JsonObject
-        println("${descriptions.size} ${json["identifier"]}")
         val description = descriptions.find { it.identifier == json["identifier"]!!.asString() }
             ?: throw NoSuchAudioProcessorException(path.toString(), name)
-        logger.info { "Creating native audio plugin: $description in $path" }
-        return pluginLoadingMutexes.getOrPut(description.fileOrIdentifier) { Mutex() }.withLock {
-            NativeAudioPluginImpl(description, this).apply { restore(path) }
+        loadMutex.withLock {
+            pluginLoadingMutexes.getOrPut(description.fileOrIdentifier) { Mutex() }
+        }.withLock {
+            logger.info { "Creating native audio plugin: $description in $path" }
+            return NativeAudioPluginImpl(description, this).apply {
+                restore(path)
+                delay(20)
+            }
         }
     }
 
@@ -195,7 +202,7 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
                         fromJsonFile(configFile)
                         return@withLock
                     } catch (e: Throwable) {
-                        e.printStackTrace()
+                        logger.error(e) { "Failed to load native audio plugin config file: $configFile" }
                         // Files.delete(NATIVE_AUDIO_PLUGIN_CONFIG)
                     }
                 }

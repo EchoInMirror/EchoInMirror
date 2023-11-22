@@ -116,6 +116,7 @@ fun Selector(
     boxModifier: Modifier = Modifier,
     enabled: Boolean = true,
     matcher: PointerMatcher = PointerMatcher.Primary,
+    content: (@Composable () -> Unit)? = null,
     onSelected: (String) -> Unit,
 ) {
     val filter = remember { mutableStateOf<String?>(null) }
@@ -144,9 +145,10 @@ fun Selector(
             }
         }
     }, modifier = boxModifier, enabled = enabled, matcher = matcher, pass = PointerEventPass.Initial) {
-        CustomTextField(filter.value ?: selected, {
+        if (content == null) CustomTextField(filter.value ?: selected, {
             filter.value = it.ifEmpty { null }
         }, Modifier.fillMaxWidth().pointerHoverIcon(PointerIcon.Hand))
+        else content()
     }
 }
 

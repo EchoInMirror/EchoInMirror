@@ -2,10 +2,10 @@
 <Configuration status="WARN" shutdownHook="disable">
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
-            <PatternLayout pattern="[%d{HH:mm:ss} %level]: [%logger] %msg%n%xEx{full}" />
+            <PatternLayout pattern="[%d{HH:mm:ss} %level]: [%c{1}] %msg%n%xEx{full}" />
         </Console>
         <RollingRandomAccessFile name="File" fileName="logs/latest.log" filePattern="logs/%d{yyyy-MM-dd}-%i.log">
-            <PatternLayout pattern="[%d{HH:mm:ss}] [%t/%level]: [%logger] %msg{strip}%n%xEx{full}" />
+            <PatternLayout pattern="[%d{HH:mm:ss}] [%t/%level]: [%c{1}] %msg{strip}%n%xEx{full}" />
             <Policies>
                 <TimeBasedTriggeringPolicy />
                 <OnStartupTriggeringPolicy />

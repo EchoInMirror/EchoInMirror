@@ -6,6 +6,7 @@ import androidx.compose.runtime.setValue
 import com.eimsound.daw.api.Clip
 import com.eimsound.daw.api.TrackClip
 import com.eimsound.daw.api.processor.Track
+import com.eimsound.daw.commons.json.asBoolean
 import com.eimsound.daw.commons.json.asInt
 import com.eimsound.daw.commons.json.putNotDefault
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -18,6 +19,7 @@ class TrackClipImpl <T: Clip> (override val clip: T, time: Int = 0, duration: In
                                track: Track? = null) : TrackClip<T> {
     override var time by mutableStateOf(time)
     override var duration by mutableStateOf(duration)
+    override var isDisabled by mutableStateOf(false)
     private var _start by mutableStateOf(start)
     override var track by mutableStateOf(track)
 
@@ -38,6 +40,7 @@ class TrackClipImpl <T: Clip> (override val clip: T, time: Int = 0, duration: In
         putNotDefault("time", time)
         putNotDefault("duration", duration)
         putNotDefault("start", start)
+        putNotDefault("isDisabled", isDisabled)
         put("clip", clip.toJson())
     }
 
@@ -46,6 +49,7 @@ class TrackClipImpl <T: Clip> (override val clip: T, time: Int = 0, duration: In
         json["time"]?.asInt()?.let { time = it }
         json["duration"]?.asInt()?.let { duration = it }
         json["start"]?.asInt()?.let { start = it }
+        json["isDisabled"]?.asBoolean()?.let { isDisabled = it }
     }
 
     override fun copy(time: Int, duration: Int, start: Int, clip: T, currentIndex: Int, track: Track?) =

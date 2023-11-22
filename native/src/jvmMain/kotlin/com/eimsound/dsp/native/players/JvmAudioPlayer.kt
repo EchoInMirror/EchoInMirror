@@ -22,6 +22,9 @@ class JvmAudioPlayer(
     private lateinit var outputBuffer: ByteArray
     override var outputLatency: Int = 0
     override var inputLatency: Int = 0
+    override val availableSampleRates = AudioSystem.getMixer(mixer).targetLineInfo.flatMap { info ->
+        if (info is DataLine.Info) info.formats.map { it.sampleRate.toInt() }.filter { it > 0 }.distinct() else emptyList()
+    }.toIntArray()
 
     init {
         if (sdl != null) {
@@ -31,17 +34,11 @@ class JvmAudioPlayer(
 
         var le: Throwable? = null
         try {
-            tryOpenAudioDevice(currentPosition.sampleRate)
+            val cur = currentPosition.sampleRate
+            tryOpenAudioDevice(if (availableSampleRates.contains(cur)) cur else availableSampleRates.lastOrNull() ?:
+                throw LineUnavailableException("Failed to open audio player!"))
         } catch (e: Throwable) {
             le = e
-            for (it in availableSampleRates) {
-                try {
-                    tryOpenAudioDevice(it)
-                    break
-                } catch (e2: Throwable) {
-                    le = e2
-                }
-            }
         }
 
         if (sdl == null) throw le ?: LineUnavailableException("Failed to open audio player!")

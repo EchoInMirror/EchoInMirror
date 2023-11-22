@@ -7,7 +7,7 @@ import com.eimsound.audioprocessor.data.Quantification
 import com.eimsound.daw.api.processor.Bus
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.api.window.WindowManager
-import com.eimsound.daw.commons.UndoManager
+import com.eimsound.daw.commons.actions.UndoManager
 import org.pf4j.PluginManager
 import java.util.*
 
@@ -27,14 +27,21 @@ interface IEchoInMirror {
     val windowManager: WindowManager
     val undoManager: UndoManager
     val audioThumbnailCache: AudioThumbnailCache
-    var quantification: Quantification
 
     var selectedTrack: Track?
     var selectedClip: TrackClip<*>?
+
+    var editorTool: EditorTool
+    var quantification: Quantification
 
     fun createAudioPlayer(): AudioPlayer
 
     fun reloadServices()
 
     val editUnit: Int
+}
+
+// Consider to make this extendable, if you want to add your own tool, you can open an issue on GitHub.
+enum class EditorTool {
+    CURSOR, PENCIL, ERASER, MUTE, CUT
 }

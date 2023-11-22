@@ -20,6 +20,7 @@ fun Int.fitInUnit(unit: Int) = this / unit * unit
 fun Int.fitInUnitCeil(unit: Int) = ceil(toDouble() / unit).toInt() * unit
 
 fun Float.fitInUnit(unit: Int) = (this / unit).roundToInt() * unit
+fun Float.fitInUnitFloor(unit: Int) = (this / unit).toInt() * unit
 
 inline fun <T> List<T>.binarySearch(comparator: (T) -> Boolean): Int {
     var l = 0

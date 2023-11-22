@@ -43,6 +43,7 @@ object Configuration : JsonSerializable {
     var audioDeviceFactoryName by mutableStateOf("")
     var audioDeviceName by mutableStateOf("")
     var autoCutOver0db by mutableStateOf(true)
+    var isTimeDisplayInBeats by mutableStateOf(false)
     var userId = UUID.randomUUID().toString()
         private set
 
@@ -93,6 +94,7 @@ object Configuration : JsonSerializable {
         put("audioDeviceName", audioDeviceName)
         put("autoCutOver0db", autoCutOver0db)
         put("isDarkTheme", EchoInMirror.windowManager.isDarkTheme)
+        put("isTimeDisplayInBeats", isTimeDisplayInBeats)
     }
 
     override fun fromJson(json: JsonElement) {
@@ -102,6 +104,7 @@ object Configuration : JsonSerializable {
         json["audioDeviceName"]?.asString()?.let { audioDeviceName = it }
         json["autoCutOver0db"]?.asBoolean()?.let { autoCutOver0db = it }
         json["isDarkTheme"]?.asBoolean()?.let { EchoInMirror.windowManager.isDarkTheme = it }
+        json["isTimeDisplayInBeats"]?.asBoolean()?.let { isTimeDisplayInBeats = it }
         val id = json["userId"]?.asString()
         if (id == null) save() else userId = id
     }

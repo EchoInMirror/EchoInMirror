@@ -1,9 +1,9 @@
 package com.eimsound.daw.impl
 
 import androidx.compose.runtime.*
-import com.eimsound.daw.commons.UndoManager
-import com.eimsound.daw.commons.UndoableAction
-import com.eimsound.daw.commons.UndoableActionExecuteException
+import com.eimsound.daw.commons.actions.UndoManager
+import com.eimsound.daw.commons.actions.UndoableAction
+import com.eimsound.daw.commons.actions.UndoableActionExecuteException
 import com.eimsound.daw.utils.ManualState
 import io.github.oshai.kotlinlogging.KotlinLogging
 

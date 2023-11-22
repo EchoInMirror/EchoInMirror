@@ -86,6 +86,10 @@ class EnvelopeClipFactoryImpl: EnvelopeClipFactory {
         )
     }
 
+    override fun split(clip: TrackClip<EnvelopeClip>, time: Int): EnvelopeClip {
+        TODO("Not yet implemented")
+    }
+
     override fun save(clip: EnvelopeClip, path: Path) { }
 
     override fun toString(): String {

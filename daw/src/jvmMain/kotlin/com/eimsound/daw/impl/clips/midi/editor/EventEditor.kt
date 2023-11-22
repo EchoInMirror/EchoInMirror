@@ -45,6 +45,7 @@ import com.eimsound.daw.components.utils.clickableWithIcon
 import com.eimsound.daw.utils.FloatRange
 import com.eimsound.daw.commons.MultiSelectableEditor
 import com.eimsound.daw.commons.SerializableEditor
+import com.eimsound.daw.dawutils.SHOULD_SCROLL_REVERSE
 import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
 
@@ -83,7 +84,7 @@ class VelocityEvent(private val editor: MidiClipEditor) : EventType {
                     val y = (size.height * (1 - it.velocity / 127F) + (if (isSelected || selectedNote == it) offsetOfDelta else 0f))
                         .coerceIn(0f, size.height - 1)
                     var color = if (isSelected) primaryColor else trackColor
-                    if (it.disabled) color = color.copy(alpha = 0.5F)
+                    if (it.isDisabled) color = color.copy(alpha = 0.5F)
                     drawLine(color, Offset(x, y + circleRadius), Offset(x, size.height), 2 * density)
                     drawCircle(color, circleRadius, Offset(x, y))
                 }
@@ -277,7 +278,7 @@ internal fun EventEditor(editor: DefaultMidiClipEditor) {
             Row(Modifier.fillMaxSize()) {
                 EventHints(editor)
                 Box(Modifier.weight(1f).fillMaxHeight().background(MaterialTheme.colorScheme.background)
-                    .scrollable(horizontalScrollState, Orientation.Horizontal, reverseDirection = true)
+                    .scrollable(horizontalScrollState, Orientation.Horizontal, reverseDirection = SHOULD_SCROLL_REVERSE)
                     .scalableNoteWidth(noteWidth, horizontalScrollState)
                 ) {
                     val range = remember(clip.time, clip.duration) { clip.time..(clip.time + clip.duration) }

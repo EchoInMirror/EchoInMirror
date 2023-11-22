@@ -77,6 +77,7 @@ class Playlist : Panel, MultiSelectableEditor {
     internal var deltaY by mutableStateOf(0)
     internal val trackHeights = arrayListOf<TrackToHeight>()
     internal val deletionList = mutableStateSetOf<TrackClip<*>>()
+    internal val disableList = mutableStateSetOf<TrackClip<*>>()
     internal val trackMovingFlags = WeakHashMap<Track, TrackMoveFlags>()
 
     companion object {
@@ -272,11 +273,10 @@ class Playlist : Panel, MultiSelectableEditor {
     @Composable
     private fun TrackContents() {
         Column(Modifier.verticalScroll(verticalScrollState).fillMaxSize()) {
-            val localDensity = LocalDensity.current
             Divider()
             var i = 0
-            EchoInMirror.bus!!.subTracks.forEach {
-                key(it) { i += TrackContent(this@Playlist, it, i, localDensity) }
+            EchoInMirror.bus!!.subTracks.fastForEach {
+                key(it) { i += TrackContent(this@Playlist, it, i) }
             }
         }
     }

@@ -7,10 +7,11 @@ import com.eimsound.audioprocessor.data.midi.NoteMessage
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.MidiClip
 import com.eimsound.daw.api.TrackClip
+import com.eimsound.daw.commons.actions.ListDisabledAction
 import com.eimsound.daw.components.icons.PencilMinus
 import com.eimsound.daw.components.icons.PencilPlus
-import com.eimsound.daw.commons.ReversibleAction
-import com.eimsound.daw.commons.UndoableAction
+import com.eimsound.daw.commons.actions.ReversibleAction
+import com.eimsound.daw.commons.actions.UndoableAction
 import kotlinx.coroutines.runBlocking
 
 fun TrackClip<MidiClip>.doNoteAmountAction(noteMessage: Collection<NoteMessage>, isDelete: Boolean = false) {
@@ -39,8 +40,8 @@ fun MidiClip.doNoteVelocityAction(noteMessage: Array<NoteMessage>, deltaVelocity
         noteMessage, deltaVelocity)) }
 }
 
-fun MidiClip.doNoteDisabledAction(noteMessage: Array<NoteMessage>, isDisabled: Boolean = false) {
-    runBlocking { EchoInMirror.undoManager.execute(NoteDisabledAction(this@doNoteDisabledAction,
+fun MidiClip.doNoteDisabledAction(noteMessage: List<NoteMessage>, isDisabled: Boolean = false) {
+    runBlocking { EchoInMirror.undoManager.execute(NotesDisabledAction(this@doNoteDisabledAction,
         noteMessage, isDisabled)) }
 }
 
@@ -113,18 +114,11 @@ class NoteVelocityAction(
     }
 }
 
-class NoteDisabledAction(
-    private val clip: MidiClip, private val notes: Array<NoteMessage>,
-    private val isDisabled: Boolean = false
-) : ReversibleAction() {
-    private val oldStates = notes.map { it.disabled }
+class NotesDisabledAction(
+    private val clip: MidiClip, notes: List<NoteMessage>, isDisabled: Boolean = false
+) : ListDisabledAction(notes, isDisabled) {
     override val name = if (isDisabled) "音符禁用 (${notes.size}个)" else "音符启用 (${notes.size}个)"
     override val icon = Icons.Default.Edit
 
-    override suspend fun perform(isForward: Boolean): Boolean {
-        if (isForward) notes.forEach { it.disabled = isDisabled }
-        else notes.forEachIndexed { index, noteMessage -> noteMessage.disabled = oldStates[index] }
-        clip.notes.update()
-        return true
-    }
+    override fun afterPerform() { clip.notes.update() }
 }

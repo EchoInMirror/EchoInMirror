@@ -49,6 +49,8 @@ interface ClipFactory<T: Clip> {
     )
     fun save(clip: T, path: Path) { }
     fun getEditor(clip: TrackClip<T>): ClipEditor?
+    fun split(clip: TrackClip<T>, time: Int): T
+
     @Composable
     fun PlaylistContent(
         clip: TrackClip<T>, track: Track, contentColor: Color,
@@ -162,7 +164,7 @@ abstract class AbstractClip<T: Clip>(override val factory: ClipFactory<T>) : Cli
 /**
  * @see com.eimsound.daw.impl.clips.TrackClipImpl
  */
-interface TrackClip<T: Clip> : JsonSerializable {
+interface TrackClip<T: Clip> : JsonSerializable, Disabled {
     var time: Int
     var duration: Int
     var start: Int
@@ -171,6 +173,7 @@ interface TrackClip<T: Clip> : JsonSerializable {
     var currentIndex: Int
     @Transient
     var track: Track?
+
     fun reset()
     fun copy(time: Int = this.time, duration: Int = this.duration, start: Int = this.start,
              clip: T = this.clip, currentIndex: Int = this.currentIndex, track: Track? = this.track

@@ -70,10 +70,10 @@ fun FloatingLayerProvider.openAudioProcessorMenu(
         Text("延迟: ${p.processor.latency} samples", Modifier.padding(start = 8.dp))
     }) {
         MenuHeader(
-            p.processor.name, !p.processor.isBypassed,
+            p.processor.name, !p.processor.isDisabled,
             if (p.processor.description.isInstrument) Icons.Default.Piano else Icons.Default.SettingsInputHdmi
         ) {
-            CustomCheckbox(!p.processor.isBypassed, { p.processor.isBypassed = !it }, Modifier.padding(start = 8.dp))
+            CustomCheckbox(!p.processor.isDisabled, { p.processor.isDisabled = !it }, Modifier.padding(start = 8.dp))
         }
         Divider()
     }

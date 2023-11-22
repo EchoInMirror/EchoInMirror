@@ -67,8 +67,8 @@ fun FloatingLayerProvider.openTrackMenu(
         override val canPaste get() = copiedTrackPath != null
         override val hasSelected get() = list != null && track !is Bus
     }, false) {
-        MenuHeader(track.name, !track.isBypassed, Icons.Default.ViewList) {
-            CustomCheckbox(!track.isBypassed, { track.isBypassed = !it }, Modifier.padding(start = 8.dp))
+        MenuHeader(track.name, !track.isDisabled, Icons.Default.ViewList) {
+            CustomCheckbox(!track.isDisabled, { track.isDisabled = !it }, Modifier.padding(start = 8.dp))
         }
         Divider()
     }

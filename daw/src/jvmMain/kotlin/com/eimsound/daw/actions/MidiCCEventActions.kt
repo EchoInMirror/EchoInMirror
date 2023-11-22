@@ -6,7 +6,7 @@ import androidx.compose.material.icons.filled.Close
 import com.eimsound.audioprocessor.data.EnvelopePointList
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.MutableMidiCCEvents
-import com.eimsound.daw.commons.ReversibleAction
+import com.eimsound.daw.commons.actions.ReversibleAction
 import kotlinx.coroutines.runBlocking
 
 fun MutableMidiCCEvents.doAddOrRemoveMidiCCEventAction(id: Int, points: EnvelopePointList? = null) {

@@ -4,6 +4,10 @@ import androidx.compose.foundation.gestures.*
 import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAll
+import com.eimsound.daw.actions.doClipsAmountAction
+import com.eimsound.daw.actions.doClipsDisabledAction
+import com.eimsound.daw.api.EchoInMirror
+import com.eimsound.daw.api.EditorTool
 import com.eimsound.daw.api.TrackClip
 import com.eimsound.daw.components.calcScroll
 import com.eimsound.daw.components.utils.EditAction
@@ -40,14 +44,28 @@ internal suspend fun PointerInputScope.handleMouseEvent(playlist: Playlist, scop
                     }
                     PointerEventType.Press -> {
                         if (event.buttons.isPrimaryPressed) {
-                            if (event.keyboardModifiers.isCrossPlatformCtrlPressed) action = EditAction.SELECT
-                            selectedClips.clear()
+                            if (event.keyboardModifiers.isCrossPlatformCtrlPressed) {
+                                action = EditAction.SELECT
+                                selectedClips.clear()
+                                break
+                            }
+                            when (EchoInMirror.editorTool) {
+                                EditorTool.ERASER -> {
+                                    selectedClips.clear()
+                                    action = EditAction.DELETE
+                                }
+                                EditorTool.MUTE -> {
+                                    selectedClips.clear()
+                                    action = EditAction.DISABLE
+                                }
+                                else -> {}
+                            }
                             break
                         } else if (event.buttons.isForwardPressed) {
                             selectedClips.clear()
                             action = EditAction.SELECT
                             break
-                        } else if (event.buttons.isTertiaryPressed) {
+                        } else if (event.buttons.isBackPressed) {
                             selectedClips.clear()
                             action = EditAction.DELETE
                             break
@@ -75,7 +93,7 @@ internal suspend fun PointerInputScope.handleMouseEvent(playlist: Playlist, scop
                     selectionX = downX
                     selectionY = dragStartY
                 }
-                EditAction.DELETE -> {
+                EditAction.DELETE, EditAction.DISABLE -> {
                     getAllTrackHeights(density)
                 }
                 else -> { }
@@ -89,13 +107,15 @@ internal suspend fun PointerInputScope.handleMouseEvent(playlist: Playlist, scop
                         selectionY = (it.position.y.coerceAtMost(size.height.toFloat()) + verticalScrollState.value)
                             .coerceAtLeast(0F)
                     }
-                    EditAction.DELETE -> {
+                    EditAction.DELETE, EditAction.DISABLE -> {
                         val y = it.position.y + verticalScrollState.value
-                        val x = it.position.x + horizontalScrollState.value / noteWidth.value.toPx()
+                        val x = (it.position.x + horizontalScrollState.value) / noteWidth.value.toPx()
                         val track = trackHeights[binarySearchTrackByHeight(y)].track
+                        val isDelete = action == EditAction.DELETE
                         for (j in track.clips.indices) {
                             val clip = track.clips[j]
-                            if (clip.time <= x && x <= clip.time + clip.duration) deletionList.add(clip)
+                            if (clip.time <= x && x <= clip.time + clip.duration)
+                                    (if (isDelete) deletionList else disableList).add(clip)
                         }
                     }
                     else -> {}
@@ -141,7 +161,14 @@ internal suspend fun PointerInputScope.handleMouseEvent(playlist: Playlist, scop
                     selectionX = 0F
                     selectionY = 0F
                 }
-                EditAction.DELETE -> deletionList.clear()
+                EditAction.DELETE -> {
+                    deletionList.toList().doClipsAmountAction(true)
+                    deletionList.clear()
+                }
+                EditAction.DISABLE -> {
+                    disableList.toList().doClipsDisabledAction()
+                    disableList.clear()
+                }
                 else -> { }
             }
             action = EditAction.NONE
