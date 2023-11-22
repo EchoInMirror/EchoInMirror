@@ -90,6 +90,7 @@ fun NoteMessage.toNoteOffRawData(channel: Int = 0) = 0x80 or (70 shl 16) or chan
 
 interface NoteMessageList : MutableList<NoteMessage>, IManualState {
     fun sort()
+    fun copy(): NoteMessageList
 }
 
 open class DefaultNoteMessageList : NoteMessageList, ArrayList<NoteMessage>() {
@@ -102,4 +103,5 @@ open class DefaultNoteMessageList : NoteMessageList, ArrayList<NoteMessage>() {
     }
     override fun update() { modification.value++ }
     override fun read() { modification.value }
+    override fun copy() = DefaultNoteMessageList().apply { this@DefaultNoteMessageList.forEach { add(it.copy()) } }
 }

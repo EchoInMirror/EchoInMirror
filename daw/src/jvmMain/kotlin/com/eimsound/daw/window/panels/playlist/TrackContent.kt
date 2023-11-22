@@ -74,12 +74,11 @@ private suspend fun AwaitPointerEventScope.handleDragEvent(playlist: Playlist, c
                             val start = (verticalScrollState.value / noteWidthPx - clip.time).coerceAtLeast(0F)
                             val clickTime = (event.changes.first().position.x / noteWidthPx + start)
                                 .fitInUnit(EchoInMirror.editUnit)
-                            @Suppress("TYPE_MISMATCH")
-                            val newClip = clip.clip.factory.split(clip, clickTime)
+                            val (newClip, startTime) = @Suppress("TYPE_MISMATCH") clip.clip.factory.split(clip, clickTime)
                             track.clips.add(ClipManager.instance.createTrackClip(
-                                newClip, clip.time + clickTime, clip.duration - clickTime, 0, track
+                                newClip, clip.time + clickTime, clip.duration - clickTime, startTime, track
                             ))
-                            clip.duration -= clickTime
+                            clip.duration = clickTime
                             track.clips.sort()
                             track.clips.update()
                             continue

@@ -138,7 +138,7 @@ class MidiClipFactoryImpl : MidiClipFactory {
         }
     }
 
-    override fun split(clip: TrackClip<MidiClip>, time: Int): MidiClip {
+    override fun split(clip: TrackClip<MidiClip>, time: Int): ClipSplitResult<MidiClip> {
         val newClip = createClip()
         clip.clip.notes.removeIf {
             if (it.time + it.duration + clip.time <= time) return@removeIf false
@@ -148,7 +148,7 @@ class MidiClipFactoryImpl : MidiClipFactory {
         }
         clip.clip.notes.update()
         newClip.notes.sort()
-        return newClip
+        return ClipSplitResult(newClip, 0)
     }
 
     @Composable
@@ -169,8 +169,8 @@ class MidiClipFactoryImpl : MidiClipFactory {
     override fun toString() = "MidiClipFactoryImpl"
 
     override fun copy(clip: MidiClip) = MidiClipImpl(this).apply {
-        notes.addAll(clip.notes)
-        events.putAll(clip.events)
+        notes.addAll(clip.notes.copy())
+        events.putAll(clip.events.copy())
     }
 }
 

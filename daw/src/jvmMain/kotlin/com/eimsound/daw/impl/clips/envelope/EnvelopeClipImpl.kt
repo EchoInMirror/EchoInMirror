@@ -26,6 +26,7 @@ class EnvelopeClipImpl(factory: ClipFactory<EnvelopeClip>): AbstractClip<Envelop
             else controllers.joinToString(", ") { it.parameter.name }})"
     override val envelope = DefaultEnvelopePointList()
     override val controllers = mutableStateListOf<ParameterController>()
+    override val isExpandable = true
 
     override fun toJson() = buildJsonObject {
         put("id", id)
@@ -86,13 +87,32 @@ class EnvelopeClipFactoryImpl: EnvelopeClipFactory {
         )
     }
 
-    override fun split(clip: TrackClip<EnvelopeClip>, time: Int): EnvelopeClip {
-        TODO("Not yet implemented")
+    override fun split(clip: TrackClip<EnvelopeClip>, time: Int): ClipSplitResult<EnvelopeClip> {
+        val newClip = EnvelopeClipImpl(this)
+        newClip.controllers.addAll(clip.clip.controllers)
+        var isFirst = true
+        clip.clip.envelope.removeIf {
+            if (it.time + clip.time <= time) return@removeIf false
+            if (isFirst) {
+                newClip.envelope.add(it.copy(time = it.time - time))
+                isFirst = false
+                return@removeIf false
+            } else {
+                it.time -= time
+                newClip.envelope.add(it)
+                return@removeIf true
+            }
+        }
+        clip.clip.envelope.getOrNull(clip.clip.envelope.size - 2)?.let {
+            newClip.envelope.add(0, it.copy(time = it.time - time))
+        }
+        clip.clip.envelope.update()
+        return ClipSplitResult(newClip, 0)
     }
 
     override fun copy(clip: EnvelopeClip) = EnvelopeClipImpl(this).apply {
-//        envelope.copyFrom(clip.envelope)
-//        controllers.addAll(clip.controllers.map { it.copy() })
+        envelope.addAll(clip.envelope.copy())
+        controllers.addAll(clip.controllers)
     }
 
     override fun save(clip: EnvelopeClip, path: Path) { }

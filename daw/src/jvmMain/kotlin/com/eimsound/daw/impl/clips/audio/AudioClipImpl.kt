@@ -79,9 +79,11 @@ private val logger = KotlinLogging.logger { }
 class AudioClipFactoryImpl: AudioClipFactory {
     override val name = "AudioClip"
     override fun createClip(path: Path) = AudioClipImpl(this, AudioSourceManager.instance.createAudioSource(path))
-
     override fun createClip() = AudioClipImpl(this).apply {
         logger.info { "Creating clip \"${this.id}\"" }
+    }
+    override fun createClip(target: AudioSource) = AudioClipImpl(this, target).apply {
+        logger.info { "Creating clip \"${this.id}\" with target $target" }
     }
     override fun createClip(path: Path, json: JsonObject) = AudioClipImpl(this).apply {
         logger.info { "Creating clip ${json["id"]} in $path" }
@@ -122,7 +124,7 @@ class AudioClipFactoryImpl: AudioClipFactory {
         }
     }
 
-    override fun split(clip: TrackClip<AudioClip>, time: Int) = copy(clip.clip)
+    override fun split(clip: TrackClip<AudioClip>, time: Int) = ClipSplitResult(copy(clip.clip) as AudioClip, time)
 
     override fun save(clip: AudioClip, path: Path) { }
 
@@ -130,10 +132,8 @@ class AudioClipFactoryImpl: AudioClipFactory {
         return "AudioClipFactoryImpl"
     }
 
-    override fun copy(clip: AudioClip): AudioClip {
-        return createClip().apply {
-            target = clip.target.copy()
-        }
+    override fun copy(clip: AudioClip) = createClip(clip.target.copy()).apply {
+        volumeEnvelope.addAll(clip.volumeEnvelope.copy())
     }
 }
 

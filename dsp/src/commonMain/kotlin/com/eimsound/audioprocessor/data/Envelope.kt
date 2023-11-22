@@ -85,6 +85,7 @@ fun JsonObjectBuilder.putNotDefault(key: String, value: BaseEnvelopePointList?) 
 @Serializable
 sealed interface EnvelopePointList : MutableBaseEnvelopePointList, IManualState, BaseEnvelopePointList {
     fun sort()
+    fun copy(): EnvelopePointList
     fun getValue(position: Int, defaultValue: Float = 0F): Float
 }
 
@@ -106,6 +107,7 @@ class DefaultEnvelopePointList : EnvelopePointList, ArrayList<EnvelopePoint>() {
     private var currentIndex = -1
 
     override fun sort() = sortBy { it.time }
+    override fun copy() = DefaultEnvelopePointList().apply { this@DefaultEnvelopePointList.forEach { add(it.copy()) } }
     override fun getValue(position: Int, defaultValue: Float): Float {
         if (size == 0) return defaultValue
         if (size == 1) return this[0].value
