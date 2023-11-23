@@ -3,6 +3,7 @@ package com.eimsound.daw.commands
 import androidx.compose.ui.input.key.Key
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.AbstractCommand
+import com.eimsound.daw.api.CommandManager
 import com.eimsound.daw.impl.WindowManagerImpl
 import com.eimsound.daw.window.dialogs.openQuickLoadDialog
 import com.eimsound.daw.window.dialogs.settings.SettingsWindow
@@ -24,4 +25,10 @@ object PlayOrPauseCommand : AbstractCommand("EIM:Play or Pause", "暂停/播放"
     override fun execute() {
         EchoInMirror.currentPosition.isPlaying = !EchoInMirror.currentPosition.isPlaying
     }
+}
+
+fun CommandManager.registerAllUICommands() {
+    registerCommand(OpenSettingsCommand)
+    registerCommand(OpenQuickLoadDialogCommand)
+    registerCommand(PlayOrPauseCommand)
 }

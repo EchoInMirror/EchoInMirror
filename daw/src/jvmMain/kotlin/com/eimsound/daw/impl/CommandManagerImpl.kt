@@ -26,20 +26,9 @@ class CommandManagerImpl : CommandManager {
     private val commandHandlers = mutableMapOf<Command, MutableSet<() -> Unit>>()
 
     init {
-        registerCommand(DeleteCommand)
-        registerCommand(CopyCommand)
-        registerCommand(CopyToClipboard)
-        registerCommand(CutCommand)
-        registerCommand(PasteCommand)
-        registerCommand(PasteFromClipboard)
-        registerCommand(SelectAllCommand)
-        registerCommand(SaveCommand)
-
-        registerCommand(OpenSettingsCommand)
-        registerCommand(OpenQuickLoadDialogCommand)
-        registerCommand(PlayOrPauseCommand)
-        registerCommand(UndoCommand)
-        registerCommand(RedoCommand)
+        registerAllEditCommands()
+        registerAllUICommands()
+        registerAllEditorToolCommands()
 
         registerCommand(object : AbstractCommand("EIM:Temp", "Temp", arrayOf(Key.CtrlLeft, Key.R)) {
             override fun execute() {
