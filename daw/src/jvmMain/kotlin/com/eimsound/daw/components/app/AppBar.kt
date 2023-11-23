@@ -7,7 +7,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
@@ -24,8 +23,8 @@ import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.EditorTool
 import com.eimsound.daw.components.*
 import com.eimsound.daw.components.IconButton
-import com.eimsound.daw.components.icons.Eraser
 import com.eimsound.daw.components.icons.MetronomeTick
+import com.eimsound.daw.dawutils.EDITOR_TOOL_ICONS
 
 private val TIME_VALUES = listOf("时间", "拍")
 
@@ -160,9 +159,6 @@ private fun BPM() {
         paddingValues = TextFieldDefaults.contentPaddingWithLabel(6.dp, 6.dp, 3.dp, 4.dp)
     )
 }
-
-val EDITOR_TOOL_ICONS = arrayOf(Icons.Outlined.NearMe, Icons.Outlined.Edit, Eraser, Icons.Outlined.VolumeOff,
-    Icons.Outlined.ContentCut)
 
 val APP_BAR_ACTIONS_ICON_MODIFIER = Modifier.size(18.dp)
 private val LeftContent: @Composable RowScope.() -> Unit = {

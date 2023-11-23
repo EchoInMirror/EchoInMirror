@@ -273,7 +273,10 @@ private fun Playlist.ClipItem(it: TrackClip<*>, track: Track, index: Int) {
                                     else this
                                 }
                                 .clip(MaterialTheme.shapes.extraSmall)
-                                .pointerHoverIcon(action0.toPointerIcon(PointerIcon.Hand))
+                                .run {
+                                    if (EchoInMirror.editorTool.ordinal <= 1) pointerHoverIcon(action0.toPointerIcon(PointerIcon.Hand))
+                                    else this
+                                }
                         ) {
                             val contentColor = trackColor.toOnSurfaceColor()
                             if (curOrMovingTrackHeight.value >= 40) {
