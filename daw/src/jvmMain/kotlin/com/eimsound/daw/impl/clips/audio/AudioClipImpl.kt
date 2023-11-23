@@ -124,7 +124,18 @@ class AudioClipFactoryImpl: AudioClipFactory {
         }
     }
 
-    override fun split(clip: TrackClip<AudioClip>, time: Int) = ClipSplitResult(copy(clip.clip) as AudioClip, time)
+    override fun split(clip: TrackClip<AudioClip>, time: Int): ClipSplitResult<AudioClip> {
+        val oldEnvelope = clip.clip.volumeEnvelope.copy()
+        return object : ClipSplitResult<AudioClip> {
+            override val clip = copy(clip.clip) as AudioClip
+            override val start = time
+            override fun revert() {
+                clip.clip.volumeEnvelope.clear()
+                clip.clip.volumeEnvelope.addAll(oldEnvelope)
+                clip.clip.volumeEnvelope.update()
+            }
+        }
+    }
 
     override fun save(clip: AudioClip, path: Path) { }
 
@@ -134,6 +145,10 @@ class AudioClipFactoryImpl: AudioClipFactory {
 
     override fun copy(clip: AudioClip) = createClip(clip.target.copy()).apply {
         volumeEnvelope.addAll(clip.volumeEnvelope.copy())
+    }
+
+    override fun merge(clip: TrackClip<AudioClip>, other: TrackClip<AudioClip>) {
+        clip.duration += other.duration
     }
 }
 

@@ -1,8 +1,10 @@
 package com.eimsound.daw.actions
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ContentCut
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.ui.util.fastForEach
+import com.eimsound.daw.api.ClipManager
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.TrackClip
 import com.eimsound.daw.api.processor.Track
@@ -10,6 +12,7 @@ import com.eimsound.daw.commons.actions.ListDisabledAction
 import com.eimsound.daw.components.icons.PencilMinus
 import com.eimsound.daw.components.icons.PencilPlus
 import com.eimsound.daw.commons.actions.ReversibleAction
+import com.eimsound.daw.commons.actions.UndoableAction
 import kotlinx.coroutines.runBlocking
 
 fun Collection<TrackClip<*>>.doClipsAmountAction(isDelete: Boolean) {
@@ -109,4 +112,48 @@ class ClipsDisabledAction(clips: List<TrackClip<*>>, isDisabled: Boolean? = null
     override val name = if ((isDisabled ?: clips.firstOrNull()?.isDisabled?.let { !it }) != false)
         "片段禁用 (${clips.size}个)" else "片段启用 (${clips.size}个)"
     override val icon = Icons.Default.Edit
+}
+
+fun List<TrackClip<*>>.doClipsSplitAction(clickTime: Int) {
+    runBlocking { EchoInMirror.undoManager.execute(ClipsSplitAction(this@doClipsSplitAction, clickTime)) }
+}
+
+class ClipsSplitAction(private val clips: List<TrackClip<*>>, private val clickTime: Int) : UndoableAction {
+    override val name = "片段分割 (${clips.size}个)"
+    override val icon = Icons.Default.ContentCut
+    private var reverts: List<ClipSplitRevert>? = null
+
+    private data class ClipSplitRevert(
+        val clip: TrackClip<*>, val oldDuration: Int, val revert: () -> Unit, val newClip: TrackClip<*>
+    )
+
+    override suspend fun undo(): Boolean {
+        val list = reverts ?: return false
+        list.fastForEach {
+            it.revert()
+            val track = it.clip.track ?: return@fastForEach
+            it.clip.duration = it.oldDuration
+            track.clips.remove(it.newClip)
+            track.clips.update()
+        }
+        reverts = null
+        return true
+    }
+
+    override suspend fun execute(): Boolean {
+        reverts = clips.mapNotNull { clip ->
+            val track = clip.track ?: return@mapNotNull null
+            val result = clip.clip.factory.split(@Suppress("TYPE_MISMATCH") clip, clickTime)
+            val newClip = ClipManager.instance.createTrackClip(
+                result.clip, clip.time + clickTime, clip.duration - clickTime, result.start, track
+            )
+            track.clips.add(newClip)
+            val oldDuration = clip.duration
+            clip.duration = clickTime
+            track.clips.sort()
+            track.clips.update()
+            return@mapNotNull ClipSplitRevert(clip, oldDuration, result::revert, newClip)
+        }
+        return true
+    }
 }

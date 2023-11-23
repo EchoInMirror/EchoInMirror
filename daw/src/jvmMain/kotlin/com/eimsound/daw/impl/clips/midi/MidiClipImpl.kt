@@ -19,6 +19,7 @@ import com.eimsound.audioprocessor.data.DefaultEnvelopePointList
 import com.eimsound.audioprocessor.data.EnvelopePointList
 import com.eimsound.audioprocessor.data.MIDI_CC_RANGE
 import com.eimsound.audioprocessor.data.midi.*
+import com.eimsound.audioprocessor.data.toMutableEnvelopePointList
 import com.eimsound.daw.api.*
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.components.EnvelopeEditor
@@ -140,15 +141,39 @@ class MidiClipFactoryImpl : MidiClipFactory {
 
     override fun split(clip: TrackClip<MidiClip>, time: Int): ClipSplitResult<MidiClip> {
         val newClip = createClip()
+        val notes = clip.clip.notes.copy()
         clip.clip.notes.removeIf {
-            if (it.time + it.duration + clip.time <= time) return@removeIf false
-            it.time -= time
-            newClip.notes.add(it)
-            return@removeIf true
+            if (it.time + it.duration <= time) return@removeIf false
+            if (it.time < time && it.time + it.duration > time) {
+                newClip.notes.add(it.copy(duration = it.time + it.duration - time))
+                it.duration = time - it.time
+                return@removeIf false
+            } else {
+                it.time -= time
+                newClip.notes.add(it)
+                return@removeIf true
+            }
+        }
+        val oldEvents = clip.clip.events.copy()
+        clip.clip.events.forEach { (id, points) ->
+            val newPoints = points.split(time, clip.time)
+            newClip.events[id] = newPoints.toMutableEnvelopePointList()
         }
         clip.clip.notes.update()
         newClip.notes.sort()
-        return ClipSplitResult(newClip, 0)
+
+        return object : ClipSplitResult<MidiClip> {
+            override val clip = newClip
+            override val start = 0
+            override fun revert() {
+                clip.clip.notes.clear()
+                clip.clip.notes.addAll(notes)
+                clip.clip.notes.sort()
+                clip.clip.events.clear()
+                clip.clip.events.putAll(oldEvents)
+                clip.clip.notes.update()
+            }
+        }
     }
 
     @Composable
@@ -171,6 +196,13 @@ class MidiClipFactoryImpl : MidiClipFactory {
     override fun copy(clip: MidiClip) = MidiClipImpl(this).apply {
         notes.addAll(clip.notes.copy())
         events.putAll(clip.events.copy())
+    }
+
+    override fun merge(clip: TrackClip<MidiClip>, other: TrackClip<MidiClip>) {
+        other.clip.notes.fastForEach {
+            it.time += clip.time
+            clip.clip.notes.add(it)
+        }
     }
 }
 

@@ -1,7 +1,14 @@
 package com.eimsound.audioprocessor.data
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import com.eimsound.audioprocessor.AudioSource
 import com.eimsound.audioprocessor.AudioSourceManager
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import org.mapdb.DBMaker
 import org.mapdb.HTreeMap
 import java.io.File
@@ -25,55 +32,65 @@ class AudioThumbnail private constructor(
 ) {
     var modifiedTime = modifiedTime
         internal set
-    val size = size ?: ceil(lengthInSamples / samplesPerThumbSample.coerceAtLeast(DEFAULT_SAMPLES_PRE_THUMB_SAMPLE).toDouble()).toInt()
+    val size = size ?: ceil(lengthInSamples / samplesPerThumbSample
+        .coerceAtLeast(DEFAULT_SAMPLES_PRE_THUMB_SAMPLE).toDouble()).toInt()
     private val minTree = Array(channels) { ByteArray(this.size * 4 + 1) }
     private val maxTree = Array(channels) { ByteArray(this.size * 4 + 1) }
     private val tempArray = FloatArray(channels * 2)
+    private var modification by mutableStateOf<Byte>(0)
 
-    constructor(channels: Int,
-                lengthInSamples: Long,
-                sampleRate: Float,
-                samplesPerThumbSample: Int = DEFAULT_SAMPLES_PRE_THUMB_SAMPLE
+    constructor(
+        channels: Int, lengthInSamples: Long, sampleRate: Float, samplesPerThumbSample: Int = DEFAULT_SAMPLES_PRE_THUMB_SAMPLE
     ): this(0L, channels, lengthInSamples, sampleRate, samplesPerThumbSample, null)
 
+    @OptIn(DelicateCoroutinesApi::class)
     constructor(source: AudioSource, samplesPerThumbSample: Int = DEFAULT_SAMPLES_PRE_THUMB_SAMPLE):
             this(source.channels, source.length, source.sampleRate, samplesPerThumbSample) {
-        val times = 1024 / this.samplesPerThumbSample
-        val buffers = Array(channels) { FloatArray(times * this.samplesPerThumbSample) }
-        var pos = 0L
-        var i = 1
-        while (pos <= source.length) {
-            if (source.getSamples(pos, times * this.samplesPerThumbSample, buffers) < 1) break
-            repeat(times) { k ->
-                val curIndex = k * this.samplesPerThumbSample
-                repeat(channels) { ch ->
-                    var min: Byte = 127
-                    var max: Byte = -128
-                    val channel = buffers[ch]
-                    repeat(this.samplesPerThumbSample) { j ->
-                        val amp = channel[j + curIndex]
-                        val v = (amp * 127F).roundToInt().coerceIn(-128, 127).toByte()
-                        if (amp < min) min = v
-                        if (amp > max) max = v
+        GlobalScope.launch(Dispatchers.IO) {
+            val times = 1024 / this@AudioThumbnail.samplesPerThumbSample
+            val buffers = Array(channels) { FloatArray(times * this@AudioThumbnail.samplesPerThumbSample) }
+            var pos = 0L
+            var i = 1
+            out@while (pos <= source.length) {
+                if (source.getSamples(pos, times * this@AudioThumbnail.samplesPerThumbSample, buffers) < 1) break
+                for (k in 0 until times) {
+                    val curIndex = k * this@AudioThumbnail.samplesPerThumbSample
+                    repeat(channels) { ch ->
+                        var min: Byte = 127
+                        var max: Byte = -128
+                        val channel = buffers[ch]
+                        repeat(this@AudioThumbnail.samplesPerThumbSample) { j ->
+                            val amp = channel[j + curIndex]
+                            val v = (amp * 127F).roundToInt().coerceIn(-128, 127).toByte()
+                            if (amp < min) min = v
+                            if (amp > max) max = v
+                        }
+                        minTree[ch][i] = min
+                        maxTree[ch][i] = max
                     }
-                    minTree[ch][i] = min
-                    maxTree[ch][i] = max
+                    i++
+                    pos += this@AudioThumbnail.samplesPerThumbSample
+                    if (pos > source.length) break@out
                 }
-                i++
-                pos += this.samplesPerThumbSample
-                if (pos > source.length) return
             }
+            buildTree()
+            modification++
         }
-        buildTree()
     }
 
+    @OptIn(DelicateCoroutinesApi::class)
     constructor(data: ByteBuffer): this(data.long, data.get().toInt(), data.long, data.float, data.int, data.int) {
-        repeat(channels) {
-            data.get(minTree[it], 1, size)
-            data.get(maxTree[it], 1, size)
+        GlobalScope.launch(Dispatchers.IO) {
+            repeat(channels) {
+                data.get(minTree[it], 1, size)
+                data.get(maxTree[it], 1, size)
+            }
+            buildTree()
+            modification++
         }
-        buildTree()
     }
+
+    fun read() { modification }
 
     fun query(x: Int, y: Int): FloatArray {
         repeat(channels) {
@@ -110,10 +127,11 @@ class AudioThumbnail private constructor(
         }
     }
 
-    inline fun query(widthInPx: Double, startTimeSeconds: Double = 0.0,
-                     endTimeSeconds: Double = lengthInSamples / sampleRate.toDouble(),
-                     stepInPx: Float = 1F,
-                     callback: (x: Float, channel: Int, min: Float, max: Float) -> Unit
+    inline fun query(
+        widthInPx: Double, startTimeSeconds: Double = 0.0,
+        endTimeSeconds: Double = lengthInSamples / sampleRate.toDouble(),
+        stepInPx: Float = 1F,
+        callback: (x: Float, channel: Int, min: Float, max: Float) -> Unit
     ) {
         var x = startTimeSeconds * sampleRate / samplesPerThumbSample + 1
         val end = (endTimeSeconds * sampleRate / samplesPerThumbSample + 1).coerceAtMost(size.toDouble())
@@ -143,6 +161,13 @@ class AudioThumbnail private constructor(
         }
         return data.array()
     }
+
+    fun copy() = AudioThumbnail(modifiedTime, channels, lengthInSamples, sampleRate, samplesPerThumbSample, size).apply {
+        repeat(channels) {
+            minTree[it].copyInto(this@AudioThumbnail.minTree[it])
+            maxTree[it].copyInto(this@AudioThumbnail.maxTree[it])
+        }
+    }
 }
 
 class AudioThumbnailCache(file: File, private val samplesPerThumbSample: Int = DEFAULT_SAMPLES_PRE_THUMB_SAMPLE): AutoCloseable {
@@ -167,7 +192,10 @@ class AudioThumbnailCache(file: File, private val samplesPerThumbSample: Int = D
                 val buf = ByteBuffer.wrap(byteArray)
                 if (buf.long == time) return AudioThumbnail(buf.position(0))
             }
-            val value = AudioThumbnail(audioSource ?: AudioSourceManager.instance.createAudioSource(real), samplesPerThumbSample)
+            val value = AudioThumbnail(
+                audioSource ?: AudioSourceManager.instance.createAudioSource(real),
+                samplesPerThumbSample
+            )
             set(file.toString(), time, value)
             return value
         } catch (e: IOException) {

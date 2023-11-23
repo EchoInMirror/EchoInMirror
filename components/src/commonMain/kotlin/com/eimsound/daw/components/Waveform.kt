@@ -28,6 +28,7 @@ fun Waveform(
     isDrawMinAndMax: Boolean = true,
     modifier: Modifier = Modifier
 ) {
+    thumbnail.read()
     Canvas(modifier.fillMaxSize().graphicsLayer { }) {
         val channelHeight = (size.height / thumbnail.channels) - 2
         val halfChannelHeight = channelHeight / 2
@@ -82,6 +83,7 @@ fun Waveform(
     isDrawMinAndMax: Boolean = true,
     modifier: Modifier = Modifier
 ) {
+    thumbnail.read()
     val startSeconds = position.convertPPQToSeconds(startPPQ)
     val endSeconds = position.convertPPQToSeconds(startPPQ + widthPPQ)
     Canvas(modifier.fillMaxSize().graphicsLayer { }) {

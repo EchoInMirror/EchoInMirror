@@ -31,6 +31,7 @@ import com.eimsound.audioprocessor.oneBarPPQ
 import com.eimsound.daw.actions.doClipsAmountAction
 import com.eimsound.daw.actions.doClipsDisabledAction
 import com.eimsound.daw.actions.doClipsEditActionAction
+import com.eimsound.daw.actions.doClipsSplitAction
 import com.eimsound.daw.api.*
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.components.utils.EditAction
@@ -74,13 +75,7 @@ private suspend fun AwaitPointerEventScope.handleDragEvent(playlist: Playlist, c
                             val start = (verticalScrollState.value / noteWidthPx - clip.time).coerceAtLeast(0F)
                             val clickTime = (event.changes.first().position.x / noteWidthPx + start)
                                 .fitInUnit(EchoInMirror.editUnit)
-                            val (newClip, startTime) = @Suppress("TYPE_MISMATCH") clip.clip.factory.split(clip, clickTime)
-                            track.clips.add(ClipManager.instance.createTrackClip(
-                                newClip, clip.time + clickTime, clip.duration - clickTime, startTime, track
-                            ))
-                            clip.duration = clickTime
-                            track.clips.sort()
-                            track.clips.update()
+                            listOf(clip).doClipsSplitAction(clickTime)
                             continue
                         }
                         else -> {

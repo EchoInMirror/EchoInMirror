@@ -90,29 +90,27 @@ class EnvelopeClipFactoryImpl: EnvelopeClipFactory {
     override fun split(clip: TrackClip<EnvelopeClip>, time: Int): ClipSplitResult<EnvelopeClip> {
         val newClip = EnvelopeClipImpl(this)
         newClip.controllers.addAll(clip.clip.controllers)
-        var isFirst = true
-        clip.clip.envelope.removeIf {
-            if (it.time + clip.time <= time) return@removeIf false
-            if (isFirst) {
-                newClip.envelope.add(it.copy(time = it.time - time))
-                isFirst = false
-                return@removeIf false
-            } else {
-                it.time -= time
-                newClip.envelope.add(it)
-                return@removeIf true
+        val oldEnvelopes = clip.clip.envelope.copy()
+        newClip.envelope.addAll(clip.clip.envelope.split(time, clip.time))
+
+        return object : ClipSplitResult<EnvelopeClip> {
+            override val clip = newClip
+            override val start = 0
+            override fun revert() {
+                clip.clip.envelope.clear()
+                clip.clip.envelope.addAll(oldEnvelopes)
+                clip.clip.envelope.update()
             }
         }
-        clip.clip.envelope.getOrNull(clip.clip.envelope.size - 2)?.let {
-            newClip.envelope.add(0, it.copy(time = it.time - time))
-        }
-        clip.clip.envelope.update()
-        return ClipSplitResult(newClip, 0)
     }
 
     override fun copy(clip: EnvelopeClip) = EnvelopeClipImpl(this).apply {
         envelope.addAll(clip.envelope.copy())
         controllers.addAll(clip.controllers)
+    }
+
+    override fun merge(clip: TrackClip<EnvelopeClip>, other: TrackClip<EnvelopeClip>) {
+        TODO("Not yet implemented")
     }
 
     override fun save(clip: EnvelopeClip, path: Path) { }
