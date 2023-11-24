@@ -14,10 +14,7 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.*
 import java.util.jar.Manifest
-import kotlin.io.path.absolute
-import kotlin.io.path.absolutePathString
-import kotlin.io.path.exists
-import kotlin.io.path.name
+import kotlin.io.path.*
 
 val WORKING_PATH: Path = Path.of(
     if (SystemUtils.IS_OS_WINDOWS) System.getenv("AppData")
@@ -44,6 +41,8 @@ object Configuration : JsonSerializable {
     var audioDeviceName by mutableStateOf("")
     var autoCutOver0db by mutableStateOf(true)
     var isTimeDisplayInBeats by mutableStateOf(false)
+    val fileBrowserCustomRoots = mutableStateListOf<Path>()
+    var fileBrowserShowSupFormatOnly by mutableStateOf(false)
     var userId = UUID.randomUUID().toString()
         private set
 
@@ -95,6 +94,8 @@ object Configuration : JsonSerializable {
         put("autoCutOver0db", autoCutOver0db)
         put("isDarkTheme", EchoInMirror.windowManager.isDarkTheme)
         put("isTimeDisplayInBeats", isTimeDisplayInBeats)
+        put("fileBrowserCustomRoots", Json.encodeToJsonElement(fileBrowserCustomRoots.map { it.pathString }))
+        put("fileBrowserShowSupFormatOnly", fileBrowserShowSupFormatOnly)
     }
 
     override fun fromJson(json: JsonElement) {
@@ -105,6 +106,9 @@ object Configuration : JsonSerializable {
         json["autoCutOver0db"]?.asBoolean()?.let { autoCutOver0db = it }
         json["isDarkTheme"]?.asBoolean()?.let { EchoInMirror.windowManager.isDarkTheme = it }
         json["isTimeDisplayInBeats"]?.asBoolean()?.let { isTimeDisplayInBeats = it }
+        fileBrowserCustomRoots.clear()
+        (json["fileBrowserCustomRoots"] as? JsonArray)?.let { fileBrowserCustomRoots.addAll(it.map { Paths.get(it.asString()) }) }
+        json["fileBrowserShowSupFormatOnly"]?.asBoolean()?.let { fileBrowserShowSupFormatOnly = it }
         val id = json["userId"]?.asString()
         if (id == null) save() else userId = id
     }
