@@ -5,6 +5,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.MusicNote
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import com.eimsound.audioprocessor.*
 import com.eimsound.audioprocessor.data.*
@@ -78,9 +79,11 @@ private val logger = KotlinLogging.logger { }
 class AudioClipFactoryImpl: AudioClipFactory {
     override val name = "AudioClip"
     override fun createClip(path: Path) = AudioClipImpl(this, AudioSourceManager.instance.createAudioSource(path))
-
     override fun createClip() = AudioClipImpl(this).apply {
         logger.info { "Creating clip \"${this.id}\"" }
+    }
+    override fun createClip(target: AudioSource) = AudioClipImpl(this, target).apply {
+        logger.info { "Creating clip \"${this.id}\" with target $target" }
     }
     override fun createClip(path: Path, json: JsonObject) = AudioClipImpl(this).apply {
         logger.info { "Creating clip ${json["id"]} in $path" }
@@ -112,7 +115,7 @@ class AudioClipFactoryImpl: AudioClipFactory {
         clip: TrackClip<AudioClip>, track: Track, contentColor: Color,
         noteWidth: MutableState<Dp>, startPPQ: Float, widthPPQ: Float
     ) {
-        val isDrawMinAndMax = noteWidth.value.value < 1
+        val isDrawMinAndMax = noteWidth.value.value < LocalDensity.current.density
         Box {
             Waveform(clip.clip.thumbnail, EchoInMirror.currentPosition, startPPQ, widthPPQ, clip.clip.volumeEnvelope, contentColor, isDrawMinAndMax)
             remember(clip) {
@@ -121,16 +124,31 @@ class AudioClipFactoryImpl: AudioClipFactory {
         }
     }
 
-    override fun split(clip: TrackClip<AudioClip>, time: Int): AudioClip {
-        val newClip = createClip()
-        newClip.target = clip.clip.target
-        return newClip
+    override fun split(clip: TrackClip<AudioClip>, time: Int): ClipSplitResult<AudioClip> {
+        val oldEnvelope = clip.clip.volumeEnvelope.copy()
+        return object : ClipSplitResult<AudioClip> {
+            override val clip = copy(clip.clip) as AudioClip
+            override val start = time
+            override fun revert() {
+                clip.clip.volumeEnvelope.clear()
+                clip.clip.volumeEnvelope.addAll(oldEnvelope)
+                clip.clip.volumeEnvelope.update()
+            }
+        }
     }
 
     override fun save(clip: AudioClip, path: Path) { }
 
     override fun toString(): String {
         return "AudioClipFactoryImpl"
+    }
+
+    override fun copy(clip: AudioClip) = createClip(clip.target.copy()).apply {
+        volumeEnvelope.addAll(clip.volumeEnvelope.copy())
+    }
+
+    override fun merge(clip: TrackClip<AudioClip>, other: TrackClip<AudioClip>) {
+        clip.duration += other.duration
     }
 }
 
@@ -141,3 +159,4 @@ class AudioFileExtensionHandler : AbstractFileExtensionHandler() {
 
     override suspend fun createClip(file: Path, data: Any?) = ClipManager.instance.defaultAudioClipFactory.createClip(file)
 }
+

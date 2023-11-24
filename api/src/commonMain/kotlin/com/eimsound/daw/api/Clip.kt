@@ -38,6 +38,12 @@ interface MidiClipEditor: ClipEditor, SerializableEditor, MultiSelectableEditor 
     val clip: TrackClip<MidiClip>
 }
 
+interface ClipSplitResult<T: Clip> {
+    val clip: T
+    val start: Int
+    fun revert()
+}
+
 @Serializable(with = ClipFactoryNameSerializer::class)
 interface ClipFactory<T: Clip> {
     val name: String
@@ -49,7 +55,9 @@ interface ClipFactory<T: Clip> {
     )
     fun save(clip: T, path: Path) { }
     fun getEditor(clip: TrackClip<T>): ClipEditor?
-    fun split(clip: TrackClip<T>, time: Int): T
+    fun split(clip: TrackClip<T>, time: Int): ClipSplitResult<T>
+    fun copy(clip: T): T
+    fun merge(clip: TrackClip<T>, other: TrackClip<T>)
 
     @Composable
     fun PlaylistContent(
@@ -68,6 +76,7 @@ interface MidiClipFactory: ClipFactory<MidiClip>
  */
 interface AudioClipFactory: ClipFactory<AudioClip> {
     fun createClip(path: Path): AudioClip
+    fun createClip(target: AudioSource): AudioClip
 }
 
 /**
@@ -114,6 +123,10 @@ interface Clip : JsonSerializable {
 
 typealias MidiCCEvents = Map<Int, BaseEnvelopePointList>
 typealias MutableMidiCCEvents = MutableMap<Int, EnvelopePointList>
+
+fun MutableMidiCCEvents.copy() = mutableMapOf<Int, EnvelopePointList>().also {
+    this@copy.forEach { (id, points) -> it[id] = points.copy() }
+}
 
 /**
  * @see com.eimsound.daw.impl.clips.midi.MidiClipImpl

@@ -26,6 +26,7 @@ class EnvelopeClipImpl(factory: ClipFactory<EnvelopeClip>): AbstractClip<Envelop
             else controllers.joinToString(", ") { it.parameter.name }})"
     override val envelope = DefaultEnvelopePointList()
     override val controllers = mutableStateListOf<ParameterController>()
+    override val isExpandable = true
 
     override fun toJson() = buildJsonObject {
         put("id", id)
@@ -86,7 +87,29 @@ class EnvelopeClipFactoryImpl: EnvelopeClipFactory {
         )
     }
 
-    override fun split(clip: TrackClip<EnvelopeClip>, time: Int): EnvelopeClip {
+    override fun split(clip: TrackClip<EnvelopeClip>, time: Int): ClipSplitResult<EnvelopeClip> {
+        val newClip = EnvelopeClipImpl(this)
+        newClip.controllers.addAll(clip.clip.controllers)
+        val oldEnvelopes = clip.clip.envelope.copy()
+        newClip.envelope.addAll(clip.clip.envelope.split(time, clip.time))
+
+        return object : ClipSplitResult<EnvelopeClip> {
+            override val clip = newClip
+            override val start = 0
+            override fun revert() {
+                clip.clip.envelope.clear()
+                clip.clip.envelope.addAll(oldEnvelopes)
+                clip.clip.envelope.update()
+            }
+        }
+    }
+
+    override fun copy(clip: EnvelopeClip) = EnvelopeClipImpl(this).apply {
+        envelope.addAll(clip.envelope.copy())
+        controllers.addAll(clip.controllers)
+    }
+
+    override fun merge(clip: TrackClip<EnvelopeClip>, other: TrackClip<EnvelopeClip>) {
         TODO("Not yet implemented")
     }
 

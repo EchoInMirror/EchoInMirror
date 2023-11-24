@@ -4,6 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.eimsound.daw.api.Clip
+import com.eimsound.daw.api.ClipFactory
 import com.eimsound.daw.api.TrackClip
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.commons.json.asBoolean
@@ -52,8 +53,9 @@ class TrackClipImpl <T: Clip> (override val clip: T, time: Int = 0, duration: In
         json["isDisabled"]?.asBoolean()?.let { isDisabled = it }
     }
 
+    @Suppress("UNCHECKED_CAST")
     override fun copy(time: Int, duration: Int, start: Int, clip: T, currentIndex: Int, track: Track?) =
-        TrackClipImpl(clip, time, duration, start, track)
+        TrackClipImpl((clip.factory as ClipFactory<T>).copy(clip), time, duration, start, track)
 
     override fun toString(): String {
         return "TrackClipImpl(clip=$clip, time=$time, duration=$duration)"

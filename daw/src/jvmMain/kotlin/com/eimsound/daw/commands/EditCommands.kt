@@ -6,6 +6,7 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.text.AnnotatedString
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.AbstractCommand
+import com.eimsound.daw.api.CommandManager
 import com.eimsound.daw.commons.BasicEditor
 import com.eimsound.daw.dawutils.CLIPBOARD_MANAGER
 import com.eimsound.daw.commons.MultiSelectableEditor
@@ -83,4 +84,17 @@ object RedoCommand : AbstractCommand("EIM:Redo", "重做", arrayOf(Key.CtrlLeft,
     override fun execute() {
         GlobalScope.launch { EchoInMirror.undoManager.redo() }
     }
+}
+
+fun CommandManager.registerAllEditCommands() {
+    registerCommand(DeleteCommand)
+    registerCommand(CopyCommand)
+    registerCommand(CopyToClipboard)
+    registerCommand(CutCommand)
+    registerCommand(PasteCommand)
+    registerCommand(PasteFromClipboard)
+    registerCommand(SelectAllCommand)
+    registerCommand(SaveCommand)
+    registerCommand(UndoCommand)
+    registerCommand(RedoCommand)
 }

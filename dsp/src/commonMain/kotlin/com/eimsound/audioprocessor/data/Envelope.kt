@@ -85,6 +85,8 @@ fun JsonObjectBuilder.putNotDefault(key: String, value: BaseEnvelopePointList?) 
 @Serializable
 sealed interface EnvelopePointList : MutableBaseEnvelopePointList, IManualState, BaseEnvelopePointList {
     fun sort()
+    fun copy(): EnvelopePointList
+    fun split(time: Int, offsetStart: Int = 0): BaseEnvelopePointList
     fun getValue(position: Int, defaultValue: Float = 0F): Float
 }
 
@@ -93,6 +95,8 @@ fun EnvelopePointList.fromJson(json: JsonElement?) {
     if (json != null) addAll(Json.decodeFromJsonElement<BaseEnvelopePointList>(json))
     update()
 }
+
+fun BaseEnvelopePointList.toMutableEnvelopePointList() = DefaultEnvelopePointList().apply { addAll(this@toMutableEnvelopePointList) }
 
 val PAN_RANGE = -1F..1F
 val VOLUME_RANGE = 0F..1.96F
@@ -106,6 +110,7 @@ class DefaultEnvelopePointList : EnvelopePointList, ArrayList<EnvelopePoint>() {
     private var currentIndex = -1
 
     override fun sort() = sortBy { it.time }
+    override fun copy() = DefaultEnvelopePointList().apply { this@DefaultEnvelopePointList.forEach { add(it.copy()) } }
     override fun getValue(position: Int, defaultValue: Float): Float {
         if (size == 0) return defaultValue
         if (size == 1) return this[0].value
@@ -123,6 +128,28 @@ class DefaultEnvelopePointList : EnvelopePointList, ArrayList<EnvelopePoint>() {
             cur.value,
             next.value
         )
+    }
+
+    override fun split(time: Int, offsetStart: Int): BaseEnvelopePointList {
+        val newEnvelope = mutableListOf<EnvelopePoint>()
+        var isFirst = true
+        removeIf {
+            if (it.time + offsetStart <= time) return@removeIf false
+            if (isFirst) {
+                newEnvelope.add(it.copy(time = it.time - time))
+                isFirst = false
+                return@removeIf false
+            } else {
+                it.time -= time
+                newEnvelope.add(it)
+                return@removeIf true
+            }
+        }
+        getOrNull(size - 2)?.let {
+            newEnvelope.add(0, it.copy(time = it.time - time))
+        }
+        update()
+        return newEnvelope
     }
 
     override fun update() { modification.value++ }

@@ -64,14 +64,16 @@ class AudioClipEditor(private val clip: TrackClip<AudioClip>) : ClipEditor {
                 clip.duration = it.range.coerceIn(0, maxPPQ)
                 clip.track?.clips?.update()
             }
-            var contentWidth by remember { mutableStateOf(0.dp) }
-            Box(Modifier.fillMaxSize().onGloballyPositioned { contentWidth = it.size.width.dp }) {
+            var contentWidth by remember { mutableStateOf(0) }
+            val density = LocalDensity.current
+            Box(Modifier.fillMaxSize().onGloballyPositioned { contentWidth = it.size.width }) {
                 val noteWidthValue = noteWidth.value
-                with(LocalDensity.current) {
-                    val scrollXPPQ = horizontalScrollState.value / noteWidthValue.toPx()
+                with(density) {
+                    val noteWidthPx = noteWidthValue.toPx()
+                    val scrollXPPQ = horizontalScrollState.value / noteWidthPx
                     val maxPPQ = EchoInMirror.currentPosition
                         .convertSecondsToPPQ(clip.clip.audioSource.timeInSeconds).toFloat()
-                    val widthPPQ = (contentWidth / noteWidthValue).coerceAtMost(maxPPQ)
+                    val widthPPQ = (contentWidth / noteWidthPx).coerceAtMost(maxPPQ)
                     remember(maxPPQ, noteWidthValue, LocalDensity.current, widthPPQ) {
                         horizontalScrollState.openMaxValue = (((maxPPQ - widthPPQ) *
                                 noteWidthValue.toPx()).toInt()).coerceAtLeast(0)
@@ -91,7 +93,7 @@ class AudioClipEditor(private val clip: TrackClip<AudioClip>) : ClipEditor {
                     Box {
                         PlayHead(noteWidth, horizontalScrollState,
                             (EchoInMirror.currentPosition.ppqPosition * EchoInMirror.currentPosition.ppq).toFloat(),
-                            contentWidth)
+                            contentWidth.toDp())
                     }
                 }
             }

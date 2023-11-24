@@ -7,7 +7,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
@@ -24,8 +23,8 @@ import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.EditorTool
 import com.eimsound.daw.components.*
 import com.eimsound.daw.components.IconButton
-import com.eimsound.daw.components.icons.Eraser
 import com.eimsound.daw.components.icons.MetronomeTick
+import com.eimsound.daw.dawutils.EDITOR_TOOL_ICONS
 
 private val TIME_VALUES = listOf("时间", "拍")
 
@@ -59,8 +58,8 @@ private fun CurrentTime() {
                 )
             },
             colors = TextFieldDefaults.colors(
-                unfocusedIndicatorColor = MaterialTheme.colorScheme.outline,
-                focusedIndicatorColor = MaterialTheme.colorScheme.outline,
+                unfocusedIndicatorColor = MaterialTheme.colorScheme.outlineVariant,
+                focusedIndicatorColor = MaterialTheme.colorScheme.outlineVariant,
             ),
             paddingValues = TextFieldDefaults.contentPaddingWithLabel(8.dp, 4.dp, 3.dp, 4.dp)
         )
@@ -153,20 +152,17 @@ private fun BPM() {
             }
         },
         colors = TextFieldDefaults.colors(
-            unfocusedIndicatorColor = MaterialTheme.colorScheme.outline,
-            focusedIndicatorColor = MaterialTheme.colorScheme.outline,
+            unfocusedIndicatorColor = MaterialTheme.colorScheme.outlineVariant,
+            focusedIndicatorColor = MaterialTheme.colorScheme.outlineVariant,
         ),
         keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
         paddingValues = TextFieldDefaults.contentPaddingWithLabel(6.dp, 6.dp, 3.dp, 4.dp)
     )
 }
 
-val EDITOR_TOOL_ICONS = arrayOf(Icons.Outlined.NearMe, Icons.Outlined.Edit, Eraser, Icons.Outlined.VolumeOff,
-    Icons.Outlined.ContentCut)
-
 val APP_BAR_ACTIONS_ICON_MODIFIER = Modifier.size(18.dp)
 private val LeftContent: @Composable RowScope.() -> Unit = {
-    SegmentedButtons(contentColor = MaterialTheme.colorScheme.outline) {
+    SegmentedButtons(borderColor = MaterialTheme.colorScheme.outlineVariant) {
         EditorTool.entries.apply {
             forEachIndexed { index, tool ->
                 key(tool) {
@@ -174,7 +170,7 @@ private val LeftContent: @Composable RowScope.() -> Unit = {
                     SegmentedButton({ EchoInMirror.editorTool = tool }, selected, showIcon = false) {
                         if (index == 0) Spacer(Modifier.width(3.dp))
                         Icon(EDITOR_TOOL_ICONS[index], tool.name, APP_BAR_ACTIONS_ICON_MODIFIER,
-                            if (selected) MaterialTheme.colorScheme.onBackground else LocalContentColor.current)
+                            if (selected) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.outline)
                         if (index == size - 1) Spacer(Modifier.width(3.dp))
                     }
                     if (index < size - 1) SegmentedDivider()

@@ -44,6 +44,7 @@ import com.eimsound.daw.components.splitpane.SplitPaneState
 import com.eimsound.daw.components.utils.EditAction
 import com.eimsound.daw.components.utils.toOnSurfaceColor
 import com.eimsound.daw.dawutils.openMaxValue
+import com.eimsound.daw.dawutils.toCursorIcon
 import com.eimsound.daw.utils.*
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
@@ -272,7 +273,7 @@ class Playlist : Panel, MultiSelectableEditor {
 
     @Composable
     private fun TrackContents() {
-        Column(Modifier.verticalScroll(verticalScrollState).fillMaxSize()) {
+        Column(Modifier.verticalScroll(verticalScrollState).fillMaxSize().pointerHoverIcon(EchoInMirror.editorTool.toCursorIcon())) {
             Divider()
             var i = 0
             EchoInMirror.bus!!.subTracks.fastForEach {

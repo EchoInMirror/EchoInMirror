@@ -1,8 +1,6 @@
 package com.eimsound.audiosources
 
-import com.eimsound.audioprocessor.AudioSource
-import com.eimsound.audioprocessor.FileAudioSource
-import com.eimsound.audioprocessor.FileAudioSourceFactory
+import com.eimsound.audioprocessor.*
 import com.eimsound.daw.utils.RandomFileInputStream
 import com.eimsound.daw.commons.json.asString
 import kotlinx.serialization.json.*
@@ -13,6 +11,7 @@ import org.jflac.util.RingBuffer
 import org.tritonus.sampled.file.WaveAudioFileReader
 import org.tritonus.share.sampled.FloatSampleTools
 import java.io.*
+import java.lang.ref.WeakReference
 import java.nio.file.Path
 import java.nio.file.Paths
 import javax.sound.sampled.AudioFileFormat
@@ -34,51 +33,80 @@ private class JFlacRandomFileInputStream(file: File) : org.jflac.io.RandomFileIn
 }
 
 class DefaultFileAudioSource(override val factory: FileAudioSourceFactory<*>, override val file: Path) : FileAudioSource {
-    private val format = AudioSystem.getAudioFileFormat(file.toFile())
-    private val isWav = format.type == AudioFileFormat.Type.WAVE
-    private val isFlac = format.type == FlacFileFormatType.FLAC
+    private var isWav = false
+    private var isFlac = false
 
-    override val source: AudioSource? = null
-    override val sampleRate = format.format.sampleRate
-    override val channels = format.format.channels
-    override val length = format.frameLength.toLong()
-    override val isRandomAccessible = isWav || isFlac
+    override val source: Nothing? = null
+    override var sampleRate = 0F
+        private set
+    override var channels = 0
+        private set
+    override var length = 0L
+        private set
+    override val isRandomAccessible get() = isWav || isFlac || memoryAudioSource != null
 
-    private val frameSize = channels * (format.format.sampleSizeInBits / 8)
-    private val newFormat = AudioFormat(AudioFormat.Encoding.PCM_SIGNED, sampleRate, format.format.sampleSizeInBits,
-        channels, frameSize, sampleRate, false)
+    private var frameSize = 0
+    private lateinit var newFormat: AudioFormat
 
     private var stream: InputStream? = null
-    private lateinit var flacDecoder: FLACDecoder
+    private var flacDecoder: FLACDecoder? = null
     private var lastPos: Long = 0
     private var pcmData: ByteData? = null
     private var tempBuffer: ByteArray? = null
     private lateinit var buffer: RingBuffer
+    private var memoryAudioSource: MemoryAudioSource? = null
 
     init {
-        if (isWav) {
-            stream = WaveAudioFileReader().getAudioInputStream(RandomFileInputStream(file.toFile())).apply { mark(0) }
-        } else if (isFlac) {
-            stream = JFlacRandomFileInputStream(file.toFile())
-            buffer = RingBuffer()
-            buffer.resize(frameSize * 2)
-            flacDecoder = FLACDecoder(stream).apply { readMetadata() }
-        } else {
-            if (length * frameSize > MB500) throw UnsupportedOperationException("File is large than 500mb!")
-            try {
-                stream = AudioSystem.getAudioInputStream(BufferedInputStream(FileInputStream(file.toFile())))
-            } catch (e: Exception) {
-                throw UnsupportedOperationException(e)
+        run {
+            AudioSourceManager.instance.fileSourcesCache[file]?.get()?.let {
+                memoryAudioSource = it
+                sampleRate = it.sampleRate
+                channels = it.channels
+                length = it.length
+                return@run
+            }
+
+            val format = AudioSystem.getAudioFileFormat(file.toFile())
+            isWav = format.type == AudioFileFormat.Type.WAVE
+            isFlac = format.type == FlacFileFormatType.FLAC
+            sampleRate = format.format.sampleRate
+            channels = format.format.channels
+            length = format.frameLength.toLong()
+            frameSize = channels * (format.format.sampleSizeInBits / 8)
+            newFormat = AudioFormat(AudioFormat.Encoding.PCM_SIGNED, sampleRate, format.format.sampleSizeInBits,
+                channels, frameSize, sampleRate, false)
+
+            if (isWav) {
+                stream = WaveAudioFileReader().getAudioInputStream(RandomFileInputStream(file.toFile())).apply { mark(0) }
+            } else if (isFlac) {
+                stream = JFlacRandomFileInputStream(file.toFile())
+                buffer = RingBuffer()
+                buffer.resize(frameSize * 2)
+                flacDecoder = FLACDecoder(stream).apply { readMetadata() }
+            } else {
+                if (length * frameSize > MB500) throw UnsupportedOperationException("File is large than 500mb!")
+                try {
+                    stream = AudioSystem.getAudioInputStream(BufferedInputStream(FileInputStream(file.toFile())))
+                } catch (e: Exception) {
+                    throw UnsupportedOperationException(e)
+                }
+            }
+
+            if (AudioSourceManager.instance.cachedFileSize > 0 && length * frameSize < AudioSourceManager.instance.cachedFileSize) {
+                memoryAudioSource = AudioSourceManager.instance.createMemorySource(this)
+                AudioSourceManager.instance.fileSourcesCache[file] = WeakReference(memoryAudioSource!!)
             }
         }
     }
 
     override fun getSamples(start: Long, length: Int, buffers: Array<FloatArray>): Int {
+        memoryAudioSource?.let { return@getSamples it.getSamples(start, length, buffers) }
+
         val stream = stream ?: return 0
         val consumed: Int
         if (isFlac) {
             if ((lastPos + length - start).absoluteValue > 4) {
-                flacDecoder.seek(start.coerceIn(0, this.length))
+                flacDecoder?.seek(start.coerceIn(0, this.length))
                 buffer.empty()
             }
             consumed = readFromByteArray(buffers, length)
@@ -110,6 +138,11 @@ class DefaultFileAudioSource(override val factory: FileAudioSourceFactory<*>, ov
     override fun close() {
         stream?.close()
         stream = null
+        if (::buffer.isInitialized) buffer.empty()
+        pcmData = null
+        tempBuffer = null
+        flacDecoder = null
+        memoryAudioSource = null
     }
 
     private fun readFlac(offset: Int, len: Int): Int {
@@ -119,12 +152,13 @@ class DefaultFileAudioSource(override val factory: FileAudioSourceFactory<*>, ov
         // can only read integral number of frames
         len2 -= len2 % frameSize
         // do the best effort to fill the buffer
+        val d = flacDecoder ?: return -1
         while (len2 > 0) {
             var thisLen = len2
             if (thisLen > buffer.available) thisLen = buffer.available
             if (thisLen < frameSize) {
-                val frame = flacDecoder.readNextFrame() ?: break
-                val data = flacDecoder.decodeFrame(frame, pcmData)
+                val frame = d.readNextFrame() ?: break
+                val data = d.decodeFrame(frame, pcmData)
                 pcmData = data
                 buffer.resize(data.len * 2)
                 buffer.put(data.data, 0, data.len)
@@ -176,6 +210,8 @@ class DefaultFileAudioSource(override val factory: FileAudioSourceFactory<*>, ov
         }
         return readSamples
     }
+
+    override fun copy() = DefaultFileAudioSource(factory, file)
 
     override fun toString(): String {
         return "DefaultFileAudioSource(file=$file, source=$source, sampleRate=$sampleRate, channels=$channels, length=$length, isRandomAccessible=$isRandomAccessible)"

@@ -23,10 +23,7 @@ import com.eimsound.daw.components.dragdrop.LocalGlobalDragAndDrop
 import com.eimsound.daw.components.dragdrop.PlatformDropTargetModifier
 import com.eimsound.daw.components.splitpane.HorizontalSplitPane
 import com.eimsound.daw.components.splitpane.VerticalSplitPane
-import com.eimsound.daw.dawutils.Border
-import com.eimsound.daw.dawutils.CLIPBOARD_MANAGER
-import com.eimsound.daw.dawutils.Logo
-import com.eimsound.daw.dawutils.border
+import com.eimsound.daw.dawutils.*
 import com.eimsound.daw.impl.WindowManagerImpl
 import com.eimsound.daw.utils.isCrossPlatformAltPressed
 import com.eimsound.daw.utils.isCrossPlatformCtrlPressed
@@ -132,6 +129,7 @@ fun ApplicationScope.MainWindow() {
         EchoInMirror.commandManager.executeCommand(keys)
         false
     }) {
+        InitEditorTools()
         if (SystemUtils.IS_OS_MAC) {
             window.rootPane.putClientProperty("apple.awt.fullWindowContent", true)
             window.rootPane.putClientProperty("apple.awt.transparentTitleBar", true)

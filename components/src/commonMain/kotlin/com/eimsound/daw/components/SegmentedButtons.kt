@@ -11,16 +11,19 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
+val LocalSegmentedButtonsBorderColor = staticCompositionLocalOf { Color.Black }
+
 @Composable
 fun SegmentedButtons(
     modifier: Modifier = Modifier,
-    contentColor: Color = MaterialTheme.colorScheme.onSurface,
+    borderColor: Color = MaterialTheme.colorScheme.onSurface,
     content: @Composable () -> Unit
 ) {
     Row(
@@ -29,17 +32,17 @@ fun SegmentedButtons(
             .clip(RoundedCornerShape(percent = 100))
             .height(30.dp)
             .border(
-                border = BorderStroke(1.dp, contentColor),
+                border = BorderStroke(1.dp, borderColor),
                 shape = RoundedCornerShape(percent = 100)
             )
     ) {
-        CompositionLocalProvider(LocalContentColor.provides(contentColor), content = content)
+        CompositionLocalProvider(LocalSegmentedButtonsBorderColor.provides(borderColor), content = content)
     }
 }
 
 @Composable
 fun SegmentedDivider(modifier: Modifier = Modifier) =
-    Divider(modifier.fillMaxHeight().width(1.dp), color = LocalContentColor.current)
+    Divider(modifier.fillMaxHeight().width(1.dp), color = LocalSegmentedButtonsBorderColor.current)
 
 @Composable
 fun SegmentedButton(

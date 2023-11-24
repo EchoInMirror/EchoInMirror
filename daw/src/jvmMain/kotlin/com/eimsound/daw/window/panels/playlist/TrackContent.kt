@@ -31,6 +31,7 @@ import com.eimsound.audioprocessor.oneBarPPQ
 import com.eimsound.daw.actions.doClipsAmountAction
 import com.eimsound.daw.actions.doClipsDisabledAction
 import com.eimsound.daw.actions.doClipsEditActionAction
+import com.eimsound.daw.actions.doClipsSplitAction
 import com.eimsound.daw.api.*
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.components.utils.EditAction
@@ -74,14 +75,7 @@ private suspend fun AwaitPointerEventScope.handleDragEvent(playlist: Playlist, c
                             val start = (verticalScrollState.value / noteWidthPx - clip.time).coerceAtLeast(0F)
                             val clickTime = (event.changes.first().position.x / noteWidthPx + start)
                                 .fitInUnit(EchoInMirror.editUnit)
-                            @Suppress("TYPE_MISMATCH")
-                            val newClip = clip.clip.factory.split(clip, clickTime)
-                            track.clips.add(ClipManager.instance.createTrackClip(
-                                newClip, clip.time + clickTime, clip.duration - clickTime, 0, track
-                            ))
-                            clip.duration -= clickTime
-                            track.clips.sort()
-                            track.clips.update()
+                            listOf(clip).doClipsSplitAction(clickTime)
                             continue
                         }
                         else -> {
@@ -279,7 +273,10 @@ private fun Playlist.ClipItem(it: TrackClip<*>, track: Track, index: Int) {
                                     else this
                                 }
                                 .clip(MaterialTheme.shapes.extraSmall)
-                                .pointerHoverIcon(action0.toPointerIcon(PointerIcon.Hand))
+                                .run {
+                                    if (EchoInMirror.editorTool.ordinal <= 1) pointerHoverIcon(action0.toPointerIcon(PointerIcon.Hand))
+                                    else this
+                                }
                         ) {
                             val contentColor = trackColor.toOnSurfaceColor()
                             if (curOrMovingTrackHeight.value >= 40) {
@@ -293,9 +290,9 @@ private fun Playlist.ClipItem(it: TrackClip<*>, track: Track, index: Int) {
                                     textDecoration = if (isDisabled) TextDecoration.LineThrough else null
                                 )
                             }
-                            @Suppress("TYPE_MISMATCH")
-                            it.clip.factory.PlaylistContent(
-                                it, track,
+                            @Suppress("UNCHECKED_CAST")
+                            (it.clip.factory as ClipFactory<Clip>).PlaylistContent(
+                                it as TrackClip<Clip>, track,
                                 contentColor.copy(animateFloatAsState(if (isSelected) 1F else 0.8F).value),
                                 noteWidth,
                                 (scrollXPPQ - clipStartPPQOnMove).coerceAtLeast(0F) +

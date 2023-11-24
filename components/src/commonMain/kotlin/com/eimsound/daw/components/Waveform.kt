@@ -17,6 +17,7 @@ import com.eimsound.audioprocessor.data.EnvelopePointList
 import kotlin.math.absoluteValue
 
 private const val STEP_IN_PX = 0.5F
+private const val WAVEFORM_DAMPING = 0.93F
 
 @Composable
 fun Waveform(
@@ -27,15 +28,22 @@ fun Waveform(
     isDrawMinAndMax: Boolean = true,
     modifier: Modifier = Modifier
 ) {
+    thumbnail.read()
     Canvas(modifier.fillMaxSize().graphicsLayer { }) {
         val channelHeight = (size.height / thumbnail.channels) - 2
         val halfChannelHeight = channelHeight / 2
         val drawHalfChannelHeight = halfChannelHeight - 1
         if (isDrawMinAndMax) {
+            var min = 0F
+            var max = 0F
             thumbnail.query(size.width.toDouble(), startSeconds, endSeconds, STEP_IN_PX) { x, ch, min0, max0 ->
                 val y = 2 + channelHeight * ch + halfChannelHeight
-                val max = max0.absoluteValue * drawHalfChannelHeight
-                val min = min0.absoluteValue * drawHalfChannelHeight
+                val curMax = max0.absoluteValue.coerceAtMost(1F) * drawHalfChannelHeight
+                val curMin = min0.absoluteValue.coerceAtMost(1F) * drawHalfChannelHeight
+                if (curMin > min) min = curMin
+                else min *= WAVEFORM_DAMPING
+                if (curMax > max) max = curMax
+                else max *= WAVEFORM_DAMPING
                 if (min + max < 0.3F) {
                     drawLine(color, Offset(x, y), Offset(x + STEP_IN_PX, y), STEP_IN_PX)
                     return@query
@@ -49,9 +57,9 @@ fun Waveform(
             }
         } else {
             thumbnail.query(size.width.toDouble(), startSeconds, endSeconds, STEP_IN_PX) { x, ch, min, max ->
-                val v = (if (max.absoluteValue > min.absoluteValue) max else min) * drawHalfChannelHeight
+                val v = (if (max.absoluteValue > min.absoluteValue) max else min).coerceIn(-1F, 1F) * drawHalfChannelHeight
                 val y = 2 + channelHeight * ch + halfChannelHeight
-                if (v < 0.3F) {
+                if (v.absoluteValue < 0.3F) {
                     drawLine(color, Offset(x, y), Offset(x + STEP_IN_PX, y), STEP_IN_PX)
                     return@query
                 }
@@ -75,6 +83,7 @@ fun Waveform(
     isDrawMinAndMax: Boolean = true,
     modifier: Modifier = Modifier
 ) {
+    thumbnail.read()
     val startSeconds = position.convertPPQToSeconds(startPPQ)
     val endSeconds = position.convertPPQToSeconds(startPPQ + widthPPQ)
     Canvas(modifier.fillMaxSize().graphicsLayer { }) {
@@ -84,11 +93,17 @@ fun Waveform(
         val stepPPQ = widthPPQ / size.width
         volumeEnvelope?.read()
         if (isDrawMinAndMax) {
+            var min = 0F
+            var max = 0F
             thumbnail.query(size.width.toDouble(), startSeconds, endSeconds, STEP_IN_PX) { x, ch, min0, max0 ->
                 val y = 2 + channelHeight * ch + halfChannelHeight
                 val volume = volumeEnvelope?.getValue((startPPQ + x * stepPPQ).toInt(), 1F) ?: 1F
-                val min = min0.absoluteValue * volume * drawHalfChannelHeight
-                val max = max0.absoluteValue * volume * drawHalfChannelHeight
+                val curMin = (min0.absoluteValue * volume).coerceAtMost(1F) * drawHalfChannelHeight
+                val curMax = (max0.absoluteValue * volume).coerceAtMost(1F) * drawHalfChannelHeight
+                if (curMin > min) min = curMin
+                else min *= WAVEFORM_DAMPING
+                if (curMax > max) max = curMax
+                else max *= WAVEFORM_DAMPING
                 if (min + max < 0.3F) {
                     drawLine(color, Offset(x, y), Offset(x + STEP_IN_PX, y), STEP_IN_PX)
                     return@query
@@ -102,10 +117,11 @@ fun Waveform(
             }
         } else {
             thumbnail.query(size.width.toDouble(), startSeconds, endSeconds, STEP_IN_PX) { x, ch, min, max ->
-                val v = (if (max.absoluteValue > min.absoluteValue) max else min) *
-                        (volumeEnvelope?.getValue((startPPQ + x * stepPPQ).toInt(), 1F) ?: 1F) * drawHalfChannelHeight
+                val v = ((if (max.absoluteValue > min.absoluteValue) max else min) *
+                        (volumeEnvelope?.getValue((startPPQ + x * stepPPQ).toInt(), 1F) ?: 1F))
+                    .coerceIn(-1F, 1F) * drawHalfChannelHeight
                 val y = 2 + channelHeight * ch + halfChannelHeight
-                if (v < 0.3F) {
+                if (v.absoluteValue < 0.3F) {
                     drawLine(color, Offset(x, y), Offset(x + STEP_IN_PX, y), STEP_IN_PX)
                     return@query
                 }

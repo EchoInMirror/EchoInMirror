@@ -10,6 +10,7 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.JsonObject
+import java.lang.ref.WeakReference
 import java.nio.file.Path
 import java.util.*
 
@@ -22,7 +23,9 @@ interface AudioSource : JsonSerializable {
     @Transient
     val length: Long // timeInSamples
     val factory: AudioSourceFactory<*>
+
     fun getSamples(start: Long, length: Int, buffers: Array<FloatArray>): Int
+    fun copy(): AudioSource
 }
 
 /**
@@ -32,7 +35,9 @@ interface FileAudioSource : AudioSource, AutoCloseable {
     val file: Path
     @Transient
     val isRandomAccessible: Boolean
+    override val source: Nothing?
     override val factory: FileAudioSourceFactory<*>
+    override fun copy(): FileAudioSource
 }
 
 /**
@@ -42,12 +47,16 @@ interface ResampledAudioSource : AudioSource {
     @Transient
     var factor: Double
     override val factory: ResampledAudioSourceFactory<*>
+    override fun copy(): ResampledAudioSource
 }
 
 /**
  * @see com.eimsound.audiosources.DefaultMemoryAudioSource
  */
-interface MemoryAudioSource : AudioSource, AutoCloseable
+interface MemoryAudioSource : AudioSource, AutoCloseable {
+    override val factory: MemoryAudioSourceFactory<*>
+    override fun copy(): MemoryAudioSource
+}
 
 @Serializable(with = AudioSourceFactoryNameSerializer::class)
 interface AudioSourceFactory <T: AudioSource> {
@@ -82,10 +91,12 @@ interface AudioSourceManager : Reloadable {
     }
     val factories: Map<String, AudioSourceFactory<*>>
     val supportedFormats: Set<String>
+    val cachedFileSize: Int
+    val fileSourcesCache: MutableMap<Path, WeakReference<MemoryAudioSource>>
+
     fun createAudioSource(factory: String, source: AudioSource? = null): AudioSource
     fun createAudioSource(json: JsonObject): AudioSource
     fun createAudioSource(file: Path, factory: String? = null): FileAudioSource
-    fun createAutoWrappedAudioSource(file: Path): AudioSource
     fun createMemorySource(source: AudioSource, factory: String? = null): MemoryAudioSource
     fun createResampledSource(source: AudioSource, factory: String? = null): ResampledAudioSource
 }
