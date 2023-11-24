@@ -157,8 +157,8 @@ fun FileNode(file: Path, depth: Int = 0, showSupFormatOnly: Boolean = false) {
     else {
         val ext = FileExtensionManager.handlers
             .firstOrNull { it.isCustomFileBrowserNode && it.extensions.containsMatchIn(file.name) }
-        if (ext == null) { if (!showSupFormatOnly) DefaultFileNode(file, depth = depth) }
-        else ext.FileBrowserNode(file, depth)
+        if (ext != null) ext.FileBrowserNode(file, depth)
+        else if (!showSupFormatOnly) DefaultFileNode(file, depth = depth)
     }
 }
 
