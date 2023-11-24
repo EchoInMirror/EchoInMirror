@@ -4,11 +4,16 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import com.eimsound.daw.Configuration
 import com.eimsound.daw.components.Gap
 import com.eimsound.daw.components.SettingTab
 import com.eimsound.daw.components.SettingsCard
 import com.eimsound.daw.components.SettingsListManager
+import com.eimsound.daw.utils.CurrentWindow
+import com.eimsound.daw.utils.openFolderBrowser
+import kotlin.io.path.pathString
+
 
 internal object FileBrowserSettings : SettingTab {
     @Composable
@@ -22,39 +27,33 @@ internal object FileBrowserSettings : SettingTab {
     }
 
     @Composable
-    @OptIn(ExperimentalMaterial3Api::class)
     override fun content() {
-        var showOptionalFormat by remember { mutableStateOf(true) }
-        var folderPathList by remember { mutableStateOf(listOf<String>(
-            "C:\\Users\\Administrator\\Desktop\\test",
-            "C:\\Users\\Administrator\\Desktop\\test2"
-        ))}
+        val window = CurrentWindow.current
 
         Column {
             SettingSection("文件浏览器的自定义文件夹") {
                 SettingsListManager(
-                    folderPathList,
+                    Configuration.fileBrowserCustomRoots,
+                    toString = { it.pathString },
                     addButtonText = "添加文件夹",
                     onAddButtonClick = {
-                        folderPathList = folderPathList + "C:\\Users\\Administrator\\Desktop\\test111"
+                        openFolderBrowser(window)?.let {
+                            Configuration.fileBrowserCustomRoots.add(it.toPath())
+                            Configuration.save()
+                        }
+                    },
+                    onDelete = {
+                        Configuration.fileBrowserCustomRoots.remove(it)
+                        Configuration.save()
                     }
                 )
             }
             Gap(16)
             SettingSection("文件浏览器的个性化配置项") {
-                SettingsCard("只显示可导入格式的文件") {
-                    Switch(checked = showOptionalFormat, onCheckedChange = {
-                        showOptionalFormat = it
-                    })
-                }
-                SettingsCard("不显示可导入的格式") {
-                    Switch(checked = showOptionalFormat, onCheckedChange = {
-                        showOptionalFormat = it
-                    })
-                }
-                SettingsCard("只显示不可导入的格式") {
-                    Switch(checked = showOptionalFormat, onCheckedChange = {
-                        showOptionalFormat = it
+                SettingsCard("只显示受支持格式的文件") {
+                    Switch(checked = Configuration.fileBrowserShowSupFormatOnly, onCheckedChange = {
+                        Configuration.fileBrowserShowSupFormatOnly = it
+                        Configuration.save()
                     })
                 }
             }

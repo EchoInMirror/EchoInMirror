@@ -33,6 +33,7 @@ import com.eimsound.audioprocessor.AudioProcessorManager
 import com.eimsound.audioprocessor.AudioSourceManager
 import com.eimsound.audioprocessor.data.midi.getNotes
 import com.eimsound.audioprocessor.data.midi.toMidiTracks
+import com.eimsound.daw.Configuration
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.window.Panel
 import com.eimsound.daw.api.window.PanelDirection
@@ -80,7 +81,8 @@ object FileSystemBrowser : Panel {
     override fun Content() {
         Column {
             Tree(Modifier.weight(1F), { if (it is Path) createPreviewerComponent(it) }) {
-                roots.fastForEach { key(it) { FileNode(it) } }
+                roots.fastForEach { key(it) { FileNode(it, showSupFormatOnly = Configuration.fileBrowserShowSupFormatOnly) } }
+                Configuration.fileBrowserCustomRoots.fastForEach { key(it) { FileNode(it, showSupFormatOnly = Configuration.fileBrowserShowSupFormatOnly) } }
             }
             Previewer()
         }

@@ -47,6 +47,9 @@ val FileExtensionIcons = mapOf(
     "html" to Icons.Outlined.TextFields,
     "htm" to Icons.Outlined.TextFields,
 )
+val SupportFormatCollection = listOf(
+    "wav", "mp3", "ogg", "flac", "aac",
+)
 
 private val expandIconModifier = Modifier.size(16.dp)
 private val iconModifier = Modifier.size(18.dp)
@@ -70,7 +73,7 @@ fun TreeItem(
     }) {
         Row(Modifier.padding(start = 8.dp * depth, top = 1.dp, bottom = 1.dp), verticalAlignment = Alignment.CenterVertically) {
             if (expanded != null) Icon(
-                if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                if (expanded) Icons.Filled.ExpandMore else Icons.Filled.ExpandLess,
                 if (expanded) "收起" else "展开",
                 expandIconModifier
             ) else Spacer(expandIconModifier)
@@ -81,7 +84,7 @@ fun TreeItem(
 }
 
 @Composable
-fun DictionaryNode(file: Path, depth: Int = 0) {
+fun DictionaryNode(file: Path, depth: Int = 0, showSupFormatOnly: Boolean = false) {
     var expanded by remember { mutableStateOf(false) }
     val list = remember(file) {
         try {
@@ -105,7 +108,7 @@ fun DictionaryNode(file: Path, depth: Int = 0) {
             { expanded = !expanded }
         } else null
     )
-    if (expanded) list!!.fastForEach { FileNode(it, depth + 1) }
+    if (expanded) list!!.fastForEach { FileNode(it, depth + 1, showSupFormatOnly) }
 }
 
 @Composable
@@ -152,9 +155,10 @@ fun DefaultFileNode(
 }
 
 @Composable
-fun FileNode(file: Path, depth: Int = 0) {
-    if (file.isDirectory()) DictionaryNode(file, depth)
+fun FileNode(file: Path, depth: Int = 0, showSupFormatOnly: Boolean = false) {
+    if (file.isDirectory()) DictionaryNode(file, depth, showSupFormatOnly)
     else {
+        if (showSupFormatOnly && !SupportFormatCollection.contains(file.extension.lowercase())) return
         val ext = FileExtensionManager.handlers
             .firstOrNull { it.isCustomFileBrowserNode && it.extensions.containsMatchIn(file.name) }
         if (ext == null) DefaultFileNode(file, depth = depth)
