@@ -44,7 +44,7 @@ private fun CardHeader(p: TrackAudioProcessorWrapper, index: Int) {
                     fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.titleSmall
                 )
-                Text(p.processor.name, Modifier.weight(1F), style = MaterialTheme.typography.titleSmall,
+                Text(p.name, Modifier.weight(1F), style = MaterialTheme.typography.titleSmall,
                     maxLines = 1, overflow = TextOverflow.Ellipsis,
                     textDecoration = if (isDisabled) TextDecoration.LineThrough else TextDecoration.None,
                     color = LocalContentColor.current.copy(alpha = if (isDisabled) 0.7F else 1F))

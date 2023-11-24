@@ -92,7 +92,8 @@ class MidiClipFactoryImpl : MidiClipFactory {
     ) {
         val c = clip.clip as MidiClipImpl
         val timeInSamples = position.timeInSamples
-        val blockEndSample = timeInSamples + position.bufferSize
+        val bufferSize = position.bufferSize
+        val blockEndSample = timeInSamples + bufferSize
         val startTime = clip.time
         val notes = c.notes
         if (clip.currentIndex == -1) {
@@ -102,7 +103,7 @@ class MidiClipFactoryImpl : MidiClipFactory {
         }
         clip.clip.events.forEach { (id, points) ->
             if (id !in 0..127) return@forEach
-            for (i in 0 until position.bufferSize step position.ppq) {
+            for (i in 0 until bufferSize step position.ppq) {
                 val ppq = position.convertSamplesToPPQ(timeInSamples + i) - startTime
                 val value = points.getValue(ppq).toInt()
                 val byteValue = value.toByte()

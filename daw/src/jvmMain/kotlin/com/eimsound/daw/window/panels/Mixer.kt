@@ -50,6 +50,7 @@ import com.eimsound.daw.components.silder.Slider
 import com.eimsound.daw.components.utils.clickableWithIcon
 import com.eimsound.daw.components.utils.onRightClickOrLongPress
 import com.eimsound.daw.components.utils.toOnSurfaceColor
+import com.eimsound.daw.utils.isCrossPlatformAltPressed
 import com.eimsound.daw.window.dialogs.openQuickLoadDialog
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
@@ -136,9 +137,10 @@ private fun MixerProcessorButton(isLoading: MutableState<Boolean>, list: Mutable
             if (wrapper != null) {
                 val floatingLayerProvider = LocalFloatingLayerProvider.current
                 val snackbarProvider = LocalSnackbarProvider.current
-                modifier = modifier.onRightClickOrLongPress { p ->
-                    if (!isLoading.value)
-                        floatingLayerProvider.openAudioProcessorMenu(p, wrapper, list, index, snackbarProvider, isLoading)
+                modifier = modifier.onRightClickOrLongPress { p, m ->
+                    if (!isLoading.value) floatingLayerProvider.openAudioProcessorMenu(
+                        p, wrapper, list, index, m.isCrossPlatformAltPressed, snackbarProvider, isLoading
+                    )
                 }
             }
             TextButton(onClick, modifier, contentPadding = BUTTON_PADDINGS) {
@@ -152,7 +154,7 @@ private fun MixerProcessorButton(isLoading: MutableState<Boolean>, list: Mutable
                 )
                 else Marquee {
                     Text(
-                        wrapper.processor.name, Modifier.fillMaxWidth(),
+                        wrapper.name, Modifier.fillMaxWidth(),
                         fontSize = MaterialTheme.typography.labelSmall.fontSize, maxLines = 1, lineHeight = 7.sp,
                         textAlign = TextAlign.Center, fontStyle = fontStyle, fontWeight = fontWeight,
                         textDecoration = if (wrapper.processor.isDisabled) TextDecoration.LineThrough else null,
@@ -207,8 +209,10 @@ private fun TrackName(track: Track, parentTrack: Track?, trackColor: Color, inde
     val parentTrackValue by rememberUpdatedState(parentTrack)
     val indexValue by rememberUpdatedState(index)
     Row(Modifier.background(trackColor).height(24.dp)
-        .onRightClickOrLongPress {
-            floatingLayerProvider.openTrackMenu(it, trackValue, parentTrackValue?.subTracks, indexValue)
+        .onRightClickOrLongPress { it, m ->
+            floatingLayerProvider.openTrackMenu(
+                it, trackValue, parentTrackValue?.subTracks, indexValue, m.isCrossPlatformAltPressed
+            )
         }
         .clickableWithIcon { EchoInMirror.selectedTrack = track }
         .padding(vertical = 2.5.dp).zIndex(2f)

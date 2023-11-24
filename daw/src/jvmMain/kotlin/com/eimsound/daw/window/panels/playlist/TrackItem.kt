@@ -7,6 +7,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandLess
@@ -26,7 +27,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAll
 import com.eimsound.daw.actions.doAddOrRemoveTrackAction
@@ -40,6 +40,7 @@ import com.eimsound.daw.components.VolumeSlider
 import com.eimsound.daw.components.icons.Crown
 import com.eimsound.daw.components.menus.openTrackMenu
 import com.eimsound.daw.components.utils.*
+import com.eimsound.daw.utils.isCrossPlatformAltPressed
 import com.eimsound.daw.window.dialogs.openColorPicker
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -149,8 +150,8 @@ private fun TrackIndex(track: Track, parentTrack: Track, index: Int) {
     val localFloatingLayerProvider = LocalFloatingLayerProvider.current
 
     Box(Modifier.fillMaxHeight().width(TRACK_ITEM_INDEX_WIDTH).background(color)
-        .onRightClickOrLongPress {
-            localFloatingLayerProvider.openTrackMenu(it, track, parentTrack.subTracks, index)
+        .onRightClickOrLongPress { it, m ->
+            localFloatingLayerProvider.openTrackMenu(it, track, parentTrack.subTracks, index, m.isCrossPlatformAltPressed)
         }
         .clickableWithIcon {
             localFloatingLayerProvider.openColorPicker(color) { track.color = it }
@@ -201,6 +202,17 @@ private fun RowScope.TrackCollapsedButton(track: Track) {
     }
 }
 
+@Composable
+private fun TrackName(track: Track) {
+    BasicTextField(track.name, { track.name = it },
+        Modifier.fillMaxWidth(), maxLines = 1,
+        textStyle = MaterialTheme.typography.labelLarge.copy(
+            if (track.isDisabled) LocalContentColor.current.copy(alpha = 0.5F) else LocalContentColor.current,
+            textDecoration = if (track.isDisabled) TextDecoration.LineThrough else null
+        )
+    )
+}
+
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun TrackItem(playlist: Playlist, track: Track, parentTrack: Track, index: Int, depth: Int = 0) {
@@ -244,14 +256,7 @@ private fun TrackItem(playlist: Playlist, track: Track, parentTrack: Track, inde
                 Modifier.weight(1F).fillMaxHeight().padding(8.dp, 5.dp, 2.dp, 5.dp),
                 if (curHeight.value >= 50) Arrangement.SpaceBetween else Arrangement.Center
             ) {
-                Text(
-                    track.name,
-                    color = if (track.isDisabled) LocalContentColor.current.copy(alpha = 0.5F) else LocalContentColor.current,
-                    style = MaterialTheme.typography.labelLarge,
-                    overflow = TextOverflow.Ellipsis, maxLines = 1,
-                    textDecoration = if (track.isDisabled) TextDecoration.LineThrough else null
-                )
-
+                TrackName(track)
                 if (curHeight.value >= 50) TrackItemControllers(track)
             }
 

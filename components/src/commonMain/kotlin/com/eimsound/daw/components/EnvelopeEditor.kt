@@ -206,7 +206,7 @@ class EnvelopeEditor(
     fun Editor(
         start: Float, color: Color, noteWidth: MutableState<Dp>, showThumb: Boolean = true, editUnit: Int = 24,
         horizontalScrollState: ScrollState? = null, clipStartTime: Int = 0, stroke: Float = 2F,
-        backgroundColor: Color? = null
+        backgroundColor: Color? = null, drawGradient: Boolean = true
     ) {
         val scope = rememberCoroutineScope()
         val measurer = rememberTextMeasurer(50)
@@ -450,7 +450,8 @@ class EnvelopeEditor(
                             first.value + (if (isFirstSelected) tmpOffsetY else 0F), valueRange
                     ))
                     val topLeft = Offset(0F, y)
-                    drawRect(if (isFirstSelected) primaryFillColor else fillColor, topLeft, Size(x, size.height - y))
+                    if (drawGradient)
+                        drawRect(if (isFirstSelected) primaryFillColor else fillColor, topLeft, Size(x, size.height - y))
                     drawLine(if (isFirstSelected) primaryColor else color, topLeft, Offset(x, y), strokeWidth)
                 }
 
@@ -494,7 +495,7 @@ class EnvelopeEditor(
                         mapValue(nextPoint.value + (if (isNextSelected) tmpOffsetY else 0F), valueRange)
                     )
                     drawPath(path, curColor, style = strokeStyle)
-                    drawPath(Path().apply {
+                    if (drawGradient) drawPath(Path().apply {
                         addPath(path)
                         lineTo(endX, size.height)
                         lineTo(startX, size.height)
@@ -511,7 +512,8 @@ class EnvelopeEditor(
                     val y = size.height * (1 - mapValue(first?.value ?: defaultValue, valueRange))
                     val isFirstSelected = first != null && selectedPoints.contains(first)
                     val topLeft = Offset(0F, y)
-                    drawRect(if (isFirstSelected) primaryFillColor else fillColor, topLeft, Size(x, size.height - y))
+                    if (drawGradient)
+                        drawRect(if (isFirstSelected) primaryFillColor else fillColor, topLeft, Size(x, size.height - y))
                     drawLine(if (isFirstSelected) primaryColor else color, topLeft, Offset(x, y), strokeWidth)
                 }
 
@@ -555,7 +557,7 @@ class EnvelopeEditor(
                         mapValue((next ?: cur).value, valueRange)
                     )
                     drawPath(path, curColor, style = strokeStyle)
-                    drawPath(Path().apply {
+                    if (drawGradient) drawPath(Path().apply {
                         addPath(path)
                         lineTo(endX, size.height)
                         lineTo(startX, size.height)

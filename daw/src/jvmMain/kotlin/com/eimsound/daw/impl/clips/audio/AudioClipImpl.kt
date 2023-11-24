@@ -120,7 +120,7 @@ class AudioClipFactoryImpl: AudioClipFactory {
             Waveform(clip.clip.thumbnail, EchoInMirror.currentPosition, startPPQ, widthPPQ, clip.clip.volumeEnvelope, contentColor, isDrawMinAndMax)
             remember(clip) {
                 EnvelopeEditor(clip.clip.volumeEnvelope, VOLUME_RANGE, 1F, true)
-            }.Editor(startPPQ, contentColor, noteWidth, false, clipStartTime = clip.start, stroke = 0.5F)
+            }.Editor(startPPQ, contentColor, noteWidth, false, clipStartTime = clip.start, stroke = 0.5F, drawGradient = false)
         }
     }
 

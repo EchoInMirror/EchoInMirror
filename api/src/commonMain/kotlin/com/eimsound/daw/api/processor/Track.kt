@@ -83,6 +83,7 @@ data class DefaultHandledParameter(
 interface TrackAudioProcessorWrapper : JsonSerializable, Restorable, AutoCloseable {
     var handledParameters: List<HandledParameter>
     val processor: AudioProcessor
+    var name: String
 
     override fun close() {
         processor.close()
@@ -94,13 +95,19 @@ class DefaultTrackAudioProcessorWrapper(
 ) : TrackAudioProcessorWrapper {
     override var handledParameters by mutableStateOf(emptyList<HandledParameter>())
     private var inited = false
+    private var _name by mutableStateOf("")
+    override var name
+        get() = _name.ifEmpty { processor.name }
+        set(value) { _name = if (value == processor.name) "" else value }
 
     override fun toJson() = buildJsonObject {
         putNotDefault("handledParameters", handledParameters)
+        putNotDefault("name", _name)
     }
 
     override fun fromJson(json: JsonElement) {
         json as JsonObject
+        if (json["name"]?.asString() != null) _name = json["name"]!!.asString()
         handledParameters = json["handledParameters"]?.let { arr ->
             (arr as JsonArray).mapNotNull { elm ->
                 if (elm !is JsonObject) return@mapNotNull null

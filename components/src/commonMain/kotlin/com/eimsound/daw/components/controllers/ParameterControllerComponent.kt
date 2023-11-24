@@ -93,7 +93,7 @@ fun ParameterControllerComponent(p: AudioProcessorParameter, uuid: UUID? = null)
     val audioProcessorParameterValue by rememberUpdatedState(p)
     val uuidValue by rememberUpdatedState(uuid)
     Column(
-        Modifier.width(80.dp).padding(vertical = 4.dp).onRightClickOrLongPress {
+        Modifier.width(80.dp).padding(vertical = 4.dp).onRightClickOrLongPress { it, _ ->
             floatingLayerProvider.openParameterControllerMenu(it, audioProcessorParameterValue, uuidValue, clipboardManager)
         }
     ) {

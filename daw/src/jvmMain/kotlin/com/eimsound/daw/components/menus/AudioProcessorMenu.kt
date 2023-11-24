@@ -11,6 +11,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.dp
 import com.eimsound.audioprocessor.AudioProcessorManager
 import com.eimsound.daw.actions.doAddOrRemoveAudioProcessorAction
+import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.processor.TrackAudioProcessorWrapper
 import com.eimsound.daw.components.*
 import com.eimsound.daw.commons.BasicEditor
@@ -19,6 +20,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
 import java.nio.file.Files
 import java.nio.file.Path
+import kotlin.math.roundToInt
 
 private var copiedAudioProcessorPath: Path? = null
 
@@ -26,7 +28,8 @@ private val logger = KotlinLogging.logger { }
 @OptIn(DelicateCoroutinesApi::class)
 fun FloatingLayerProvider.openAudioProcessorMenu(
     pos: Offset, p: TrackAudioProcessorWrapper, list: MutableList<TrackAudioProcessorWrapper>,
-    index: Int = -1, snackbarProvider: SnackbarProvider? = null, isLoading: MutableState<Boolean>? = null
+    index: Int = -1, showExtra: Boolean = false, snackbarProvider: SnackbarProvider? = null,
+    isLoading: MutableState<Boolean>? = null
 ) {
     openEditorMenu(pos, object : BasicEditor {
         override fun delete() {
@@ -66,12 +69,21 @@ fun FloatingLayerProvider.openAudioProcessorMenu(
 
         override val canPaste get() = copiedAudioProcessorPath != null
     }, false, {
-        Divider()
-        Text("延迟: ${p.processor.latency} samples", Modifier.padding(start = 8.dp))
+        if (showExtra) {
+            Divider()
+            val latency = p.processor.latency
+            Text(
+                "延迟: $latency (${(latency * 1000F / EchoInMirror.currentPosition.sampleRate).roundToInt()}毫秒)",
+                Modifier.padding(16.dp, 6.dp),
+                style = MaterialTheme.typography.bodySmall,
+                color = LocalContentColor.current.copy(0.4F)
+            )
+        }
     }) {
         MenuHeader(
-            p.processor.name, !p.processor.isDisabled,
-            if (p.processor.description.isInstrument) Icons.Default.Piano else Icons.Default.SettingsInputHdmi
+            p.name, !p.processor.isDisabled,
+            if (p.processor.description.isInstrument) Icons.Default.Piano else Icons.Default.SettingsInputHdmi,
+            { p.name = it }
         ) {
             CustomCheckbox(!p.processor.isDisabled, { p.processor.isDisabled = !it }, Modifier.padding(start = 8.dp))
         }

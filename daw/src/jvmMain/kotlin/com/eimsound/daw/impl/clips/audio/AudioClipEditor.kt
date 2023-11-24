@@ -89,7 +89,9 @@ class AudioClipEditor(private val clip: TrackClip<AudioClip>) : ClipEditor {
                         clip.clip.volumeEnvelope,
                         color, modifier = Modifier.width(noteWidthValue * widthPPQ)
                     )
-                    envelopeEditor.Editor(0F, color, noteWidth, true, clipStartTime = clip.start)
+                    envelopeEditor.Editor(
+                        0F, color, noteWidth, true, clipStartTime = clip.start, drawGradient = false
+                    )
                     Box {
                         PlayHead(noteWidth, horizontalScrollState,
                             (EchoInMirror.currentPosition.ppqPosition * EchoInMirror.currentPosition.ppq).toFloat(),

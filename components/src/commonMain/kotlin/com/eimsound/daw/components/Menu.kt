@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -154,7 +155,8 @@ fun Selector(
 
 @Composable
 fun MenuHeader(
-    title: String, enable: Boolean = true, icon: ImageVector? = null, content: @Composable (RowScope.() -> Unit)? = null
+    title: String, enable: Boolean = true, icon: ImageVector? = null,
+    onChange: ((String) -> Unit)? = null, content: @Composable (RowScope.() -> Unit)? = null
 ) {
     Row(
         Modifier.padding(start = 12.dp).fillMaxWidth().heightIn(32.dp),
@@ -163,11 +165,18 @@ fun MenuHeader(
         if (icon != null) {
             Icon(icon, null, Modifier.size(18.dp))
         }
-        Text(title, Modifier.weight(1F).padding(4.dp, end = 16.dp), style = MaterialTheme.typography.titleSmall,
+        if (onChange == null) Text(title, Modifier.weight(1F).padding(4.dp, end = 16.dp),
+            style = MaterialTheme.typography.titleSmall,
             maxLines = 1, overflow = TextOverflow.Ellipsis,
             textDecoration = if (enable) null else TextDecoration.LineThrough,
             color = LocalContentColor.current.copy(alpha = if (enable) 1F else 0.7F),
             fontWeight = FontWeight.ExtraBold
+        ) else BasicTextField(title, onChange,
+            Modifier.weight(1F).padding(start = 4.dp), maxLines = 1,
+            textStyle = MaterialTheme.typography.titleSmall.copy(
+                LocalContentColor.current.copy(if (enable) 1F else 0.7F),
+                fontWeight = FontWeight.ExtraBold
+            )
         )
         content?.invoke(this)
     }

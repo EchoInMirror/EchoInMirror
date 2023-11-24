@@ -103,27 +103,29 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
                 clip.clip.factory.processBlock(clip, buffers, position, midiBuffer, noteRecorder, pendingNoteOns)
             }
         }
-        latency = 0
+        var tempLatency = 0
         preProcessorsChain.fastForEach {
             if (!it.processor.isDisabled) {
                 it.processor.processBlock(buffers, position, midiBuffer)
-                latency += it.processor.latency
+                tempLatency += it.processor.latency
             }
         }
-        processSubTracks(position, buffers, midiBuffer)
+        tempLatency = processSubTracks(position, buffers, midiBuffer)
 
         if (position.isRealtime) {
             internalProcessorsChain.fastForEach {
                 it.processBlock(buffers, position, midiBuffer)
-                latency += it.latency
+                tempLatency += it.latency
             }
         }
         postProcessorsChain.fastForEach {
             if (!it.processor.isDisabled) {
                 it.processor.processBlock(buffers, position, midiBuffer)
-                latency += it.processor.latency
+                tempLatency += it.processor.latency
             }
         }
+
+        if (latency != tempLatency) latency = tempLatency
 
         var leftPeak = 0F
         var rightPeak = 0F
@@ -148,43 +150,44 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         }
     }
 
-    private suspend fun processSubTracks(position: CurrentPosition, buffers: Array<FloatArray>, midiBuffer: ArrayList<Int>) {
-        withContext(Dispatchers.Default) {
-            if (subTracks.isEmpty()) return@withContext
-            trackBuffers.checkSize(subTracks.size, 2, position.bufferSize)
+    private suspend fun processSubTracks(
+        position: CurrentPosition, buffers: Array<FloatArray>, midiBuffer: ArrayList<Int>
+    ) = withContext(Dispatchers.Default) {
+        if (subTracks.isEmpty()) return@withContext 0
+        trackBuffers.checkSize(subTracks.size, 2, position.bufferSize)
 
-            if (asyncJobs.size != subTracks.size) asyncJobs = arrayOfNulls(subTracks.size)
-            repeat(subTracks.size) { index ->
-                val it = subTracks[index]
-                asyncJobs[index] = if (it.isDisabled || it.isRendering) null
-                else launch {
-                    val trackBuffer = trackBuffers[index]
-                    trackBuffer.putBuffers(buffers, 2, buffers[0].size)
-                    it.processBlock(trackBuffer.buffers, position, ArrayList(midiBuffer))
-                }
+        if (asyncJobs.size != subTracks.size) asyncJobs = arrayOfNulls(subTracks.size)
+        repeat(subTracks.size) { index ->
+            val it = subTracks[index]
+            asyncJobs[index] = if (it.isDisabled || it.isRendering) null
+            else launch {
+                val trackBuffer = trackBuffers[index]
+                trackBuffer.putBuffers(buffers, 2, buffers[0].size)
+                it.processBlock(trackBuffer.buffers, position, ArrayList(midiBuffer))
             }
-
-            var maxLatency = 0
-            repeat(subTracks.size) { index ->
-                asyncJobs[index]?.apply {
-                    join()
-                    subTracks[index].latency.let { l -> if (l > maxLatency) maxLatency = l }
-                }
-            }
-            latency += maxLatency
-
-            buffers[0].fill(0F)
-            buffers[1].fill(0F)
-
-            repeat(subTracks.size) { index ->
-                if (asyncJobs[index] == null) return@repeat
-//                buffers.mixWith(trackBuffers[index].buffers, 1F)
-                trackBuffers[index].popAndMixBuffersTo(buffers, (maxLatency - subTracks[index].latency).coerceAtLeast(0))
-            }
-
-            buffers[0].copyInto(buffers[0])
-            buffers[1].copyInto(buffers[1])
         }
+
+        var maxLatency = 0
+        repeat(subTracks.size) { index ->
+            asyncJobs[index]?.apply {
+                join()
+                subTracks[index].latency.let { l -> if (l > maxLatency) maxLatency = l }
+            }
+        }
+
+        buffers[0].fill(0F)
+        buffers[1].fill(0F)
+
+        repeat(subTracks.size) { index ->
+            if (asyncJobs[index] == null) return@repeat
+//                buffers.mixWith(trackBuffers[index].buffers, 1F)
+            trackBuffers[index].popAndMixBuffersTo(buffers, (maxLatency - subTracks[index].latency).coerceAtLeast(0))
+        }
+
+        buffers[0].copyInto(buffers[0])
+        buffers[1].copyInto(buffers[1])
+
+        maxLatency
     }
 
     override suspend fun prepareToPlay(sampleRate: Int, bufferSize: Int) {

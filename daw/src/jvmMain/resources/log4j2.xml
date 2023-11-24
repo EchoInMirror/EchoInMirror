@@ -10,7 +10,12 @@
                 <TimeBasedTriggeringPolicy />
                 <OnStartupTriggeringPolicy />
             </Policies>
-            <DefaultRolloverStrategy max="100" />
+            <DefaultRolloverStrategy max="100">
+                <Delete basePath="${logPath}/" maxDepth="1">
+                    <IfFileName glob="*.log" />
+                    <IfLastModified age="60d" />
+                </Delete>
+            </DefaultRolloverStrategy>
         </RollingRandomAccessFile>
         <Async name="Async">
             <AppenderRef ref="rewrite"/>

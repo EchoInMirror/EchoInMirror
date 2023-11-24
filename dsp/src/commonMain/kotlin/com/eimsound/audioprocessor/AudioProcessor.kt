@@ -19,7 +19,7 @@ enum class AudioProcessorState {
 }
 
 interface AudioProcessor: Restorable, AutoCloseable, SuddenChangeListener, Disabled {
-    var name: String
+    val name: String
     val description: AudioProcessorDescription
     val inputChannelsCount: Int
     val outputChannelsCount: Int

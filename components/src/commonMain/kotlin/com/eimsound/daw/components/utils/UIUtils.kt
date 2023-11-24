@@ -29,7 +29,7 @@ fun Modifier.clickableWithIcon(enabled: Boolean = true, onClickLabel: String? = 
 }
 
 @Suppress("DEPRECATION")
-fun Modifier.onRightClickOrLongPress(onClick: (Offset) -> Unit) = composed {
+fun Modifier.onRightClickOrLongPress(onClick: (Offset, PointerKeyboardModifiers) -> Unit) = composed {
     var (position) = remember { arrayOf(Offset.Zero) }
     onGloballyPositioned { position = it.positionInWindow() }.pointerInput(Unit) {
         awaitPointerEventScope {
@@ -49,14 +49,14 @@ fun Modifier.onRightClickOrLongPress(onClick: (Offset) -> Unit) = composed {
                         }
                     } catch (_: PointerEventTimeoutCancellationException) {
                         if (!change.consumed.positionChange) {
-                            onClick(change.position + position)
+                            onClick(change.position + position, event.keyboardModifiers)
                             change.consume()
                             change.consumed.positionChange = true
                             change.changedToDown()
                         }
                     }
                 } else if (event.buttons.isSecondaryPressed && !change.isConsumed) {
-                    onClick(change.position + position)
+                    onClick(change.position + position, event.keyboardModifiers)
                     change.consume()
                 }
             }
