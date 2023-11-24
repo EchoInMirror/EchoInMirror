@@ -47,9 +47,6 @@ val FileExtensionIcons = mapOf(
     "html" to Icons.Outlined.TextFields,
     "htm" to Icons.Outlined.TextFields,
 )
-val SupportFormatCollection = listOf(
-    "wav", "mp3", "ogg", "flac", "aac",
-)
 
 private val expandIconModifier = Modifier.size(16.dp)
 private val iconModifier = Modifier.size(18.dp)
@@ -158,10 +155,9 @@ fun DefaultFileNode(
 fun FileNode(file: Path, depth: Int = 0, showSupFormatOnly: Boolean = false) {
     if (file.isDirectory()) DictionaryNode(file, depth, showSupFormatOnly)
     else {
-        if (showSupFormatOnly && !SupportFormatCollection.contains(file.extension.lowercase())) return
         val ext = FileExtensionManager.handlers
             .firstOrNull { it.isCustomFileBrowserNode && it.extensions.containsMatchIn(file.name) }
-        if (ext == null) DefaultFileNode(file, depth = depth)
+        if (ext == null) { if (!showSupFormatOnly) DefaultFileNode(file, depth = depth) }
         else ext.FileBrowserNode(file, depth)
     }
 }
