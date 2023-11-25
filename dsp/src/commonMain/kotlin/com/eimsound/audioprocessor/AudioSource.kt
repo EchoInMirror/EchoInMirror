@@ -111,7 +111,7 @@ object AudioSourceFactoryNameSerializer : KSerializer<AudioSourceFactory<*>> {
 }
 
 fun AudioSource.close() {
-    var source: AudioSource? = source
+    var source: AudioSource? = this
     while (source != null) {
         if (source is AutoCloseable) source.close()
         source = source.source

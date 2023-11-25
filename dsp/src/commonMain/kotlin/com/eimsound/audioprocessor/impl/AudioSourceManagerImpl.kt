@@ -47,11 +47,8 @@ class AudioSourceManagerImpl : AudioSourceManager {
         if (value !is FileAudioSourceFactory<*>) return@firstNotNullOfOrNull null
         try {
             value.createAudioSource(file)
-        } catch (ignored: UnsupportedOperationException) {
-            null
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
+        } catch (e: Throwable) {
+            throw UnsupportedOperationException("No factory supports file $file", e)
         }
     } ?: throw UnsupportedOperationException("No factory supports file $file")
 
@@ -71,11 +68,8 @@ class AudioSourceManagerImpl : AudioSourceManager {
             if (value !is T) return@firstNotNullOfOrNull null
             try {
                 value.createAudioSource(source)
-            } catch (ignored: UnsupportedOperationException) {
-                null
-            } catch (e: Exception) {
-                e.printStackTrace()
-                null
+            } catch (e: Throwable) {
+                throw UnsupportedOperationException("No factory from $source", e)
             }
         } ?: throw UnsupportedOperationException("No factory inherited from ${T::class.simpleName}")
     }

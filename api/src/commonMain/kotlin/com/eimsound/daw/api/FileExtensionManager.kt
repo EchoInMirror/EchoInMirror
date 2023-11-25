@@ -24,6 +24,8 @@ abstract class AbstractFileExtensionHandler : FileExtensionHandler {
     override val isCustomFileBrowserNode = false
     @Composable
     override fun FileBrowserNode(file: Path, depth: Int) { }
+
+    override fun toString() = "${this::class.simpleName}(${extensions.pattern})"
 }
 
 object FileExtensionManager {

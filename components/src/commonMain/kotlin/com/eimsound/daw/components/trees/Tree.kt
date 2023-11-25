@@ -156,9 +156,9 @@ fun FileNode(file: Path, depth: Int = 0, showSupFormatOnly: Boolean = false) {
     if (file.isDirectory()) DictionaryNode(file, depth, showSupFormatOnly)
     else {
         val ext = FileExtensionManager.handlers
-            .firstOrNull { it.isCustomFileBrowserNode && it.extensions.containsMatchIn(file.name) }
-        if (ext != null) ext.FileBrowserNode(file, depth)
-        else if (!showSupFormatOnly) DefaultFileNode(file, depth = depth)
+            .firstOrNull { it.extensions.containsMatchIn(file.name) }
+        if (ext?.isCustomFileBrowserNode == true) ext.FileBrowserNode(file, depth)
+        else if (!showSupFormatOnly || ext != null) DefaultFileNode(file, depth = depth)
     }
 }
 

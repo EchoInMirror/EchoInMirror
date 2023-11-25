@@ -110,7 +110,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
                 tempLatency += it.processor.latency
             }
         }
-        tempLatency = processSubTracks(position, buffers, midiBuffer)
+        tempLatency += processSubTracks(position, buffers, midiBuffer)
 
         if (position.isRealtime) {
             internalProcessorsChain.fastForEach {

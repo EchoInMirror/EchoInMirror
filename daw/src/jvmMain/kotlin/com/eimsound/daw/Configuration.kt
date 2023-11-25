@@ -42,7 +42,7 @@ object Configuration : JsonSerializable {
     var autoCutOver0db by mutableStateOf(true)
     var isTimeDisplayInBeats by mutableStateOf(false)
     val fileBrowserCustomRoots = mutableStateListOf<Path>()
-    var fileBrowserShowSupFormatOnly by mutableStateOf(false)
+    var fileBrowserShowSupFormatOnly by mutableStateOf(true)
     var userId = UUID.randomUUID().toString()
         private set
 

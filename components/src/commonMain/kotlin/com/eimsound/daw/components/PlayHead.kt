@@ -41,7 +41,7 @@ import com.eimsound.daw.utils.range
 private val BOTTOM = ParagraphStyle(lineHeight = 16.sp,
     lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Bottom, LineHeightStyle.Trim.FirstLineTop))
 
-fun calcDrag(x0: Float, noteWidth: Float, editUnit: Int, range: IntRange?, onRangeChange: ((IntRange) -> Unit)?,
+private fun calcDrag(x0: Float, noteWidth: Float, editUnit: Int, range: IntRange?, onRangeChange: ((IntRange) -> Unit)?,
              onTimeChange: ((Int) -> Unit)?) {
     val x = x0.coerceAtLeast(0F)
     val newValue = (x / noteWidth).fitInUnit(editUnit)
@@ -154,7 +154,7 @@ fun Timeline(modifier: Modifier = Modifier, noteWidth: MutableState<Dp>, scrollS
             }
 
             if (range != null) {
-                val start = range.first * noteWidthPx - scrollState.value + offsetXValue
+                val start = (range.first * noteWidthPx - scrollState.value + offsetXValue)
                 val end = range.last * noteWidthPx - scrollState.value + offsetXValue
                 // draw a rect with rangeColor in startPPQ to endPPQ
                 drawRect(rangeColor, Offset(start, 0F),

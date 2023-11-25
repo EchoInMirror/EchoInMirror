@@ -1,8 +1,9 @@
 package com.eimsound.audiosources
 
 import com.eimsound.audioprocessor.*
-import com.eimsound.daw.utils.RandomFileInputStream
 import com.eimsound.daw.commons.json.asString
+import javazoom.spi.mpeg.sampled.file.MpegAudioFileFormat
+import javazoom.spi.mpeg.sampled.file.MpegAudioFileReader
 import kotlinx.serialization.json.*
 import org.jflac.FLACDecoder
 import org.jflac.sound.spi.FlacFileFormatType
@@ -14,11 +15,10 @@ import java.io.*
 import java.lang.ref.WeakReference
 import java.nio.file.Path
 import java.nio.file.Paths
-import javax.sound.sampled.AudioFileFormat
-import javax.sound.sampled.AudioFormat
-import javax.sound.sampled.AudioSystem
+import javax.sound.sampled.*
 import kotlin.io.path.pathString
 import kotlin.math.absoluteValue
+import kotlin.math.ceil
 
 private const val MB500 = 500 * 1024 * 1024
 
@@ -26,11 +26,15 @@ private class JFlacRandomFileInputStream(file: File) : org.jflac.io.RandomFileIn
     private var markPos = 0L
     @Synchronized
     override fun reset() { randomFile.seek(markPos) }
+    fun resetToStart() { randomFile.seek(0) }
     @Synchronized
     override fun mark(limit: Int) { markPos = randomFile.filePointer }
     @Throws(IOException::class)
     override fun seek(pos: Long) { randomFile.seek(pos) }
 }
+
+private val wavFileReader by lazy { WaveAudioFileReader() }
+private val mpegFileReader by lazy { MpegAudioFileReader() }
 
 class DefaultFileAudioSource(override val factory: FileAudioSourceFactory<*>, override val file: Path) : FileAudioSource {
     private var isWav = false
@@ -50,11 +54,12 @@ class DefaultFileAudioSource(override val factory: FileAudioSourceFactory<*>, ov
 
     private var stream: InputStream? = null
     private var flacDecoder: FLACDecoder? = null
-    private var lastPos: Long = 0
+    private var lastPos = -1L
     private var pcmData: ByteData? = null
     private var tempBuffer: ByteArray? = null
     private lateinit var buffer: RingBuffer
     private var memoryAudioSource: MemoryAudioSource? = null
+    private var isFirstTimeToClose = false
 
     init {
         run {
@@ -66,33 +71,48 @@ class DefaultFileAudioSource(override val factory: FileAudioSourceFactory<*>, ov
                 return@run
             }
 
-            val format = AudioSystem.getAudioFileFormat(file.toFile())
+            val randomStream = JFlacRandomFileInputStream(file.toFile())
+            var format = AudioSystem.getAudioFileFormat(randomStream)
+            if (format is MpegAudioFileFormat) {
+                randomStream.close()
+                format = mpegFileReader.getAudioFileFormat(file.toFile())
+                length = ceil((format.properties()["duration"] as? Long ?: -1) / 1000000F * format.format.sampleRate).toLong()
+            } else {
+                randomStream.resetToStart()
+                length = format.frameLength.toLong()
+            }
+            var bits = format.format.sampleSizeInBits
+            if (bits == AudioSystem.NOT_SPECIFIED) bits = 16
             isWav = format.type == AudioFileFormat.Type.WAVE
             isFlac = format.type == FlacFileFormatType.FLAC
             sampleRate = format.format.sampleRate
             channels = format.format.channels
-            length = format.frameLength.toLong()
-            frameSize = channels * (format.format.sampleSizeInBits / 8)
-            newFormat = AudioFormat(AudioFormat.Encoding.PCM_SIGNED, sampleRate, format.format.sampleSizeInBits,
+            if (channels < 0 || length < 0) throw UnsupportedOperationException("Unsupported file!")
+            frameSize = channels * (bits / 8)
+            newFormat = AudioFormat(AudioFormat.Encoding.PCM_SIGNED, sampleRate, bits,
                 channels, frameSize, sampleRate, false)
 
+            var readAll = AudioSourceManager.instance.cachedFileSize > 0 && length * frameSize < AudioSourceManager.instance.cachedFileSize
+
             if (isWav) {
-                stream = WaveAudioFileReader().getAudioInputStream(RandomFileInputStream(file.toFile())).apply { mark(0) }
+                stream = wavFileReader.getAudioInputStream(randomStream).apply { mark(0) }
             } else if (isFlac) {
-                stream = JFlacRandomFileInputStream(file.toFile())
+                stream = randomStream
                 buffer = RingBuffer()
                 buffer.resize(frameSize * 2)
                 flacDecoder = FLACDecoder(stream).apply { readMetadata() }
             } else {
                 if (length * frameSize > MB500) throw UnsupportedOperationException("File is large than 500mb!")
+                readAll = true
                 try {
-                    stream = AudioSystem.getAudioInputStream(BufferedInputStream(FileInputStream(file.toFile())))
+                    stream = AudioSystem.getAudioInputStream(newFormat, AudioSystem.getAudioInputStream(file.toFile()))
                 } catch (e: Exception) {
                     throw UnsupportedOperationException(e)
                 }
             }
 
-            if (AudioSourceManager.instance.cachedFileSize > 0 && length * frameSize < AudioSourceManager.instance.cachedFileSize) {
+            if (readAll) {
+                isFirstTimeToClose = true
                 memoryAudioSource = AudioSourceManager.instance.createMemorySource(this)
                 AudioSourceManager.instance.fileSourcesCache[file] = WeakReference(memoryAudioSource!!)
             }
@@ -105,7 +125,7 @@ class DefaultFileAudioSource(override val factory: FileAudioSourceFactory<*>, ov
         val stream = stream ?: return 0
         val consumed: Int
         if (isFlac) {
-            if ((lastPos + length - start).absoluteValue > 4) {
+            if (lastPos != -1L && (lastPos + length - start).absoluteValue > 4) {
                 flacDecoder?.seek(start.coerceIn(0, this.length))
                 buffer.empty()
             }
@@ -114,11 +134,11 @@ class DefaultFileAudioSource(override val factory: FileAudioSourceFactory<*>, ov
         } else {
             val len = this.length
             if (start > len) return 0
-            if (lastPos + length != start) {
+            if (lastPos != -1L && lastPos + length != start) {
                 if (start > lastPos) {
                     stream.skip((start - lastPos) * frameSize)
                 } else {
-                    stream.reset()
+                    if (stream.markSupported()) stream.reset()
                     stream.skip(start * frameSize)
                 }
             }
@@ -142,7 +162,8 @@ class DefaultFileAudioSource(override val factory: FileAudioSourceFactory<*>, ov
         pcmData = null
         tempBuffer = null
         flacDecoder = null
-        memoryAudioSource = null
+        if (isFirstTimeToClose) isFirstTimeToClose = false
+        else memoryAudioSource = null
     }
 
     private fun readFlac(offset: Int, len: Int): Int {

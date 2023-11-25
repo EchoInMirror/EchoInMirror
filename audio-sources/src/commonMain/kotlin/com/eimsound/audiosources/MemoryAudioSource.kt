@@ -12,7 +12,6 @@ class DefaultMemoryAudioSource(
     override val source: AudioSource? = null
     override val length get() = samplesBuffer.firstOrNull()?.size?.toLong() ?: 0
     override val channels get() = samplesBuffer.size
-    private var sampleBuffer = Array(channels) { FloatArray(length.toInt()) }
 
     constructor(factory: MemoryAudioSourceFactory<MemoryAudioSource>, source: AudioSource):
             this(factory, source.run {
@@ -28,14 +27,13 @@ class DefaultMemoryAudioSource(
         if (start > len || start < 0) return 0
         var consumed = 0
         for (i in 0 until channels.coerceAtMost(buffers.size)) {
-            val buf = sampleBuffer[i]
             consumed = length.coerceAtMost((len - start).toInt())
-            System.arraycopy(buf, start.toInt(), buffers[i], 0, consumed)
+            samplesBuffer[i].copyInto(buffers[i], 0, start.toInt(), (start + consumed).toInt())
         }
         return consumed
     }
 
-    override fun close() { sampleBuffer = emptyArray() }
+    override fun close() { samplesBuffer = emptyArray() }
 
     override fun copy() = DefaultMemoryAudioSource(factory, samplesBuffer, sampleRate)
 
