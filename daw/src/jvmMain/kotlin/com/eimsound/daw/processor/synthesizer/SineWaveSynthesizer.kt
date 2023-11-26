@@ -7,7 +7,7 @@ import com.eimsound.audioprocessor.AudioProcessor
 import com.eimsound.audioprocessor.AudioProcessorFactory
 import com.eimsound.audioprocessor.CurrentPosition
 import com.eimsound.audioprocessor.data.midi.MidiEvent
-import com.eimsound.audioprocessor.dsp.Volume
+import com.eimsound.audioprocessor.interfaces.Volume
 import com.eimsound.daw.impl.processor.EIMAudioProcessorDescription
 import kotlin.math.sin
 

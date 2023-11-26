@@ -1,4 +1,4 @@
-package com.eimsound.audioprocessor.dsp
+package com.eimsound.audioprocessor.interfaces
 
 interface Pan {
     var pan: Float

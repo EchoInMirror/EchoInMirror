@@ -18,7 +18,7 @@ kotlin {
     sourceSets {
         named("commonMain") {
             dependencies {
-                compileOnly(project(":dsp"))
+                compileOnly(project(":audio-processors"))
                 compileOnly(project(":api"))
                 compileOnly(project(":commons"))
                 compileOnly(compose.runtime)

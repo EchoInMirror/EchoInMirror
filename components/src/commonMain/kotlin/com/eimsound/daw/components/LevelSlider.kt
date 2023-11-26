@@ -4,7 +4,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.eimsound.audioprocessor.dsp.Volume
+import com.eimsound.audioprocessor.interfaces.Volume
 import com.eimsound.daw.components.silder.DefaultTrack
 import com.eimsound.daw.components.silder.Slider
 import kotlin.math.pow

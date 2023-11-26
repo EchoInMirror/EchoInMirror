@@ -19,6 +19,7 @@ include(
     ":utils",
     ":audio-sources",
     ":dsp",
+    ":audio-processors",
     ":native",
     ":api",
     ":daw"

@@ -10,8 +10,8 @@ import com.eimsound.audioprocessor.data.VOLUME_RANGE
 import com.eimsound.audioprocessor.data.midi.MidiEvent
 import com.eimsound.audioprocessor.data.midi.MidiNoteRecorder
 import com.eimsound.audioprocessor.data.midi.noteOff
-import com.eimsound.audioprocessor.dsp.calcPanLeftChannel
-import com.eimsound.audioprocessor.dsp.calcPanRightChannel
+import com.eimsound.audioprocessor.interfaces.calcPanLeftChannel
+import com.eimsound.audioprocessor.interfaces.calcPanRightChannel
 import com.eimsound.daw.api.*
 import com.eimsound.daw.api.processor.*
 import com.eimsound.daw.commons.json.*

@@ -16,7 +16,7 @@ kotlin {
         named("commonMain") {
             dependencies {
                 api("org.jetbrains.kotlinx:kotlinx-serialization-json:${extra["eim.dependencies.kotlinx.serialization"]}")
-                compileOnly(compose.runtime)
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${extra["eim.dependencies.kotlinx.coroutines"]}")
                 compileOnly(compose.ui)
             }
         }

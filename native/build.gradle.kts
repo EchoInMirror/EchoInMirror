@@ -35,7 +35,7 @@ kotlin {
                 compileOnly(compose.materialIconsExtended)
                 compileOnly(project(":components"))
                 compileOnly(project(":api"))
-                compileOnly(project(":dsp"))
+                compileOnly(project(":audio-processors"))
                 compileOnly(project(":utils"))
             }
         }

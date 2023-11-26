@@ -1,7 +1,5 @@
 plugins {
     kotlin("multiplatform")
-    kotlin("plugin.serialization") version "1.9.20"
-    id("org.jetbrains.compose")
 }
 
 kotlin {
@@ -15,11 +13,6 @@ kotlin {
     sourceSets {
         named("commonMain") {
             dependencies {
-                api(project(":commons"))
-                api(project(":utils"))
-                implementation(compose.runtime)
-                implementation("com.github.albfernandez:juniversalchardet:2.4.0")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${extra["eim.dependencies.kotlinx.coroutines"]}")
                 implementation("org.mapdb:mapdb:3.0.10") {
                     exclude(group = "com.google.guava")
                 }

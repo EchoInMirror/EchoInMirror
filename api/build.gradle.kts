@@ -16,7 +16,7 @@ kotlin {
     sourceSets {
         named("commonMain") {
             dependencies {
-                api(project(":dsp"))
+                api(project(":audio-processors"))
                 api(project(":utils"))
                 api(project(":commons"))
                 api("org.pf4j:pf4j:3.8.0")

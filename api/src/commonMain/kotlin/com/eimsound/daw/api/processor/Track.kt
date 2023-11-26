@@ -5,8 +5,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.eimsound.audioprocessor.*
 import com.eimsound.audioprocessor.data.*
-import com.eimsound.audioprocessor.dsp.Pan
-import com.eimsound.audioprocessor.dsp.Volume
+import com.eimsound.audioprocessor.interfaces.Pan
+import com.eimsound.audioprocessor.interfaces.Volume
 import com.eimsound.daw.api.Colorable
 import com.eimsound.daw.api.LevelMeter
 import com.eimsound.daw.api.ProjectInformation
