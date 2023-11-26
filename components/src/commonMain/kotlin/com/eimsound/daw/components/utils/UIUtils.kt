@@ -28,7 +28,7 @@ fun Modifier.clickableWithIcon(enabled: Boolean = true, onClickLabel: String? = 
     else modifier.clickable(interactionSource, indication, enabled, onClickLabel, role, onClick)
 }
 
-@Suppress("DEPRECATION")
+@Suppress("DEPRECATION", "DuplicatedCode")
 fun Modifier.onRightClickOrLongPress(onClick: (Offset, PointerKeyboardModifiers) -> Unit) = composed {
     val obj = remember { arrayOf(Offset.Zero) }
     onGloballyPositioned { obj[0] = it.positionInWindow() }.pointerInput(Unit) {
@@ -56,6 +56,29 @@ fun Modifier.onRightClickOrLongPress(onClick: (Offset, PointerKeyboardModifiers)
                         }
                     }
                 } else if (event.buttons.isSecondaryPressed && !change.isConsumed) {
+                    onClick(change.position + obj[0], event.keyboardModifiers)
+                    change.consume()
+                }
+            }
+        }
+    }
+}
+
+@Suppress("DEPRECATION", "DuplicatedCode")
+fun Modifier.onRightClick(onClick: (Offset, PointerKeyboardModifiers) -> Unit) = composed {
+    val obj = remember { arrayOf(Offset.Zero) }
+    onGloballyPositioned { obj[0] = it.positionInWindow() }.pointerInput(Unit) {
+        awaitPointerEventScope {
+            while (true) {
+                val event = awaitPointerEvent(PointerEventPass.Main)
+                if (event.type == PointerEventType.Release) {
+                    event.changes.first().consume()
+                    continue
+                }
+                if (event.type != PointerEventType.Press) continue
+                val change = event.changes.first()
+                change.consumed.positionChange = false
+                if (event.buttons.isSecondaryPressed && !change.isConsumed) {
                     onClick(change.position + obj[0], event.keyboardModifiers)
                     change.consume()
                 }

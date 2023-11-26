@@ -1,9 +1,12 @@
 package com.eimsound.daw.impl.clips.audio
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.MusicNote
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
@@ -11,17 +14,21 @@ import com.eimsound.audioprocessor.*
 import com.eimsound.dsp.data.midi.MidiNoteRecorder
 import com.eimsound.daw.api.*
 import com.eimsound.daw.api.processor.Track
-import com.eimsound.daw.components.EnvelopeEditor
-import com.eimsound.daw.components.Waveform
 import com.eimsound.audiosources.*
+import com.eimsound.daw.components.*
 import com.eimsound.dsp.data.*
+import com.eimsound.dsp.detectBPM
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import java.nio.file.Path
 import kotlin.io.path.name
+import kotlin.math.roundToInt
 
 class AudioClipImpl(
     factory: ClipFactory<AudioClip>, target: AudioSource? = null
@@ -122,6 +129,42 @@ class AudioClipFactoryImpl: AudioClipFactory {
             remember(clip) {
                 EnvelopeEditor(clip.clip.volumeEnvelope, VOLUME_RANGE, 1F, true)
             }.Editor(startPPQ, contentColor, noteWidth, false, clipStartTime = clip.start, stroke = 0.5F, drawGradient = false)
+        }
+    }
+
+    @Composable
+    override fun MenuContent(clips: List<TrackClip<*>>, close: () -> Unit) {
+        val trackClip = clips.firstOrNull { it.clip is AudioClip } ?: return
+        val clip = trackClip.clip as AudioClip
+        val snackbarProvider = LocalSnackbarProvider.current
+
+        Divider()
+        MenuItem({
+            close()
+            @OptIn(DelicateCoroutinesApi::class)
+            GlobalScope.launch {
+                val bpm = detectBPM(clip.audioSource.copy())
+                if (bpm.isEmpty()) {
+                    snackbarProvider.enqueueSnackbar("采样时间过短!", SnackbarType.Error)
+                    return@launch
+                }
+                snackbarProvider.enqueueSnackbar {
+                    Text("检测到速度: ")
+                    val color = LocalContentColor.current.copy(0.5F)
+                    bpm.firstOrNull()?.let {
+                        Text(it.first.toString())
+                        Text("(${(it.second * 100).roundToInt()}%)", color = color)
+                    }
+                    bpm.subList(1, bpm.size).forEach {
+                        Text(
+                            ", ${it.first}(${(it.second * 100).roundToInt()}%)",
+                            color = color
+                        )
+                    }
+                }
+            }
+        }, modifier = Modifier.fillMaxWidth()) {
+            Text("检测速度")
         }
     }
 

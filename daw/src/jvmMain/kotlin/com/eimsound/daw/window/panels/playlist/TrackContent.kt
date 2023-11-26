@@ -34,8 +34,10 @@ import com.eimsound.daw.actions.doClipsEditActionAction
 import com.eimsound.daw.actions.doClipsSplitAction
 import com.eimsound.daw.api.*
 import com.eimsound.daw.api.processor.Track
+import com.eimsound.daw.components.LocalFloatingLayerProvider
 import com.eimsound.daw.components.utils.EditAction
 import com.eimsound.daw.components.utils.HorizontalResize
+import com.eimsound.daw.components.utils.onRightClick
 import com.eimsound.daw.components.utils.toOnSurfaceColor
 import com.eimsound.daw.utils.fitInUnit
 import com.eimsound.daw.utils.fitInUnitFloor
@@ -47,7 +49,9 @@ private val RESIZE_HAND_MODIFIER = Modifier.width(4.dp).fillMaxHeight()
 
 internal var resizeDirectionRight = false
 
-private suspend fun AwaitPointerEventScope.handleDragEvent(playlist: Playlist, clip: TrackClip<*>, index: Int, track: Track) {
+private suspend fun AwaitPointerEventScope.handleDragEvent(
+    playlist: Playlist, clip: TrackClip<*>, index: Int, track: Track
+) {
     var event: PointerEvent
     playlist.apply {
         do {
@@ -89,7 +93,6 @@ private suspend fun AwaitPointerEventScope.handleDragEvent(playlist: Playlist, c
                     if (event.keyboardModifiers.isCrossPlatformCtrlPressed) continue
                     break
                 } else if (event.buttons.isSecondaryPressed) {
-                    selectedClips.clear()
                     action = EditAction.NONE
                     break
                 } else if (event.buttons.isBackPressed) {
@@ -236,8 +239,12 @@ private fun Playlist.ClipItem(it: TrackClip<*>, track: Track, index: Int) {
                         clipStartPPQOnMove.toFloat().coerceAtLeast(scrollXPPQ)
                 val curTrack = currentMoveObj?.track ?: track
                 val curOrMovingTrackHeight = if (curTrack.height == 0) trackHeight else curTrack.height.dp
+                val floatingLayerProvider = LocalFloatingLayerProvider.current
                 Box(Modifier
                     .absoluteOffset(noteWidth.value * (clipStartPPQ - scrollXPPQ).coerceAtLeast(0F))
+                    .onRightClick { pos, _ ->
+                        floatingLayerProvider.openPlaylistMenu(pos, listOf(it), this@ClipItem)
+                    }
                     .pointerInput(it, track, index) {
                         awaitEachGesture { handleDragEvent(this@ClipItem, it, index, track) }
                     }

@@ -63,6 +63,9 @@ interface ClipFactory<T: Clip> {
         clip: TrackClip<T>, track: Track, contentColor: Color,
         noteWidth: MutableState<Dp>, startPPQ: Float, widthPPQ: Float
     )
+
+    @Composable
+    fun MenuContent(clips: List<TrackClip<*>>, close: () -> Unit) { }
 }
 
 /**
