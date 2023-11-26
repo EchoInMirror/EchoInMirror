@@ -1,23 +1,17 @@
-@file:Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER")
-
 package com.eimsound.daw.impl.clips.midi.editor
 
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitPointerSlopOrCancellation
-import androidx.compose.foundation.gestures.drag
-import androidx.compose.foundation.gestures.scrollBy
+import androidx.compose.foundation.gestures.*
 import androidx.compose.ui.input.pointer.*
-import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.util.fastForEach
 import com.eimsound.audioprocessor.data.midi.NoteMessage
-import com.eimsound.audioprocessor.data.midi.defaultNoteMessage
 import com.eimsound.audioprocessor.data.midi.toNoteOffEvent
 import com.eimsound.audioprocessor.data.midi.toNoteOnEvent
 import com.eimsound.daw.actions.doNoteAmountAction
 import com.eimsound.daw.actions.doNoteMessageEditAction
 import com.eimsound.daw.api.EchoInMirror
+import com.eimsound.daw.api.EditorTool
 import com.eimsound.daw.components.FloatingLayerProvider
 import com.eimsound.daw.components.KEYBOARD_KEYS
 import com.eimsound.daw.components.calcScroll
@@ -28,26 +22,6 @@ import com.eimsound.daw.utils.isCrossPlatformCtrlPressed
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
-
-private var currentX = 0
-private var lastSelectedNoteDuration = 0
-
-private fun Density.getClickedNotes(
-    x: Float, y: Float, editor: DefaultMidiClipEditor, block: Density.(NoteMessage) -> Boolean = { true }
-): NoteMessage? {
-    editor.apply {
-        currentNote = KEYBOARD_KEYS - ((y + verticalScrollState.value) / noteHeight.toPx()).toInt() - 1
-        currentX = ((x + horizontalScrollState.value) / noteWidth.value.toPx() - clip.time).roundToInt()
-        for (i in startNoteIndex..clip.clip.notes.lastIndex) {
-            val note = clip.clip.notes[i]
-            val startTime = note.time
-            if (startTime > currentX) break
-            if (note.note == currentNote && startTime <= currentX && startTime + note.duration >= currentX && block(note))
-                return note
-        }
-    }
-    return null
-}
 
 private fun playNote(note: NoteMessage, editor: DefaultMidiClipEditor) {
     if (!DefaultMidiClipEditor.playOnEdit) return
@@ -80,7 +54,7 @@ internal suspend fun PointerInputScope.handleMouseEvent(
                 when (event.type) {
                     PointerEventType.Move -> {
                         var cursor0 = PointerIcon.Default
-                        getClickedNotes(event.x, event.y, editor)?.let {
+                        getClickedNotes(event.changes[0].position)?.let {
                             val startTime = clip.time + it.time - clip.start
                             val startX = startTime * noteWidth.value.toPx() - horizontalScrollState.value
                             val endX =
@@ -119,55 +93,56 @@ internal suspend fun PointerInputScope.handleMouseEvent(
                                 action = EditAction.SELECT
                                 break
                             }
-                            var currentSelectNote = getClickedNotes(event.x, event.y, editor)
-                            if (currentSelectNote == null) {
-                                val noteUnit = EchoInMirror.editUnit
-                                currentSelectedNote?.apply { lastSelectedNoteDuration = duration }
-                                currentSelectNote = defaultNoteMessage(
-                                    currentNote,
-                                    currentX.fitInUnit(noteUnit),
-                                    lastSelectedNoteDuration.coerceAtLeast(noteUnit),
-                                    DefaultMidiClipEditor.defaultVelocity
-                                )
-                                clip.doNoteAmountAction(listOf(currentSelectNote), false)
-                                clip.clip.notes.sort()
-                                clip.clip.notes.update()
-                                selectedNotes.clear()
-                                selectedNotes.add(currentSelectNote)
-                            } else if (!selectedNotes.contains(currentSelectNote)) {
-                                selectedNotes.clear()
-                                selectedNotes.add(currentSelectNote)
-                                action = EditAction.MOVE
-                            }
-                            currentSelectedNote = currentSelectNote
-                            lastSelectedNoteDuration = currentSelectNote.duration
+                            when (EchoInMirror.editorTool) {
+                                EditorTool.PENCIL, EditorTool.CURSOR -> {
+                                    var currentSelectNote = getClickedNotes(event.changes[0].position)
+                                    if (currentSelectNote == null) {
+                                        if (EchoInMirror.editorTool == EditorTool.PENCIL) currentSelectNote = createNewNote()
+                                    } else if (!selectedNotes.contains(currentSelectNote)) {
+                                        selectedNotes.clear()
+                                        selectedNotes.add(currentSelectNote)
+                                        DefaultMidiClipEditor.lastSelectedNoteDuration = currentSelectNote.duration
+                                        action = EditAction.MOVE
+                                    }
+                                    currentSelectedNote = currentSelectNote
+                                    if (currentSelectNote != null) {
+                                        playNote(currentSelectNote, editor)
 
-                            playNote(currentSelectNote, editor)
+                                        // check is move or resize
+                                        // if user click on start 4px and end -4px is resize
+                                        // else will move
+                                        val curTrueStartTime = currentSelectNote.time + clip.time - clip.start
+                                        val startX = curTrueStartTime * noteWidth.value.toPx() - horizontalScrollState.value
+                                        val endX = (curTrueStartTime + currentSelectNote.duration) * noteWidth.value.toPx() -
+                                                horizontalScrollState.value
+                                        val fourDp = 4 * density
 
-                            // check is move or resize
-                            // if user click on start 4px and end -4px is resize
-                            // else will move
-                            val curTrueStartTime = currentSelectNote.time + clip.time - clip.start
-                            val startX = curTrueStartTime * noteWidth.value.toPx() - horizontalScrollState.value
-                            val endX = (curTrueStartTime + currentSelectNote.duration) * noteWidth.value.toPx() -
-                                    horizontalScrollState.value
-                            val fourDp = 4 * density
-                            if (event.x < startX + fourDp && event.x > startX - fourDp) {
-                                resizeDirectionRight = false
-                                action = EditAction.RESIZE
-                                break
-                            } else if (event.x < endX + fourDp && event.x > endX - fourDp) {
-                                resizeDirectionRight = true
-                                action = EditAction.RESIZE
-                            } else action = EditAction.MOVE
+                                        if (event.x < startX + fourDp && event.x > startX - fourDp) {
+                                            resizeDirectionRight = false
+                                            action = EditAction.RESIZE
+                                            break
+                                        } else if (event.x < endX + fourDp && event.x > endX - fourDp) {
+                                            resizeDirectionRight = true
+                                            action = EditAction.RESIZE
+                                        } else action = EditAction.MOVE
 
-                            // calc bound of all selected notes
-                            selectedNotes.forEach {
-                                val top = KEYBOARD_KEYS - it.note - 1
-                                if (it.time < selectedNotesLeft) selectedNotesLeft = it.time
-                                if (top > selectedNotesTop) selectedNotesTop = top
-                                if (top < selectedNotesBottom) selectedNotesBottom = top
-                                if (it.duration < minNoteDuration) minNoteDuration = it.duration
+                                        // calc bound of all selected notes
+                                        selectedNotes.forEach {
+                                            val top = KEYBOARD_KEYS - it.note - 1
+                                            if (it.time < selectedNotesLeft) selectedNotesLeft = it.time
+                                            if (top > selectedNotesTop) selectedNotesTop = top
+                                            if (top < selectedNotesBottom) selectedNotesBottom = top
+                                            if (it.duration < minNoteDuration) minNoteDuration = it.duration
+                                        }
+                                    }
+                                }
+                                EditorTool.ERASER -> {
+                                    selectedNotes.clear()
+                                    getClickedNotes(event.changes[0].position)?.let(deletionList::add)
+                                    action = EditAction.DELETE
+                                    break
+                                }
+                                else -> {}
                             }
                             break
                         } else if (event.buttons.isForwardPressed) {
@@ -175,7 +150,7 @@ internal suspend fun PointerInputScope.handleMouseEvent(
                             break
                         } else if (event.buttons.isTertiaryPressed) {
                             selectedNotes.clear()
-                            getClickedNotes(event.x, event.y, editor)?.let(deletionList::add)
+                            getClickedNotes(event.changes[0].position)?.let(deletionList::add)
                             action = EditAction.DELETE
                             break
                         } else if (event.buttons.isSecondaryPressed) {
@@ -226,9 +201,8 @@ internal suspend fun PointerInputScope.handleMouseEvent(
                                     noteHeight.toPx()).roundToInt()
                     }
 
-                    EditAction.DELETE -> getClickedNotes(it.position.x, it.position.y, editor) { note ->
-                        !deletionList.contains(note)
-                    }?.let(deletionList::add)
+                    EditAction.DELETE -> getClickedNotes(it.position) { note -> !deletionList.contains(note) }
+                        ?.let(deletionList::add)
 
                     EditAction.MOVE, EditAction.RESIZE -> {
                         val noteUnit = EchoInMirror.editUnit

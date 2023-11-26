@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.eimsound.audioprocessor.data.midi.*
@@ -109,6 +110,7 @@ class DefaultMidiClipEditor(override val clip: TrackClip<MidiClip>) : MidiClipEd
         var copiedNotes: List<NoteMessage>? = null
         var playOnEdit by mutableStateOf(true)
         var defaultVelocity by mutableStateOf(70)
+        var lastSelectedNoteDuration = 0
     }
 
     @Composable
@@ -201,5 +203,38 @@ class DefaultMidiClipEditor(override val clip: TrackClip<MidiClip>) : MidiClipEd
             selectedNotes.clear()
             selectedNotes.addAll(clip.clip.notes)
         }
+    }
+
+    private var currentX = 0
+    internal fun Density.getClickedNotes(
+        offset: Offset, block: Density.(NoteMessage) -> Boolean = { true }
+    ): NoteMessage? {
+        currentNote = KEYBOARD_KEYS - ((offset.y + verticalScrollState.value) / noteHeight.toPx()).toInt() - 1
+        currentX = ((offset.x + horizontalScrollState.value) / noteWidth.value.toPx() - clip.time).roundToInt()
+        for (i in startNoteIndex..clip.clip.notes.lastIndex) {
+            val note = clip.clip.notes[i]
+            val startTime = note.time
+            if (startTime > currentX) break
+            if (note.note == currentNote && startTime <= currentX && startTime + note.duration >= currentX && block(note))
+                return note
+        }
+        return null
+    }
+
+    internal fun createNewNote(): NoteMessage {
+        val noteUnit = EchoInMirror.editUnit
+        currentSelectedNote?.apply { lastSelectedNoteDuration = duration }
+        val newNote = defaultNoteMessage(
+            currentNote,
+            currentX.fitInUnit(noteUnit),
+            lastSelectedNoteDuration.coerceAtLeast(noteUnit),
+            defaultVelocity
+        )
+        clip.doNoteAmountAction(listOf(newNote), false)
+        clip.clip.notes.sort()
+        clip.clip.notes.update()
+        selectedNotes.clear()
+        selectedNotes.add(newNote)
+        return newNote
     }
 }

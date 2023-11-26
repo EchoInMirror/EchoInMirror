@@ -3,6 +3,7 @@ package com.eimsound.daw.impl.clips.midi.editor
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
@@ -34,6 +35,7 @@ import com.eimsound.audioprocessor.data.midi.colorSaturation
 import com.eimsound.audioprocessor.data.midi.getNoteName
 import com.eimsound.audioprocessor.projectDisplayPPQ
 import com.eimsound.daw.api.EchoInMirror
+import com.eimsound.daw.api.EditorTool
 import com.eimsound.daw.api.asMidiTrackClipOrNull
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.api.window.EditorExtension
@@ -42,9 +44,7 @@ import com.eimsound.daw.components.EditorGrid
 import com.eimsound.daw.components.KEYBOARD_KEYS
 import com.eimsound.daw.components.LocalFloatingLayerProvider
 import com.eimsound.daw.components.dragdrop.dropTarget
-import com.eimsound.daw.components.utils.EditAction
-import com.eimsound.daw.components.utils.saturate
-import com.eimsound.daw.components.utils.toOnSurfaceColor
+import com.eimsound.daw.components.utils.*
 import com.eimsound.daw.dawutils.SHOULD_SCROLL_REVERSE
 import com.eimsound.daw.dawutils.openMaxValue
 import com.eimsound.daw.utils.mapValue
@@ -101,6 +101,19 @@ internal fun NotesEditorCanvas(editor: DefaultMidiClipEditor) {
                 .onGloballyPositioned { offsetOfRoot = it.positionInRoot() }
                 .pointerInput(coroutineScope, editor) {
                     handleMouseEvent(coroutineScope, editor, floatingLayerProvider)
+                }
+                .pointerInput(editor) { // Double click
+                    awaitPointerEventScope {
+                        var time = 0L
+                        while (true) {
+                            val event = awaitFirstDown(false)
+                            if (action != EditAction.NONE || EchoInMirror.editorTool != EditorTool.CURSOR) continue
+                            time = if (event.previousUptimeMillis - time < viewConfiguration.longPressTimeoutMillis && getClickedNotes(event.position) == null) {
+                                createNewNote()
+                                0
+                            } else event.previousUptimeMillis
+                        }
+                    }
                 }
                 .dropTarget({ _, _ -> true }) { _, pos ->
                     println(pos)

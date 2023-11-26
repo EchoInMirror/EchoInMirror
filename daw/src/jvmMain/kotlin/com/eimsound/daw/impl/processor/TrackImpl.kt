@@ -245,7 +245,10 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         put("uuid", uuid.toString())
         putNotDefault("name", name)
         put("color", color.value.toLong())
+        putNotDefault("pan", pan)
+        putNotDefault("volume", volume)
         putNotDefault("height", height)
+        putNotDefault("collapsed", collapsed)
         putNotDefault("isDisabled", isDisabled)
         putNotDefault("isSolo", isSolo)
         putNotDefault("subTracks", subTracks.fastMap { it.id })
@@ -338,8 +341,10 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         json["name"]?.asString()?.let { name = it }
         json["color"]?.asLong()?.let { color = Color(it.toULong()) }
         json["height"]?.asInt()?.let { height = it }
+        json["collapsed"]?.asBoolean()?.let { collapsed = it }
         json["isDisabled"]?.asBoolean()?.let { isDisabled = it }
         json["isSolo"]?.asBoolean()?.let { isSolo = it }
+        json["volume"]?.asFloat()?.let { volume = it }
     }
 
     override suspend fun restore(path: Path) {

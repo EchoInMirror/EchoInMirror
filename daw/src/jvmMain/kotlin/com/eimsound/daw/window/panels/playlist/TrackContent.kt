@@ -346,7 +346,6 @@ internal fun TrackContent(playlist: Playlist, track: Track, index: Int): Int {
         Box(Modifier.fillMaxWidth().height(if (track.height == 0) trackHeight else track.height.dp)) {
             Box(Modifier.fillMaxSize().pointerInput(track) { // Double click
                 awaitPointerEventScope {
-                    this.density
                     var time = 0L
                     while (true) {
                         val event = awaitFirstDown(false)

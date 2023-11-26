@@ -30,8 +30,8 @@ fun Modifier.clickableWithIcon(enabled: Boolean = true, onClickLabel: String? = 
 
 @Suppress("DEPRECATION")
 fun Modifier.onRightClickOrLongPress(onClick: (Offset, PointerKeyboardModifiers) -> Unit) = composed {
-    var (position) = remember { arrayOf(Offset.Zero) }
-    onGloballyPositioned { position = it.positionInWindow() }.pointerInput(Unit) {
+    val obj = remember { arrayOf(Offset.Zero) }
+    onGloballyPositioned { obj[0] = it.positionInWindow() }.pointerInput(Unit) {
         awaitPointerEventScope {
             while (true) {
                 val event = awaitPointerEvent(PointerEventPass.Main)
@@ -49,14 +49,14 @@ fun Modifier.onRightClickOrLongPress(onClick: (Offset, PointerKeyboardModifiers)
                         }
                     } catch (_: PointerEventTimeoutCancellationException) {
                         if (!change.consumed.positionChange) {
-                            onClick(change.position + position, event.keyboardModifiers)
+                            onClick(change.position + obj[0], event.keyboardModifiers)
                             change.consume()
                             change.consumed.positionChange = true
                             change.changedToDown()
                         }
                     }
                 } else if (event.buttons.isSecondaryPressed && !change.isConsumed) {
-                    onClick(change.position + position, event.keyboardModifiers)
+                    onClick(change.position + obj[0], event.keyboardModifiers)
                     change.consume()
                 }
             }

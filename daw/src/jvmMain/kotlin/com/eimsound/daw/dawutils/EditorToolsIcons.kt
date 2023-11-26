@@ -18,6 +18,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.LayoutDirection
 import com.eimsound.daw.api.EditorTool
 import com.eimsound.daw.components.icons.Eraser
+import java.awt.Point
 import java.awt.Toolkit
 import kotlin.math.roundToInt
 
@@ -29,6 +30,10 @@ val EDITOR_TOOL_ICONS = arrayOf(
 val CURSOR_ICONS = mutableStateListOf<PointerIcon?>(null, null, null, null)
 fun EditorTool.toCursorIcon() = if (this == EditorTool.CURSOR) PointerIcon.Default
     else CURSOR_ICONS[ordinal - 1] ?: PointerIcon.Default
+
+private val TOOLS_HOT_SPOTS = arrayOf(
+    arrayOf(0F, 1F), arrayOf(0F, 1F), arrayOf(0.5F, 0.5F), arrayOf(1F, 0.5F)
+)
 
 @Composable
 fun InitEditorTools() {
@@ -50,9 +55,10 @@ fun InitEditorTools() {
                         translate(1F, 1F) { draw(size) }
                     }
                 }
+                val hotSpot = TOOLS_HOT_SPOTS[i - 1]
                 CURSOR_ICONS[i - 1] = PointerIcon(toolkit.createCustomCursor(
                     img.toAwtImage(),
-                    java.awt.Point(0, 0),
+                    Point((hotSpot[0] * d.width * 0.99999F).toInt(), (hotSpot[1] * d.height * 0.99999F).toInt()),
                     it.name
                 ))
             }

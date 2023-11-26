@@ -6,10 +6,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitPointerSlopOrCancellation
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.drag
+import androidx.compose.foundation.gestures.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
@@ -37,6 +34,7 @@ import com.eimsound.daw.components.utils.HorizontalResize
 import com.eimsound.daw.components.utils.x
 import com.eimsound.daw.utils.fitInUnit
 import com.eimsound.daw.utils.range
+import org.apache.commons.lang3.SystemUtils
 
 private val BOTTOM = ParagraphStyle(lineHeight = 16.sp,
     lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Bottom, LineHeightStyle.Trim.FirstLineTop))
@@ -64,8 +62,12 @@ fun Timeline(modifier: Modifier = Modifier, noteWidth: MutableState<Dp>, scrollS
     val tmpArr = remember { intArrayOf(editUnit, barPPQ) }
     tmpArr[0] = editUnit
     tmpArr[1] = barPPQ
-    Surface(modifier.height(TIMELINE_HEIGHT).fillMaxWidth().zIndex(2F).pointerHoverIcon(PointerIcon.HorizontalResize),
-        shadowElevation = 5.dp, tonalElevation = 4.dp) {
+    Surface(
+        modifier.height(TIMELINE_HEIGHT).fillMaxWidth().zIndex(2F)
+            .scrollable(scrollState, Orientation.Horizontal, reverseDirection = SystemUtils.IS_OS_MAC_OSX)
+            .pointerHoverIcon(PointerIcon.HorizontalResize),
+        shadowElevation = 5.dp, tonalElevation = 4.dp
+    ) {
         val outlineColor = MaterialTheme.colorScheme.outlineVariant
         val primaryColor = MaterialTheme.colorScheme.primary
         val rangeColor = primaryColor.copy(0.2F)
