@@ -1,6 +1,6 @@
 @file:Suppress("unused")
 
-package com.eimsound.daw.utils
+package com.eimsound.daw.commons
 
 import androidx.compose.runtime.mutableStateOf
 import kotlin.reflect.KProperty
@@ -11,7 +11,7 @@ interface IManualState {
 }
 
 open class ManualState : IManualState {
-    @Transient private var modification = mutableStateOf(0)
+    @Transient private var modification = mutableStateOf<Byte>(0)
     override fun update() { modification.value++ }
     override fun read() { modification.value }
 }

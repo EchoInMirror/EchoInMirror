@@ -1,18 +1,36 @@
-package com.eimsound.audioprocessor.impl
+package com.eimsound.audiosources
 
-import androidx.compose.runtime.mutableStateMapOf
-import com.eimsound.audioprocessor.*
 import com.eimsound.daw.commons.NoSuchFactoryException
+import com.eimsound.daw.commons.Reloadable
 import com.eimsound.daw.commons.json.asString
 import kotlinx.serialization.json.JsonObject
 import java.lang.ref.WeakReference
 import java.nio.file.Path
 import java.util.*
 
+/**
+ * @see com.eimsound.audiosources.AudioSourceManagerImpl
+ */
+interface AudioSourceManager : Reloadable {
+    companion object {
+        val instance = AudioSourceManagerImpl()
+    }
+    val factories: Map<String, AudioSourceFactory<*>>
+    val supportedFormats: Set<String>
+    val cachedFileSize: Int
+    val fileSourcesCache: MutableMap<Path, WeakReference<MemoryAudioSource>>
+
+    fun createAudioSource(factory: String, source: AudioSource? = null): AudioSource
+    fun createAudioSource(json: JsonObject): AudioSource
+    fun createAudioSource(file: Path, factory: String? = null): FileAudioSource
+    fun createMemorySource(source: AudioSource, factory: String? = null): MemoryAudioSource
+    fun createResampledSource(source: AudioSource, factory: String? = null): ResampledAudioSource
+}
+
 class AudioSourceManagerImpl : AudioSourceManager {
     override val cachedFileSize = 32 * 1024 * 1024 // 32MB
     override val fileSourcesCache = mutableMapOf<Path, WeakReference<MemoryAudioSource>>()
-    override val factories = mutableStateMapOf<String, AudioSourceFactory<*>>()
+    override val factories = mutableMapOf<String, AudioSourceFactory<*>>()
     override val supportedFormats get() = factories.values.mapNotNull { it as? FileAudioSourceFactory<*> }
         .flatMap { it.supportedFormats }.toSet()
 

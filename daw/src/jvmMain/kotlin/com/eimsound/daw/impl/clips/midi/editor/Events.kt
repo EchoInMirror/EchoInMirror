@@ -5,9 +5,9 @@ import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.util.fastForEach
-import com.eimsound.audioprocessor.data.midi.NoteMessage
-import com.eimsound.audioprocessor.data.midi.toNoteOffEvent
-import com.eimsound.audioprocessor.data.midi.toNoteOnEvent
+import com.eimsound.dsp.data.midi.NoteMessage
+import com.eimsound.dsp.data.midi.toNoteOffEvent
+import com.eimsound.dsp.data.midi.toNoteOnEvent
 import com.eimsound.daw.actions.doNoteAmountAction
 import com.eimsound.daw.actions.doNoteDisabledAction
 import com.eimsound.daw.actions.doNoteMessageEditAction

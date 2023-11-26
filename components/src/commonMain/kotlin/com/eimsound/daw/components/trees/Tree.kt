@@ -17,8 +17,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachIndexed
-import com.eimsound.audioprocessor.data.midi.MidiTrack
-import com.eimsound.audioprocessor.data.midi.toMidiTracks
+import com.eimsound.dsp.data.midi.MidiTrack
+import com.eimsound.dsp.data.midi.toMidiTracks
 import com.eimsound.daw.api.FileExtensionManager
 import com.eimsound.daw.components.dragdrop.FileDraggable
 import com.eimsound.daw.components.dragdrop.GlobalDraggable

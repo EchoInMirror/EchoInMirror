@@ -16,6 +16,7 @@ kotlin {
     sourceSets {
         named("commonMain") {
             dependencies {
+                api(project(":audio-sources"))
                 api(project(":audio-processors"))
                 api(project(":utils"))
                 api(project(":commons"))

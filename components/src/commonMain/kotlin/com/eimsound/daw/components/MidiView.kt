@@ -10,8 +10,8 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.util.fastForEach
-import com.eimsound.audioprocessor.data.midi.NoteMessage
-import com.eimsound.audioprocessor.data.midi.NoteMessageList
+import com.eimsound.dsp.data.midi.NoteMessage
+import com.eimsound.dsp.data.midi.NoteMessageList
 
 @Composable
 fun MidiView(list: List<NoteMessage>, color: Color = MaterialTheme.colorScheme.primary, modifier: Modifier = Modifier) {

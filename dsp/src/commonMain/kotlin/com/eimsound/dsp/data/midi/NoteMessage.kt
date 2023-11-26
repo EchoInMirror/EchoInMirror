@@ -1,9 +1,8 @@
-package com.eimsound.audioprocessor.data.midi
+package com.eimsound.dsp.data.midi
 
 import androidx.compose.runtime.mutableStateOf
 import com.eimsound.daw.commons.Disabled
-import com.eimsound.daw.utils.IManualState
-import com.eimsound.daw.utils.mapValue
+import com.eimsound.daw.commons.IManualState
 import com.eimsound.daw.commons.json.*
 import kotlinx.serialization.json.*
 
@@ -22,7 +21,7 @@ interface NoteMessage : JsonSerializable, Disabled {
 }
 
 fun NoteMessage.getColorSaturation(isDisabled: Boolean = this.isDisabled) =
-    0.4F + 0.6F * if (isDisabled) 0F else mapValue(velocity, 0, 127)
+    0.4F + 0.6F * if (isDisabled) 0F else (velocity / 127F).coerceIn(0f, 1f)
 
 class SerializableNoteMessages(var ppq: Int = 96, notes: List<NoteMessage>? = null) : JsonSerializable {
     private val notesP = arrayListOf<NoteMessage>().apply { if (notes != null) addAll(notes) }

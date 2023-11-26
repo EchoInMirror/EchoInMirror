@@ -30,9 +30,9 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.util.fastForEach
 import com.eimsound.audioprocessor.data.defaultScale
-import com.eimsound.audioprocessor.data.midi.NoteMessage
-import com.eimsound.audioprocessor.data.midi.getColorSaturation
-import com.eimsound.audioprocessor.data.midi.getNoteName
+import com.eimsound.dsp.data.midi.NoteMessage
+import com.eimsound.dsp.data.midi.getColorSaturation
+import com.eimsound.dsp.data.midi.getNoteName
 import com.eimsound.audioprocessor.projectDisplayPPQ
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.EditorTool

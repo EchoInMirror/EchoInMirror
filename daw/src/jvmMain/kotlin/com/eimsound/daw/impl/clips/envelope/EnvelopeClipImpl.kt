@@ -7,8 +7,7 @@ import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.util.fastForEach
 import com.eimsound.audioprocessor.*
-import com.eimsound.audioprocessor.data.*
-import com.eimsound.audioprocessor.data.midi.MidiNoteRecorder
+import com.eimsound.dsp.data.midi.MidiNoteRecorder
 import com.eimsound.daw.actions.GlobalEnvelopeEditorEventHandler
 import com.eimsound.daw.api.*
 import com.eimsound.daw.api.controllers.DefaultParameterControllerFactory
@@ -16,6 +15,9 @@ import com.eimsound.daw.api.controllers.ParameterController
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.commons.json.putNotDefault
 import com.eimsound.daw.components.EnvelopeEditor
+import com.eimsound.dsp.data.DefaultEnvelopePointList
+import com.eimsound.dsp.data.fromJson
+import com.eimsound.dsp.data.putNotDefault
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.json.*
 import java.nio.file.Path

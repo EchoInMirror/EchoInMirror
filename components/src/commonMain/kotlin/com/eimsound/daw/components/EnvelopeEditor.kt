@@ -30,7 +30,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.util.fastForEach
-import com.eimsound.audioprocessor.data.*
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.commons.json.JsonIgnoreDefaults
 import com.eimsound.daw.commons.MultiSelectableEditor
@@ -38,6 +37,7 @@ import com.eimsound.daw.commons.SerializableEditor
 import com.eimsound.daw.components.utils.EditAction
 import com.eimsound.daw.components.utils.calculateContrastRatio
 import com.eimsound.daw.utils.*
+import com.eimsound.dsp.data.*
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlin.math.*
@@ -185,7 +185,8 @@ class EnvelopeEditor(
         selectedPoints.addAll(result)
     }
     override fun copyAsString() = if (selectedPoints.isEmpty()) "" else JsonIgnoreDefaults.encodeToString(
-        SerializableEnvelopePointList(EchoInMirror.currentPosition.ppq, copyAsObject()))
+        SerializableEnvelopePointList(EchoInMirror.currentPosition.ppq, copyAsObject())
+    )
 
     override fun pasteFromString(value: String) {
         try {

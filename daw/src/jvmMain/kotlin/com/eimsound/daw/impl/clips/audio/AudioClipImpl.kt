@@ -8,12 +8,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import com.eimsound.audioprocessor.*
-import com.eimsound.audioprocessor.data.*
-import com.eimsound.audioprocessor.data.midi.MidiNoteRecorder
+import com.eimsound.dsp.data.midi.MidiNoteRecorder
 import com.eimsound.daw.api.*
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.components.EnvelopeEditor
 import com.eimsound.daw.components.Waveform
+import com.eimsound.audiosources.*
+import com.eimsound.dsp.data.*
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject

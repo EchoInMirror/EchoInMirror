@@ -7,10 +7,10 @@ import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachIndexed
 import androidx.compose.ui.util.fastMap
 import com.eimsound.audioprocessor.AudioProcessorParameter
-import com.eimsound.audioprocessor.data.BaseEnvelopePointList
-import com.eimsound.audioprocessor.data.EnvelopePoint
-import com.eimsound.audioprocessor.data.EnvelopePointList
-import com.eimsound.audioprocessor.data.EnvelopeType
+import com.eimsound.dsp.data.BaseEnvelopePointList
+import com.eimsound.dsp.data.EnvelopePoint
+import com.eimsound.dsp.data.EnvelopePointList
+import com.eimsound.dsp.data.EnvelopeType
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.commons.actions.ReversibleAction
 import com.eimsound.daw.commons.actions.UndoableAction

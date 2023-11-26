@@ -1,6 +1,9 @@
-package com.eimsound.audiosources
+package com.eimsound.audiosources.impl
 
-import com.eimsound.audioprocessor.*
+import com.eimsound.audiosources.AudioSource
+import com.eimsound.audiosources.MemoryAudioSource
+import com.eimsound.audiosources.MemoryAudioSourceFactory
+import com.eimsound.audiosources.close
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 

@@ -14,7 +14,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import com.eimsound.audioprocessor.data.midi.*
 import com.eimsound.audioprocessor.oneBarPPQ
 import com.eimsound.audioprocessor.projectDisplayPPQ
 import com.eimsound.daw.actions.doNoteAmountAction
@@ -24,6 +23,8 @@ import com.eimsound.daw.api.MidiClipEditor
 import com.eimsound.daw.api.TrackClip
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.api.window.EditorExtension
+import com.eimsound.daw.commons.IManualStateValue
+import com.eimsound.daw.commons.ManualStateValue
 import com.eimsound.daw.commons.json.JsonIgnoreDefaults
 import com.eimsound.daw.commons.SerializableEditor
 import com.eimsound.daw.components.*
@@ -34,6 +35,7 @@ import com.eimsound.daw.dawutils.openMaxValue
 import com.eimsound.daw.utils.*
 import com.eimsound.daw.window.panels.playlist.playlistTrackControllerMinWidth
 import com.eimsound.daw.window.panels.playlist.Playlist
+import com.eimsound.dsp.data.midi.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.util.*

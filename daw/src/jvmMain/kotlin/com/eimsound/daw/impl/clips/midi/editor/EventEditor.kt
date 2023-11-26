@@ -28,10 +28,10 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.zIndex
-import com.eimsound.audioprocessor.data.DefaultEnvelopePointList
-import com.eimsound.audioprocessor.data.EnvelopePointList
-import com.eimsound.audioprocessor.data.MIDI_CC_RANGE
-import com.eimsound.audioprocessor.data.midi.NoteMessage
+import com.eimsound.dsp.data.DefaultEnvelopePointList
+import com.eimsound.dsp.data.EnvelopePointList
+import com.eimsound.dsp.data.MIDI_CC_RANGE
+import com.eimsound.dsp.data.midi.NoteMessage
 import com.eimsound.daw.actions.GlobalEnvelopeEditorEventHandler
 import com.eimsound.daw.actions.doAddOrRemoveMidiCCEventAction
 import com.eimsound.daw.actions.doNoteVelocityAction

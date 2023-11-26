@@ -12,8 +12,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import com.eimsound.audioprocessor.CurrentPosition
 import com.eimsound.audioprocessor.convertPPQToSeconds
-import com.eimsound.audioprocessor.data.AudioThumbnail
-import com.eimsound.audioprocessor.data.EnvelopePointList
+import com.eimsound.dsp.data.AudioThumbnail
+import com.eimsound.dsp.data.EnvelopePointList
 import kotlin.math.absoluteValue
 
 private const val STEP_IN_PX = 0.5F

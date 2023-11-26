@@ -15,11 +15,10 @@ import androidx.compose.ui.util.fastForEach
 import com.eimsound.audioprocessor.CurrentPosition
 import com.eimsound.audioprocessor.convertPPQToSamples
 import com.eimsound.audioprocessor.convertSamplesToPPQ
-import com.eimsound.audioprocessor.data.DefaultEnvelopePointList
-import com.eimsound.audioprocessor.data.EnvelopePointList
-import com.eimsound.audioprocessor.data.MIDI_CC_RANGE
-import com.eimsound.audioprocessor.data.midi.*
-import com.eimsound.audioprocessor.data.toMutableEnvelopePointList
+import com.eimsound.dsp.data.DefaultEnvelopePointList
+import com.eimsound.dsp.data.EnvelopePointList
+import com.eimsound.dsp.data.MIDI_CC_RANGE
+import com.eimsound.dsp.data.toMutableEnvelopePointList
 import com.eimsound.daw.api.*
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.components.EnvelopeEditor
@@ -27,6 +26,7 @@ import com.eimsound.daw.impl.clips.midi.editor.DefaultMidiClipEditor
 import com.eimsound.daw.utils.binarySearch
 import com.eimsound.daw.commons.json.putNotDefault
 import com.eimsound.daw.components.trees.MidiNode
+import com.eimsound.dsp.data.midi.*
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
 import kotlinx.serialization.json.*

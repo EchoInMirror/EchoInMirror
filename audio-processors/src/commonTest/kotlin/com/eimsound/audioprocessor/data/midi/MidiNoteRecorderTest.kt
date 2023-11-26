@@ -1,5 +1,6 @@
 package com.eimsound.audioprocessor.data.midi
 
+import com.eimsound.dsp.data.midi.MidiNoteRecorder
 import org.junit.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertFalse

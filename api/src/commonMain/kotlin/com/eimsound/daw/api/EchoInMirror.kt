@@ -2,7 +2,7 @@ package com.eimsound.daw.api
 
 import com.eimsound.audioprocessor.AudioPlayer
 import com.eimsound.audioprocessor.CurrentPosition
-import com.eimsound.audioprocessor.data.AudioThumbnailCache
+import com.eimsound.dsp.data.AudioThumbnailCache
 import com.eimsound.audioprocessor.data.Quantification
 import com.eimsound.daw.api.processor.Bus
 import com.eimsound.daw.api.processor.Track

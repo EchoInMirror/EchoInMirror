@@ -3,7 +3,7 @@ package com.eimsound.daw.actions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
-import com.eimsound.audioprocessor.data.EnvelopePointList
+import com.eimsound.dsp.data.EnvelopePointList
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.MutableMidiCCEvents
 import com.eimsound.daw.commons.actions.ReversibleAction

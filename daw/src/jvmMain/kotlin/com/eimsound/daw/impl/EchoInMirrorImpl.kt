@@ -4,7 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.eimsound.audioprocessor.*
-import com.eimsound.audioprocessor.data.AudioThumbnailCache
+import com.eimsound.dsp.data.AudioThumbnailCache
 import com.eimsound.audioprocessor.data.defaultQuantification
 import com.eimsound.audioprocessor.data.getEditUnit
 import com.eimsound.daw.AUDIO_THUMBNAIL_CACHE_PATH
@@ -21,6 +21,7 @@ import com.eimsound.daw.components.GlobalSnackbarProvider
 import com.eimsound.daw.plugin.EIMPluginManager
 import com.eimsound.daw.commons.ExperimentalEIMApi
 import com.eimsound.daw.window.dialogs.settings.settingsTabsLoader
+import com.eimsound.audiosources.AudioSourceManager
 import com.microsoft.appcenter.crashes.Crashes
 import kotlinx.coroutines.runBlocking
 

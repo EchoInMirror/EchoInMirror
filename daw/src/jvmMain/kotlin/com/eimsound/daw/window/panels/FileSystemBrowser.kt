@@ -30,9 +30,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import com.eimsound.audioprocessor.AudioProcessorManager
-import com.eimsound.audioprocessor.AudioSourceManager
-import com.eimsound.audioprocessor.data.midi.getNotes
-import com.eimsound.audioprocessor.data.midi.toMidiTracks
+import com.eimsound.audiosources.AudioSourceManager
+import com.eimsound.dsp.data.midi.getNotes
+import com.eimsound.dsp.data.midi.toMidiTracks
 import com.eimsound.daw.Configuration
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.window.Panel

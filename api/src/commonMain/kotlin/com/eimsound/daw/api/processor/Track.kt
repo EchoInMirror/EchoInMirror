@@ -4,7 +4,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.eimsound.audioprocessor.*
-import com.eimsound.audioprocessor.data.*
 import com.eimsound.audioprocessor.interfaces.Pan
 import com.eimsound.audioprocessor.interfaces.Volume
 import com.eimsound.daw.api.Colorable
@@ -13,6 +12,10 @@ import com.eimsound.daw.api.ProjectInformation
 import com.eimsound.daw.api.TrackClipList
 import com.eimsound.daw.commons.actions.Restorable
 import com.eimsound.daw.commons.json.*
+import com.eimsound.dsp.data.DefaultEnvelopePointList
+import com.eimsound.dsp.data.EnvelopePointList
+import com.eimsound.dsp.data.fromJson
+import com.eimsound.dsp.data.putNotDefault
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable

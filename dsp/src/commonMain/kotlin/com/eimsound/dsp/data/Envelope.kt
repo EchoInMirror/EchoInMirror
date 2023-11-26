@@ -1,8 +1,7 @@
-package com.eimsound.audioprocessor.data
+package com.eimsound.dsp.data
 
 import androidx.compose.runtime.mutableStateOf
-import com.eimsound.daw.utils.IManualState
-import com.eimsound.daw.utils.binarySearch
+import com.eimsound.daw.commons.IManualState
 import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
@@ -102,6 +101,17 @@ val PAN_RANGE = -1F..1F
 val VOLUME_RANGE = 0F..1.96F
 val MIDI_CC_RANGE = 0F..127F
 
+private inline fun <T> List<T>.lowerBound(comparator: (T) -> Boolean): Int {
+    var l = 0
+    var r = size - 1
+    while (l < r) {
+        val mid = (l + r) ushr 1
+        if (comparator(this[mid])) l = mid + 1
+        else r = mid
+    }
+    return l
+}
+
 @Serializable
 class DefaultEnvelopePointList : EnvelopePointList, ArrayList<EnvelopePoint>() {
     @Transient
@@ -117,7 +127,7 @@ class DefaultEnvelopePointList : EnvelopePointList, ArrayList<EnvelopePoint>() {
         if (position < this[0].time) return this[0].value
         if (position > this[size - 1].time) return this[size - 1].value
         if (currentIndex == -1 || currentIndex >= size || this[currentIndex].time > position)
-            currentIndex = (binarySearch { it.time <= position } - 1).coerceAtLeast(0)
+            currentIndex = (lowerBound { it.time <= position } - 1).coerceAtLeast(0)
         while (currentIndex < size - 1 && this[currentIndex + 1].time <= position) currentIndex++
         val cur = this[currentIndex]
         if (currentIndex >= size - 1) return cur.value

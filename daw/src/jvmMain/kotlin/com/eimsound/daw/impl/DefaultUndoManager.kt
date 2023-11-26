@@ -4,7 +4,7 @@ import androidx.compose.runtime.*
 import com.eimsound.daw.commons.actions.UndoManager
 import com.eimsound.daw.commons.actions.UndoableAction
 import com.eimsound.daw.commons.actions.UndoableActionExecuteException
-import com.eimsound.daw.utils.ManualState
+import com.eimsound.daw.commons.ManualState
 import io.github.oshai.kotlinlogging.KotlinLogging
 
 private val logger = KotlinLogging.logger { }

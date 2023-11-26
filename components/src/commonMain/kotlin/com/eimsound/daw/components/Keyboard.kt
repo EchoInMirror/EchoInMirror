@@ -19,7 +19,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.eimsound.audioprocessor.data.defaultScale
-import com.eimsound.audioprocessor.data.midi.KEY_NAMES
+import com.eimsound.dsp.data.midi.KEY_NAMES
 import com.eimsound.daw.components.utils.clickableWithIcon
 import com.eimsound.daw.components.utils.toOnSurfaceColor
 import com.eimsound.daw.components.utils.x

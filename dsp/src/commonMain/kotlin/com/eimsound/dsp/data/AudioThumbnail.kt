@@ -1,10 +1,10 @@
-package com.eimsound.audioprocessor.data
+package com.eimsound.dsp.data
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.eimsound.audioprocessor.AudioSource
-import com.eimsound.audioprocessor.AudioSourceManager
+import com.eimsound.audiosources.AudioSource
+import com.eimsound.audiosources.AudioSourceManager
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope

@@ -16,13 +16,9 @@ kotlin {
         named("commonMain") {
             dependencies {
                 api(project(":commons"))
+                api(project(":dsp"))
                 api(project(":utils"))
-                implementation(compose.runtime)
-                implementation("com.github.albfernandez:juniversalchardet:2.4.0")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${extra["eim.dependencies.kotlinx.coroutines"]}")
-                implementation("org.mapdb:mapdb:3.0.10") {
-                    exclude(group = "com.google.guava")
-                }
+                compileOnly(compose.runtime)
             }
         }
         named("commonTest") {

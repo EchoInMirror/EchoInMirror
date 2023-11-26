@@ -1,9 +1,7 @@
-package com.eimsound.audiosources
+package com.eimsound.audiosources.impl
 
 import be.tarsos.dsp.resample.Resampler
-import com.eimsound.audioprocessor.AudioSource
-import com.eimsound.audioprocessor.ResampledAudioSource
-import com.eimsound.audioprocessor.ResampledAudioSourceFactory
+import com.eimsound.audiosources.*
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject

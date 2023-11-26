@@ -24,7 +24,7 @@ import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.components.*
 import com.eimsound.daw.components.silder.Slider
 import com.eimsound.daw.components.utils.toOnSurfaceColor
-import com.eimsound.daw.utils.IManualStateValue
+import com.eimsound.daw.commons.IManualStateValue
 import java.util.*
 import kotlin.math.roundToInt
 

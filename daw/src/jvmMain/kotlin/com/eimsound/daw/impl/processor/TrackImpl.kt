@@ -5,11 +5,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
 import com.eimsound.audioprocessor.*
-import com.eimsound.audioprocessor.data.PAN_RANGE
-import com.eimsound.audioprocessor.data.VOLUME_RANGE
-import com.eimsound.audioprocessor.data.midi.MidiEvent
-import com.eimsound.audioprocessor.data.midi.MidiNoteRecorder
-import com.eimsound.audioprocessor.data.midi.noteOff
+import com.eimsound.dsp.data.PAN_RANGE
+import com.eimsound.dsp.data.VOLUME_RANGE
+import com.eimsound.dsp.data.midi.MidiEvent
+import com.eimsound.dsp.data.midi.MidiNoteRecorder
+import com.eimsound.dsp.data.midi.noteOff
 import com.eimsound.audioprocessor.interfaces.calcPanLeftChannel
 import com.eimsound.audioprocessor.interfaces.calcPanRightChannel
 import com.eimsound.daw.api.*

@@ -6,7 +6,7 @@ import androidx.compose.runtime.setValue
 import com.eimsound.audioprocessor.AbstractAudioProcessor
 import com.eimsound.audioprocessor.AudioProcessorFactory
 import com.eimsound.audioprocessor.CurrentPosition
-import com.eimsound.audioprocessor.data.midi.MidiEvent
+import com.eimsound.dsp.data.midi.MidiEvent
 import com.eimsound.audioprocessor.interfaces.Volume
 import com.eimsound.daw.impl.processor.EIMAudioProcessorDescription
 

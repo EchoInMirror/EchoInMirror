@@ -1,7 +1,8 @@
 package com.eimsound.daw.processor
 
 import com.eimsound.audioprocessor.*
-import com.eimsound.audioprocessor.data.midi.*
+import com.eimsound.audiosources.*
+import com.eimsound.dsp.data.midi.*
 import com.eimsound.daw.impl.CurrentPositionImpl
 import com.eimsound.daw.impl.processor.eimAudioProcessorFactory
 import com.eimsound.daw.processor.synthesizer.SineWaveSynthesizer

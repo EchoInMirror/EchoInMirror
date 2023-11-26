@@ -4,8 +4,8 @@ import com.eimsound.audioprocessor.AbstractAudioProcessor
 import com.eimsound.audioprocessor.AudioProcessor
 import com.eimsound.audioprocessor.AudioProcessorDescription
 import com.eimsound.audioprocessor.AudioProcessorFactory
-import com.eimsound.audioprocessor.data.midi.MidiEvent
-import com.eimsound.audioprocessor.data.midi.MidiNoteRecorder
+import com.eimsound.dsp.data.midi.MidiEvent
+import com.eimsound.dsp.data.midi.MidiNoteRecorder
 
 abstract class Synthesizer(
     description: AudioProcessorDescription,

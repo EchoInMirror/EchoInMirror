@@ -19,8 +19,8 @@ kotlin {
     sourceSets {
         named("commonMain") {
             dependencies {
-                api(project(":audio-processors"))
-                implementation("be.tarsos.dsp:core:2.5")
+                implementation(project(":commons"))
+                implementation("be.tarsos.dsp:core:${extra["eim.dependencies.tarsos"]}")
                 implementation("com.googlecode.soundlibs:mp3spi:1.9.5.4") {
                     exclude("com.googlecode.soundlibs", "tritonus_share")
                     exclude("junit")

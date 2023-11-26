@@ -1,6 +1,6 @@
-package com.eimsound.audiosources
+package com.eimsound.audiosources.impl
 
-import com.eimsound.audioprocessor.*
+import com.eimsound.audiosources.*
 import com.eimsound.daw.commons.json.asString
 import javazoom.spi.mpeg.sampled.file.MpegAudioFileFormat
 import javazoom.spi.mpeg.sampled.file.MpegAudioFileReader
@@ -36,7 +36,8 @@ private class JFlacRandomFileInputStream(file: File) : org.jflac.io.RandomFileIn
 private val wavFileReader by lazy { WaveAudioFileReader() }
 private val mpegFileReader by lazy { MpegAudioFileReader() }
 
-class DefaultFileAudioSource(override val factory: FileAudioSourceFactory<*>, override val file: Path) : FileAudioSource {
+class DefaultFileAudioSource(override val factory: FileAudioSourceFactory<*>, override val file: Path) :
+    FileAudioSource {
     private var isWav = false
     private var isFlac = false
 

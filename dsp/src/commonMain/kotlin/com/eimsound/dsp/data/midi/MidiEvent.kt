@@ -1,9 +1,9 @@
 @file:Suppress("unused")
 
-package com.eimsound.audioprocessor.data.midi
+package com.eimsound.dsp.data.midi
 
-import com.eimsound.audioprocessor.data.BaseEnvelopePointList
-import com.eimsound.audioprocessor.data.EnvelopePoint
+import com.eimsound.dsp.data.BaseEnvelopePointList
+import com.eimsound.dsp.data.EnvelopePoint
 import org.mozilla.universalchardet.UniversalDetector
 import java.nio.charset.Charset
 import javax.sound.midi.MidiMessage
