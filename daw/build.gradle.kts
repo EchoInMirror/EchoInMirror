@@ -34,6 +34,7 @@ kotlin {
                 api(project(":commons"))
                 api(project(":components"))
                 api(project(":utils"))
+                api(project(":dsp"))
                 api(project(":api"))
                 api(project(":native"))
                 api(project(":audio-sources"))
