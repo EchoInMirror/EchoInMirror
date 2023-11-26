@@ -19,7 +19,6 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -28,17 +27,17 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.*
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.util.fastForEach
 import com.eimsound.audioprocessor.data.defaultScale
 import com.eimsound.audioprocessor.data.midi.NoteMessage
-import com.eimsound.audioprocessor.data.midi.colorSaturation
+import com.eimsound.audioprocessor.data.midi.getColorSaturation
 import com.eimsound.audioprocessor.data.midi.getNoteName
 import com.eimsound.audioprocessor.projectDisplayPPQ
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.EditorTool
 import com.eimsound.daw.api.asMidiTrackClipOrNull
 import com.eimsound.daw.api.processor.Track
-import com.eimsound.daw.api.window.EditorExtension
 import com.eimsound.daw.api.window.EditorExtensions
 import com.eimsound.daw.components.EditorGrid
 import com.eimsound.daw.components.KEYBOARD_KEYS
@@ -46,20 +45,10 @@ import com.eimsound.daw.components.LocalFloatingLayerProvider
 import com.eimsound.daw.components.dragdrop.dropTarget
 import com.eimsound.daw.components.utils.*
 import com.eimsound.daw.dawutils.SHOULD_SCROLL_REVERSE
+import com.eimsound.daw.dawutils.editorToolHoverIcon
 import com.eimsound.daw.dawutils.openMaxValue
 import com.eimsound.daw.utils.mapValue
 import kotlin.math.absoluteValue
-
-internal var selectionStartX = 0F
-internal var selectionStartY = 0
-internal var selectionX by mutableStateOf(0F)
-internal var selectionY by mutableStateOf(0)
-internal var deltaX by mutableStateOf(0)
-internal var deltaY by mutableStateOf(0)
-internal var action by mutableStateOf(EditAction.NONE)
-internal var resizeDirectionRight = false
-internal var cursor by mutableStateOf(PointerIcon.Default)
-internal var currentNote = 0
 
 private const val MIN_NOTE_WIDTH_WITH_KEY_NAME = 30
 
@@ -67,8 +56,27 @@ private data class NoteDrawObject(val note: NoteMessage, val offset: Offset, val
                                   val keyNameOffset: Offset? = null, val textLayoutResult: TextLayoutResult? = null)
 private data class BackingTrack(val track: Track, val notes: ArrayList<NoteDrawObject>)
 
-
-val notesEditorExtensions: MutableList<EditorExtension> = mutableStateListOf()
+private var maxKeyNameSize = Constraints(0, 0, 0, 0)
+private var keyNameLayerResults = arrayOfNulls<TextLayoutResult>(0)
+private var disabledKeyNameLayerResults = arrayOfNulls<TextLayoutResult>(0)
+private fun NoteMessage.getLayoutResult(
+    localDensity: Density, measurer: TextMeasurer, labelMediumStyle: TextStyle, disabledKeyNameTextStyle: TextStyle, offset: Int = 0
+): TextLayoutResult {
+    val results = if (isDisabled) disabledKeyNameLayerResults else keyNameLayerResults
+    val curNote = note - offset
+    var layoutResult = if (curNote in 0..126) results[curNote] else null
+    if (layoutResult == null) {
+        layoutResult = measurer.measure(
+            AnnotatedString(getNoteName(curNote)),
+            if (isDisabled) disabledKeyNameTextStyle else labelMediumStyle,
+            constraints = Constraints(0, (20 * localDensity.density).toInt(),
+                0, (16 * localDensity.density).toInt()),
+            density = localDensity
+        )
+        if (curNote in 0..126) results[curNote] = layoutResult
+    }
+    return layoutResult
+}
 
 @Composable
 private fun DefaultMidiClipEditor.EditorHorizontalGrid() {
@@ -136,31 +144,18 @@ internal fun NotesEditorCanvas(editor: DefaultMidiClipEditor) {
                 EditorGrid(noteWidth, horizontalScrollState, range, ppq, timeSigDenominator, timeSigNumerator)
             }
             EditorHorizontalGrid()
-            notesEditorExtensions.EditorExtensions(true)
+            DefaultMidiClipEditor.notesEditorExtensions.EditorExtensions(true)
 
-            val maxKeyNameSize = Constraints(0, (20 * localDensity.density).toInt(),
-                0, (16 * localDensity.density).toInt())
-            val keyNameLayerResults = remember(localDensity) { arrayOfNulls<TextLayoutResult>(127) }
-            val disabledKeyNameLayerResults = remember(localDensity) { arrayOfNulls<TextLayoutResult>(127) }
             val trackColor = clip.track?.color ?: primaryColor
             val keyNameTextColor = trackColor.toOnSurfaceColor().copy(0.9F)
             val disabledKeyNameTextStyle = labelMediumStyle.copy(textDecoration = TextDecoration.LineThrough)
-
-            fun NoteMessage.getLayoutResult(offset: Int = 0): TextLayoutResult {
-                val results = if (isDisabled) disabledKeyNameLayerResults else keyNameLayerResults
-                val curNote = note - offset
-                var layoutResult = if (curNote in 0..126) results[curNote] else null
-                if (layoutResult == null) {
-                    layoutResult = measurer.measure(
-                        AnnotatedString(getNoteName(curNote)),
-                        if (isDisabled) disabledKeyNameTextStyle else labelMediumStyle,
-                        constraints = maxKeyNameSize,
-                        density = localDensity
-                    )
-                    if (curNote in 0..126) results[curNote] = layoutResult
-                }
-                return layoutResult
+            remember(localDensity) {
+                keyNameLayerResults = arrayOfNulls(127)
+                disabledKeyNameLayerResults = arrayOfNulls(127)
+                maxKeyNameSize = Constraints(0, (20 * localDensity.density).toInt(),
+                    0, (16 * localDensity.density).toInt())
             }
+
 
             Spacer(Modifier.fillMaxSize().drawWithCache {
                 val noteWidthPx = noteWidth.value.toPx()
@@ -198,10 +193,14 @@ internal fun NotesEditorCanvas(editor: DefaultMidiClipEditor) {
                     if (selectedNotes.contains(it)) continue
                     val offset = Offset(x, y.coerceAtLeast(0F))
                     val size = Size(width, if (y < 0) (noteHeightPx + y).coerceAtLeast(0F) else noteHeightPx)
-                    val color = trackColor.saturate(it.colorSaturation)
+                    val muted = it.isDisabled
+                    val color = trackColor.saturate(it.getColorSaturation(if (muteList.contains(it)) !muted else muted))
                     notes.add(
                         if (shouldDrawNoteName && width > MIN_NOTE_WIDTH_WITH_KEY_NAME)
-                            NoteDrawObject(it, offset, size, color, Offset(x + 3 * density, y), it.getLayoutResult())
+                            NoteDrawObject(
+                                it, offset, size, color, Offset(x + 3 * density, y),
+                                it.getLayoutResult(localDensity, measurer, labelMediumStyle, disabledKeyNameTextStyle)
+                            )
                         else NoteDrawObject(it, offset, size, color)
                     )
                 }
@@ -271,35 +270,46 @@ internal fun NotesEditorCanvas(editor: DefaultMidiClipEditor) {
                             }
                         }
                         if (size.height <= 0 || size.width <= 0) return@forEach
-                        drawRoundRect(trackColor.saturate(it.colorSaturation), offset, size, borderCornerRadius2PX)
+                        val muted = it.isDisabled
+                        drawRoundRect(trackColor.saturate(
+                            it.getColorSaturation(if (muteList.contains(it)) !muted else muted)
+                        ), offset, size, borderCornerRadius2PX)
                         drawRoundRect(primaryColor, offset, size, borderCornerRadius2PX, Stroke(2f * density))
                         if (shouldDrawNoteName && size.width > MIN_NOTE_WIDTH_WITH_KEY_NAME) {
-                            drawText(it.getLayoutResult(offsetNote), keyNameTextColor, Offset(offset.x + 3 * density, y))
+                            drawText(it.getLayoutResult(
+                                localDensity, measurer, labelMediumStyle, disabledKeyNameTextStyle, offsetNote
+                            ), keyNameTextColor, Offset(offset.x + 3 * density, y))
                         }
                     }
                 }
             })
-            notesEditorExtensions.EditorExtensions(false)
-            Canvas(Modifier.fillMaxSize().pointerHoverIcon(action.toPointerIcon(cursor))) {
-                if (selectionX == 0F && selectionStartX == 0F) return@Canvas
-                val scrollX = horizontalScrollState.value
-                val scrollY = verticalScrollState.value
-                val noteHeightPx = noteHeight.toPx()
-                val y = (selectionStartY.coerceAtMost(selectionY).coerceAtMost(KEYBOARD_KEYS - 1) *
-                        noteHeightPx - scrollY)
-                val pos = Offset(
-                    (selectionStartX.coerceAtMost(selectionX) - scrollX).coerceAtLeast(0F),
-                    y.coerceAtLeast(0F)
-                )
-                val size = Size(
-                    (selectionX.coerceAtLeast(scrollX.toFloat()) - selectionStartX).absoluteValue,
-                    (selectionY.coerceAtLeast((scrollY / noteHeightPx).toInt()) - selectionStartY)
-                        .absoluteValue.coerceIn(1, KEYBOARD_KEYS) * noteHeightPx -
-                            (if (y < 0) -y % noteHeightPx else 0F)
-                )
-                drawRect(primaryColor.copy(0.1F), pos, size)
-                drawRect(primaryColor, pos, size, style = Stroke(density))
-            }
+            DefaultMidiClipEditor.notesEditorExtensions.EditorExtensions(false)
+            Selection()
         }
+    }
+}
+
+@Composable
+private fun DefaultMidiClipEditor.Selection() {
+    val primaryColor = MaterialTheme.colorScheme.primary
+    Canvas(Modifier.fillMaxSize().pointerHoverIcon(action.toPointerIcon(cursor)).editorToolHoverIcon(EchoInMirror.editorTool)) {
+        if (selectionX == 0F && selectionStartX == 0F) return@Canvas
+        val scrollX = horizontalScrollState.value
+        val scrollY = verticalScrollState.value
+        val noteHeightPx = noteHeight.toPx()
+        val y = (selectionStartY.coerceAtMost(selectionY).coerceAtMost(KEYBOARD_KEYS - 1) *
+                noteHeightPx - scrollY)
+        val pos = Offset(
+            (selectionStartX.coerceAtMost(selectionX) - scrollX).coerceAtLeast(0F),
+            y.coerceAtLeast(0F)
+        )
+        val size = Size(
+            (selectionX.coerceAtLeast(scrollX.toFloat()) - selectionStartX).absoluteValue,
+            (selectionY.coerceAtLeast((scrollY / noteHeightPx).toInt()) - selectionStartY)
+                .absoluteValue.coerceIn(1, KEYBOARD_KEYS) * noteHeightPx -
+                    (if (y < 0) -y % noteHeightPx else 0F)
+        )
+        drawRect(primaryColor.copy(0.1F), pos, size)
+        drawRect(primaryColor, pos, size, style = Stroke(density))
     }
 }

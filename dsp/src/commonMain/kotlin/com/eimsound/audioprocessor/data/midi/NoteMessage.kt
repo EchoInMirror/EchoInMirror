@@ -21,7 +21,8 @@ interface NoteMessage : JsonSerializable, Disabled {
              duration: Int = this.duration, disabled: Boolean = this.isDisabled): NoteMessage
 }
 
-val NoteMessage.colorSaturation get() = 0.4F + 0.6F * if (isDisabled) 0F else mapValue(velocity, 0, 127)
+fun NoteMessage.getColorSaturation(isDisabled: Boolean = this.isDisabled) =
+    0.4F + 0.6F * if (isDisabled) 0F else mapValue(velocity, 0, 127)
 
 class SerializableNoteMessages(var ppq: Int = 96, notes: List<NoteMessage>? = null) : JsonSerializable {
     private val notesP = arrayListOf<NoteMessage>().apply { if (notes != null) addAll(notes) }

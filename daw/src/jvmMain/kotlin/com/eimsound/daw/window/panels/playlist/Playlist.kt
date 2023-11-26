@@ -43,8 +43,8 @@ import com.eimsound.daw.components.splitpane.HorizontalSplitPane
 import com.eimsound.daw.components.splitpane.SplitPaneState
 import com.eimsound.daw.components.utils.EditAction
 import com.eimsound.daw.components.utils.toOnSurfaceColor
+import com.eimsound.daw.dawutils.editorToolHoverIcon
 import com.eimsound.daw.dawutils.openMaxValue
-import com.eimsound.daw.dawutils.toCursorIcon
 import com.eimsound.daw.utils.*
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
@@ -53,8 +53,6 @@ import kotlinx.coroutines.launch
 import java.nio.file.Path
 import java.util.*
 
-val playListExtensions: MutableList<EditorExtension> = mutableStateListOf()
-val playlistTrackControllerPanelState = SplitPaneState()
 val playlistTrackControllerMinWidth = 240.dp
 
 class Playlist : Panel, MultiSelectableEditor {
@@ -83,6 +81,8 @@ class Playlist : Panel, MultiSelectableEditor {
 
     companion object {
         var copiedClips: List<TrackClip<*>>? = null
+        val playListExtensions: MutableList<EditorExtension> = mutableStateListOf()
+        val playlistTrackControllerPanelState = SplitPaneState()
     }
 
     @Composable
@@ -273,7 +273,7 @@ class Playlist : Panel, MultiSelectableEditor {
 
     @Composable
     private fun TrackContents() {
-        Column(Modifier.verticalScroll(verticalScrollState).fillMaxSize().pointerHoverIcon(EchoInMirror.editorTool.toCursorIcon())) {
+        Column(Modifier.verticalScroll(verticalScrollState).fillMaxSize().editorToolHoverIcon(EchoInMirror.editorTool)) {
             Divider()
             var i = 0
             EchoInMirror.bus!!.subTracks.fastForEach {

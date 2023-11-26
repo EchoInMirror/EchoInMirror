@@ -19,9 +19,9 @@ import com.eimsound.daw.components.ClickableText
 import com.eimsound.daw.components.Gap
 import com.eimsound.daw.components.SettingTab
 import com.eimsound.daw.dawutils.EIMChan
-import com.eimsound.daw.impl.clips.midi.editor.notesEditorExtensions
+import com.eimsound.daw.impl.clips.midi.editor.DefaultMidiClipEditor
 import com.eimsound.daw.utils.openInBrowser
-import com.eimsound.daw.window.panels.playlist.playListExtensions
+import com.eimsound.daw.window.panels.playlist.Playlist
 import org.apache.commons.lang3.SystemUtils
 import java.net.URI
 import java.text.DateFormat
@@ -82,11 +82,11 @@ internal object AboutPanel: SettingTab {
                         if (prev == it) return@Slider
                         EditorEIMChan.alpha = it
                         if (it == 0F) {
-                            playListExtensions.remove(EditorEIMChan)
-                            notesEditorExtensions.remove(EditorEIMChan)
+                            Playlist.playListExtensions.remove(EditorEIMChan)
+                            DefaultMidiClipEditor.notesEditorExtensions.remove(EditorEIMChan)
                         } else if (prev == 0F) {
-                            playListExtensions.add(EditorEIMChan)
-                            notesEditorExtensions.add(EditorEIMChan)
+                            Playlist.playListExtensions.add(EditorEIMChan)
+                            DefaultMidiClipEditor.notesEditorExtensions.add(EditorEIMChan)
                         }
                     }, Modifier.width(160.dp))
                 }

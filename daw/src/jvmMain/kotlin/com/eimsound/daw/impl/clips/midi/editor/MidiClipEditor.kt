@@ -8,6 +8,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
@@ -22,15 +23,17 @@ import com.eimsound.daw.api.MidiClip
 import com.eimsound.daw.api.MidiClipEditor
 import com.eimsound.daw.api.TrackClip
 import com.eimsound.daw.api.processor.Track
+import com.eimsound.daw.api.window.EditorExtension
 import com.eimsound.daw.commons.json.JsonIgnoreDefaults
 import com.eimsound.daw.commons.SerializableEditor
 import com.eimsound.daw.components.*
 import com.eimsound.daw.components.splitpane.VerticalSplitPane
 import com.eimsound.daw.components.splitpane.rememberSplitPaneState
+import com.eimsound.daw.components.utils.EditAction
 import com.eimsound.daw.dawutils.openMaxValue
 import com.eimsound.daw.utils.*
 import com.eimsound.daw.window.panels.playlist.playlistTrackControllerMinWidth
-import com.eimsound.daw.window.panels.playlist.playlistTrackControllerPanelState
+import com.eimsound.daw.window.panels.playlist.Playlist
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.util.*
@@ -98,10 +101,21 @@ class DefaultMidiClipEditor(override val clip: TrackClip<MidiClip>) : MidiClipEd
     internal var startNoteIndex = 0
     internal val playingNotes = arrayListOf<MidiEvent>()
     internal val deletionList = mutableStateSetOf<NoteMessage>()
+    internal val muteList = mutableStateSetOf<NoteMessage>()
     internal var currentSelectedNote by mutableStateOf<NoteMessage?>(null)
     internal var notesInView by mutableStateOf(arrayListOf<NoteMessage>())
     internal var isEventPanelActive = false
     internal var offsetOfRoot = Offset.Zero
+
+    internal var selectionStartX = 0F
+    internal var selectionStartY = 0
+    internal var selectionX by mutableStateOf(0F)
+    internal var selectionY by mutableStateOf(0)
+    internal var deltaX by mutableStateOf(0)
+    internal var deltaY by mutableStateOf(0)
+    internal var action by mutableStateOf(EditAction.NONE)
+    internal var resizeDirectionRight = false
+    internal var cursor by mutableStateOf(PointerIcon.Default)
 
     override val hasSelected get() = !selectedNotes.isEmpty()
     override val canPaste get() = copiedNotes?.isNotEmpty() == true
@@ -111,12 +125,13 @@ class DefaultMidiClipEditor(override val clip: TrackClip<MidiClip>) : MidiClipEd
         var playOnEdit by mutableStateOf(true)
         var defaultVelocity by mutableStateOf(70)
         var lastSelectedNoteDuration = 0
+        val notesEditorExtensions: MutableList<EditorExtension> = mutableStateListOf()
     }
 
     @Composable
     override fun Editor() {
         Row(Modifier.fillMaxSize()) {
-            Column(Modifier.width((playlistTrackControllerPanelState.position / LocalDensity.current.density).dp
+            Column(Modifier.width((Playlist.playlistTrackControllerPanelState.position / LocalDensity.current.density).dp
                 .coerceAtLeast(playlistTrackControllerMinWidth))) {
                 EditorControls(this@DefaultMidiClipEditor)
             }
@@ -206,6 +221,7 @@ class DefaultMidiClipEditor(override val clip: TrackClip<MidiClip>) : MidiClipEd
     }
 
     private var currentX = 0
+    private var currentNote = 0
     internal fun Density.getClickedNotes(
         offset: Offset, block: Density.(NoteMessage) -> Boolean = { true }
     ): NoteMessage? {

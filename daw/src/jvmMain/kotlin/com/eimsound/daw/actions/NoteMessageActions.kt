@@ -40,7 +40,7 @@ fun MidiClip.doNoteVelocityAction(noteMessage: Array<NoteMessage>, deltaVelocity
         noteMessage, deltaVelocity)) }
 }
 
-fun MidiClip.doNoteDisabledAction(noteMessage: List<NoteMessage>, isDisabled: Boolean = false) {
+fun MidiClip.doNoteDisabledAction(noteMessage: List<NoteMessage>, isDisabled: Boolean? = null) {
     runBlocking { EchoInMirror.undoManager.execute(NotesDisabledAction(this@doNoteDisabledAction,
         noteMessage, isDisabled)) }
 }
@@ -115,9 +115,9 @@ class NoteVelocityAction(
 }
 
 class NotesDisabledAction(
-    private val clip: MidiClip, notes: List<NoteMessage>, isDisabled: Boolean = false
+    private val clip: MidiClip, notes: List<NoteMessage>, isDisabled: Boolean? = null
 ) : ListDisabledAction(notes, isDisabled) {
-    override val name = if (isDisabled) "音符禁用 (${notes.size}个)" else "音符启用 (${notes.size}个)"
+    override val name = if (isDisabled ?: (notes.firstOrNull()?.isDisabled == false)) "音符禁用 (${notes.size}个)" else "音符启用 (${notes.size}个)"
     override val icon = Icons.Default.Edit
 
     override fun afterPerform() { clip.notes.update() }

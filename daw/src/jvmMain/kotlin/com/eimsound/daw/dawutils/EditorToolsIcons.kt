@@ -8,12 +8,14 @@ import androidx.compose.material.icons.outlined.VolumeOff
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.LayoutDirection
 import com.eimsound.daw.api.EditorTool
@@ -65,3 +67,5 @@ fun InitEditorTools() {
         }
     }
 }
+
+fun Modifier.editorToolHoverIcon(tool: EditorTool) = if (tool.ordinal == 0) this else pointerHoverIcon(tool.toCursorIcon())

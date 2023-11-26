@@ -9,6 +9,7 @@ import com.eimsound.audioprocessor.data.midi.NoteMessage
 import com.eimsound.audioprocessor.data.midi.toNoteOffEvent
 import com.eimsound.audioprocessor.data.midi.toNoteOnEvent
 import com.eimsound.daw.actions.doNoteAmountAction
+import com.eimsound.daw.actions.doNoteDisabledAction
 import com.eimsound.daw.actions.doNoteMessageEditAction
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.EditorTool
@@ -142,6 +143,11 @@ internal suspend fun PointerInputScope.handleMouseEvent(
                                     action = EditAction.DELETE
                                     break
                                 }
+                                EditorTool.MUTE -> {
+                                    selectedNotes.clear()
+                                    getClickedNotes(event.changes[0].position)?.let(muteList::add)
+                                    action = EditAction.DISABLE
+                                }
                                 else -> {}
                             }
                             break
@@ -174,9 +180,16 @@ internal suspend fun PointerInputScope.handleMouseEvent(
                 ) { change, _ -> change.consume() }
             } while (drag != null && !drag.isConsumed)
             if (drag == null) {
-                if (action == EditAction.DELETE) {
-                    clip.doNoteAmountAction(deletionList, true)
-                    deletionList.clear()
+                when (action) {
+                    EditAction.DELETE -> {
+                        clip.doNoteAmountAction(deletionList, true)
+                        deletionList.clear()
+                    }
+                    EditAction.DISABLE -> {
+                        clip.clip.doNoteDisabledAction(muteList.toList())
+                        muteList.clear()
+                    }
+                    else -> {}
                 }
                 stopAllNotes(editor)
                 action = EditAction.NONE
@@ -203,6 +216,9 @@ internal suspend fun PointerInputScope.handleMouseEvent(
 
                     EditAction.DELETE -> getClickedNotes(it.position) { note -> !deletionList.contains(note) }
                         ?.let(deletionList::add)
+
+                    EditAction.DISABLE -> getClickedNotes(it.position) { note -> !muteList.contains(note) }
+                        ?.let(muteList::add)
 
                     EditAction.MOVE, EditAction.RESIZE -> {
                         val noteUnit = EchoInMirror.editUnit
@@ -269,6 +285,11 @@ internal suspend fun PointerInputScope.handleMouseEvent(
                 EditAction.DELETE -> {
                     clip.doNoteAmountAction(deletionList, true)
                     deletionList.clear()
+                }
+
+                EditAction.DISABLE -> {
+                    clip.clip.doNoteDisabledAction(muteList.toList())
+                    muteList.clear()
                 }
 
                 EditAction.MOVE -> clip.doNoteMessageEditAction(

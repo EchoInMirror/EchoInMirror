@@ -19,13 +19,13 @@ import com.eimsound.daw.components.NoteWidthSlider
 import com.eimsound.daw.components.TIMELINE_HEIGHT
 import com.eimsound.daw.components.utils.toOnSurfaceColor
 import com.eimsound.daw.window.panels.playlist.playlistTrackControllerMinWidth
-import com.eimsound.daw.window.panels.playlist.playlistTrackControllerPanelState
+import com.eimsound.daw.window.panels.playlist.Playlist
 
 @Composable
 fun EditorControls(clip: TrackClip<*>, noteWidth: MutableState<Dp>, content: @Composable ColumnScope.() -> Unit) {
     Column(
         Modifier
-            .width((playlistTrackControllerPanelState.position / LocalDensity.current.density).dp
+            .width((Playlist.playlistTrackControllerPanelState.position / LocalDensity.current.density).dp
                 .coerceAtLeast(playlistTrackControllerMinWidth))
     ) {
         val color by animateColorAsState(clip.track?.color ?: MaterialTheme.colorScheme.primary, tween(100))
