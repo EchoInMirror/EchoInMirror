@@ -95,7 +95,7 @@ fun DictionaryNode(file: Path, depth: Int = 0, showSupFormatOnly: Boolean = fals
     val isExpandable = !list.isNullOrEmpty()
     TreeItem(
         file.name.ifEmpty {
-            if (depth == 0) "根目录" else "未命名"
+            if (depth == 0) file.pathString else "未命名"
         },
         file,
         if (expanded) Icons.Filled.FolderOpen else Icons.Outlined.Folder,

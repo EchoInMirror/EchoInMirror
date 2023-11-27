@@ -18,7 +18,9 @@ import kotlin.io.path.*
 
 val WORKING_PATH: Path = Path.of(
     if (SystemUtils.IS_OS_WINDOWS) System.getenv("AppData")
-    else System.getProperty("user.home") + "/Library/Application Support"
+    else if(SystemUtils.IS_OS_MAC) System.getProperty("user.home") + "/Library/Application Support"
+    else if(SystemUtils.IS_OS_LINUX) System.getenv("HOME") + "/.local"
+    else throw UnsupportedOperationException("Unsupported operating system!")
 )
 val ROOT_PATH: Path = WORKING_PATH.resolve("EchoInMirror")
 val FAVORITE_AUDIO_PROCESSORS_PATH: Path = ROOT_PATH.resolve("favoriteAudioProcessors.json")

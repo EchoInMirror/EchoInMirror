@@ -10,6 +10,7 @@ plugins {
     kotlin("plugin.serialization") version "1.9.20"
     id("org.jetbrains.compose")
     id("com.github.johnrengelman.shadow") version "8.1.1"
+    id("java")
 }
 
 repositories {
