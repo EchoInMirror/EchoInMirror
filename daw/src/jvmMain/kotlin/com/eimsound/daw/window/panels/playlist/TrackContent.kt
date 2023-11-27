@@ -19,6 +19,7 @@ import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextDecoration
@@ -354,15 +355,25 @@ internal fun TrackContent(playlist: Playlist, track: Track, index: Int): Int {
             Box(Modifier.fillMaxSize().pointerInput(track) { // Double click
                 awaitPointerEventScope {
                     var time = 0L
+                    var lastPos: Offset? = null
                     while (true) {
                         val event = awaitFirstDown(false)
                         if (action != EditAction.NONE) continue
                         when (EchoInMirror.editorTool) {
                             EditorTool.CURSOR -> {
+                                if (lastPos != null && (event.position - lastPos).getDistanceSquared() > 20 * density * density) {
+                                    time = 0
+                                    lastPos = null
+                                    continue
+                                }
                                 time = if (event.previousUptimeMillis - time < viewConfiguration.longPressTimeoutMillis) {
                                     createNewClip(playlist, track, event.position.x)
+                                    lastPos = null
                                     0L
-                                } else event.previousUptimeMillis
+                                } else {
+                                    lastPos = event.position
+                                    event.previousUptimeMillis
+                                }
                             }
                             EditorTool.PENCIL -> createNewClip(playlist, track, event.position.x)
                             else -> { }

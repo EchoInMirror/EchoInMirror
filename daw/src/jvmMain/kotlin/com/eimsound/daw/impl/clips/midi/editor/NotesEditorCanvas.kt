@@ -113,13 +113,24 @@ internal fun NotesEditorCanvas(editor: DefaultMidiClipEditor) {
                 .pointerInput(editor) { // Double click
                     awaitPointerEventScope {
                         var time = 0L
+                        var lastPos: Offset? = null
                         while (true) {
                             val event = awaitFirstDown(false)
                             if (action != EditAction.NONE || EchoInMirror.editorTool != EditorTool.CURSOR) continue
-                            time = if (event.previousUptimeMillis - time < viewConfiguration.longPressTimeoutMillis && getClickedNotes(event.position) == null) {
+                            if (lastPos != null && (event.position - lastPos).getDistanceSquared() > 20 * density * density) {
+                                time = 0
+                                lastPos = null
+                                continue
+                            }
+                            time = if (event.previousUptimeMillis - time < viewConfiguration.longPressTimeoutMillis &&
+                                getClickedNotes(event.position) == null) {
+                                lastPos = null
                                 createNewNote()
                                 0
-                            } else event.previousUptimeMillis
+                            } else {
+                                lastPos = event.position
+                                event.previousUptimeMillis
+                            }
                         }
                     }
                 }
@@ -160,7 +171,6 @@ internal fun NotesEditorCanvas(editor: DefaultMidiClipEditor) {
                 maxKeyNameSize = Constraints(0, (20 * localDensity.density).toInt(),
                     0, (16 * localDensity.density).toInt())
             }
-
 
             Spacer(Modifier.fillMaxSize().drawWithCache {
                 val noteWidthPx = noteWidth.value.toPx()

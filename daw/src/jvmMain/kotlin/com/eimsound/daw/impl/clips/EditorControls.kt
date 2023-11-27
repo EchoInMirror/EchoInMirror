@@ -12,6 +12,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.eimsound.daw.api.TrackClip
@@ -32,7 +33,14 @@ fun EditorControls(clip: TrackClip<*>, noteWidth: MutableState<Dp>, content: @Co
         Surface(Modifier.fillMaxWidth().height(TIMELINE_HEIGHT), shadowElevation = 2.dp, tonalElevation = 4.dp, color = color) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 val textColor by animateColorAsState(color.toOnSurfaceColor(), tween(80))
-                Text(clip.clip.name, Modifier.padding(horizontal = 8.dp), textColor, style = MaterialTheme.typography.labelLarge)
+                Text(
+                    clip.clip.name,
+                    Modifier.padding(horizontal = 8.dp),
+                    textColor,
+                    style = MaterialTheme.typography.labelLarge,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
         }
         Column(Modifier.padding(10.dp)) {
