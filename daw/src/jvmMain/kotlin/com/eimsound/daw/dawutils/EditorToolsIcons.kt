@@ -30,8 +30,6 @@ val EDITOR_TOOL_ICONS = arrayOf(
 )
 
 val CURSOR_ICONS = mutableStateListOf<PointerIcon?>(null, null, null, null)
-fun EditorTool.toCursorIcon() = if (this == EditorTool.CURSOR) PointerIcon.Default
-    else CURSOR_ICONS[ordinal - 1] ?: PointerIcon.Default
 
 private val TOOLS_HOT_SPOTS = arrayOf(
     arrayOf(0F, 1F), arrayOf(0F, 1F), arrayOf(0.5F, 0.5F), arrayOf(1F, 0.5F)
@@ -58,14 +56,16 @@ fun InitEditorTools() {
                     }
                 }
                 val hotSpot = TOOLS_HOT_SPOTS[i - 1]
-                CURSOR_ICONS[i - 1] = PointerIcon(toolkit.createCustomCursor(
+                val icon = PointerIcon(toolkit.createCustomCursor(
                     img.toAwtImage(),
                     Point((hotSpot[0] * d.width * 0.99999F).toInt(), (hotSpot[1] * d.height * 0.99999F).toInt()),
                     it.name
                 ))
+                CURSOR_ICONS[i - 1] = icon
+                EditorTool.entries[i].pointerIcon = icon
             }
         }
     }
 }
 
-fun Modifier.editorToolHoverIcon(tool: EditorTool) = if (tool.ordinal == 0) this else pointerHoverIcon(tool.toCursorIcon())
+fun Modifier.editorToolHoverIcon(tool: EditorTool) = if (tool.ordinal == 0) this else pointerHoverIcon(tool.pointerIcon)

@@ -82,7 +82,10 @@ class EnvelopeClipFactoryImpl: EnvelopeClipFactory {
         val ctrl = clip.clip.controllers.firstOrNull()?.parameter
         remember(clip, ctrl) {
             if (ctrl == null) return@remember null
-            EnvelopeEditor(clip.clip.envelope, ctrl.range, ctrl.initialValue, ctrl.isFloat, GlobalEnvelopeEditorEventHandler)
+            EnvelopeEditor(
+                clip.clip.envelope, ctrl.range, ctrl.initialValue, ctrl.isFloat,
+                null, GlobalEnvelopeEditorEventHandler
+            )
         }?.Editor(
             startPPQ, contentColor, noteWidth, true, clipStartTime = clip.start, stroke = 1F,
             backgroundColor = track.color.copy(0.7F).compositeOver(MaterialTheme.colorScheme.background)

@@ -31,8 +31,10 @@ class AudioClipEditor(private val clip: TrackClip<AudioClip>) : ClipEditor {
     val noteWidth = mutableStateOf(0.4.dp)
     @Suppress("MemberVisibilityCanBePrivate")
     val horizontalScrollState = ScrollState(0)
-    private val envelopeEditor = EnvelopeEditor(clip.clip.volumeEnvelope, VOLUME_RANGE, 1F,
-        true, GlobalEnvelopeEditorEventHandler)
+    private val envelopeEditor = EnvelopeEditor(
+        clip.clip.volumeEnvelope, VOLUME_RANGE, 1F, true,
+        horizontalScrollState, GlobalEnvelopeEditorEventHandler
+    )
 
     @Composable
     override fun Editor() {

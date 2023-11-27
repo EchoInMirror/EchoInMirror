@@ -1,5 +1,7 @@
 package com.eimsound.daw.api
 
+import androidx.compose.runtime.*
+import androidx.compose.ui.input.pointer.PointerIcon
 import com.eimsound.audioprocessor.AudioPlayer
 import com.eimsound.audioprocessor.CurrentPosition
 import com.eimsound.dsp.data.AudioThumbnailCache
@@ -43,5 +45,7 @@ interface IEchoInMirror {
 
 // Consider to make this extendable, if you want to add your own tool, you can open an issue on GitHub.
 enum class EditorTool {
-    CURSOR, PENCIL, ERASER, MUTE, CUT
+    CURSOR, PENCIL, ERASER, MUTE, CUT;
+
+    var pointerIcon by mutableStateOf(PointerIcon.Default)
 }

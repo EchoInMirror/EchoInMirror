@@ -69,11 +69,14 @@ class EnvelopeClipEditor(private val clip: TrackClip<EnvelopeClip>) : ClipEditor
                 val ctrl = clip.clip.controllers.firstOrNull()?.parameter
                 remember(clip, ctrl) {
                     if (ctrl == null) return@remember null
-                    EnvelopeEditor(clip.clip.envelope, ctrl.range, ctrl.initialValue, ctrl.isFloat, GlobalEnvelopeEditorEventHandler)
+                    EnvelopeEditor(
+                        clip.clip.envelope, ctrl.range, ctrl.initialValue, ctrl.isFloat,
+                        horizontalScrollState, GlobalEnvelopeEditorEventHandler
+                    )
                 }?.Editor(
                     clip.start - clip.time + with (LocalDensity.current) { horizontalScrollState.value / noteWidth.value.toPx() },
                     clip.track?.color ?: MaterialTheme.colorScheme.primary,
-                    noteWidth, editUnit = EchoInMirror.editUnit, horizontalScrollState = horizontalScrollState,
+                    noteWidth, editUnit = EchoInMirror.editUnit,
                     clipStartTime = clip.time
                 )
                 Box {

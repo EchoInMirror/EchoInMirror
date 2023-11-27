@@ -123,7 +123,11 @@ class CCEvent(private val editor: MidiClipEditor, eventId: Int, points: Envelope
     override val range get() = MIDI_CC_RANGE
     override val name = "CC:${eventId}"
     override val isInteger = true
-    private val envEditor = EnvelopeEditor(points, range, eventHandler = GlobalEnvelopeEditorEventHandler)
+    private val envEditor = EnvelopeEditor(
+        points, range, horizontalScrollState = (editor as? DefaultMidiClipEditor)?.horizontalScrollState,
+        eventHandler = GlobalEnvelopeEditorEventHandler
+    )
+
     @Composable
     override fun Editor() {
         if (editor !is DefaultMidiClipEditor) return
@@ -131,7 +135,7 @@ class CCEvent(private val editor: MidiClipEditor, eventId: Int, points: Envelope
             envEditor.Editor(
                 clip.start - clip.time + with (LocalDensity.current) { horizontalScrollState.value / noteWidth.value.toPx() },
                 clip.track?.color ?: MaterialTheme.colorScheme.primary,
-                noteWidth, editUnit = EchoInMirror.editUnit, horizontalScrollState = horizontalScrollState,
+                noteWidth, editUnit = EchoInMirror.editUnit,
                 clipStartTime = clip.time
             )
         }

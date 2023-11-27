@@ -20,6 +20,7 @@ import com.eimsound.dsp.data.*
 import com.eimsound.dsp.detectBPM
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonElement
@@ -142,7 +143,7 @@ class AudioClipFactoryImpl: AudioClipFactory {
         MenuItem({
             close()
             @OptIn(DelicateCoroutinesApi::class)
-            GlobalScope.launch {
+            GlobalScope.launch(Dispatchers.IO) {
                 val bpm = detectBPM(clip.audioSource.copy())
                 if (bpm.isEmpty()) {
                     snackbarProvider.enqueueSnackbar("采样时间过短!", SnackbarType.Error)
