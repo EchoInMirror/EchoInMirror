@@ -4,8 +4,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.util.fastMap
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.commons.json.*
+import com.eimsound.daw.utils.observableMutableStateOf
+import com.jthemedetecor.OsThemeDetector
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.*
 import org.apache.commons.lang3.SystemUtils
@@ -43,10 +46,18 @@ object Configuration : JsonSerializable {
     var audioDeviceName by mutableStateOf("")
     var autoCutOver0db by mutableStateOf(true)
     var isTimeDisplayInBeats by mutableStateOf(false)
+    var themeMode by observableMutableStateOf(2) {
+        if (it == 0 || it == 1) EchoInMirror.windowManager.isDarkTheme = it == 1
+        else EchoInMirror.windowManager.isDarkTheme = themeDetector.isDark
+    }
     val fileBrowserCustomRoots = mutableStateListOf<Path>()
     var fileBrowserShowSupFormatOnly by mutableStateOf(true)
     var userId = UUID.randomUUID().toString()
         private set
+
+    private val themeDetector = OsThemeDetector.getDetector().apply {
+        registerListener { EchoInMirror.windowManager.isDarkTheme = it }
+    }
 
     init {
         if (!Files.exists(ROOT_PATH)) Files.createDirectory(ROOT_PATH)
@@ -94,7 +105,7 @@ object Configuration : JsonSerializable {
         put("audioDeviceFactoryName", audioDeviceFactoryName)
         put("audioDeviceName", audioDeviceName)
         put("autoCutOver0db", autoCutOver0db)
-        put("isDarkTheme", EchoInMirror.windowManager.isDarkTheme)
+        put("themeMode", themeMode)
         put("isTimeDisplayInBeats", isTimeDisplayInBeats)
         put("fileBrowserCustomRoots", Json.encodeToJsonElement(fileBrowserCustomRoots.map { it.pathString }))
         put("fileBrowserShowSupFormatOnly", fileBrowserShowSupFormatOnly)
@@ -106,10 +117,16 @@ object Configuration : JsonSerializable {
         json["audioDeviceFactoryName"]?.asString()?.let { audioDeviceFactoryName = it }
         json["audioDeviceName"]?.asString()?.let { audioDeviceName = it }
         json["autoCutOver0db"]?.asBoolean()?.let { autoCutOver0db = it }
-        json["isDarkTheme"]?.asBoolean()?.let { EchoInMirror.windowManager.isDarkTheme = it }
+        json["themeMode"]?.asInt()?.let {
+            themeMode = it
+            if (it == 0 || it == 1) EchoInMirror.windowManager.isDarkTheme = it == 1
+            else EchoInMirror.windowManager.isDarkTheme = themeDetector.isDark
+        }
         json["isTimeDisplayInBeats"]?.asBoolean()?.let { isTimeDisplayInBeats = it }
         fileBrowserCustomRoots.clear()
-        (json["fileBrowserCustomRoots"] as? JsonArray)?.let { fileBrowserCustomRoots.addAll(it.map { Paths.get(it.asString()) }) }
+        (json["fileBrowserCustomRoots"] as? JsonArray)?.let {
+            fileBrowserCustomRoots.addAll(it.fastMap { p -> Paths.get(p.asString()) })
+        }
         json["fileBrowserShowSupFormatOnly"]?.asBoolean()?.let { fileBrowserShowSupFormatOnly = it }
         val id = json["userId"]?.asString()
         if (id == null) save() else userId = id

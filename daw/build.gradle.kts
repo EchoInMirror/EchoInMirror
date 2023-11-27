@@ -54,6 +54,7 @@ kotlin {
                 implementation("org.apache.logging.log4j:log4j-slf4j2-impl:2.20.0")
                 implementation("org.jetbrains.compose.ui:ui-util:${ComposeBuildConfig.composeVersion}")
                 implementation("com.github.Apisium:appcenter-sdk-jvm:1.0.6")
+                implementation("com.github.Dansoftowner:jSystemThemeDetector:61d9025a31")
             }
         }
     }

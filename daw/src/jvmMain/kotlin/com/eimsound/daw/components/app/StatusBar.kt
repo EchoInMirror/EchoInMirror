@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import com.eimsound.daw.Configuration
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.processor.ChannelType
 import com.eimsound.daw.components.Filled
@@ -82,8 +83,12 @@ private fun BusChannelType() {
 @Composable
 private fun ThemeSwitch() {
     StatusBarItem("Theme",
-        if (EchoInMirror.windowManager.isDarkTheme) Icons.Default.DarkMode else Icons.Default.LightMode,
-        onClick = { EchoInMirror.windowManager.isDarkTheme = !EchoInMirror.windowManager.isDarkTheme }
+        when (Configuration.themeMode) {
+            0 -> Icons.Default.LightMode
+            1 -> Icons.Default.DarkMode
+            else -> Icons.Default.SettingsBrightness
+        },
+        onClick = { Configuration.themeMode = (Configuration.themeMode + 1) % 3 },
     )
 }
 
