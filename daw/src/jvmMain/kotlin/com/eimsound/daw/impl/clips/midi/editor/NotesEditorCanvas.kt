@@ -136,6 +136,10 @@ internal fun NotesEditorCanvas(editor: DefaultMidiClipEditor) {
                 with (localDensity) { horizontalScrollState.openMaxValue = (noteWidth.value.toPx() * displayPPQ).toInt() }
             }
 
+            val borderCornerRadius2PX = CornerRadius(2F * localDensity.density, 2F * localDensity.density)
+            val stroke1PX = Stroke(localDensity.density)
+            val stroke2PX = Stroke(2f * localDensity.density)
+
             val measurer = rememberTextMeasurer(127)
 
             val trackClip = editor.clip
@@ -147,6 +151,7 @@ internal fun NotesEditorCanvas(editor: DefaultMidiClipEditor) {
             DefaultMidiClipEditor.notesEditorExtensions.EditorExtensions(true)
 
             val trackColor = clip.track?.color ?: primaryColor
+            val defaultNoteBorderColor = trackColor.saturate(0F)
             val keyNameTextColor = trackColor.toOnSurfaceColor().copy(0.9F)
             val disabledKeyNameTextStyle = labelMediumStyle.copy(textDecoration = TextDecoration.LineThrough)
             remember(localDensity) {
@@ -233,8 +238,6 @@ internal fun NotesEditorCanvas(editor: DefaultMidiClipEditor) {
                     backingsNotes.add(BackingTrack(track, curNotes))
                 }
 
-                val borderCornerRadius2PX = CornerRadius(2F * density, 2F * density)
-
                 onDrawBehind {
                     backingsNotes.fastForEach { cur ->
                         val color = cur.track.color.copy(0.16F)
@@ -242,6 +245,7 @@ internal fun NotesEditorCanvas(editor: DefaultMidiClipEditor) {
                     }
                     notes.fastForEach {
                         drawRoundRect(it.color, it.offset, it.size, borderCornerRadius2PX)
+                        drawRoundRect(defaultNoteBorderColor, it.offset, it.size, borderCornerRadius2PX, stroke1PX)
                         it.keyNameOffset?.let { o -> drawText(it.textLayoutResult!!, keyNameTextColor, o) }
                     }
                     selectedNotes.forEach {
@@ -274,7 +278,7 @@ internal fun NotesEditorCanvas(editor: DefaultMidiClipEditor) {
                         drawRoundRect(trackColor.saturate(
                             it.getColorSaturation(if (muteList.contains(it)) !muted else muted)
                         ), offset, size, borderCornerRadius2PX)
-                        drawRoundRect(primaryColor, offset, size, borderCornerRadius2PX, Stroke(2f * density))
+                        drawRoundRect(primaryColor, offset, size, borderCornerRadius2PX, stroke2PX)
                         if (shouldDrawNoteName && size.width > MIN_NOTE_WIDTH_WITH_KEY_NAME) {
                             drawText(it.getLayoutResult(
                                 localDensity, measurer, labelMediumStyle, disabledKeyNameTextStyle, offsetNote

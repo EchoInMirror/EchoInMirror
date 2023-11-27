@@ -3,6 +3,7 @@ package com.eimsound.daw.actions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.ui.util.fastForEach
 import com.eimsound.dsp.data.midi.NoteMessage
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.MidiClip
@@ -121,4 +122,39 @@ class NotesDisabledAction(
     override val icon = Icons.Default.Edit
 
     override fun afterPerform() { clip.notes.update() }
+}
+
+fun MidiClip.doNotesSplitAction(notes: List<NoteMessage>, clickTime: Int) {
+    runBlocking { EchoInMirror.undoManager.execute(NotesSplitAction(this@doNotesSplitAction,
+        notes, clickTime)) }
+}
+
+class NotesSplitAction(
+    private val clip: MidiClip, private val notes: List<NoteMessage>, private val clickTime: Int
+) : UndoableAction {
+    private val newNotes = mutableListOf<NoteMessage>()
+    private val modifiedNotes = mutableListOf<Pair<NoteMessage, Int>>()
+    override val name = "音符分割 (${notes.size}个)"
+    override val icon = Icons.Default.Edit
+
+    override suspend fun undo(): Boolean {
+        clip.notes.removeAll(newNotes)
+        modifiedNotes.fastForEach { it.first.duration = it.second }
+        clip.notes.update()
+        return true
+    }
+
+    override suspend fun execute(): Boolean {
+        newNotes.clear()
+        notes.fastForEach {
+            if (it.time + it.duration <= clickTime || it.time >= clickTime) return@fastForEach
+            newNotes.add(it.copy(time = clickTime, duration = it.time + it.duration - clickTime))
+            modifiedNotes.add(it to it.duration)
+            it.duration = clickTime - it.time
+        }
+        clip.notes.addAll(newNotes)
+        clip.notes.sort()
+        clip.notes.update()
+        return true
+    }
 }

@@ -222,9 +222,9 @@ class DefaultMidiClipEditor(override val clip: TrackClip<MidiClip>) : MidiClipEd
         }
     }
 
-    private var currentX = 0
+    internal var currentX = 0
     private var currentNote = 0
-    internal fun Density.getClickedNotes(
+    internal inline fun Density.getClickedNotes(
         offset: Offset, block: Density.(NoteMessage) -> Boolean = { true }
     ): NoteMessage? {
         currentNote = KEYBOARD_KEYS - ((offset.y + verticalScrollState.value) / noteHeight.toPx()).toInt() - 1

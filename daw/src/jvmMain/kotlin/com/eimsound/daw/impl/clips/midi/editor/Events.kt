@@ -11,6 +11,7 @@ import com.eimsound.dsp.data.midi.toNoteOnEvent
 import com.eimsound.daw.actions.doNoteAmountAction
 import com.eimsound.daw.actions.doNoteDisabledAction
 import com.eimsound.daw.actions.doNoteMessageEditAction
+import com.eimsound.daw.actions.doNotesSplitAction
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.EditorTool
 import com.eimsound.daw.components.FloatingLayerProvider
@@ -147,6 +148,13 @@ internal suspend fun PointerInputScope.handleMouseEvent(
                                     selectedNotes.clear()
                                     getClickedNotes(event.changes[0].position)?.let(muteList::add)
                                     action = EditAction.DISABLE
+                                }
+                                EditorTool.CUT -> {
+                                    selectedNotes.clear()
+                                    getClickedNotes(event.changes[0].position)?.let {
+                                        clip.clip.doNotesSplitAction(listOf(it), currentX)
+                                    }
+                                    continue
                                 }
                                 else -> {}
                             }
