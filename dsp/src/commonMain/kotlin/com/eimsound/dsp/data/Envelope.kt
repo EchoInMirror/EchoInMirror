@@ -61,7 +61,9 @@ data class EnvelopePoint(
     var value: Float,
     var tension: Float = 0F,
     var type: EnvelopeType = EnvelopeType.SMOOTH
-)
+): Comparable<EnvelopePoint> {
+    override fun compareTo(other: EnvelopePoint) = time.compareTo(other.time)
+}
 
 typealias BaseEnvelopePointList = List<EnvelopePoint>
 typealias MutableBaseEnvelopePointList = MutableList<EnvelopePoint>
@@ -83,7 +85,6 @@ fun JsonObjectBuilder.putNotDefault(key: String, value: BaseEnvelopePointList?) 
 
 @Serializable
 sealed interface EnvelopePointList : MutableBaseEnvelopePointList, IManualState, BaseEnvelopePointList {
-    fun sort()
     fun copy(): EnvelopePointList
     fun split(time: Int, offsetStart: Int = 0): BaseEnvelopePointList
     fun getValue(position: Int, defaultValue: Float = 0F): Float
@@ -119,7 +120,6 @@ class DefaultEnvelopePointList : EnvelopePointList, ArrayList<EnvelopePoint>() {
     @Transient
     private var currentIndex = -1
 
-    override fun sort() = sortBy { it.time }
     override fun copy() = DefaultEnvelopePointList().apply { this@DefaultEnvelopePointList.forEach { add(it.copy()) } }
     override fun getValue(position: Int, defaultValue: Float): Float {
         if (size == 0) return defaultValue

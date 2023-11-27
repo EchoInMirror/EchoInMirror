@@ -87,7 +87,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
             }
             val startTime = position.timeInPPQ
             val blockEndSample = position.timeInSamples + position.bufferSize
-            if (lastClipIndex == -1) lastClipIndex = clips.binarySearch { it.time < startTime }
+            if (lastClipIndex == -1) lastClipIndex = clips.lowerBound { it.time < startTime }
             if (lastClipIndex > 0) lastClipIndex--
             for (i in lastClipIndex..clips.lastIndex) {
                 val clip = clips[i]

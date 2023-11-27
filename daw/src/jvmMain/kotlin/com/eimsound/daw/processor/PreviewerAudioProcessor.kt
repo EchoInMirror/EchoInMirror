@@ -6,7 +6,7 @@ import com.eimsound.dsp.data.midi.*
 import com.eimsound.daw.impl.CurrentPositionImpl
 import com.eimsound.daw.impl.processor.eimAudioProcessorFactory
 import com.eimsound.daw.processor.synthesizer.SineWaveSynthesizer
-import com.eimsound.daw.utils.binarySearch
+import com.eimsound.daw.utils.lowerBound
 
 val PreviewerDescription = DefaultAudioProcessorDescription(
     "Previewer",
@@ -54,7 +54,7 @@ class PreviewerAudioProcessor(factory: AudioProcessorFactory<*>) : AbstractAudio
             val blockEndSample = timeInSamples + bufferSize
             if (currentIndex == -1) {
                 val startPPQ = this.position.timeInPPQ
-                currentIndex = notes.binarySearch { it.time <= startPPQ }
+                currentIndex = notes.lowerBound { it.time <= startPPQ }
             }
             if (currentIndex > 0) currentIndex--
             for (i in currentIndex..notes.lastIndex) {

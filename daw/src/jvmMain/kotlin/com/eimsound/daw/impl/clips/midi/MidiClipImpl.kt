@@ -23,7 +23,7 @@ import com.eimsound.daw.api.*
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.components.EnvelopeEditor
 import com.eimsound.daw.impl.clips.midi.editor.DefaultMidiClipEditor
-import com.eimsound.daw.utils.binarySearch
+import com.eimsound.daw.utils.lowerBound
 import com.eimsound.daw.commons.json.putNotDefault
 import com.eimsound.daw.components.trees.MidiNode
 import com.eimsound.dsp.data.midi.*
@@ -99,7 +99,7 @@ class MidiClipFactoryImpl : MidiClipFactory {
         if (clip.currentIndex == -1) {
             // use binary search to find the first note that is after the start of the block
             val startPPQ = position.timeInPPQ - startTime
-            clip.currentIndex = notes.binarySearch { it.time <= startPPQ }
+            clip.currentIndex = notes.lowerBound { it.time <= startPPQ }
         }
         clip.clip.events.forEach { (id, points) ->
             if (id !in 0..127) return@forEach
@@ -223,7 +223,7 @@ private fun MidiClipContents(
         val noteWidthPx = noteWidth.value.toPx()
         val trackHeightPx = size.height - density * 4F
         val height = (trackHeightPx / 128).coerceAtLeast(density * 1.5F)
-        var startId = notes.binarySearch { it.time <= startPPQ }
+        var startId = notes.lowerBound { it.time <= startPPQ }
         if (startId > 0) startId--
         val endTime = startPPQ + widthPPQ
         val noteHeight = trackHeightPx / (top - bottom + 2)

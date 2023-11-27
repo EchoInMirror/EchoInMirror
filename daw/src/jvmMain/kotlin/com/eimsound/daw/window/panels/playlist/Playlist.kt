@@ -294,7 +294,7 @@ class Playlist : Panel, MultiSelectableEditor {
     }
 
     // binary search drop track by trackHeights and currentY
-    internal fun binarySearchTrackByHeight(y: Float) = trackHeights.binarySearch { it.height <= y }
+    internal fun binarySearchTrackByHeight(y: Float) = trackHeights.lowerBound { it.height <= y }
 }
 
 @Deprecated("Will be replaced with a more flexible system")

@@ -43,6 +43,7 @@ import com.eimsound.dsp.data.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
+import kotlin.collections.ArrayDeque
 import kotlin.math.*
 
 @Suppress("DuplicatedCode")
@@ -120,7 +121,7 @@ private fun Density.getSelectedPoint(
     if (points.isEmpty()) return -1 to -1
     val noteWidthPx = noteWidth.value.toPx()
     val targetX = start + position.x / noteWidthPx
-    val pointIndex = points.binarySearch { it.time <= targetX }
+    val pointIndex = points.lowerBound { it.time <= targetX }
     val point = points[pointIndex]
     fun checkIsSelectedPoint(point: EnvelopePoint?) = point != null && (point.time - targetX).absoluteValue < 8F / noteWidthPx &&
             (height * (1 - point.value.coerceIn(valueRange) / valueRange.range) - position.y).absoluteValue < 8 * density
@@ -135,6 +136,7 @@ interface EnvelopeEditorEventHandler {
     fun onMovePoints(editor: EnvelopeEditor, points: BaseEnvelopePointList, offsetTime: Int, offsetValue: Float)
     fun onTensionChanged(editor: EnvelopeEditor, points: BaseEnvelopePointList, tension: Float)
     fun onTypeChanged(editor: EnvelopeEditor, points: BaseEnvelopePointList, type: EnvelopeType)
+    fun onMultiplePointsChanged(editor: EnvelopeEditor, points: BaseEnvelopePointList)
 }
 
 private fun floatToFixed(value: Float): String {
@@ -263,20 +265,20 @@ class EnvelopeEditor(
                             )
                             continue
                         }
-                        if (isPointExists) {
-                            if (isPencil) {
-                                selectedPoints.clear()
-                                action = EditAction.BRUSH
-                            } else {
-                                if (!selectedPoints.contains(points[pointId])) selectedPoints.clear()
-                                currentAdjustingPoint = pointId
-                                action = EditAction.RESIZE
-                            }
+                        if (isPencil) {
+                            selectedPoints.clear()
+                            action = EditAction.BRUSH
+                            break
+                        } else if (isPointExists) {
+                            if (!selectedPoints.contains(points[pointId])) selectedPoints.clear()
+                            currentAdjustingPoint = pointId
+                            action = EditAction.RESIZE
                             break
                         }
                     } else if (isPencil) {
                         selectedPoints.clear()
                         action = EditAction.BRUSH
+                        break
                     } else {
                         if (!selectedPoints.contains(points[tmpId])) {
                             selectedPoints.clear()
@@ -314,16 +316,23 @@ class EnvelopeEditor(
 //                    var selectedPointsRight = Int.MIN_VALUE
         var selectedPointsTop = valueRange.start
         var selectedPointsBottom = valueRange.endInclusive
-        if (action == EditAction.MOVE) {
-            selectedPoints.forEach {
-                if (it.time < selectedPointsLeft) selectedPointsLeft = it.time
-//                            if (it.time > selectedPointsRight) selectedPointsRight = it.time
-                if (it.value > selectedPointsTop) selectedPointsTop = it.value
-                if (it.value < selectedPointsBottom) selectedPointsBottom = it.value
+        when (action) {
+            EditAction.MOVE -> {
+                selectedPoints.forEach {
+                    if (it.time < selectedPointsLeft) selectedPointsLeft = it.time
+                    //                            if (it.time > selectedPointsRight) selectedPointsRight = it.time
+                    if (it.value > selectedPointsTop) selectedPointsTop = it.value
+                    if (it.value < selectedPointsBottom) selectedPointsBottom = it.value
+                }
+                movingPoints = points.toMutableList()
             }
-            movingPoints = points.toMutableList()
+
+            EditAction.BRUSH -> tempAddPoints.addAll(points.copy())
+
+            else -> { }
         }
 
+        var addTimes = 0
         drag(drag.id) {
             var y = it.position.y
             if (action == EditAction.RESIZE) {
@@ -348,16 +357,18 @@ class EnvelopeEditor(
                     }
 
                     EditAction.BRUSH -> {
-                        val start = tempAddPoints.firstOrNull()?.time ?: 0
-                        val cur = (((x + (horizontalScrollState?.value?.toFloat() ?: 0F)).coerceAtLeast(0F) - downX) /
-                                noteWidth.value.toPx()).fitInUnit(editUnitValue)
-                        val curIndex = (cur - start) / editUnitValue
+                        val cur = (startValue + x / noteWidth.value.toPx()).fitInUnit(editUnitValue)
+                        val curIndex = tempAddPoints.lowerBound { p -> p.time < cur }
                         val curObj = tempAddPoints.getOrNull(curIndex)
                         val value = (1 - y / size.height) * valueRange.range + valueRange.start
                         if (curObj == null || curObj.time != cur) {
-                            tempAddPoints.add(curIndex.coerceAtLeast(0), EnvelopePoint(cur, value.coerceIn(valueRange), defaultTension))
+                            tempAddPoints.add(curIndex, EnvelopePoint(cur, value.coerceIn(valueRange), defaultTension))
                         } else {
                             curObj.value = value.coerceIn(valueRange)
+                        }
+                        when (addTimes) {
+                            0, 1 -> addTimes++
+                            2 -> tempAddPoints.sort()
                         }
                         modification++
                     }
@@ -406,7 +417,11 @@ class EnvelopeEditor(
                 )
             }
 
-            EditAction.BRUSH -> tempAddPoints.clear()
+            EditAction.BRUSH -> {
+                eventHandler?.onMultiplePointsChanged(this@EnvelopeEditor, tempAddPoints)
+                action = EditAction.NONE
+                tempAddPoints.clear()
+            }
 
             else -> {}
         }
@@ -461,10 +476,10 @@ class EnvelopeEditor(
                     val newPoint = EnvelopePoint(targetX.fitInUnit(editUnitValue), newValue.coerceIn(valueRange), defaultTension)
                     eventHandler.onAddPoints(this@EnvelopeEditor, listOf(newPoint))
                 })
-            }.pointerInput(Unit) {
-                awaitEachGesture { handlePointerEvent(noteWidth, floatingLayerProvider, scope) }
             }.run {
                 if (isPencil) pointerHoverIcon(EditorTool.PENCIL.pointerIcon) else this
+            }.pointerInput(this@EnvelopeEditor) {
+                awaitEachGesture { handlePointerEvent(noteWidth, floatingLayerProvider, scope) }
             }
         }) {
             val strokeWidth = stroke * density
@@ -504,7 +519,7 @@ class EnvelopeEditor(
                     drawLine(if (isFirstSelected) primaryColor else color, topLeft, Offset(x, y), strokeWidth)
                 }
 
-                val tmpStartIndex = (movingPoints.binarySearch { it.time < start } - 1).coerceAtLeast(0)
+                val tmpStartIndex = (movingPoints.lowerBound { it.time < start } - 1).coerceAtLeast(0)
                 for (i in tmpStartIndex until points.size) {
                     val cur = movingPoints[i]
                     val isSelected = selectedPoints.contains(cur)
@@ -554,7 +569,8 @@ class EnvelopeEditor(
                 }
             } else {
                 modification
-                startIndex = (points.binarySearch { it.time < start } - 1).coerceAtLeast(0)
+                val points = if (action == EditAction.BRUSH && tempAddPoints.isNotEmpty()) tempAddPoints else points
+                startIndex = (points.lowerBound { it.time < start } - 1).coerceAtLeast(0)
 
                 val first = points.firstOrNull()
                 if (first == null || first.time > start) {

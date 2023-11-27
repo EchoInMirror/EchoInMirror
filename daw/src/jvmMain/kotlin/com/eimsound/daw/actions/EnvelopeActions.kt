@@ -136,6 +136,39 @@ class EnvelopePointsTypeAction(
     }
 }
 
+fun EnvelopePointList.doEnvelopePointsMultipleAction(points: List<EnvelopePoint>) {
+    runBlocking {
+        EchoInMirror.undoManager.execute(
+            EnvelopePointsMultipleChangedAction(this@doEnvelopePointsMultipleAction, points)
+        )
+    }
+}
+
+class EnvelopePointsMultipleChangedAction(
+    private val list: EnvelopePointList, private val points: List<EnvelopePoint>
+) : UndoableAction {
+    private val cnt = points.size - list.size
+    private var oldPoints: List<EnvelopePoint>? = null
+    override val name = "包络节点多重编辑${if (cnt > 0) "(${cnt}个)" else ""}"
+    override val icon = Icons.Default.Tune
+
+    override suspend fun undo(): Boolean {
+        if (oldPoints == null) return false
+        list.clear()
+        list.addAll(oldPoints!!)
+        list.update()
+        return true
+    }
+
+    override suspend fun execute(): Boolean {
+        oldPoints = list.toList()
+        list.clear()
+        list.addAll(points.sorted())
+        list.update()
+        return true
+    }
+}
+
 object GlobalEnvelopeEditorEventHandler : EnvelopeEditorEventHandler {
     override fun onAddPoints(editor: EnvelopeEditor, points: BaseEnvelopePointList) {
         editor.points.doEnvelopePointsAmountAction(points)
@@ -162,6 +195,10 @@ object GlobalEnvelopeEditorEventHandler : EnvelopeEditorEventHandler {
 
     override fun onTypeChanged(editor: EnvelopeEditor, points: BaseEnvelopePointList, type: EnvelopeType) {
         editor.points.doEnvelopePointsTypeAction(points, type)
+    }
+
+    override fun onMultiplePointsChanged(editor: EnvelopeEditor, points: BaseEnvelopePointList) {
+        editor.points.doEnvelopePointsMultipleAction(points)
     }
 }
 
