@@ -39,9 +39,7 @@ fun SettingsCard(
 
 @Composable
 fun <T> SettingsListManager(
-    list: MutableList<T>,
-    toString: (T) -> String = { it.toString() },
-//    content: @Composable (T) -> Unit,
+    list: Collection<T>,
     addButtonText: String? = "添加路径",
     onAddButtonClick: (() -> Unit)? = null,
     onDelete: ((T) -> Unit)? = null,
@@ -52,7 +50,7 @@ fun <T> SettingsListManager(
             if (list.isEmpty()) {
                 MenuItem(modifier=Modifier.background(MaterialTheme.colorScheme.surface).fillMaxWidth()) {
                     Filled()
-                    Text("Empty",
+                    Text("暂无...",
                         color = MaterialTheme.colorScheme.onSurface.copy(0.5F),
                         style = LocalTextStyle.current.copy(fontSize = 14.sp, fontStyle = FontStyle.Italic)
                     )

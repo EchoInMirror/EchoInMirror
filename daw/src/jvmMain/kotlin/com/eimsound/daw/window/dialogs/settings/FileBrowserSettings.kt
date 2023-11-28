@@ -12,7 +12,6 @@ import com.eimsound.daw.components.SettingsCard
 import com.eimsound.daw.components.SettingsListManager
 import com.eimsound.daw.utils.CurrentWindow
 import com.eimsound.daw.utils.openFolderBrowser
-import kotlin.io.path.pathString
 
 
 internal object FileBrowserSettings : SettingTab {
@@ -34,7 +33,6 @@ internal object FileBrowserSettings : SettingTab {
             SettingSection("文件浏览器的自定义文件夹") {
                 SettingsListManager(
                     Configuration.fileBrowserCustomRoots,
-                    toString = { it.pathString },
                     addButtonText = "添加文件夹",
                     onAddButtonClick = {
                         openFolderBrowser(window)?.let {

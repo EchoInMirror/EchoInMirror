@@ -81,8 +81,12 @@ object FileSystemBrowser : Panel {
     override fun Content() {
         Column {
             Tree(Modifier.weight(1F), { if (it is Path) createPreviewerComponent(it) }) {
-                roots.fastForEach { key(it) { FileNode(it, showSupFormatOnly = Configuration.fileBrowserShowSupFormatOnly) } }
-                Configuration.fileBrowserCustomRoots.fastForEach { key(it) { FileNode(it, showSupFormatOnly = Configuration.fileBrowserShowSupFormatOnly) } }
+                roots.fastForEach {
+                    key(it) { FileNode(it, showSupFormatOnly = Configuration.fileBrowserShowSupFormatOnly) }
+                }
+                Configuration.fileBrowserCustomRoots.forEach {
+                    key(it) { FileNode(it, showSupFormatOnly = Configuration.fileBrowserShowSupFormatOnly) }
+                }
             }
             Previewer()
         }

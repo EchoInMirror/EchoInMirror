@@ -17,11 +17,9 @@ import javax.swing.JFileChooser
 @Suppress("INVISIBLE_MEMBER")
 val CurrentWindow @Composable get() = androidx.compose.ui.window.LocalWindow
 
-fun openFolderBrowser(parent: Component? = null): File? {
-    val fileChooser = JFileChooser()
-    fileChooser.fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
-    fileChooser.showOpenDialog(parent)
-    return fileChooser.selectedFile
+fun openFolderBrowser(parent: Component? = null): File? = JFileChooser().run {
+    fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
+    if (showOpenDialog(parent) == JFileChooser.APPROVE_OPTION) selectedFile else null
 }
 
 fun openInExplorer(file: File) = Desktop.getDesktop().open(file)

@@ -7,6 +7,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.util.fastMap
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.commons.json.*
+import com.eimsound.daw.utils.mutableStateSetOf
 import com.eimsound.daw.utils.observableMutableStateOf
 import com.jthemedetecor.OsThemeDetector
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -50,7 +51,7 @@ object Configuration : JsonSerializable {
         if (it == 0 || it == 1) EchoInMirror.windowManager.isDarkTheme = it == 1
         else EchoInMirror.windowManager.isDarkTheme = themeDetector.isDark
     }
-    val fileBrowserCustomRoots = mutableStateListOf<Path>()
+    val fileBrowserCustomRoots = mutableStateSetOf<Path>()
     var fileBrowserShowSupFormatOnly by mutableStateOf(true)
     var userId = UUID.randomUUID().toString()
         private set
