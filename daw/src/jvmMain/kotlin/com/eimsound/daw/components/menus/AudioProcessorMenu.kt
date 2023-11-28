@@ -3,19 +3,24 @@ package com.eimsound.daw.components.menus
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Piano
+import androidx.compose.material.icons.filled.Reply
 import androidx.compose.material.icons.filled.SettingsInputHdmi
 import androidx.compose.material3.*
 import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import com.eimsound.audioprocessor.AudioProcessorManager
+import com.eimsound.audioprocessor.createAudioProcessorOrNull
 import com.eimsound.daw.actions.doAddOrRemoveAudioProcessorAction
+import com.eimsound.daw.actions.doReplaceAudioProcessorAction
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.processor.TrackAudioProcessorWrapper
 import com.eimsound.daw.components.*
 import com.eimsound.daw.commons.BasicEditor
 import com.eimsound.daw.utils.createTempDirectory
+import com.eimsound.daw.window.dialogs.openQuickLoadDialog
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
 import java.nio.file.Files
@@ -68,7 +73,25 @@ fun FloatingLayerProvider.openAudioProcessorMenu(
         }
 
         override val canPaste get() = copiedAudioProcessorPath != null
-    }, false, {
+    }, false, { close ->
+        CommandMenuItem({
+            close()
+            openQuickLoadDialog {
+                if (it == null) return@openQuickLoadDialog
+                isLoading?.value = true
+                GlobalScope.launch {
+                    val (ap, err) = it.factory.createAudioProcessorOrNull(it.description)
+                    if (err != null) {
+                        snackbarProvider?.enqueueSnackbar(err)
+                        return@launch
+                    }
+                    if (ap == null) return@launch
+                    list.doReplaceAudioProcessorAction(ap, index)
+                }.invokeOnCompletion { isLoading?.value = false }
+            }
+        }, Icons.Default.Reply) {
+            Text("替换...", fontStyle = FontStyle.Italic)
+        }
         if (showExtra) {
             Divider()
             val latency = p.processor.latency

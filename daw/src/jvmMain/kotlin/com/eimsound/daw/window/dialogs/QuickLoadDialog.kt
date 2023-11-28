@@ -216,9 +216,10 @@ fun FloatingLayerProvider.openQuickLoadDialog(onClose: ((AudioProcessorDescripti
                                 countMap = manufacturerCountMap,
                                 allCount = manufacturerAllCount
                             ) { selectedManufacturer = it }
-                            DescList(
+                            DescList( // AudioProcessor list
                                 Modifier.weight(1f).padding(SUB_PADDING), descList,
-                                selectedDescription, tailContent = {
+                                selectedDescription, ellipsis = false,
+                                tailContent = {
                                     descriptionsToFactory[it]?.name?.let { factoryName ->
                                         val pair = it.identifier to factoryName
                                         IconToggleButton(favoriteAudioProcessors.contains(pair), {
@@ -275,12 +276,29 @@ fun FloatingLayerProvider.openQuickLoadDialog(onClose: ((AudioProcessorDescripti
 }
 
 @Composable
+private fun <T: Any> RowScope.ItemText(it: T, ellipsis: Boolean) {
+    val isDeprecated = it is AudioProcessorDescription && it.isDeprecated == true
+    val color = LocalContentColor.current
+    Text(
+        if (it is IDisplayName) it.displayName else it.toString(),
+        if (ellipsis) Modifier.weight(1F) else Modifier,
+        overflow = if (ellipsis) TextOverflow.Ellipsis else TextOverflow.Clip,
+        textAlign = TextAlign.Start,
+        maxLines = 1,
+        style = MaterialTheme.typography.labelMedium,
+        fontStyle = if (isDeprecated) FontStyle.Italic else null,
+        color = if (isDeprecated) color.copy(0.7F) else color
+    )
+}
+
+@Composable
 private fun <T: Any> DescListItem(
     it: T,
     selectedDesc: T?,
     onClick: (it: T?) -> Unit,
+    ellipsis: Boolean,
     countMap: Map<T, Int> = mapOf(),
-    tailContent: (@Composable RowScope.(T) -> Unit)? = null,
+    tailContent: (@Composable RowScope.(T) -> Unit)? = null
 ) {
     MenuItem(
         { onClick(it) },
@@ -288,19 +306,7 @@ private fun <T: Any> DescListItem(
         modifier = Modifier.fillMaxWidth().height(30.dp),
         minHeight = 30.dp
     ) {
-        Marquee(Modifier.weight(1F)) {
-            val isDeprecated = it is AudioProcessorDescription && it.isDeprecated == true
-            val color = LocalContentColor.current
-            Text(
-                if (it is IDisplayName) it.displayName else it.toString(),
-                overflow = TextOverflow.Ellipsis,
-                textAlign = TextAlign.Start,
-                maxLines = 1,
-                style = MaterialTheme.typography.labelMedium,
-                fontStyle = if (isDeprecated) FontStyle.Italic else null,
-                color = if (isDeprecated) color.copy(0.7F) else color
-            )
-        }
+        if (ellipsis) ItemText(it, true) else Marquee(Modifier.weight(1F)) { ItemText(it, false) }
         if (tailContent != null) tailContent(it)
         else {
             val count = countMap.getOrDefault(it, 0)
@@ -324,6 +330,7 @@ private fun <T: Any> DescList(
     title: String? = null,
     countMap: Map<T, Int> = mapOf(),
     allCount: Int = countMap.values.sum(),
+    ellipsis: Boolean = true,
     tailContent: (@Composable RowScope.(T) -> Unit)? = null,
     onDragStart: ((T) -> Any?)? = null,
     onDragEnd: (() -> Unit)? = null,
@@ -342,7 +349,7 @@ private fun <T: Any> DescList(
                     if (favoriteAudioProcessorsActuallyLoaded) state.dispatchRawDelta(Float.NEGATIVE_INFINITY)
                 }
                 LazyColumn(state = state) {
-                    if (defaultText != null) item {
+                    if (defaultText != null) item(defaultText) {
                         MenuItem(
                             { onClick(null) },
                             selectedDesc == null,
@@ -367,11 +374,12 @@ private fun <T: Any> DescList(
                         }
                     }
                     items(descList, { it }) {
-                        if (onDragEnd == null || onDragStart == null) DescListItem(it, selectedDesc, onClick, countMap, tailContent)
+                        if (onDragEnd == null || onDragStart == null)
+                            DescListItem(it, selectedDesc, onClick, ellipsis, countMap, tailContent)
                         else GlobalDraggable({ onDragStart(it) }, onDragEnd, draggingComponent = {
                             Text(if (it is IDisplayName) it.displayName else it.toString())
                         }) {
-                            DescListItem(it, selectedDesc, onClick, countMap, tailContent)
+                            DescListItem(it, selectedDesc, onClick, ellipsis, countMap, tailContent)
                         }
                     }
                 }
