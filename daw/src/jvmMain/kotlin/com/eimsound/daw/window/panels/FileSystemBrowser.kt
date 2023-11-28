@@ -188,12 +188,13 @@ object FileSystemBrowser : Panel {
                     hasContent = true
                 } else if (AudioSourceManager.instance.supportedFormats.contains(ext)) {
                     val audioSource = AudioSourceManager.instance.createAudioSource(file)
-                    EchoInMirror.audioThumbnailCache[file, audioSource]?.let {
+                    EchoInMirror.audioThumbnailCache[file, audioSource, {
+                        fileBrowserPreviewer.setPreviewTarget(audioSource)
+                    }]?.let {
                         component = { Waveform(it) }
                         nodeName = file.name
                         hasContent = true
                     }
-                    fileBrowserPreviewer.setPreviewTarget(audioSource)
                 }
             } catch (e: Exception) {
                 hasContent = false

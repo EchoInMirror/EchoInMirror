@@ -13,7 +13,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.util.fastForEach
 import com.eimsound.audioprocessor.CurrentPosition
-import com.eimsound.audioprocessor.convertPPQToSamples
 import com.eimsound.audioprocessor.convertSamplesToPPQ
 import com.eimsound.dsp.data.DefaultEnvelopePointList
 import com.eimsound.dsp.data.EnvelopePointList
@@ -26,6 +25,7 @@ import com.eimsound.daw.impl.clips.midi.editor.DefaultMidiClipEditor
 import com.eimsound.daw.utils.lowerBound
 import com.eimsound.daw.commons.json.putNotDefault
 import com.eimsound.daw.components.trees.MidiNode
+import com.eimsound.daw.dawutils.processMIDIBuffer
 import com.eimsound.dsp.data.midi.*
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
@@ -35,6 +35,7 @@ import java.nio.file.Path
 import javax.sound.midi.MidiSystem
 
 class MidiClipImpl(factory: ClipFactory<MidiClip>) : AbstractClip<MidiClip>(factory), MidiClip {
+    override val name = "MIDI 片段"
     override val notes = DefaultNoteMessageList()
     override val events: MutableMidiCCEvents = mutableStateMapOf()
     override val isExpandable = true
@@ -93,14 +94,7 @@ class MidiClipFactoryImpl : MidiClipFactory {
         val c = clip.clip as MidiClipImpl
         val timeInSamples = position.timeInSamples
         val bufferSize = position.bufferSize
-        val blockEndSample = timeInSamples + bufferSize
         val startTime = clip.time
-        val notes = c.notes
-        if (clip.currentIndex == -1) {
-            // use binary search to find the first note that is after the start of the block
-            val startPPQ = position.timeInPPQ - startTime
-            clip.currentIndex = notes.lowerBound { it.time <= startPPQ }
-        }
         clip.clip.events.forEach { (id, points) ->
             if (id !in 0..127) return@forEach
             for (i in 0 until bufferSize step position.ppq) {
@@ -113,31 +107,9 @@ class MidiClipFactoryImpl : MidiClipFactory {
                 midiBuffer.add(i)
             }
         }
-        if (clip.currentIndex > 0) clip.currentIndex--
-        for (i in clip.currentIndex..notes.lastIndex) {
-            val note = notes[i]
-            val startTimeInSamples = position.convertPPQToSamples(startTime + note.time)
-            if (startTimeInSamples > blockEndSample) break
-            clip.currentIndex = i + 1
-            if (startTimeInSamples < timeInSamples || note.isDisabled) continue
-            val noteOnTime = (startTimeInSamples - timeInSamples).toInt().coerceAtLeast(0)
-            if (noteRecorder.isMarked(note.note)) {
-                noteRecorder.unmarkNote(note.note)
-                midiBuffer.add(note.toNoteOffRawData())
-                midiBuffer.add(noteOnTime)
-            }
-            midiBuffer.add(note.toNoteOnRawData())
-            midiBuffer.add(noteOnTime)
-            val endTimeInSamples = position.convertPPQToSamples(startTime + note.time + note.duration)
-            val endTime = endTimeInSamples - timeInSamples
-            if (endTimeInSamples > blockEndSample) {
-                pendingNoteOns[note.note] = endTime
-                noteRecorder.markNote(note.note)
-            } else {
-                midiBuffer.add(note.toNoteOffRawData())
-                midiBuffer.add((endTimeInSamples - timeInSamples).toInt().coerceAtLeast(0))
-            }
-        }
+        clip.currentIndex = processMIDIBuffer(
+            c.notes, position, midiBuffer, startTime, timeInSamples, pendingNoteOns, noteRecorder, clip.currentIndex
+        )
     }
 
     override fun split(clip: TrackClip<MidiClip>, time: Int): ClipSplitResult<MidiClip> {

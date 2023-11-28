@@ -2,11 +2,11 @@ package com.eimsound.daw.processor
 
 import com.eimsound.audioprocessor.*
 import com.eimsound.audiosources.*
+import com.eimsound.daw.dawutils.processMIDIBuffer
 import com.eimsound.dsp.data.midi.*
 import com.eimsound.daw.impl.CurrentPositionImpl
 import com.eimsound.daw.impl.processor.eimAudioProcessorFactory
 import com.eimsound.daw.processor.synthesizer.SineWaveSynthesizer
-import com.eimsound.daw.utils.lowerBound
 
 val PreviewerDescription = DefaultAudioProcessorDescription(
     "Previewer",
@@ -51,42 +51,15 @@ class PreviewerAudioProcessor(factory: AudioProcessorFactory<*>) : AbstractAudio
                 }
             }
             val timeInSamples = this.position.timeInSamples
-            val blockEndSample = timeInSamples + bufferSize
-            if (currentIndex == -1) {
-                val startPPQ = this.position.timeInPPQ
-                currentIndex = notes.lowerBound { it.time <= startPPQ }
-            }
-            if (currentIndex > 0) currentIndex--
-            for (i in currentIndex..notes.lastIndex) {
-                val note = notes[i]
-                val startTimeInSamples = this.position.convertPPQToSamples(note.time)
-                if (startTimeInSamples > blockEndSample) break
-                currentIndex = i + 1
-                if (startTimeInSamples < timeInSamples || note.isDisabled) continue
-                val noteOnTime = (startTimeInSamples - timeInSamples).toInt().coerceAtLeast(0)
-                if (noteRecorder.isMarked(note.note)) {
-                    noteRecorder.unmarkNote(note.note)
-                    midiBuffer2.add(note.toNoteOffRawData())
-                    midiBuffer2.add(noteOnTime)
-                }
-                midiBuffer2.add(note.toNoteOnRawData())
-                midiBuffer2.add(noteOnTime)
-                val endTimeInSamples = this.position.convertPPQToSamples(note.time + note.duration)
-                val endTime = endTimeInSamples - timeInSamples
-                if (endTimeInSamples > blockEndSample) {
-                    pendingNoteOns[note.note] = endTime
-                    noteRecorder.markNote(note.note)
-                } else {
-                    midiBuffer2.add(note.toNoteOffRawData())
-                    midiBuffer2.add((endTimeInSamples - timeInSamples).toInt().coerceAtLeast(0))
-                }
-            }
+            currentIndex = processMIDIBuffer(
+                notes, this.position, midiBuffer2, 0, timeInSamples, pendingNoteOns, noteRecorder, currentIndex
+            )
             sineWaveSynthesizer.processBlock(buffers, this.position, midiBuffer2)
-            this.position.update(blockEndSample)
+            this.position.update(timeInSamples + position.bufferSize)
         } else if (audio != null) {
             audio.factor = position.sampleRate.toDouble() / audio.source!!.sampleRate
             audio.getSamples(this.position.timeInSamples, this.position.bufferSize, tempBuffers)
-            buffers.mixWith(tempBuffers, volume)
+            buffers.mixWith(tempBuffers, volume, 1F)
             this.position.update(this.position.timeInSamples + position.bufferSize)
         }
     }

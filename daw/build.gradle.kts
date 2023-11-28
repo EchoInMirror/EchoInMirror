@@ -111,6 +111,8 @@ tasks.withType<Jar> {
             "App-Center-Secret" to (System.getenv("APP_CENTER_SECRET") ?: "")
         )
     }
+
+    from("../LICENSE")
 }
 
 tasks.withType<ShadowJar> {

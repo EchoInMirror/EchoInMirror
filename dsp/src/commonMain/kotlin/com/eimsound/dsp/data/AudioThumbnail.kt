@@ -44,8 +44,10 @@ class AudioThumbnail private constructor(
     ): this(0L, channels, lengthInSamples, sampleRate, samplesPerThumbSample, null)
 
     @OptIn(DelicateCoroutinesApi::class)
-    constructor(source: AudioSource, samplesPerThumbSample: Int = DEFAULT_SAMPLES_PRE_THUMB_SAMPLE):
-            this(source.channels, source.length, source.sampleRate, samplesPerThumbSample) {
+    constructor(
+        source: AudioSource, samplesPerThumbSample: Int = DEFAULT_SAMPLES_PRE_THUMB_SAMPLE,
+        onComplete: ((cause: Throwable?) -> Unit)? = null
+    ): this(source.channels, source.length, source.sampleRate, samplesPerThumbSample) {
         GlobalScope.launch(Dispatchers.IO) {
             val times = 1024 / this@AudioThumbnail.samplesPerThumbSample
             val buffers = Array(channels) { FloatArray(times * this@AudioThumbnail.samplesPerThumbSample) }
@@ -75,6 +77,8 @@ class AudioThumbnail private constructor(
             }
             buildTree()
             modification++
+        }.apply {
+            if (onComplete != null) invokeOnCompletion(onComplete)
         }
     }
 
@@ -170,7 +174,9 @@ class AudioThumbnail private constructor(
     }
 }
 
-class AudioThumbnailCache(file: File, private val samplesPerThumbSample: Int = DEFAULT_SAMPLES_PRE_THUMB_SAMPLE): AutoCloseable {
+class AudioThumbnailCache(
+    file: File, private val samplesPerThumbSample: Int = DEFAULT_SAMPLES_PRE_THUMB_SAMPLE
+): AutoCloseable {
     @Suppress("UNCHECKED_CAST")
     private val db = DBMaker.fileDB(file).fileMmapEnableIfSupported().closeOnJvmShutdown().make()
         .hashMap("audioThumbnails").expireMaxSize(200).createOrOpen() as HTreeMap<String, ByteArray>
@@ -182,24 +188,32 @@ class AudioThumbnailCache(file: File, private val samplesPerThumbSample: Int = D
     }
     operator fun contains(key: String) = db[key] != null
     fun remove(key: String) = db.remove(key)
-    operator fun get(file: File, audioSource: AudioSource? = null): AudioThumbnail? = get(file.toPath(), audioSource)
-    operator fun get(file: Path, audioSource: AudioSource? = null): AudioThumbnail? {
+    operator fun get(
+        file: File, audioSource: AudioSource? = null, onComplete: ((cause: Throwable?) -> Unit)? = null
+    ): AudioThumbnail? = get(file.toPath(), audioSource, onComplete)
+    operator fun get(
+        file: Path, audioSource: AudioSource? = null, onComplete: ((cause: Throwable?) -> Unit)? = null
+    ): AudioThumbnail? {
         try {
             val real = file.toRealPath()
             val time = Files.getLastModifiedTime(real).toMillis()
             val byteArray = db[file.toString()]
             if (byteArray != null) {
                 val buf = ByteBuffer.wrap(byteArray)
-                if (buf.long == time) return AudioThumbnail(buf.position(0))
+                if (buf.long == time) {
+                    onComplete?.invoke(null)
+                    return AudioThumbnail(buf.position(0))
+                }
             }
             val value = AudioThumbnail(
                 audioSource ?: AudioSourceManager.instance.createAudioSource(real),
-                samplesPerThumbSample
+                samplesPerThumbSample, onComplete
             )
             set(file.toString(), time, value)
             return value
         } catch (e: IOException) {
             e.printStackTrace()
+            onComplete?.invoke(e)
             return null
         }
     }

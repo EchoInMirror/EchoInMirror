@@ -127,7 +127,7 @@ class DefaultFileAudioSource(override val factory: FileAudioSourceFactory<*>, ov
         val consumed: Int
         if (isFlac) {
             if (lastPos != -1L && (lastPos + length - start).absoluteValue > 4) {
-                flacDecoder?.seek(start.coerceIn(0, this.length))
+                flacDecoder?.seek(start.coerceIn(0, this.length - 1))
                 buffer.empty()
             }
             consumed = readFromByteArray(buffers, length)
