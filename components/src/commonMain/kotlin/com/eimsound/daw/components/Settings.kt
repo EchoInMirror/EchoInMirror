@@ -18,6 +18,20 @@ private val EXPANDER_CARD_GAP = 4.dp
 private val LIST_HEIGHT = 36.dp
 
 @Composable
+fun SettingsSection(
+    title: String? = null,
+    content: @Composable () -> Unit
+){
+    Column {
+        if (title != null){
+            Text(title, style = MaterialTheme.typography.bodyMedium)
+            Gap(8)
+        }
+        content()
+    }
+}
+
+@Composable
 fun SettingsCard(
     header: String = "",
     content: @Composable () -> Unit
