@@ -112,7 +112,7 @@ fun Menu(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun Selector(
-    items: List<String>,
+    items: Collection<String>,
     selected: String,
     boxModifier: Modifier = Modifier,
     enabled: Boolean = true,
