@@ -51,10 +51,13 @@ internal object FileBrowserSettings : SettingTab {
             Gap(16)
             SettingsSection("文件浏览器的个性化配置项") {
                 SettingsCard("只显示受支持格式的文件") {
-                    Switch(checked = Configuration.fileBrowserShowSupFormatOnly, onCheckedChange = {
-                        Configuration.fileBrowserShowSupFormatOnly = it
-                        Configuration.save()
-                    })
+                    Switch(
+                        Configuration.fileBrowserShowSupFormatOnly,
+                        {
+                            Configuration.fileBrowserShowSupFormatOnly = it
+                            Configuration.save()
+                        }
+                    )
                 }
             }
         }
