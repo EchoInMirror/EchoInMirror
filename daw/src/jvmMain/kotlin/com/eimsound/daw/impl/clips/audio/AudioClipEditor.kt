@@ -58,7 +58,7 @@ class AudioClipEditor(private val clip: TrackClip<AudioClip>) : ClipEditor {
             val range = remember(clip.start, clip.duration) { clip.start..(clip.start + clip.duration) }
             Timeline(Modifier.zIndex(3F), noteWidth, horizontalScrollState, range, 0.dp,
                 EchoInMirror.editUnit, EchoInMirror.currentPosition.oneBarPPQ,
-                EchoInMirror.currentPosition::setCurrentTime
+                { EchoInMirror.currentPosition.timeInPPQ = it }
             ) {
                 val maxPPQ = EchoInMirror.currentPosition
                     .convertSecondsToPPQ(clip.clip.audioSource.timeInSeconds).toInt()

@@ -13,11 +13,13 @@ class AudioPlayerManagerImpl : AudioPlayerManager {
     override fun create(
         factory: String,
         name: String,
-        currentPosition: CurrentPosition,
-        processor: AudioProcessor
-    ) = factories[factory]?.create(name, currentPosition, processor) ?: throw NoSuchFactoryException(factory)
+        currentPosition: MutableCurrentPosition,
+        processor: AudioProcessor,
+        preferredSampleRate: Int?,
+    ) = factories[factory]?.create(name, currentPosition, processor, preferredSampleRate)
+        ?: throw NoSuchFactoryException(factory)
 
-    override fun createDefaultPlayer(currentPosition: CurrentPosition, processor: AudioProcessor): AudioPlayer {
+    override fun createDefaultPlayer(currentPosition: MutableCurrentPosition, processor: AudioProcessor): AudioPlayer {
         val factory = factories.values.firstOrNull() ?: throw NoSuchFactoryException("No audio player factory")
         return factory.create("", currentPosition, processor)
     }

@@ -164,7 +164,7 @@ class Playlist : Panel, MultiSelectableEditor {
                 val localDensity = LocalDensity.current
                 Timeline(Modifier.zIndex(3f), noteWidth, horizontalScrollState, EchoInMirror.currentPosition.projectRange,
                     editUnit = EchoInMirror.editUnit, barPPQ = EchoInMirror.currentPosition.oneBarPPQ,
-                    onTimeChange = EchoInMirror.currentPosition::setCurrentTime
+                    onTimeChange = { EchoInMirror.currentPosition.timeInPPQ = it }
                 ) {
                     EchoInMirror.currentPosition.projectRange = it
                 }

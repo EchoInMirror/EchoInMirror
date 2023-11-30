@@ -61,7 +61,9 @@ class EchoInMirrorImpl : IEchoInMirror {
             try {
                 ret = AudioPlayerManager.instance.create(
                     Configuration.audioDeviceFactoryName,
-                    Configuration.audioDeviceName, currentPosition, bus!!
+                    Configuration.audioDeviceName, currentPosition, bus!!,
+                    if (Configuration.preferredSampleRate > 0) Configuration.preferredSampleRate
+                    else null
                 )
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -75,6 +77,10 @@ class EchoInMirrorImpl : IEchoInMirror {
         }
         if (Configuration.audioDeviceName != ret.name) {
             Configuration.audioDeviceName = ret.name
+            flag = true
+        }
+        if (Configuration.preferredSampleRate != ret.sampleRate) {
+            Configuration.preferredSampleRate = -1
             flag = true
         }
         if (flag) Configuration.save()

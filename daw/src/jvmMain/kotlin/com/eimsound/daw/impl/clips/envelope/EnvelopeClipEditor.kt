@@ -53,7 +53,8 @@ class EnvelopeClipEditor(private val clip: TrackClip<EnvelopeClip>) : ClipEditor
         Column(Modifier.fillMaxSize()) {
             val range = remember(clip.time, clip.duration) { clip.time..(clip.time + clip.duration) }
             Timeline(Modifier.zIndex(3F), noteWidth, horizontalScrollState, range, 0.dp, EchoInMirror.editUnit,
-                EchoInMirror.currentPosition.oneBarPPQ, EchoInMirror.currentPosition::setCurrentTime
+                EchoInMirror.currentPosition.oneBarPPQ,
+                { EchoInMirror.currentPosition.timeInPPQ = it }
             ) {
                 clip.time = it.first
                 clip.duration = it.range

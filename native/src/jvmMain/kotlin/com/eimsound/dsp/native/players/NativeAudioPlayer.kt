@@ -4,10 +4,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import cn.apisium.shm.SharedMemory
-import com.eimsound.audioprocessor.AbstractAudioPlayer
-import com.eimsound.audioprocessor.AudioPlayerFactory
-import com.eimsound.audioprocessor.AudioProcessor
-import com.eimsound.audioprocessor.CurrentPosition
+import com.eimsound.audioprocessor.*
 import com.eimsound.daw.utils.ByteBufInputStream
 import com.eimsound.daw.utils.ByteBufOutputStream
 import com.eimsound.dsp.native.IS_SHM_SUPPORTED
@@ -25,27 +22,26 @@ private val logger = KotlinLogging.logger {  }
 class NativeAudioPlayer(
     factory: NativeAudioPlayerFactory,
     type: String, name: String,
-    currentPosition: CurrentPosition,
+    currentPosition: MutableCurrentPosition,
     processor: AudioProcessor,
+    preferredSampleRate: Int?,
     execFile: String,
     enabledSharedMemory: Boolean = IS_SHM_SUPPORTED &&
             System.getProperty("eim.dsp.nativeaudioplayer.sharedmemory", "1") != "false",
     vararg commands: String,
-) : AbstractAudioPlayer(factory, "[$type] $name", currentPosition, processor), Runnable {
+) : AbstractAudioPlayer(factory, "[$type] $name", 2, currentPosition, processor), Runnable {
     private var thread: Thread? = null
     private var process: Process? = null
     private var inputStream: ByteBufInputStream
     private var outputStream: ByteBufOutputStream
     private val mutex = Mutex()
-    private var channels = 2
     private var hasControls = false
     private var sharedMemory: SharedMemory? = null
     private var byteBuffer: ByteBuffer? = null
-    private lateinit var buffers: Array<FloatArray>
     override var inputLatency = 0
     override var outputLatency = 0
-    override lateinit var availableSampleRates: IntArray
-    override lateinit var availableBufferSizes: IntArray
+    override lateinit var availableSampleRates: List<Int>
+    override lateinit var availableBufferSizes: List<Int>
     override var name = super.name
 
     init {
@@ -67,7 +63,7 @@ class NativeAudioPlayer(
                 add("-B")
                 add(currentPosition.bufferSize.toString())
                 add("-R")
-                add(currentPosition.sampleRate.toString())
+                add(preferredSampleRate.toString())
                 sharedMemory?.let {
                     add("-M")
                     add(it.name)
@@ -120,7 +116,7 @@ class NativeAudioPlayer(
     }
 
     @Composable
-    override fun controls() {
+    override fun Controls() {
         if (hasControls) {
             Button({
                 runBlocking {
@@ -139,22 +135,22 @@ class NativeAudioPlayer(
 
     @Suppress("DuplicatedCode")
     override fun run() {
-        val bufferSize = buffers[0].size
         use {
             while (process != null) {
                 enterProcessBlock()
-                buffers.forEach { it.fill(0F) }
 
                 runBlocking(Dispatchers.IO + CoroutineName("NativeAudioPlayer")) {
-                    try {
-                        processor.processBlock(buffers, currentPosition, ArrayList(0))
+                    val bufferSize = currentPosition.bufferSize
+                    val buffers = try {
+                        process()
                     } catch (e: Throwable) {
                         e.printStackTrace()
+                        null
                     }
 
                     exitProcessBlock()
 
-                    mutex.withLock {
+                    if (buffers != null) mutex.withLock {
                         when (inputStream.read()) {
                             0 -> {
                                 outputStream.write(0)
@@ -178,8 +174,6 @@ class NativeAudioPlayer(
                         }
                     }
                 }
-
-                if (currentPosition.isPlaying) currentPosition.update(currentPosition.timeInSamples + bufferSize)
             }
         }
     }
@@ -188,13 +182,11 @@ class NativeAudioPlayer(
         name = inputStream.readString()
         inputLatency = inputStream.readVarInt()
         outputLatency = inputStream.readVarInt()
-        val sampleRate = inputStream.readVarInt()
+        sampleRate = inputStream.readVarInt()
         val bufferSize = inputStream.readVarInt()
-        if (sampleRate != currentPosition.sampleRate || bufferSize != currentPosition.bufferSize) {
-            currentPosition.setSampleRateAndBufferSize(sampleRate, bufferSize)
-        }
-        availableSampleRates = IntArray(inputStream.readVarInt()) { inputStream.readVarInt() }
-        availableBufferSizes = IntArray(inputStream.readVarInt()) { inputStream.readVarInt() }
+        currentPosition.bufferSize = bufferSize
+        availableSampleRates = List(inputStream.readVarInt()) { inputStream.readVarInt() }
+        availableBufferSizes = List(inputStream.readVarInt()) { inputStream.readVarInt() }
         hasControls = inputStream.readBoolean()
 
         var outBufferSize = 0
@@ -207,8 +199,7 @@ class NativeAudioPlayer(
                 outBufferSize = newSize
             }
         }
-        buffers = arrayOf(FloatArray(bufferSize), FloatArray(bufferSize))
-        runBlocking { processor.prepareToPlay(sampleRate, bufferSize) }
+        runBlocking { prepareToPlay() }
         outputStream.writeInt(outBufferSize)
         outputStream.flush()
     }
@@ -221,18 +212,21 @@ class NativeAudioPlayerFactory : AudioPlayerFactory {
         ProcessBuilder(execFile, "-O", "-A").start().inputStream
             .readAllBytes().decodeToString().split("\$EIM\$").filter { it.isNotEmpty() }
     }
-    override fun create(name: String, currentPosition: CurrentPosition, processor: AudioProcessor) = try {
+    override fun create(
+        name: String, currentPosition: MutableCurrentPosition, processor: AudioProcessor,
+        preferredSampleRate: Int?
+    ) = try {
         "\\[(.+?)] ".toRegex().find(name)?.let {
             NativeAudioPlayer(this,
                 it.groupValues[1],
                 name.substring(it.range.last + 1),
-                currentPosition, processor, execFile
+                currentPosition, processor, preferredSampleRate, execFile
             )
         }
     } catch (e: Throwable) {
         e.printStackTrace()
         null
     } ?: NativeAudioPlayer(this, "", "",
-        currentPosition, processor, execFile
+        currentPosition, processor, preferredSampleRate, execFile
     )
 }

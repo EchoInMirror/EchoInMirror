@@ -189,7 +189,7 @@ private val CenterContent: @Composable RowScope.() -> Unit = {
     }
     IconButton({
         EchoInMirror.currentPosition.isPlaying = false
-        EchoInMirror.currentPosition.setPPQPosition(0.0)
+        EchoInMirror.currentPosition.ppqPosition = 0.0
     }) {
         Icon(
             imageVector = Icons.Filled.Stop,

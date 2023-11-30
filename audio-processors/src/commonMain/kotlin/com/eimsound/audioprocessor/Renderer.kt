@@ -57,20 +57,4 @@ class RenderPosition(override var ppq: Int, override val sampleRate: Int, range:
 
     override val ppqCountOfBlock: Int
         get() = (bufferSize / sampleRate / 60.0 * bpm * ppq).toInt()
-
-    override fun setCurrentTime(timeInPPQ: Int) {
-        logger.warn { "Call setCurrentTime is not supported in RenderPosition" }
-    }
-
-    override fun setPPQPosition(ppqPosition: Double) {
-        logger.warn { "Call setPPQPosition is not supported in RenderPosition" }
-    }
-
-    override fun update(timeInSamples: Long) {
-        logger.warn { "Call update is not supported in RenderPosition" }
-    }
-
-    override fun setSampleRateAndBufferSize(sampleRate: Int, bufferSize: Int) {
-        logger.warn { "Call setSampleRateAndBufferSize is not supported in RenderPosition" }
-    }
 }

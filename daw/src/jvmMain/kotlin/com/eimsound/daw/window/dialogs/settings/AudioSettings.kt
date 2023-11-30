@@ -105,10 +105,6 @@ internal object AudioSettings : SettingTab {
                         MenuItem({
                             close()
                             EchoInMirror.player?.close()
-                            EchoInMirror.currentPosition.setSampleRateAndBufferSize(
-                                EchoInMirror.currentPosition.sampleRate,
-                                it
-                            )
 
                             reopenAudioDevice()
                         }, EchoInMirror.currentPosition.bufferSize == it, modifier = Modifier.fillMaxWidth()) {
@@ -122,18 +118,14 @@ internal object AudioSettings : SettingTab {
 
             Gap(8)
             Row(verticalAlignment = Alignment.CenterVertically) {
-                var sampleRate by remember { mutableStateOf(EchoInMirror.currentPosition.sampleRate) }
                 Text("采样率:", Modifier.weight(1f))
                 Menu({ close ->
-                    EchoInMirror.player?.availableSampleRates?.forEach {
+                    val sampleRate = EchoInMirror.player?.sampleRate
+                    EchoInMirror.player?.availableSampleRates?.fastForEach {
                         MenuItem({
                             close()
-                            sampleRate = it
                             EchoInMirror.player?.close()
-                            EchoInMirror.currentPosition.setSampleRateAndBufferSize(
-                                it,
-                                EchoInMirror.currentPosition.bufferSize
-                            )
+                            Configuration.preferredSampleRate = it
 
                             reopenAudioDevice()
                         }, sampleRate == it, modifier = Modifier.fillMaxWidth()) {
@@ -141,7 +133,7 @@ internal object AudioSettings : SettingTab {
                         }
                     }
                 }, boxModifier = Modifier.weight(1f)) {
-                    Text(sampleRate.toString(), Modifier.fillMaxWidth())
+                    Text(EchoInMirror.player?.sampleRate?.toString() ?: "未知", Modifier.fillMaxWidth())
                 }
             }
 
@@ -170,7 +162,7 @@ internal object AudioSettings : SettingTab {
             Latency("输入延迟", EchoInMirror.player?.inputLatency ?: 0)
             Latency("输出延迟", EchoInMirror.player?.outputLatency ?: 0)
             Gap(8)
-            EchoInMirror.player?.controls()
+            EchoInMirror.player?.Controls()
         }
     }
 }

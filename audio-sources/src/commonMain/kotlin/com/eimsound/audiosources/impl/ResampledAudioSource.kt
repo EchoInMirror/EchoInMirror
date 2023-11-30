@@ -16,7 +16,7 @@ class DefaultResampledAudioSource(
     override val channels get() = source.channels
     override val sampleRate get() = (source.sampleRate * factor).toFloat()
     override val length get() = (source.length * factor).toLong()
-    private val resamplers = Array(channels) { Resampler(false, 0.1, 4.0) }
+    private val resamplers = Array(channels) { Resampler(true, 0.1, 4.0) }
     private var nextStart = 0L
     private var sourceBuffers = Array(channels) { FloatArray(1024) }
 

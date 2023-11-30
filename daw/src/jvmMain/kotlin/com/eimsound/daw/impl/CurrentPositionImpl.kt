@@ -3,7 +3,7 @@ package com.eimsound.daw.impl
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.eimsound.audioprocessor.CurrentPosition
+import com.eimsound.audioprocessor.MutableCurrentPosition
 import com.eimsound.audioprocessor.SuddenChangeListener
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.utils.observableMutableStateOf
@@ -11,13 +11,10 @@ import com.eimsound.daw.utils.observableMutableStateOf
 class CurrentPositionImpl(
     private val suddenChangeListener: SuddenChangeListener? = null,
     private val isMainPosition: Boolean = false
-): CurrentPosition {
+): MutableCurrentPosition {
     override var bpm by mutableStateOf(140.0)
-    override var timeInSamples = 0L
     override var timeInSeconds by mutableStateOf(0.0)
     override var ppq by mutableStateOf(96)
-    override var timeInPPQ by mutableStateOf(0)
-    override var ppqPosition by mutableStateOf(0.0)
     override var bufferSize by mutableStateOf(1024)
     override var sampleRate by mutableStateOf(48000)
     override var timeSigNumerator by mutableStateOf(4)
@@ -35,44 +32,46 @@ class CurrentPositionImpl(
         (if (isMainPosition) EchoInMirror.bus else suddenChangeListener)?.onSuddenChange()
     }
 
-    override fun update(timeInSamples: Long) {
-        this.timeInSamples = timeInSamples.coerceAtLeast(0)
-        timeInSeconds = this.timeInSamples.toDouble() / sampleRate
-        ppqPosition = timeInSeconds / 60.0 * bpm
-        timeInPPQ = (ppqPosition * ppq).toInt()
-        checkTimeInPPQ()
-    }
-
-    override fun setPPQPosition(ppqPosition: Double) {
-        if (this.ppqPosition == ppqPosition) return
-        this.ppqPosition = ppqPosition.coerceAtLeast(0.0)
-        timeInSeconds = this.ppqPosition / bpm * 60.0
-        timeInSamples = (timeInSeconds * sampleRate).toLong()
-        timeInPPQ = (this.ppqPosition * ppq * timeSigNumerator).toInt()
-        checkTimeInPPQ()
-        (if (isMainPosition) EchoInMirror.bus else suddenChangeListener)?.onSuddenChange()
-    }
-
-    override fun setCurrentTime(timeInPPQ: Int) {
-        if (this.timeInPPQ == timeInPPQ) return
-        this.timeInPPQ = timeInPPQ.coerceIn(projectRange).coerceAtLeast(0)
-        ppqPosition = this.timeInPPQ.toDouble() / ppq
-        timeInSeconds = ppqPosition / bpm * 60.0
-        timeInSamples = (timeInSeconds * sampleRate).toLong()
-        (if (isMainPosition) EchoInMirror.bus else suddenChangeListener)?.onSuddenChange()
-    }
-
-    override fun setSampleRateAndBufferSize(sampleRate: Int, bufferSize: Int) {
-        this.sampleRate = sampleRate
-        this.bufferSize = bufferSize
-    }
+    private var _timeInSamples = 0L
+    override var timeInSamples
+        get() = _timeInSamples
+        set(value) {
+            _timeInSamples = value.coerceAtLeast(0)
+            timeInSeconds = _timeInSamples.toDouble() / sampleRate
+            ppqPosition = timeInSeconds / 60.0 * bpm
+            _timeInPPQ = (ppqPosition * ppq).toInt()
+            checkTimeInPPQ()
+        }
+    private var _timeInPPQ by mutableStateOf(0)
+    override var timeInPPQ
+        get() = _timeInPPQ
+        set(value) {
+            if (value == _timeInPPQ) return
+            _timeInPPQ = value.coerceIn(projectRange).coerceAtLeast(0)
+            _ppqPosition = _timeInPPQ.toDouble() / ppq
+            timeInSeconds = ppqPosition / bpm * 60.0
+            _timeInSamples = (timeInSeconds * sampleRate).toLong()
+            (if (isMainPosition) EchoInMirror.bus else suddenChangeListener)?.onSuddenChange()
+        }
+    private var _ppqPosition by mutableStateOf(0.0)
+    override var ppqPosition
+        get() = _ppqPosition
+        set(value) {
+            if (value == _ppqPosition) return
+            _ppqPosition = value.coerceAtLeast(0.0)
+            timeInSeconds = _ppqPosition / bpm * 60.0
+            _timeInSamples = (timeInSeconds * sampleRate).toLong()
+            _timeInPPQ = (_ppqPosition * ppq * timeSigNumerator).toInt()
+            checkTimeInPPQ()
+            (if (isMainPosition) EchoInMirror.bus else suddenChangeListener)?.onSuddenChange()
+        }
 
     private fun checkTimeInPPQ() {
-        if (timeInPPQ !in projectRange) if (isProjectLooping) {
-            setCurrentTime(projectRange.first)
+        if (_timeInPPQ !in projectRange) if (isProjectLooping) {
+            _timeInPPQ = projectRange.first
         } else {
             isPlaying = false
-            setCurrentTime(projectRange.last)
+            _timeInPPQ = projectRange.last
         }
     }
 }

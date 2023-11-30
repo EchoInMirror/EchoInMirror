@@ -52,7 +52,8 @@ private fun EditorContent(editor: DefaultMidiClipEditor) {
                     var contentWidth by remember { mutableStateOf(0.dp) }
                     val range = remember(clip.time, clip.duration) { clip.time..(clip.time + clip.duration) }
                     Timeline(Modifier.zIndex(3F), noteWidth, horizontalScrollState, range, 68.dp, EchoInMirror.editUnit,
-                        EchoInMirror.currentPosition.oneBarPPQ, EchoInMirror.currentPosition::setCurrentTime
+                        EchoInMirror.currentPosition.oneBarPPQ,
+                        { EchoInMirror.currentPosition.timeInPPQ = it }
                     ) {
                         clip.time = it.first
                         clip.duration = it.range

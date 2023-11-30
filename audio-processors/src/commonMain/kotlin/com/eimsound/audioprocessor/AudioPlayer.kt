@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.eimsound.daw.commons.Reloadable
+import com.eimsound.dsp.ResampledQueueAudioProcessor
 import java.util.*
 
 interface AudioPlayer : AutoCloseable {
@@ -13,26 +14,48 @@ interface AudioPlayer : AutoCloseable {
     val cpuLoad: Float
     val inputLatency: Int
     val outputLatency: Int
-    val availableSampleRates: IntArray
-    val availableBufferSizes: IntArray
-    @Composable fun controls()
+    val channels: Int
+    val availableSampleRates: List<Int>
+    val availableBufferSizes: List<Int>
+    val sampleRate: Int
+
+    @Composable fun Controls()
     fun onClose(callback: () -> Unit)
 }
 
 abstract class AbstractAudioPlayer(
     override val factory: AudioPlayerFactory,
     override val name: String,
-    val currentPosition: CurrentPosition,
-    var processor: AudioProcessor,
+    final override val channels: Int,
+    val currentPosition: MutableCurrentPosition,
+    private val processor: AudioProcessor,
+    preferredSampleRate: Int? = null,
 ) : AudioPlayer {
     final override var cpuLoad by mutableStateOf(0F)
         private set
     private var lastTime = 0L
     private var time = 0L
     private var times = 0
+    override var sampleRate by mutableStateOf(preferredSampleRate ?: currentPosition.sampleRate)
+        protected set
+    override val availableSampleRates = listOf(44100, 48000, 88200, 96000)
+    override val availableBufferSizes = listOf(256, 512, 1024, 2048, 4096)
     protected var closeCallback: (() -> Unit)? = null
-    override val availableSampleRates = intArrayOf(44100, 48000, 88200, 96000)
-    override val availableBufferSizes = intArrayOf(256, 512, 1024, 2048, 4096)
+
+    private var processBuffers = Array(channels) { FloatArray(currentPosition.bufferSize) }
+    private val midiBuffer = arrayListOf<Int>()
+    private val resampler = ResampledQueueAudioProcessor(
+        channels,
+        currentPosition.sampleRate,
+        currentPosition.sampleRate
+    ) {
+        repeat(channels) { i -> processBuffers[i].fill(0F) }
+        processor.processBlock(processBuffers, currentPosition, midiBuffer)
+        if (currentPosition.isPlaying) {
+            currentPosition.timeInSamples += currentPosition.bufferSize
+        }
+        processBuffers
+    }
 
     protected fun enterProcessBlock() {
         lastTime = System.nanoTime()
@@ -48,15 +71,31 @@ abstract class AbstractAudioPlayer(
     }
 
     @Composable
-    override fun controls() { }
+    override fun Controls() { }
 
     override fun onClose(callback: () -> Unit) { closeCallback = callback }
+
+    protected suspend fun process(): Array<FloatArray> {
+        if (processBuffers[0].size != currentPosition.bufferSize)
+            processBuffers = Array(channels) { FloatArray(currentPosition.bufferSize) }
+        if (currentPosition.sampleRate != resampler.inputSampleRate) resampler.inputSampleRate = currentPosition.sampleRate
+        if (sampleRate != resampler.outputSampleRate) resampler.outputSampleRate = sampleRate
+        resampler.process(processBuffers)
+        return processBuffers
+    }
+
+    protected suspend fun prepareToPlay() {
+        processor.prepareToPlay(currentPosition.sampleRate, currentPosition.bufferSize)
+    }
 }
 
 interface AudioPlayerFactory {
     val name: String
     suspend fun getPlayers(): List<String>
-    fun create(name: String, currentPosition: CurrentPosition, processor: AudioProcessor): AudioPlayer
+    fun create(
+        name: String, currentPosition: MutableCurrentPosition, processor: AudioProcessor,
+        preferredSampleRate: Int? = null,
+    ): AudioPlayer
 }
 
 /**
@@ -68,6 +107,9 @@ interface AudioPlayerManager : Reloadable {
     }
     val factories: Map<String, AudioPlayerFactory>
 
-    fun create(factory: String, name: String, currentPosition: CurrentPosition, processor: AudioProcessor): AudioPlayer
-    fun createDefaultPlayer(currentPosition: CurrentPosition, processor: AudioProcessor): AudioPlayer
+    fun create(
+        factory: String, name: String, currentPosition: MutableCurrentPosition, processor: AudioProcessor,
+        preferredSampleRate: Int? = null,
+    ): AudioPlayer
+    fun createDefaultPlayer(currentPosition: MutableCurrentPosition, processor: AudioProcessor): AudioPlayer
 }

@@ -26,13 +26,14 @@ class PreviewerAudioProcessor(factory: AudioProcessorFactory<*>) : AbstractAudio
     private var tempBuffers = Array(2) { FloatArray(1024) }
 
     var volume by sineWaveSynthesizer::volume
-    val position: CurrentPosition = CurrentPositionImpl(this).apply {
+    val position = CurrentPositionImpl(this).apply {
         isPlaying = true
         isProjectLooping = false
     }
+    
     var playPosition
         get() = position.timeInPPQ.toDouble() / position.projectRange.last
-        set(value) { position.setCurrentTime((value * position.projectRange.last).toInt()) }
+        set(value) { position.timeInPPQ = (value * position.projectRange.last).toInt() }
 
     override suspend fun processBlock(buffers: Array<FloatArray>, position: CurrentPosition, midiBuffer: ArrayList<Int>) {
         if (position.bpm != this.position.bpm) this.position.bpm = position.bpm
@@ -55,12 +56,12 @@ class PreviewerAudioProcessor(factory: AudioProcessorFactory<*>) : AbstractAudio
                 notes, this.position, midiBuffer2, 0, timeInSamples, pendingNoteOns, noteRecorder, currentIndex
             )
             sineWaveSynthesizer.processBlock(buffers, this.position, midiBuffer2)
-            this.position.update(timeInSamples + position.bufferSize)
+            this.position.timeInSamples += position.bufferSize
         } else if (audio != null) {
             audio.factor = position.sampleRate.toDouble() / audio.source!!.sampleRate
             audio.getSamples(this.position.timeInSamples, this.position.bufferSize, tempBuffers)
             buffers.mixWith(tempBuffers, volume, 1F)
-            this.position.update(this.position.timeInSamples + position.bufferSize)
+            this.position.timeInSamples += position.bufferSize
         }
     }
 
@@ -73,8 +74,9 @@ class PreviewerAudioProcessor(factory: AudioProcessorFactory<*>) : AbstractAudio
 
     override suspend fun prepareToPlay(sampleRate: Int, bufferSize: Int) {
         tempBuffers = Array(2) { FloatArray(bufferSize) }
-        position.setSampleRateAndBufferSize(sampleRate, bufferSize)
-        position.setCurrentTime(0)
+        position.bufferSize = bufferSize
+        position.sampleRate = sampleRate
+        position.timeInPPQ = 0
         sineWaveSynthesizer.prepareToPlay(sampleRate, bufferSize)
         val audio = audioPreviewTarget
         if (audio != null) {
@@ -84,14 +86,14 @@ class PreviewerAudioProcessor(factory: AudioProcessorFactory<*>) : AbstractAudio
     }
 
     fun setPreviewTarget(target: List<NoteMessage>) {
-        position.setCurrentTime(0)
+        position.timeInPPQ = 0
         audioPreviewTarget?.close()
         audioPreviewTarget = null
         midiPreviewTarget = target
         position.projectRange = 0..target.maxOf { it.time + it.duration }
     }
     fun setPreviewTarget(target: AudioSource) {
-        position.setCurrentTime(0)
+        position.timeInPPQ = 0
         midiPreviewTarget = null
         audioPreviewTarget?.close()
         val factor = position.sampleRate.toDouble() / target.sampleRate

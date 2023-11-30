@@ -18,16 +18,25 @@ interface CurrentPosition {
     val isRealtime: Boolean
     val bufferSize: Int
     val sampleRate: Int
-    var timeSigNumerator: Int
-    var timeSigDenominator: Int
-    var projectRange: IntRange
-    var loopingRange: IntRange
+    val timeSigNumerator: Int
+    val timeSigDenominator: Int
+    val projectRange: IntRange
+    val loopingRange: IntRange
     val ppqCountOfBlock: Int
+}
 
-    fun update(timeInSamples: Long)
-    fun setPPQPosition(ppqPosition: Double)
-    fun setCurrentTime(timeInPPQ: Int)
-    fun setSampleRateAndBufferSize(sampleRate: Int, bufferSize: Int)
+interface MutableCurrentPosition : CurrentPosition {
+    override var timeInSamples: Long
+    override var timeInSeconds: Double
+    override var ppq: Int
+    override var timeInPPQ: Int
+    override var ppqPosition: Double
+    override var bufferSize: Int
+    override var sampleRate: Int
+    override var timeSigNumerator: Int
+    override var timeSigDenominator: Int
+    override var projectRange: IntRange
+    override var loopingRange: IntRange
 }
 
 fun CurrentPosition.convertPPQToSamples(ppq: Int) = (ppq.toDouble() / this.ppq / bpm * 60.0 * sampleRate).toLong()
