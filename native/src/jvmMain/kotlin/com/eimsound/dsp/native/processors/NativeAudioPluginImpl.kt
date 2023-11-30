@@ -80,6 +80,20 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
         scanned.addAll(skipList)
         descriptions.forEach { scanned.add(it.fileOrIdentifier) }
 
+        val scanDirectoryOnLinux = {directory: Path ->
+            if(directory.name.endsWith(".vst3")) {
+                pluginList.add(directory.absolutePathString())
+                FileVisitResult.SKIP_SUBTREE
+            }
+            FileVisitResult.CONTINUE
+        }
+
+        val scanDirectoryOnWindows = {_: Path ->
+            FileVisitResult.CONTINUE
+        }
+
+        val scanDirectory = if (SystemUtils.IS_OS_WINDOWS) scanDirectoryOnWindows else scanDirectoryOnLinux
+
         if (SystemUtils.IS_OS_MAC) {
             pluginList.addAll(getAudioUnitsForMacOS())
         } else {
@@ -88,7 +102,7 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
                     if (directory.name.startsWith(".")) {
                         FileVisitResult.SKIP_SUBTREE
                     } else {
-                        FileVisitResult.CONTINUE
+                        scanDirectory(directory)
                     }
                 }
                 onVisitFile { file, _ ->
