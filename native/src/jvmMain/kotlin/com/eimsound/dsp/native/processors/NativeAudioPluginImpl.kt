@@ -88,6 +88,10 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
                     if (directory.name.startsWith(".")) {
                         FileVisitResult.SKIP_SUBTREE
                     } else {
+                        if(directory.name.endsWith(".vst3")) {
+                            pluginList.add(directory.absolutePathString())
+                            FileVisitResult.SKIP_SUBTREE
+                        }
                         FileVisitResult.CONTINUE
                     }
                 }
