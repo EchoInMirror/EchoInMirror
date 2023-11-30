@@ -111,8 +111,7 @@ class NativeAudioPlayer(
             sharedMemory!!.close()
             sharedMemory = null
         }
-        closeCallback?.invoke()
-        closeCallback = null
+        super.close()
     }
 
     @Composable
@@ -137,8 +136,6 @@ class NativeAudioPlayer(
     override fun run() {
         use {
             while (process != null) {
-                enterProcessBlock()
-
                 runBlocking(Dispatchers.IO + CoroutineName("NativeAudioPlayer")) {
                     val bufferSize = currentPosition.bufferSize
                     val buffers = try {
@@ -147,8 +144,6 @@ class NativeAudioPlayer(
                         e.printStackTrace()
                         null
                     }
-
-                    exitProcessBlock()
 
                     if (buffers != null) mutex.withLock {
                         when (inputStream.read()) {

@@ -30,10 +30,10 @@ kotlin {
                 compileOnly(compose.runtime)
             }
         }
-//        named("commonTest") {
-//            dependencies {
-//                implementation(kotlin("test-junit"))
-//            }
-//        }
+        named("commonTest") {
+            dependencies {
+                implementation(kotlin("test-junit"))
+            }
+        }
     }
 }

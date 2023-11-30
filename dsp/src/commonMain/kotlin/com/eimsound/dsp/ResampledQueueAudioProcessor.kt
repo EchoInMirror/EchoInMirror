@@ -22,13 +22,11 @@ class ResampledQueueAudioProcessor(
             return
         }
 
-        val factor = inputSampleRate.toDouble() / outputSampleRate
+        val factor = outputSampleRate.toDouble() / inputSampleRate
 
-        val inputSize = ceil(buffers[0].size * factor).toInt()
+        val inputSize = ceil(buffers[0].size / factor).toInt()
 
-        while (queue.available < inputSize) {
-            queue.push(getNextBlock())
-        }
+        while (queue.available < inputSize) queue.push(getNextBlock())
 
         if (outputBuffers.size != channels || outputBuffers[0].size != inputSize)
             outputBuffers = Array(channels) { FloatArray(inputSize) }

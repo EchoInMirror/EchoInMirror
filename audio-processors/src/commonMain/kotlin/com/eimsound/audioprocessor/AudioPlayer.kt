@@ -36,11 +36,11 @@ abstract class AbstractAudioPlayer(
     private var lastTime = 0L
     private var time = 0L
     private var times = 0
+    private var closeCallback: (() -> Unit)? = null
     override var sampleRate by mutableStateOf(preferredSampleRate ?: currentPosition.sampleRate)
         protected set
     override val availableSampleRates = listOf(44100, 48000, 88200, 96000)
     override val availableBufferSizes = listOf(256, 512, 1024, 2048, 4096)
-    protected var closeCallback: (() -> Unit)? = null
 
     private var processBuffers = Array(channels) { FloatArray(currentPosition.bufferSize) }
     private val midiBuffer = arrayListOf<Int>()
@@ -49,19 +49,18 @@ abstract class AbstractAudioPlayer(
         currentPosition.sampleRate,
         currentPosition.sampleRate
     ) {
+        lastTime = System.nanoTime()
         repeat(channels) { i -> processBuffers[i].fill(0F) }
         processor.processBlock(processBuffers, currentPosition, midiBuffer)
         if (currentPosition.isPlaying) {
             currentPosition.timeInSamples += currentPosition.bufferSize
         }
+        midiBuffer.clear()
+        exitProcessBlock()
         processBuffers
     }
 
-    protected fun enterProcessBlock() {
-        lastTime = System.nanoTime()
-    }
-
-    protected fun exitProcessBlock() {
+    private fun exitProcessBlock() {
         time += System.nanoTime() - lastTime
         if (currentPosition.bufferSize * times++ > currentPosition.sampleRate) {
             cpuLoad = time / 1_000_000_1000F
@@ -74,6 +73,10 @@ abstract class AbstractAudioPlayer(
     override fun Controls() { }
 
     override fun onClose(callback: () -> Unit) { closeCallback = callback }
+    override fun close() {
+        closeCallback?.invoke()
+        closeCallback = null
+    }
 
     protected suspend fun process(): Array<FloatArray> {
         if (processBuffers[0].size != currentPosition.bufferSize)

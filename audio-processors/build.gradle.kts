@@ -21,11 +21,6 @@ kotlin {
                 compileOnly(compose.runtime)
             }
         }
-        named("commonTest") {
-            dependencies {
-                implementation(kotlin("test-junit"))
-            }
-        }
         named("jvmMain") {
             dependencies {
                 implementation("com.google.guava:guava:31.1-jre")

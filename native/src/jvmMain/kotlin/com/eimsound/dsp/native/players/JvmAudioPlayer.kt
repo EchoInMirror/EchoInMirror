@@ -68,8 +68,7 @@ class JvmAudioPlayer(
             thread!!.interrupt()
             thread = null
         }
-        closeCallback?.invoke()
-        closeCallback = null
+        super.close()
     }
 
     @Suppress("DuplicatedCode")
@@ -77,8 +76,6 @@ class JvmAudioPlayer(
         val sampleBits = getSampleBits(bits)
         try {
             while (thread?.isAlive == true && sdl?.isOpen == true) {
-                enterProcessBlock()
-
                 try {
                     runBlocking {
                         val buffers = process()
@@ -100,7 +97,6 @@ class JvmAudioPlayer(
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }
-                exitProcessBlock()
 
                 sdl?.write(outputBuffer, 0, outputBuffer.size)
             }

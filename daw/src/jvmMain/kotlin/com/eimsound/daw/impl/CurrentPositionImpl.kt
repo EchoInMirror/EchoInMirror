@@ -38,7 +38,7 @@ class CurrentPositionImpl(
         set(value) {
             _timeInSamples = value.coerceAtLeast(0)
             timeInSeconds = _timeInSamples.toDouble() / sampleRate
-            ppqPosition = timeInSeconds / 60.0 * bpm
+            _ppqPosition = timeInSeconds / 60.0 * bpm
             _timeInPPQ = (ppqPosition * ppq).toInt()
             checkTimeInPPQ()
         }

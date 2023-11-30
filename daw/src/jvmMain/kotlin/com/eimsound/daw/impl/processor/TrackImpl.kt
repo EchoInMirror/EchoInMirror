@@ -77,8 +77,9 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
             pendingMidiBuffer.clear()
         }
         if (position.isPlaying) {
+            val bufferSize = position.bufferSize.toLong()
             noteRecorder.forEachNotes {
-                pendingNoteOns[it] -= position.bufferSize.toLong()
+                pendingNoteOns[it] -= bufferSize
                 if (pendingNoteOns[it] <= 0) {
                     noteRecorder.unmarkNote(it)
                     midiBuffer.add(noteOff(0, it).rawData)
@@ -86,7 +87,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
                 }
             }
             val startTime = position.timeInPPQ
-            val blockEndSample = position.timeInSamples + position.bufferSize
+            val blockEndSample = position.timeInSamples + bufferSize
             if (lastClipIndex == -1) lastClipIndex = clips.lowerBound { it.time < startTime }
             if (lastClipIndex > 0) lastClipIndex--
             for (i in lastClipIndex..clips.lastIndex) {
