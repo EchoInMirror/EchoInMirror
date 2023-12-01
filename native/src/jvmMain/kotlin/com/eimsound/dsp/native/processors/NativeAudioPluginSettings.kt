@@ -80,8 +80,9 @@ class NativeAudioPluginSettings: SettingTab {
                         )
                         IconButton(
                             onClick = {
-                                openFolderBrowser(window)?.let {
-                                    apm.scanPaths.add(it.absolutePath)
+                                openFolderBrowser(window) { file ->
+                                    if (file == null) return@openFolderBrowser
+                                    apm.scanPaths.add(file.absolutePath)
                                     apm.saveAsync()
                                 }
                             },

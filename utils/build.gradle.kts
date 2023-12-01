@@ -28,7 +28,6 @@ kotlin {
             }
         }
         named("jvmMain") {
-
         }
     }
 }

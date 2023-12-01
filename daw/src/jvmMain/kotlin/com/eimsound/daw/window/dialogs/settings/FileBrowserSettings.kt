@@ -35,8 +35,9 @@ internal object FileBrowserSettings : SettingTab {
                     Configuration.fileBrowserCustomRoots,
                     addButtonText = "添加文件夹",
                     onAddButtonClick = {
-                        openFolderBrowser(window)?.let {
-                            Configuration.fileBrowserCustomRoots.add(it.toPath())
+                        openFolderBrowser(window) { file ->
+                            if (file == null) return@openFolderBrowser
+                            Configuration.fileBrowserCustomRoots.add(file.toPath())
                             Configuration.save()
                         }
                     },

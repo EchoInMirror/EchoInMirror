@@ -50,9 +50,9 @@ private class Projects: Tab {
                 val id = remember { Any() }
                 val localFloatingLayerProvider = LocalFloatingLayerProvider.current
                 ExtendedFloatingActionButton({
-                    openFolderBrowser(window)?.let {
-                        if (!it.isDirectory) return@let
-                        if (Files.list(it.toPath()).findFirst().isPresent && !File(it, "eim.json").exists()) {
+                    openFolderBrowser(window) { file ->
+                        if (file == null) return@openFolderBrowser
+                        if (Files.list(file.toPath()).findFirst().isPresent && !File(file, "eim.json").exists()) {
                             localFloatingLayerProvider.openFloatingLayer({
                                 localFloatingLayerProvider.closeFloatingLayer(id)
                             }, hasOverlay = true, key = id) {

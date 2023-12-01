@@ -25,7 +25,8 @@ import com.eimsound.daw.commons.BasicEditor
 
 private data class FloatingLayer(
     val key: Any, val onClose: ((Any) -> Unit)?, val position: Offset?,
-    val hasOverlay: Boolean, val overflow: Boolean, val content: @Composable () -> Unit
+    val hasOverlay: Boolean, val overflow: Boolean, val afterClose: (() -> Unit)? = null,
+    val content: @Composable () -> Unit
 ) {
     var isClosed by mutableStateOf(false)
     var isShow by mutableStateOf(false)
@@ -34,20 +35,18 @@ private data class FloatingLayer(
 class FloatingLayerProvider {
     private var floatingLayers by mutableStateOf(listOf<FloatingLayer>())
 
-    fun openFloatingLayer(onClose: ((Any) -> Unit)? = null, position: Offset? = null, key: Any? = null,
-                          hasOverlay: Boolean = false, overflow: Boolean = false, content: @Composable () -> Unit): Any {
+    fun openFloatingLayer(
+        onClose: ((Any) -> Unit)? = null, position: Offset? = null, key: Any? = null,
+        hasOverlay: Boolean = false, overflow: Boolean = false, afterClose: (() -> Unit)? = null,
+        content: @Composable () -> Unit
+    ): Any {
         val k = key ?: Any()
-        floatingLayers += FloatingLayer(k, onClose, position, hasOverlay, overflow, content)
+        floatingLayers += FloatingLayer(k, onClose, position, hasOverlay, overflow, afterClose, content)
         return k
     }
 
     fun closeFloatingLayer(key: Any) {
-        floatingLayers = floatingLayers.filter {
-            if (it.key == key) {
-                it.isClosed = true
-                false
-            } else true
-        }
+        floatingLayers.fastForEach { if (it.key == key) it.isClosed = true }
     }
 
     fun setFloatingLayerShow(key: Any, show: Boolean) {
@@ -59,7 +58,10 @@ class FloatingLayerProvider {
     private fun FloatingSingleLayer(layer: FloatingLayer) {
         Box {
             val alpha by animateFloatAsState(if (layer.isClosed || !layer.isShow) 0F else 1F, tween(300)) {
-                if (layer.isClosed) floatingLayers = floatingLayers.filter { it.key != layer.key }
+                if (layer.isClosed) {
+                    floatingLayers = floatingLayers.filter { it.key != layer.key }
+                    layer.afterClose?.invoke()
+                }
             }
             var modifier = if (layer.hasOverlay) Modifier.fillMaxSize().background(Color.Black.copy(alpha * 0.26F))
             else Modifier
