@@ -5,6 +5,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
 import com.eimsound.audioprocessor.*
+import com.eimsound.audioprocessor.interfaces.PannerRule
 import com.eimsound.dsp.data.PAN_RANGE
 import com.eimsound.dsp.data.VOLUME_RANGE
 import com.eimsound.dsp.data.midi.MidiEvent
@@ -58,6 +59,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
     private val panParameter = audioProcessorParameterOf("pan", "声相", PAN_RANGE, 0F)
     private val volumeParameter = audioProcessorParameterOf("volume", "电平", VOLUME_RANGE, 1F)
     private var asyncJobs: Array<Job?> = emptyArray()
+    override val pannerRule get() = EchoInMirror.bus?.project?.pannerRule ?: PannerRule.SINE3DB
     override var pan by panParameter
     override var volume by volumeParameter
     override val parameters = listOf(panParameter, volumeParameter)

@@ -3,6 +3,7 @@ package com.eimsound.daw.api
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.eimsound.audioprocessor.interfaces.PannerRule
 import com.eimsound.daw.commons.json.*
 import kotlinx.serialization.Transient
 import kotlinx.serialization.json.JsonElement
@@ -22,6 +23,7 @@ interface ProjectInformation {
     var author: String
     var description: String
     var timeCost: Int
+    var pannerRule: PannerRule
     val saved: Boolean
 
     fun save(file: Path? = null)
@@ -34,6 +36,7 @@ class DefaultProjectInformation(override val root: Path): ProjectInformation, Js
     override var timeCost by mutableStateOf(0)
     override var saved by mutableStateOf(true)
         private set
+    override var pannerRule = PannerRule.SINE3DB
 
     @Transient
     private val jsonFile = root.resolve("eim.json")
