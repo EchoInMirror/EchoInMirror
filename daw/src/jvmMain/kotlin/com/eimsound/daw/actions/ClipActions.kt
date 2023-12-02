@@ -4,6 +4,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCut
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.util.fastMap
 import com.eimsound.daw.api.ClipManager
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.TrackClip
@@ -14,6 +15,7 @@ import com.eimsound.daw.components.icons.PencilPlus
 import com.eimsound.daw.commons.actions.ReversibleAction
 import com.eimsound.daw.commons.actions.UndoableAction
 import kotlinx.coroutines.runBlocking
+import java.util.LinkedList
 
 fun Collection<TrackClip<*>>.doClipsAmountAction(isDelete: Boolean) {
     runBlocking { EchoInMirror.undoManager.execute(ClipsAmountAction(toList(), isDelete)) }
@@ -153,6 +155,68 @@ class ClipsSplitAction(private val clips: List<TrackClip<*>>, private val clickT
             track.clips.sort()
             track.clips.update()
             return@mapNotNull ClipSplitRevert(clip, oldDuration, result::revert, newClip)
+        }
+        return true
+    }
+}
+
+fun List<TrackClip<*>>.doClipsMergeAction() {
+    runBlocking { EchoInMirror.undoManager.execute(ClipsMergeAction(this@doClipsMergeAction)) }
+}
+
+class ClipsMergeAction(clips: List<TrackClip<*>>) : UndoableAction {
+    override val name = "片段合并 (${clips.size}个)"
+    override val icon = Icons.Default.ContentCut
+    private val clips = clips.filter { it.clip.factory.canMerge(it) }.fastMap { it to it.track }
+    private val newClips: MutableMap<Track, MutableList<TrackClip<*>>> = hashMapOf()
+
+    override suspend fun undo(): Boolean {
+        newClips.forEach { (track, clips) ->
+            track.clips.removeAll(clips)
+        }
+        newClips.clear()
+
+        val tracks = hashSetOf<Track>()
+        clips.fastForEach {
+            val track = it.second ?: return@fastForEach
+            track.clips.add(it.first)
+            tracks.add(track)
+        }
+        tracks.forEach {
+            it.clips.sort()
+            it.clips.update()
+        }
+        return true
+    }
+
+    override suspend fun execute(): Boolean {
+        val map = hashMapOf<Track, MutableList<TrackClip<*>>>()
+        clips.fastForEach {
+            val track = it.second ?: return@fastForEach
+            map.getOrPut(track) { LinkedList() }.add(it.first)
+        }
+        map.forEach { (track, clips) ->
+            var size = 0
+            while (size != clips.size) {
+                size = clips.size
+                if (size < 2) break
+                val currentClipFactory = clips.first().clip.factory
+                val canMerges = mutableSetOf<TrackClip<*>>()
+                clips.removeIf {
+                    if (currentClipFactory.canMerge(it)) {
+                        canMerges.add(it)
+                        true
+                    } else false
+                }
+                track.clips.removeAll(canMerges)
+                currentClipFactory.merge(canMerges).fastForEach {
+                    val trackClip = ClipManager.instance.createTrackClip(it.clip, it.time, it.duration, it.start, track)
+                    track.clips.add(trackClip)
+                    newClips.getOrPut(track) { mutableListOf() }.add(trackClip)
+                }
+                track.clips.sort()
+                track.clips.update()
+            }
         }
         return true
     }

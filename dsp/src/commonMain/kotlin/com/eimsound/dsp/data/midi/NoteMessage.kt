@@ -10,7 +10,7 @@ import kotlinx.serialization.json.*
  * Consider make this class open.
  * @see [DefaultNoteMessage]
  */
-interface NoteMessage : JsonSerializable, Disabled {
+interface NoteMessage : JsonSerializable, Disabled, Comparable<NoteMessage> {
     var note: Int
     var velocity: Int
     var time: Int
@@ -79,6 +79,11 @@ open class DefaultNoteMessage(
     override fun toString(): String {
         return "DefaultNoteMessage(note=$note, time=$time, duration=$duration, velocity=$velocity, isDisabled=$isDisabled)"
     }
+
+    override fun compareTo(other: NoteMessage) =
+        if (time == other.time)
+            if (duration == other.duration) note - other.note else duration - other.duration
+        else time - other.time
 }
 
 @Suppress("unused")
@@ -89,18 +94,12 @@ fun NoteMessage.toNoteOnRawData(channel: Int = 0) = 0x90 or channel or (note shl
 fun NoteMessage.toNoteOffRawData(channel: Int = 0) = 0x80 or (70 shl 16) or channel or (note shl 8)
 
 interface NoteMessageList : MutableList<NoteMessage>, IManualState {
-    fun sort()
     fun copy(): NoteMessageList
 }
 
 open class DefaultNoteMessageList : NoteMessageList, ArrayList<NoteMessage>() {
     @Transient
     private var modification = mutableStateOf(0)
-    override fun sort() = sortWith { o1, o2 ->
-        if (o1.time == o2.time)
-            if (o1.duration == o2.duration) o1.note - o2.note else o1.duration - o2.duration
-        else o1.time - o2.time
-    }
     override fun update() { modification.value++ }
     override fun read() { modification.value }
     override fun copy() = DefaultNoteMessageList().apply { this@DefaultNoteMessageList.forEach { add(it.copy()) } }

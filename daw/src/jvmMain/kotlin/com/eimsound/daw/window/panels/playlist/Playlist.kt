@@ -26,6 +26,7 @@ import androidx.compose.ui.zIndex
 import com.eimsound.audioprocessor.oneBarPPQ
 import com.eimsound.audioprocessor.projectDisplayPPQ
 import com.eimsound.daw.actions.doClipsAmountAction
+import com.eimsound.daw.actions.doClipsMergeAction
 import com.eimsound.daw.api.ClipManager
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.FileExtensionManager
@@ -127,6 +128,16 @@ class Playlist : Panel, MultiSelectableEditor {
                 PlaylistContents()
             }
         }
+    }
+
+    val canBeMergedSelectedClips get() = selectedClips
+        .count { it.clip.factory.canMerge(it) }
+        .let { if (it > 1) it else 0 }
+
+    fun mergeSelectedClips() {
+        if (selectedClips.size < 2) return
+        selectedClips.toList().doClipsMergeAction()
+        selectedClips.clear()
     }
 
     override fun copy() {

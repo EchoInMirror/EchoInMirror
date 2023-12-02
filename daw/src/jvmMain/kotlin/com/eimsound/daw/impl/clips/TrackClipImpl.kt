@@ -60,4 +60,8 @@ class TrackClipImpl <T: Clip> (override val clip: T, time: Int = 0, duration: In
     override fun toString(): String {
         return "TrackClipImpl(clip=$clip, time=$time, duration=$duration)"
     }
+
+    override fun compareTo(other: TrackClip<*>) =
+        if (time == other.time) duration - other.duration
+        else time - other.time
 }

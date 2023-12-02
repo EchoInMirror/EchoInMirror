@@ -86,7 +86,7 @@ fun JsonObjectBuilder.putNotDefault(key: String, value: BaseEnvelopePointList?) 
 @Serializable
 sealed interface EnvelopePointList : MutableBaseEnvelopePointList, IManualState, BaseEnvelopePointList {
     fun copy(): EnvelopePointList
-    fun split(time: Int, offsetStart: Int = 0): BaseEnvelopePointList
+    fun split(time: Int, offsetStart: Int = 0): Pair<BaseEnvelopePointList, BaseEnvelopePointList>
     fun getValue(position: Int, defaultValue: Float = 0F): Float
 }
 
@@ -140,26 +140,27 @@ class DefaultEnvelopePointList : EnvelopePointList, ArrayList<EnvelopePoint>() {
         )
     }
 
-    override fun split(time: Int, offsetStart: Int): BaseEnvelopePointList {
-        val newEnvelope = mutableListOf<EnvelopePoint>()
+    override fun split(time: Int, offsetStart: Int): Pair<BaseEnvelopePointList, BaseEnvelopePointList> {
+        val leftEnvelope = mutableListOf<EnvelopePoint>()
+        val rightEnvelope = mutableListOf<EnvelopePoint>()
         var isFirst = true
-        removeIf {
-            if (it.time + offsetStart <= time) return@removeIf false
+        var firstIndex = -1
+        forEachIndexed { i, it ->
+            if (it.time + offsetStart <= time) {
+                leftEnvelope.add(it.copy())
+                return@forEachIndexed
+            }
+            rightEnvelope.add(it.copy(time = it.time - time))
             if (isFirst) {
-                newEnvelope.add(it.copy(time = it.time - time))
+                firstIndex = i
                 isFirst = false
-                return@removeIf false
-            } else {
-                it.time -= time
-                newEnvelope.add(it)
-                return@removeIf true
+                leftEnvelope.add(it.copy())
             }
         }
-        getOrNull(size - 2)?.let {
-            newEnvelope.add(0, it.copy(time = it.time - time))
-        }
+        if (firstIndex == -1 && leftEnvelope.isNotEmpty()) firstIndex = leftEnvelope.size
+        if (firstIndex > 0) rightEnvelope.add(0, this[firstIndex - 1].let { it.copy(time = it.time - time) })
         update()
-        return newEnvelope
+        return leftEnvelope to rightEnvelope
     }
 
     override fun update() { modification.value++ }

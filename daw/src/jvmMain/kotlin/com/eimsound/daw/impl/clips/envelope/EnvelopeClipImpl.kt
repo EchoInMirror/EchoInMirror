@@ -95,8 +95,11 @@ class EnvelopeClipFactoryImpl: EnvelopeClipFactory {
     override fun split(clip: TrackClip<EnvelopeClip>, time: Int): ClipSplitResult<EnvelopeClip> {
         val newClip = EnvelopeClipImpl(this)
         newClip.controllers.addAll(clip.clip.controllers)
-        val oldEnvelopes = clip.clip.envelope.copy()
-        newClip.envelope.addAll(clip.clip.envelope.split(time, clip.time))
+        val oldEnvelopes = clip.clip.envelope.toList()
+        val (left, right) = clip.clip.envelope.split(time, 0)
+        clip.clip.envelope.clear()
+        clip.clip.envelope.addAll(left)
+        newClip.envelope.addAll(right)
 
         return object : ClipSplitResult<EnvelopeClip> {
             override val clip = newClip
@@ -113,14 +116,12 @@ class EnvelopeClipFactoryImpl: EnvelopeClipFactory {
         envelope.addAll(clip.envelope.copy())
         controllers.addAll(clip.controllers)
     }
-
-    override fun merge(clip: TrackClip<EnvelopeClip>, other: TrackClip<EnvelopeClip>) {
-        TODO("Not yet implemented")
-    }
-
     override fun save(clip: EnvelopeClip, path: Path) { }
 
-    override fun toString(): String {
-        return "EnvelopeClipFactoryImpl"
+    override fun toString() = "EnvelopeClipFactoryImpl"
+
+    override fun canMerge(clip: TrackClip<*>) = clip.clip is EnvelopeClip
+    override fun merge(clips: Collection<TrackClip<*>>): List<ClipActionResult<EnvelopeClip>> {
+        TODO("Not yet implemented")
     }
 }

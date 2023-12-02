@@ -37,6 +37,8 @@ interface MidiClipEditor: ClipEditor, SerializableEditor, MultiSelectableEditor 
     val clip: TrackClip<MidiClip>
 }
 
+data class ClipActionResult<T: Clip>(val clip: T, val time: Int, val duration: Int, val start: Int = 0)
+
 interface ClipSplitResult<T: Clip> {
     val clip: T
     val start: Int
@@ -56,7 +58,8 @@ interface ClipFactory<T: Clip> {
     fun getEditor(clip: TrackClip<T>): ClipEditor?
     fun split(clip: TrackClip<T>, time: Int): ClipSplitResult<T>
     fun copy(clip: T): T
-    fun merge(clip: TrackClip<T>, other: TrackClip<T>)
+    fun merge(clips: Collection<TrackClip<*>>): List<ClipActionResult<T>>
+    fun canMerge(clip: TrackClip<*>): Boolean
 
     @Composable
     fun PlaylistContent(
@@ -179,7 +182,7 @@ abstract class AbstractClip<T: Clip>(override val factory: ClipFactory<T>) : Cli
 /**
  * @see com.eimsound.daw.impl.clips.TrackClipImpl
  */
-interface TrackClip<T: Clip> : JsonSerializable, Disabled {
+interface TrackClip<T: Clip> : JsonSerializable, Disabled, Comparable<TrackClip<*>> {
     var time: Int
     var duration: Int
     var start: Int
@@ -200,16 +203,10 @@ fun TrackClip<*>.asMidiTrackClip() = this as TrackClip<MidiClip>
 @Suppress("UNCHECKED_CAST")
 fun TrackClip<*>.asMidiTrackClipOrNull() = if (clip is MidiClip) this as TrackClip<MidiClip> else null
 
-interface TrackClipList : MutableList<TrackClip<*>>, IManualState {
-    fun sort()
-}
+interface TrackClipList : MutableList<TrackClip<*>>, IManualState
 
 class DefaultTrackClipList(private val track: Track) : TrackClipList, ArrayList<TrackClip<*>>() {
     @Transient private var modification = mutableStateOf(0)
-    override fun sort() = sortWith { o1, o2 ->
-        if (o1.time == o2.time) o1.duration - o2.duration
-        else o1.time - o2.time
-    }
     override fun update() { modification.value++ }
     override fun read() { modification.value }
     override fun add(element: TrackClip<*>): Boolean {

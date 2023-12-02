@@ -114,23 +114,26 @@ class MidiClipFactoryImpl : MidiClipFactory {
 
     override fun split(clip: TrackClip<MidiClip>, time: Int): ClipSplitResult<MidiClip> {
         val newClip = createClip()
-        val notes = clip.clip.notes.copy()
-        clip.clip.notes.removeIf {
-            if (it.time + it.duration <= time) return@removeIf false
+        val notes = clip.clip.notes.toList()
+        clip.clip.notes.clear()
+        notes.fastForEach {
+            if (it.time + it.duration <= time) {
+                clip.clip.notes.add(it)
+                return@fastForEach
+            }
             if (it.time < time && it.time + it.duration > time) {
                 newClip.notes.add(it.copy(duration = it.time + it.duration - time))
-                it.duration = time - it.time
-                return@removeIf false
+                clip.clip.notes.add(it.copy(duration = time - it.time))
             } else {
                 it.time -= time
                 newClip.notes.add(it)
-                return@removeIf true
             }
         }
-        val oldEvents = clip.clip.events.copy()
+        val oldEvents = clip.clip.events.toMap()
         clip.clip.events.forEach { (id, points) ->
-            val newPoints = points.split(time, clip.time)
-            newClip.events[id] = newPoints.toMutableEnvelopePointList()
+            val (left, right) = points.split(time, clip.time)
+            clip.clip.events[id] = left.toMutableEnvelopePointList()
+            newClip.events[id] = right.toMutableEnvelopePointList()
         }
         clip.clip.notes.update()
         newClip.notes.sort()
@@ -171,11 +174,28 @@ class MidiClipFactoryImpl : MidiClipFactory {
         events.putAll(clip.events.copy())
     }
 
-    override fun merge(clip: TrackClip<MidiClip>, other: TrackClip<MidiClip>) {
-        other.clip.notes.fastForEach {
-            it.time += clip.time
-            clip.clip.notes.add(it)
+    override fun canMerge(clip: TrackClip<*>) = clip.clip is MidiClip
+    override fun merge(clips: Collection<TrackClip<*>>): List<ClipActionResult<MidiClip>> {
+        val newClip = createClip()
+        var start = Int.MAX_VALUE
+        var end = Int.MIN_VALUE
+        clips.forEach {
+            if (it.clip !is MidiClip) return@forEach
+            if (it.time < start) start = it.time
+            if (it.time + it.duration > end) end = it.time + it.duration
         }
+        clips.forEach {
+            val clip = it.clip as? MidiClip ?: return@forEach
+            clip.notes.fastForEach { note ->
+                if (
+                    (note.time + it.time >= it.start && note.time < it.duration + it.start) ||
+                    (note.time + it.time + note.duration >= it.start && note.time + note.duration < it.duration + it.start)
+                )
+                    newClip.notes.add(note.copy(time = note.time + it.time - start - it.start))
+            }
+        }
+        newClip.notes.sort()
+        return listOf(ClipActionResult(newClip, start, end - start))
     }
 }
 
