@@ -4,7 +4,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCut
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.ui.util.fastForEach
-import androidx.compose.ui.util.fastMap
 import com.eimsound.daw.api.ClipManager
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.TrackClip
@@ -167,7 +166,11 @@ fun List<TrackClip<*>>.doClipsMergeAction() {
 class ClipsMergeAction(clips: List<TrackClip<*>>) : UndoableAction {
     override val name = "片段合并 (${clips.size}个)"
     override val icon = Icons.Default.ContentCut
-    private val clips = clips.filter { it.clip.factory.canMerge(it) }.fastMap { it to it.track }
+    private val clips = hashMapOf<TrackClip<*>, Track>().apply {
+        clips.fastForEach {
+            if (it.clip.factory.canMerge(it) && it.track != null) put(it, it.track!!)
+        }
+    }
     private val newClips: MutableMap<Track, MutableList<TrackClip<*>>> = hashMapOf()
 
     override suspend fun undo(): Boolean {
@@ -177,9 +180,8 @@ class ClipsMergeAction(clips: List<TrackClip<*>>) : UndoableAction {
         newClips.clear()
 
         val tracks = hashSetOf<Track>()
-        clips.fastForEach {
-            val track = it.second ?: return@fastForEach
-            track.clips.add(it.first)
+        clips.forEach { (clip, track) ->
+            track.clips.add(clip)
             tracks.add(track)
         }
         tracks.forEach {
@@ -191,9 +193,8 @@ class ClipsMergeAction(clips: List<TrackClip<*>>) : UndoableAction {
 
     override suspend fun execute(): Boolean {
         val map = hashMapOf<Track, MutableList<TrackClip<*>>>()
-        clips.fastForEach {
-            val track = it.second ?: return@fastForEach
-            map.getOrPut(track) { LinkedList() }.add(it.first)
+        clips.forEach { (clip, track) ->
+            map.getOrPut(track) { LinkedList() }.add(clip)
         }
         map.forEach { (track, clips) ->
             var size = 0
@@ -207,6 +208,9 @@ class ClipsMergeAction(clips: List<TrackClip<*>>) : UndoableAction {
                         canMerges.add(it)
                         true
                     } else false
+                }
+                if (canMerges.size < 2) {
+                    this.clips.remove(canMerges.firstOrNull() ?: continue)
                 }
                 track.clips.removeAll(canMerges)
                 currentClipFactory.merge(canMerges).fastForEach {

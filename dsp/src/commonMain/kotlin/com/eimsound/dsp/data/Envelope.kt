@@ -166,3 +166,14 @@ class DefaultEnvelopePointList : EnvelopePointList, ArrayList<EnvelopePoint>() {
     override fun update() { modification.value++ }
     override fun read() { modification.value }
 }
+
+@Suppress("unused")
+fun Collection<BaseEnvelopePointList>.merge(): BaseEnvelopePointList {
+    val result = hashMapOf<Int, EnvelopePoint>()
+    forEach {
+        repeat(it.size) { i ->
+            result[it[i].time] = it[i]
+        }
+    }
+    return result.values.sorted()
+}

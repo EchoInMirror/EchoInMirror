@@ -14,10 +14,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.util.fastForEach
 import com.eimsound.audioprocessor.CurrentPosition
 import com.eimsound.audioprocessor.convertSamplesToPPQ
-import com.eimsound.dsp.data.DefaultEnvelopePointList
-import com.eimsound.dsp.data.EnvelopePointList
-import com.eimsound.dsp.data.MIDI_CC_RANGE
-import com.eimsound.dsp.data.toMutableEnvelopePointList
 import com.eimsound.daw.api.*
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.components.EnvelopeEditor
@@ -26,6 +22,7 @@ import com.eimsound.daw.utils.lowerBound
 import com.eimsound.daw.commons.json.putNotDefault
 import com.eimsound.daw.components.trees.MidiNode
 import com.eimsound.daw.dawutils.processMIDIBuffer
+import com.eimsound.dsp.data.*
 import com.eimsound.dsp.data.midi.*
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
@@ -179,11 +176,14 @@ class MidiClipFactoryImpl : MidiClipFactory {
         val newClip = createClip()
         var start = Int.MAX_VALUE
         var end = Int.MIN_VALUE
+        val envelopes = hashMapOf<Int, MutableMap<Int, EnvelopePoint>>()
         clips.forEach {
             if (it.clip !is MidiClip) return@forEach
             if (it.time < start) start = it.time
             if (it.time + it.duration > end) end = it.time + it.duration
         }
+        if (start == Int.MAX_VALUE || end == Int.MIN_VALUE) return emptyList()
+
         clips.forEach {
             val clip = it.clip as? MidiClip ?: return@forEach
             clip.notes.fastForEach { note ->
@@ -193,8 +193,23 @@ class MidiClipFactoryImpl : MidiClipFactory {
                 )
                     newClip.notes.add(note.copy(time = note.time + it.time - start - it.start))
             }
+            clip.events.forEach { (id, points) ->
+                val map = envelopes.getOrPut(id) { hashMapOf() }
+                points.fastForEach { p ->
+                    if (p.time + it.time >= it.start && p.time <= it.duration + it.start) {
+                        val time = p.time + it.time - start - it.start
+                        map[time] = p.copy(time = time)
+                    }
+                }
+            }
         }
         newClip.notes.sort()
+        envelopes.forEach { (id, points) ->
+            newClip.events[id] = DefaultEnvelopePointList().apply {
+                addAll(points.values)
+                sort()
+            }
+        }
         return listOf(ClipActionResult(newClip, start, end - start))
     }
 }

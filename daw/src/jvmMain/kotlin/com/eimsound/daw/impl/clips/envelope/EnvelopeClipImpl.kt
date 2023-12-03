@@ -15,9 +15,7 @@ import com.eimsound.daw.api.controllers.ParameterController
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.commons.json.putNotDefault
 import com.eimsound.daw.components.EnvelopeEditor
-import com.eimsound.dsp.data.DefaultEnvelopePointList
-import com.eimsound.dsp.data.fromJson
-import com.eimsound.dsp.data.putNotDefault
+import com.eimsound.dsp.data.*
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.json.*
 import java.nio.file.Path
@@ -122,6 +120,30 @@ class EnvelopeClipFactoryImpl: EnvelopeClipFactory {
 
     override fun canMerge(clip: TrackClip<*>) = clip.clip is EnvelopeClip
     override fun merge(clips: Collection<TrackClip<*>>): List<ClipActionResult<EnvelopeClip>> {
-        TODO("Not yet implemented")
+        val newClip = EnvelopeClipImpl(this)
+        var start = Int.MAX_VALUE
+        var end = Int.MIN_VALUE
+        val newPoints = hashMapOf<Int, EnvelopePoint>()
+        val controllers = mutableSetOf<ParameterController>()
+        clips.forEach {
+            if (it.clip !is EnvelopeClip) return@forEach
+            start = start.coerceAtMost(it.time)
+            end = end.coerceAtLeast(it.time + it.duration)
+        }
+        if (start == Int.MAX_VALUE || end == Int.MIN_VALUE) return emptyList()
+        clips.forEach { c ->
+            val clip = c.clip as? EnvelopeClip ?: return@forEach
+            controllers.addAll(clip.controllers)
+            clip.envelope.fastForEach {
+                if (it.time + c.time >= c.start && it.time <= c.duration + c.start) {
+                    val time = it.time + c.time - start - c.start
+                    newPoints[time] = it.copy(time = time)
+                }
+            }
+        }
+        newClip.envelope.addAll(newPoints.values)
+        newClip.envelope.sort()
+        newClip.controllers.addAll(controllers)
+        return listOf(ClipActionResult(newClip, start, end - start))
     }
 }
