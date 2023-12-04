@@ -9,7 +9,6 @@ import kotlin.math.ceil
 
 @Suppress("unused")
 class WaveformSimilarityBasedOverlapAddStretcher : AbstractTimeStretcher() {
-    private var samplesPerBlock = 0
     private var channels = 0
     private var timeStretchers: Array<WaveformSimilarityBasedOverlapAdd> = emptyArray()
     private var resamplers: Array<Resampler> = emptyArray()
@@ -34,8 +33,8 @@ class WaveformSimilarityBasedOverlapAddStretcher : AbstractTimeStretcher() {
         inputBufferSize * ceil(samplesPerBlock / (outputBufferSize / pitchRatio)).toInt()
     }
 
-    override fun initialise(sourceSampleRate: Double, samplesPerBlock: Int, numChannels: Int, isRealtime: Boolean) {
-        this.samplesPerBlock = samplesPerBlock
+    override fun initialise(sourceSampleRate: Float, samplesPerBlock: Int, numChannels: Int, isRealtime: Boolean) {
+        super.initialise(sourceSampleRate, samplesPerBlock, numChannels, isRealtime)
         if (channels != numChannels) {
             channels = numChannels
             timeStretchers = Array(numChannels) { WaveformSimilarityBasedOverlapAdd() }
@@ -65,6 +64,11 @@ class WaveformSimilarityBasedOverlapAddStretcher : AbstractTimeStretcher() {
 //            resampler.process(pitchRatio, outputBuffer, framesNeeded)
         }
         return 0
+    }
+
+    override fun flush(output: Array<FloatArray>) = 0
+
+    override fun reset() {
     }
 
     override fun close() {

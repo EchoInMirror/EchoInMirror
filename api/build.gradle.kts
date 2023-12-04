@@ -16,6 +16,7 @@ kotlin {
     sourceSets {
         named("commonMain") {
             dependencies {
+                compileOnly(project(":time-stretchers"))
                 api(project(":audio-sources"))
                 api(project(":audio-processors"))
                 api(project(":utils"))

@@ -25,3 +25,5 @@ fun Array<FloatArray>.mixWith(source: Array<FloatArray>, volume: Float, limit: F
         }
     }
 }
+
+fun Array<FloatArray>.clear() { repeat(size) { this[it].fill(0F) } }

@@ -20,7 +20,7 @@ class WaveformSimilarityBasedOverlapAdd {
         sampleReq = (max((intskip + overlapLength).toDouble(), seekWindowLength.toDouble()) + seekLength).toInt()
     }
 
-    fun applyNewParameters(sampleRate: Double, overlapMs: Int = 12, sequenceMs: Int = 82, seekWindowMs: Int = 28) {
+    fun applyNewParameters(sampleRate: Float, overlapMs: Int = 12, sequenceMs: Int = 82, seekWindowMs: Int = 28) {
         val oldOverlapLength = overlapLength
         overlapLength = (sampleRate * overlapMs / 1000).toInt()
         seekWindowLength = (sampleRate * sequenceMs / 1000).toInt()

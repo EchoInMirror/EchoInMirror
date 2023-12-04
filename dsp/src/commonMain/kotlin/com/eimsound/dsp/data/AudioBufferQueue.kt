@@ -10,18 +10,21 @@ class AudioBufferQueue(
     val available: Int get() = if (pushPos >= popPos) pushPos - popPos else cacheSize - (popPos - pushPos)
 
     fun push(buffers: Array<FloatArray>) {
+        push(buffers, 0, buffers[0].size)
+    }
+
+    fun push(buffers: Array<FloatArray>, offset: Int, length: Int) {
         if (buffers.size != channels) {
             this.buffers.forEach { it.fill(0F) }
             return
         }
 
-        val length = buffers[0].size
         repeat(channels.coerceAtMost(buffers.size)) {
             var pushIndex = pushPos
             if (pushIndex >= cacheSize) pushIndex -= cacheSize
             val pushRemains = (length - (cacheSize - pushIndex)).coerceAtLeast(0)
-            buffers[it].copyInto(this.buffers[it], pushIndex, 0, length - pushRemains)
-            buffers[it].copyInto(this.buffers[it], 0, length - pushRemains, length)
+            buffers[it].copyInto(this.buffers[it], pushIndex, offset, offset + length - pushRemains)
+            buffers[it].copyInto(this.buffers[it], 0, offset + length - pushRemains, offset + length)
         }
 
         pushPos += length
@@ -29,18 +32,21 @@ class AudioBufferQueue(
     }
 
     fun pop(buffers: Array<FloatArray>) {
+        pop(buffers, 0, buffers[0].size)
+    }
+
+    fun pop(buffers: Array<FloatArray>, offset: Int, length: Int) {
         if (buffers.size != channels) {
             buffers.forEach { it.fill(0F) }
             return
         }
 
-        val length = buffers[0].size
         repeat(channels.coerceAtMost(buffers.size)) {
             var popIndex = popPos
             if (popIndex >= cacheSize) popIndex -= cacheSize
             val popRemains = (length - (cacheSize - popIndex)).coerceAtLeast(0)
-            this.buffers[it].copyInto(buffers[it], 0, popIndex, popIndex + length - popRemains)
-            this.buffers[it].copyInto(buffers[it], length - popRemains, 0, popRemains)
+            this.buffers[it].copyInto(buffers[it], offset, popIndex, popIndex + length - popRemains)
+            this.buffers[it].copyInto(buffers[it], offset + length - popRemains, 0, popRemains)
         }
 
         popPos += length

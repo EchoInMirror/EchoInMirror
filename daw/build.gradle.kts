@@ -39,6 +39,7 @@ kotlin {
                 api(project(":api"))
                 api(project(":native"))
                 api(project(":audio-sources"))
+                api(project(":time-stretchers"))
 
                 api(compose.desktop.currentOs) {
                     exclude("org.jetbrains.compose.material")

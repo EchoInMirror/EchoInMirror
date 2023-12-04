@@ -16,7 +16,6 @@ import androidx.compose.ui.zIndex
 import com.eimsound.audioprocessor.convertSecondsToPPQ
 import com.eimsound.dsp.data.VOLUME_RANGE
 import com.eimsound.audioprocessor.oneBarPPQ
-import com.eimsound.audiosources.timeInSeconds
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.actions.GlobalEnvelopeEditorEventHandler
 import com.eimsound.daw.api.clips.AudioClip
@@ -61,7 +60,7 @@ class AudioClipEditor(private val clip: TrackClip<AudioClip>) : ClipEditor {
                 { EchoInMirror.currentPosition.timeInPPQ = it }
             ) {
                 val maxPPQ = EchoInMirror.currentPosition
-                    .convertSecondsToPPQ(clip.clip.audioSource.timeInSeconds).toInt()
+                    .convertSecondsToPPQ(clip.clip.timeInSeconds).toInt()
                 clip.start = it.first.coerceIn(0, maxPPQ)
                 clip.duration = it.range.coerceIn(0, maxPPQ)
                 clip.track?.clips?.update()
@@ -74,7 +73,7 @@ class AudioClipEditor(private val clip: TrackClip<AudioClip>) : ClipEditor {
                     val noteWidthPx = noteWidthValue.toPx()
                     val scrollXPPQ = horizontalScrollState.value / noteWidthPx
                     val maxPPQ = EchoInMirror.currentPosition
-                        .convertSecondsToPPQ(clip.clip.audioSource.timeInSeconds).toFloat()
+                        .convertSecondsToPPQ(clip.clip.timeInSeconds).toFloat()
                     val widthPPQ = (contentWidth / noteWidthPx).coerceAtMost(maxPPQ)
                     remember(maxPPQ, noteWidthValue, LocalDensity.current, widthPPQ) {
                         horizontalScrollState.openMaxValue = (((maxPPQ - widthPPQ) *
