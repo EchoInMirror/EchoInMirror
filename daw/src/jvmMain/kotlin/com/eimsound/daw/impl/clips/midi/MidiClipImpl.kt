@@ -86,7 +86,7 @@ class MidiClipFactoryImpl : MidiClipFactory {
 
     override fun processBlock(
         clip: TrackClip<MidiClip>, buffers: Array<FloatArray>, position: CurrentPosition,
-        midiBuffer: ArrayList<Int>, noteRecorder: MidiNoteRecorder, pendingNoteOns: LongArray
+        midiBuffer: ArrayList<Int>, noteRecorder: MidiNoteTimeRecorder
     ) {
         val c = clip.clip as MidiClipImpl
         val timeInSamples = position.timeInSamples
@@ -105,7 +105,7 @@ class MidiClipFactoryImpl : MidiClipFactory {
             }
         }
         clip.currentIndex = processMIDIBuffer(
-            c.notes, position, midiBuffer, startTime, timeInSamples, pendingNoteOns, noteRecorder, clip.currentIndex
+            c.notes, position, midiBuffer, startTime, timeInSamples, noteRecorder, clip.currentIndex
         )
     }
 

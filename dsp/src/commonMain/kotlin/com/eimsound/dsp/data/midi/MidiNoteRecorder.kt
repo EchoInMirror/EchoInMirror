@@ -65,3 +65,29 @@ class MidiNoteIterator(private var notes1: ULong, private var notes2: ULong) : I
         return i
     }
 }
+
+class MidiNoteTimeRecorder {
+    val noteRecorder = MidiNoteRecorder()
+    private val pendingNoteOns = IntArray(128)
+
+    fun markNoteOn(note: Int, timeInSamples: Int) {
+        noteRecorder.markNote(note)
+        pendingNoteOns[note] = timeInSamples
+    }
+
+    fun processBlock(bufferSize: Int, midiBuffer: ArrayList<Int>) {
+        noteRecorder.forEachNotes {
+            pendingNoteOns[it] -= bufferSize
+            if (pendingNoteOns[it] <= 0) {
+                noteRecorder.unmarkNote(it)
+                midiBuffer.add(noteOff(0, it).rawData)
+                midiBuffer.add(pendingNoteOns[it].coerceAtLeast(0))
+            }
+        }
+    }
+
+    fun reset() {
+        noteRecorder.reset()
+        pendingNoteOns.fill(0)
+    }
+}

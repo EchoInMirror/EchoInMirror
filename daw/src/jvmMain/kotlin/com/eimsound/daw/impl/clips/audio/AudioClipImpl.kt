@@ -11,12 +11,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import com.eimsound.audioprocessor.*
-import com.eimsound.dsp.data.midi.MidiNoteRecorder
 import com.eimsound.daw.api.*
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.audiosources.*
 import com.eimsound.daw.components.*
 import com.eimsound.dsp.data.*
+import com.eimsound.dsp.data.midi.MidiNoteTimeRecorder
 import com.eimsound.dsp.detectBPM
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -42,7 +42,7 @@ class AudioClipImpl(
             close()
             _target = value
             resampledAudioSource = AudioSourceManager.instance.createResampledSource(value).apply {
-                factor = EchoInMirror.currentPosition.sampleRate.toDouble() / value.sampleRate
+                resampleFactor = EchoInMirror.currentPosition.sampleRate.toDouble() / value.sampleRate
             }
             _thumbnail = AudioThumbnail(audioSource)
         }
@@ -102,9 +102,9 @@ class AudioClipFactoryImpl: AudioClipFactory {
 
     override fun processBlock(
         clip: TrackClip<AudioClip>, buffers: Array<FloatArray>, position: CurrentPosition,
-        midiBuffer: ArrayList<Int>, noteRecorder: MidiNoteRecorder, pendingNoteOns: LongArray
+        midiBuffer: ArrayList<Int>, noteRecorder: MidiNoteTimeRecorder
     ) {
-        clip.clip.audioSource.factor = position.sampleRate.toDouble() / clip.clip.audioSource.source!!.sampleRate
+        clip.clip.audioSource.resampleFactor = position.sampleRate.toDouble() / clip.clip.audioSource.source!!.sampleRate
         val clipTime = clip.time - clip.start
         clip.clip.audioSource.getSamples(
             position.timeInSamples - position.convertPPQToSamples(clipTime),

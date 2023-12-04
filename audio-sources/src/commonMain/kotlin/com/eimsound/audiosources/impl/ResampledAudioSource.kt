@@ -1,33 +1,39 @@
 package com.eimsound.audiosources.impl
 
+import be.tarsos.dsp.WaveformSimilarityBasedOverlapAdd
+import be.tarsos.dsp.WaveformSimilarityBasedOverlapAdd.Parameters
 import be.tarsos.dsp.resample.Resampler
 import com.eimsound.audiosources.*
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import kotlin.math.roundToInt
-import kotlin.math.roundToLong
+import kotlin.math.*
 
 class DefaultResampledAudioSource(
     override val factory: ResampledAudioSourceFactory<ResampledAudioSource>,
-    override val source: AudioSource, override var factor: Double = 1.0
+    override val source: AudioSource, override var resampleFactor: Double = 1.0,
+    override var timeStretchFactor: Double = 1.0
 ): ResampledAudioSource {
+//    private val factorUp = 1 / E.pow(centsUp * ln(2.0) / 1200 / ln(E))
     override val channels get() = source.channels
-    override val sampleRate get() = (source.sampleRate * factor).toFloat()
-    override val length get() = (source.length * factor).toLong()
+    override val sampleRate get() = (source.sampleRate * resampleFactor).toFloat()
+    override val length get() = (source.length * timeStretchFactor / resampleFactor).roundToLong()
     private val resamplers = Array(channels) { Resampler(true, 0.1, 4.0) }
+    private val timeStretchers = Array(channels) {
+        WaveformSimilarityBasedOverlapAdd(Parameters.automaticDefaults(timeStretchFactor, source.sampleRate.toDouble()))
+    }
     private var nextStart = 0L
     private var sourceBuffers = Array(channels) { FloatArray(1024) }
 
     override fun getSamples(start: Long, length: Int, buffers: Array<FloatArray>): Int {
-        if (factor == 1.0) {
+        if (resampleFactor == 1.0 && timeStretchFactor == 1.0) {
             source.getSamples(start, length, buffers)
             return buffers[0].size
         }
-        var sourceStart = (start / factor).roundToLong()
+        var sourceStart = (start * resampleFactor / timeStretchFactor).roundToLong()
         if (nextStart - 1 == sourceStart) sourceStart = nextStart
-        val sourceLength = (buffers[0].size / factor).roundToInt()
+        val sourceLength = (buffers[0].size * timeStretchFactor / resampleFactor).roundToInt()
         nextStart = sourceStart + sourceLength
         val ch = channels.coerceAtMost(buffers.size)
         if (sourceBuffers[0].size < sourceLength || sourceBuffers.size < ch)
@@ -35,7 +41,7 @@ class DefaultResampledAudioSource(
         source.getSamples(sourceStart, sourceLength, sourceBuffers)
         var consumed = 0
         repeat(ch) {
-            consumed = resamplers[it].process(factor, sourceBuffers[it], 0, sourceLength, false,
+            consumed = resamplers[it].process(resampleFactor, sourceBuffers[it], 0, sourceLength, false,
                 buffers[it], 0, buffers[it].size).outputSamplesGenerated
         }
         return consumed
@@ -46,11 +52,11 @@ class DefaultResampledAudioSource(
         put("source", source.toJson())
     }
     override fun fromJson(json: JsonElement) = throw UnsupportedOperationException()
-    override fun copy() = DefaultResampledAudioSource(factory, source.copy(), factor)
+    override fun copy() = DefaultResampledAudioSource(factory, source.copy(), resampleFactor, timeStretchFactor)
 
-    override fun toString(): String {
-        return "DefaultResampledAudioSource(source=$source, factor=$factor, channels=$channels, sampleRate=$sampleRate, length=$length)"
-    }
+    override fun toString() =
+        "DefaultResampledAudioSource(source=$source, resampleFactor=$resampleFactor, " +
+                "timeStretchFactor=$timeStretchFactor, channels=$channels, sampleRate=$sampleRate, length=$length)"
 }
 
 class DefaultResampledAudioSourceFactory: ResampledAudioSourceFactory<ResampledAudioSource> {

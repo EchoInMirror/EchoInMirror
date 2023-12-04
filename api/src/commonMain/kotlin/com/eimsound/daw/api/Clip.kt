@@ -10,13 +10,13 @@ import com.eimsound.dsp.data.AudioThumbnail
 import com.eimsound.audioprocessor.CurrentPosition
 import com.eimsound.dsp.data.BaseEnvelopePointList
 import com.eimsound.dsp.data.EnvelopePointList
-import com.eimsound.dsp.data.midi.MidiNoteRecorder
 import com.eimsound.dsp.data.midi.NoteMessageList
 import com.eimsound.daw.api.controllers.ParameterController
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.commons.*
 import com.eimsound.daw.commons.json.*
 import com.eimsound.daw.utils.*
+import com.eimsound.dsp.data.midi.MidiNoteTimeRecorder
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -52,7 +52,7 @@ interface ClipFactory<T: Clip> {
     fun createClip(path: Path, json: JsonObject): T
     fun processBlock(
         clip: TrackClip<T>, buffers: Array<FloatArray>, position: CurrentPosition,
-        midiBuffer: ArrayList<Int>, noteRecorder: MidiNoteRecorder, pendingNoteOns: LongArray
+        midiBuffer: ArrayList<Int>, noteRecorder: MidiNoteTimeRecorder
     )
     fun save(clip: T, path: Path) { }
     fun getEditor(clip: TrackClip<T>): ClipEditor?

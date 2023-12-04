@@ -3,14 +3,11 @@ package com.eimsound.daw.dawutils
 import com.eimsound.audioprocessor.CurrentPosition
 import com.eimsound.audioprocessor.convertPPQToSamples
 import com.eimsound.daw.utils.lowerBound
-import com.eimsound.dsp.data.midi.MidiNoteRecorder
-import com.eimsound.dsp.data.midi.NoteMessage
-import com.eimsound.dsp.data.midi.toNoteOffRawData
-import com.eimsound.dsp.data.midi.toNoteOnRawData
+import com.eimsound.dsp.data.midi.*
 
 fun processMIDIBuffer(
     notes: List<NoteMessage>, position: CurrentPosition, midiBuffer: ArrayList<Int>, startTime: Int,
-    timeInSamples: Long, pendingNoteOns: LongArray, noteRecorder: MidiNoteRecorder, currentIndex: Int,
+    timeInSamples: Long, noteRecorder: MidiNoteTimeRecorder, currentIndex: Int,
 ): Int {
     var index = currentIndex
     if (index == -1) {
@@ -27,21 +24,20 @@ fun processMIDIBuffer(
         index = i + 1
         if (startTimeInSamples < timeInSamples || note.isDisabled) continue
         val noteOnTime = (startTimeInSamples - timeInSamples).toInt().coerceAtLeast(0)
-        if (noteRecorder.isMarked(note.note)) {
-            noteRecorder.unmarkNote(note.note)
+        if (noteRecorder.noteRecorder.isMarked(note.note)) {
+            noteRecorder.noteRecorder.unmarkNote(note.note)
             midiBuffer.add(note.toNoteOffRawData())
             midiBuffer.add(noteOnTime)
         }
         midiBuffer.add(note.toNoteOnRawData())
         midiBuffer.add(noteOnTime)
         val endTimeInSamples = position.convertPPQToSamples(startTime + note.time + note.duration)
-        val endTime = endTimeInSamples - timeInSamples
+        val endTime = (endTimeInSamples - timeInSamples).toInt().coerceAtLeast(0)
         if (endTimeInSamples > blockEndSample) {
-            pendingNoteOns[note.note] = endTime
-            noteRecorder.markNote(note.note)
+            noteRecorder.markNoteOn(note.note, endTime)
         } else {
             midiBuffer.add(note.toNoteOffRawData())
-            midiBuffer.add((endTimeInSamples - timeInSamples).toInt().coerceAtLeast(0))
+            midiBuffer.add(endTime)
         }
     }
 

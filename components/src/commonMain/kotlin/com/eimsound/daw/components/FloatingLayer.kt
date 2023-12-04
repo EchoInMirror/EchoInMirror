@@ -182,6 +182,7 @@ fun Dialog(
     }
 }
 
+private var lastMenuOpenedTime = 0L
 /**
  * @see com.eimsound.daw.components.initEditorMenuItems
  */
@@ -191,6 +192,10 @@ fun FloatingLayerProvider.openEditorMenu(
     footer: @Composable ((() -> Unit) -> Unit)? = null,
     content: @Composable ((() -> Unit) -> Unit)? = null
 ) {
+    val t = System.currentTimeMillis()
+    if (t - lastMenuOpenedTime < 100) return
+    lastMenuOpenedTime = t
+
     val key = Any()
     val close = { closeFloatingLayer(key) }
 

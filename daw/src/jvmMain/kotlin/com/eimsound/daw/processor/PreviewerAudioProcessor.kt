@@ -18,8 +18,7 @@ val PreviewerDescription = DefaultAudioProcessorDescription(
 class PreviewerAudioProcessor(factory: AudioProcessorFactory<*>) : AbstractAudioProcessor(PreviewerDescription, factory) {
     private var midiPreviewTarget: List<NoteMessage>? = null
     private var currentIndex = -1
-    private val noteRecorder = MidiNoteRecorder()
-    private val pendingNoteOns = LongArray(128)
+    private val noteRecorder = MidiNoteTimeRecorder()
     private val sineWaveSynthesizer =
         SineWaveSynthesizer(AudioProcessorManager.instance.eimAudioProcessorFactory, true, 0.5F)
     private var audioPreviewTarget: ResampledAudioSource? = null
@@ -42,23 +41,15 @@ class PreviewerAudioProcessor(factory: AudioProcessorFactory<*>) : AbstractAudio
         val audio = audioPreviewTarget
         if (notes != null) {
             val midiBuffer2 = ArrayList<Int>()
-            val bufferSize = this.position.bufferSize.toLong()
-            noteRecorder.forEachNotes {
-                pendingNoteOns[it] -= bufferSize
-                if (pendingNoteOns[it] <= 0) {
-                    noteRecorder.unmarkNote(it)
-                    midiBuffer2.add(noteOff(0, it).rawData)
-                    midiBuffer2.add(pendingNoteOns[it].toInt().coerceAtLeast(0))
-                }
-            }
+            noteRecorder.processBlock(this.position.bufferSize, midiBuffer2)
             val timeInSamples = this.position.timeInSamples
             currentIndex = processMIDIBuffer(
-                notes, this.position, midiBuffer2, 0, timeInSamples, pendingNoteOns, noteRecorder, currentIndex
+                notes, this.position, midiBuffer2, 0, timeInSamples, noteRecorder, currentIndex
             )
             sineWaveSynthesizer.processBlock(buffers, this.position, midiBuffer2)
             this.position.timeInSamples += position.bufferSize
         } else if (audio != null) {
-            audio.factor = position.sampleRate.toDouble() / audio.source!!.sampleRate
+            audio.resampleFactor = position.sampleRate.toDouble() / audio.source!!.sampleRate
             audio.getSamples(this.position.timeInSamples, this.position.bufferSize, tempBuffers)
             buffers.mixWith(tempBuffers, volume, 1F)
             this.position.timeInSamples += position.bufferSize
@@ -67,7 +58,6 @@ class PreviewerAudioProcessor(factory: AudioProcessorFactory<*>) : AbstractAudio
 
     override fun onSuddenChange() {
         currentIndex = -1
-        pendingNoteOns.fill(0L)
         noteRecorder.reset()
         sineWaveSynthesizer.onSuddenChange()
     }
@@ -80,8 +70,8 @@ class PreviewerAudioProcessor(factory: AudioProcessorFactory<*>) : AbstractAudio
         sineWaveSynthesizer.prepareToPlay(sampleRate, bufferSize)
         val audio = audioPreviewTarget
         if (audio != null) {
-            audio.factor = sampleRate.toDouble() / audio.source!!.sampleRate
-            position.projectRange = 0..position.convertSamplesToPPQ((audio.length * audio.factor).toLong())
+            audio.resampleFactor = sampleRate.toDouble() / audio.source!!.sampleRate
+            position.projectRange = 0..position.convertSamplesToPPQ((audio.length * audio.resampleFactor).toLong())
         }
     }
 
@@ -98,7 +88,7 @@ class PreviewerAudioProcessor(factory: AudioProcessorFactory<*>) : AbstractAudio
         audioPreviewTarget?.close()
         val factor = position.sampleRate.toDouble() / target.sampleRate
         audioPreviewTarget = AudioSourceManager.instance.createResampledSource(target).apply {
-            this.factor = factor
+            this.resampleFactor = factor
         }
         position.projectRange = 0..position.convertSamplesToPPQ((target.length * factor).toLong())
     }

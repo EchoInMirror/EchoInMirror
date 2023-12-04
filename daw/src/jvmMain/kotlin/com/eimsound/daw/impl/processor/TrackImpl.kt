@@ -9,8 +9,6 @@ import com.eimsound.audioprocessor.interfaces.PannerRule
 import com.eimsound.dsp.data.PAN_RANGE
 import com.eimsound.dsp.data.VOLUME_RANGE
 import com.eimsound.dsp.data.midi.MidiEvent
-import com.eimsound.dsp.data.midi.MidiNoteRecorder
-import com.eimsound.dsp.data.midi.noteOff
 import com.eimsound.audioprocessor.interfaces.calcPanLeftChannel
 import com.eimsound.audioprocessor.interfaces.calcPanRightChannel
 import com.eimsound.daw.api.*
@@ -19,6 +17,7 @@ import com.eimsound.daw.commons.json.*
 import com.eimsound.daw.components.utils.randomColor
 import com.eimsound.daw.dawutils.buffer.TrackBuffers
 import com.eimsound.daw.utils.*
+import com.eimsound.dsp.data.midi.MidiNoteTimeRecorder
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
 import kotlinx.serialization.json.*
@@ -48,7 +47,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
 
     private val pendingMidiBuffer = Collections.synchronizedList(ArrayList<Int>())
     private val pendingNoteOns = LongArray(128)
-    private val noteRecorder = MidiNoteRecorder()
+    private val noteRecorder = MidiNoteTimeRecorder()
     private var lastUpdateTime = 0L
 
     private val trackBuffers = TrackBuffers()
@@ -79,15 +78,8 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
             pendingMidiBuffer.clear()
         }
         if (position.isPlaying) {
-            val bufferSize = position.bufferSize.toLong()
-            noteRecorder.forEachNotes {
-                pendingNoteOns[it] -= bufferSize
-                if (pendingNoteOns[it] <= 0) {
-                    noteRecorder.unmarkNote(it)
-                    midiBuffer.add(noteOff(0, it).rawData)
-                    midiBuffer.add(pendingNoteOns[it].toInt().coerceAtLeast(0))
-                }
-            }
+            val bufferSize = position.bufferSize
+            noteRecorder.processBlock(bufferSize, midiBuffer)
             val startTime = position.timeInPPQ
             val blockEndSample = position.timeInSamples + bufferSize
             if (lastClipIndex == -1) lastClipIndex = clips.lowerBound { it.time < startTime }
@@ -103,7 +95,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
                 if (clip.isDisabled) continue
                 if (startTimeInSamples > blockEndSample) break
                 @Suppress("TYPE_MISMATCH")
-                clip.clip.factory.processBlock(clip, buffers, position, midiBuffer, noteRecorder, pendingNoteOns)
+                clip.clip.factory.processBlock(clip, buffers, position, midiBuffer, noteRecorder)
             }
         }
         var tempLatency = 0
@@ -365,6 +357,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
                             }
                         }
                     }.awaitAll().filterNotNull())
+                    clips.sort()
                 }
 
                 json["subTracks"]?.let { tracks ->

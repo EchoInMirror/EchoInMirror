@@ -35,8 +35,8 @@ interface FileAudioSource : AudioSource, AutoCloseable {
  * @see com.eimsound.audiosources.impl.DefaultResampledAudioSource
  */
 interface ResampledAudioSource : AudioSource {
-    @Transient
-    var factor: Double
+    var resampleFactor: Double
+    var timeStretchFactor: Double
     override val factory: ResampledAudioSourceFactory<*>
     override fun copy(): ResampledAudioSource
 }

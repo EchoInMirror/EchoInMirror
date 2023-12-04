@@ -7,7 +7,6 @@ import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.util.fastForEach
 import com.eimsound.audioprocessor.*
-import com.eimsound.dsp.data.midi.MidiNoteRecorder
 import com.eimsound.daw.actions.GlobalEnvelopeEditorEventHandler
 import com.eimsound.daw.api.*
 import com.eimsound.daw.api.controllers.DefaultParameterControllerFactory
@@ -16,6 +15,7 @@ import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.commons.json.putNotDefault
 import com.eimsound.daw.components.EnvelopeEditor
 import com.eimsound.dsp.data.*
+import com.eimsound.dsp.data.midi.MidiNoteTimeRecorder
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.json.*
 import java.nio.file.Path
@@ -65,7 +65,7 @@ class EnvelopeClipFactoryImpl: EnvelopeClipFactory {
 
     override fun processBlock(
         clip: TrackClip<EnvelopeClip>, buffers: Array<FloatArray>, position: CurrentPosition,
-        midiBuffer: ArrayList<Int>, noteRecorder: MidiNoteRecorder, pendingNoteOns: LongArray
+        midiBuffer: ArrayList<Int>, noteRecorder: MidiNoteTimeRecorder
     ) {
         val clipTime = clip.time - clip.start
         val value = clip.clip.envelope.getValue(position.timeInPPQ - clipTime, 1F)
