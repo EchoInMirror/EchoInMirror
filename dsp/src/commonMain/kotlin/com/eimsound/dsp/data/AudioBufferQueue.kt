@@ -1,7 +1,7 @@
 package com.eimsound.dsp.data
 
 class AudioBufferQueue(
-    private val channels: Int,
+    val channels: Int,
     private val cacheSize: Int
 ) {
     private var pushPos = 0

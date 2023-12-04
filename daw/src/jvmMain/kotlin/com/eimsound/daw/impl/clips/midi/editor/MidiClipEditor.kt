@@ -18,9 +18,9 @@ import com.eimsound.audioprocessor.oneBarPPQ
 import com.eimsound.audioprocessor.projectDisplayPPQ
 import com.eimsound.daw.actions.doNoteAmountAction
 import com.eimsound.daw.api.EchoInMirror
-import com.eimsound.daw.api.MidiClip
-import com.eimsound.daw.api.MidiClipEditor
-import com.eimsound.daw.api.TrackClip
+import com.eimsound.daw.api.clips.MidiClip
+import com.eimsound.daw.api.clips.MidiClipEditor
+import com.eimsound.daw.api.clips.TrackClip
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.api.window.EditorExtension
 import com.eimsound.daw.commons.IManualStateValue

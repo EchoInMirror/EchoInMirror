@@ -4,9 +4,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCut
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.ui.util.fastForEach
-import com.eimsound.daw.api.ClipManager
+import com.eimsound.daw.api.clips.ClipManager
 import com.eimsound.daw.api.EchoInMirror
-import com.eimsound.daw.api.TrackClip
+import com.eimsound.daw.api.clips.TrackClip
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.commons.actions.ListDisabledAction
 import com.eimsound.daw.components.icons.PencilMinus
@@ -21,7 +21,7 @@ fun Collection<TrackClip<*>>.doClipsAmountAction(isDelete: Boolean) {
 }
 
 fun Collection<TrackClip<*>>.doClipsEditActionAction(deltaX: Int = 0, deltaDuration: Int = 0,
-                            deltaStart: Int = 0, newTracks: List<Track>? = null) {
+                                                     deltaStart: Int = 0, newTracks: List<Track>? = null) {
     if (deltaX == 0 && deltaDuration == 0 && deltaStart == 0 && newTracks == null) return
     runBlocking { EchoInMirror.undoManager.execute(ClipsEditAction(toList(), deltaX, deltaDuration, deltaStart, newTracks)) }
 }

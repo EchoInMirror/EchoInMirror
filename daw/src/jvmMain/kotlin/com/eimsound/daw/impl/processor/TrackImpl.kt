@@ -12,6 +12,8 @@ import com.eimsound.dsp.data.midi.MidiEvent
 import com.eimsound.audioprocessor.interfaces.calcPanLeftChannel
 import com.eimsound.audioprocessor.interfaces.calcPanRightChannel
 import com.eimsound.daw.api.*
+import com.eimsound.daw.api.clips.ClipManager
+import com.eimsound.daw.api.clips.DefaultTrackClipList
 import com.eimsound.daw.api.processor.*
 import com.eimsound.daw.commons.json.*
 import com.eimsound.daw.components.utils.randomColor

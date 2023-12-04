@@ -1,9 +1,9 @@
 package com.eimsound.daw.impl.clips
 
 import androidx.compose.runtime.mutableStateMapOf
-import com.eimsound.daw.api.Clip
-import com.eimsound.daw.api.ClipFactory
-import com.eimsound.daw.api.ClipManager
+import com.eimsound.daw.api.clips.Clip
+import com.eimsound.daw.api.clips.ClipFactory
+import com.eimsound.daw.api.clips.ClipManager
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.commons.NoSuchFactoryException
 import com.eimsound.daw.commons.json.*

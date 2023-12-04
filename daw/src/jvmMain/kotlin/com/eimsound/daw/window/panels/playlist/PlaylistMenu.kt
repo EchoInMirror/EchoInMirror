@@ -2,7 +2,7 @@ package com.eimsound.daw.window.panels.playlist
 
 import androidx.compose.material3.Text
 import androidx.compose.ui.geometry.Offset
-import com.eimsound.daw.api.TrackClip
+import com.eimsound.daw.api.clips.TrackClip
 import com.eimsound.daw.components.CommandMenuItem
 import com.eimsound.daw.components.FloatingLayerProvider
 import com.eimsound.daw.components.openEditorMenu

@@ -8,7 +8,7 @@ import com.eimsound.daw.actions.doClipsAmountAction
 import com.eimsound.daw.actions.doClipsDisabledAction
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.EditorTool
-import com.eimsound.daw.api.TrackClip
+import com.eimsound.daw.api.clips.TrackClip
 import com.eimsound.daw.components.calcScroll
 import com.eimsound.daw.components.utils.EditAction
 import com.eimsound.daw.utils.isCrossPlatformCtrlPressed

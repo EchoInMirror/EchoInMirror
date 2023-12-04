@@ -9,7 +9,7 @@ import com.eimsound.audioprocessor.interfaces.Volume
 import com.eimsound.daw.api.Colorable
 import com.eimsound.daw.api.LevelMeter
 import com.eimsound.daw.api.ProjectInformation
-import com.eimsound.daw.api.TrackClipList
+import com.eimsound.daw.api.clips.TrackClipList
 import com.eimsound.daw.commons.actions.Restorable
 import com.eimsound.daw.commons.json.*
 import com.eimsound.dsp.data.DefaultEnvelopePointList

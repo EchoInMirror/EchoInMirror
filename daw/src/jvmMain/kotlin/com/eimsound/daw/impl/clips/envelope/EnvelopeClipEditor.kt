@@ -19,6 +19,9 @@ import com.eimsound.audioprocessor.oneBarPPQ
 import com.eimsound.audioprocessor.projectDisplayPPQ
 import com.eimsound.daw.actions.GlobalEnvelopeEditorEventHandler
 import com.eimsound.daw.api.*
+import com.eimsound.daw.api.clips.ClipEditor
+import com.eimsound.daw.api.clips.EnvelopeClip
+import com.eimsound.daw.api.clips.TrackClip
 import com.eimsound.daw.components.*
 import com.eimsound.daw.dawutils.SHOULD_SCROLL_REVERSE
 import com.eimsound.daw.dawutils.openMaxValue

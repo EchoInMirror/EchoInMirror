@@ -5,7 +5,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import com.eimsound.dsp.data.EnvelopePointList
 import com.eimsound.daw.api.EchoInMirror
-import com.eimsound.daw.api.MutableMidiCCEvents
+import com.eimsound.daw.api.clips.MutableMidiCCEvents
 import com.eimsound.daw.commons.actions.ReversibleAction
 import kotlinx.coroutines.runBlocking
 

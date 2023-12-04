@@ -6,6 +6,7 @@ import com.eimsound.audioprocessor.AudioPlayer
 import com.eimsound.audioprocessor.MutableCurrentPosition
 import com.eimsound.dsp.data.AudioThumbnailCache
 import com.eimsound.audioprocessor.data.Quantification
+import com.eimsound.daw.api.clips.TrackClip
 import com.eimsound.daw.api.processor.Bus
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.api.window.WindowManager

@@ -2,6 +2,7 @@ package com.eimsound.daw.api
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.eimsound.daw.api.clips.Clip
 import java.nio.file.Path
 import java.util.*
 import kotlin.io.path.name

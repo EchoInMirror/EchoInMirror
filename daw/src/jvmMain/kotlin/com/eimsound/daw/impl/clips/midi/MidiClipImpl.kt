@@ -15,6 +15,7 @@ import androidx.compose.ui.util.fastForEach
 import com.eimsound.audioprocessor.CurrentPosition
 import com.eimsound.audioprocessor.convertSamplesToPPQ
 import com.eimsound.daw.api.*
+import com.eimsound.daw.api.clips.*
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.components.EnvelopeEditor
 import com.eimsound.daw.impl.clips.midi.editor.DefaultMidiClipEditor

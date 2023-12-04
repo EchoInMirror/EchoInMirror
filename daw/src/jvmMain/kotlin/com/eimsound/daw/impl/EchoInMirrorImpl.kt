@@ -10,10 +10,10 @@ import com.eimsound.audioprocessor.data.getEditUnit
 import com.eimsound.daw.AUDIO_THUMBNAIL_CACHE_PATH
 import com.eimsound.daw.Configuration
 import com.eimsound.daw.actions.AudioProcessorParameterChangeAction
-import com.eimsound.daw.api.ClipManager
+import com.eimsound.daw.api.clips.ClipManager
 import com.eimsound.daw.api.EditorTool
 import com.eimsound.daw.api.IEchoInMirror
-import com.eimsound.daw.api.TrackClip
+import com.eimsound.daw.api.clips.TrackClip
 import com.eimsound.daw.api.processor.Bus
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.api.processor.TrackManager

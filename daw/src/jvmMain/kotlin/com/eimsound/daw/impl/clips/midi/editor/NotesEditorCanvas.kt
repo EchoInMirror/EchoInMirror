@@ -36,7 +36,7 @@ import com.eimsound.dsp.data.midi.getNoteName
 import com.eimsound.audioprocessor.projectDisplayPPQ
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.EditorTool
-import com.eimsound.daw.api.asMidiTrackClipOrNull
+import com.eimsound.daw.api.clips.asMidiTrackClipOrNull
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.api.window.EditorExtensions
 import com.eimsound.daw.components.EditorGrid

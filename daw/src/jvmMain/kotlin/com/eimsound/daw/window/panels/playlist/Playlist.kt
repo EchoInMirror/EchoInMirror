@@ -27,10 +27,10 @@ import com.eimsound.audioprocessor.oneBarPPQ
 import com.eimsound.audioprocessor.projectDisplayPPQ
 import com.eimsound.daw.actions.doClipsAmountAction
 import com.eimsound.daw.actions.doClipsMergeAction
-import com.eimsound.daw.api.ClipManager
+import com.eimsound.daw.api.clips.ClipManager
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.FileExtensionManager
-import com.eimsound.daw.api.TrackClip
+import com.eimsound.daw.api.clips.TrackClip
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.api.window.EditorExtension
 import com.eimsound.daw.api.window.EditorExtensions
@@ -230,7 +230,8 @@ class Playlist : Panel, MultiSelectableEditor {
 
             GlobalScope.launch(Dispatchers.IO) {
                 val clip = handler.createClip(path0, data)
-                listOf(ClipManager.instance.createTrackClip(
+                listOf(
+                    ClipManager.instance.createTrackClip(
                     clip,
                     time,
                     if (clip.maxDuration == -1) clip.duration.coerceAtLeast(EchoInMirror.currentPosition.oneBarPPQ) else clip.duration,

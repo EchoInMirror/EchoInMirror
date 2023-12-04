@@ -1,7 +1,5 @@
 package com.eimsound.audiosources.impl
 
-import be.tarsos.dsp.WaveformSimilarityBasedOverlapAdd
-import be.tarsos.dsp.WaveformSimilarityBasedOverlapAdd.Parameters
 import be.tarsos.dsp.resample.Resampler
 import com.eimsound.audiosources.*
 import kotlinx.serialization.json.JsonElement
@@ -15,14 +13,10 @@ class DefaultResampledAudioSource(
     override val source: AudioSource, override var resampleFactor: Double = 1.0,
     override var timeStretchFactor: Double = 1.0
 ): ResampledAudioSource {
-//    private val factorUp = 1 / E.pow(centsUp * ln(2.0) / 1200 / ln(E))
     override val channels get() = source.channels
     override val sampleRate get() = (source.sampleRate * resampleFactor).toFloat()
     override val length get() = (source.length * timeStretchFactor / resampleFactor).roundToLong()
     private val resamplers = Array(channels) { Resampler(true, 0.1, 4.0) }
-    private val timeStretchers = Array(channels) {
-        WaveformSimilarityBasedOverlapAdd(Parameters.automaticDefaults(timeStretchFactor, source.sampleRate.toDouble()))
-    }
     private var nextStart = 0L
     private var sourceBuffers = Array(channels) { FloatArray(1024) }
 

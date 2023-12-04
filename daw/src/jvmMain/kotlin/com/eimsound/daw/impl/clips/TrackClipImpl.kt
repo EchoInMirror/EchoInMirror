@@ -3,9 +3,9 @@ package com.eimsound.daw.impl.clips
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.eimsound.daw.api.Clip
-import com.eimsound.daw.api.ClipFactory
-import com.eimsound.daw.api.TrackClip
+import com.eimsound.daw.api.clips.Clip
+import com.eimsound.daw.api.clips.ClipFactory
+import com.eimsound.daw.api.clips.TrackClip
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.commons.json.asBoolean
 import com.eimsound.daw.commons.json.asInt

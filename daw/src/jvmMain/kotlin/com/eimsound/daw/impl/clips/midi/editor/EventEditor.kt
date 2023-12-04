@@ -36,8 +36,8 @@ import com.eimsound.daw.actions.GlobalEnvelopeEditorEventHandler
 import com.eimsound.daw.actions.doAddOrRemoveMidiCCEventAction
 import com.eimsound.daw.actions.doNoteVelocityAction
 import com.eimsound.daw.api.EchoInMirror
-import com.eimsound.daw.api.MidiClipEditor
-import com.eimsound.daw.api.MutableMidiCCEvents
+import com.eimsound.daw.api.clips.MidiClipEditor
+import com.eimsound.daw.api.clips.MutableMidiCCEvents
 import com.eimsound.daw.components.*
 import com.eimsound.daw.components.IconButton
 import com.eimsound.daw.components.utils.EditAction

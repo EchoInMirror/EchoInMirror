@@ -12,10 +12,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.application
 import com.eimsound.audioprocessor.oneBarPPQ
 import com.eimsound.daw.actions.doClipsAmountAction
-import com.eimsound.daw.api.ClipManager
+import com.eimsound.daw.api.clips.ClipManager
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.controllers.DefaultParameterControllerFactory
-import com.eimsound.daw.api.defaultEnvelopeClipFactory
+import com.eimsound.daw.api.clips.defaultEnvelopeClipFactory
 import com.eimsound.daw.commons.ExperimentalEIMApi
 import com.eimsound.daw.components.controllers.parameterControllerCreateClipHandler
 import com.eimsound.daw.components.icons.EIMLogo

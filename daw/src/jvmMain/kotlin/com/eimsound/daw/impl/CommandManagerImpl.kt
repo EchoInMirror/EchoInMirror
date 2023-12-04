@@ -6,6 +6,8 @@ import com.eimsound.audioprocessor.NativeAudioPluginDescription
 import com.eimsound.audioprocessor.oneBarPPQ
 import com.eimsound.daw.ROOT_PATH
 import com.eimsound.daw.api.*
+import com.eimsound.daw.api.clips.ClipManager
+import com.eimsound.daw.api.clips.defaultMidiClipFactory
 import com.eimsound.daw.api.processor.DefaultTrackAudioProcessorWrapper
 import com.eimsound.daw.api.processor.TrackManager
 import com.eimsound.daw.commands.*

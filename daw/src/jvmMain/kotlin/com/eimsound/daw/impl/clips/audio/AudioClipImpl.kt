@@ -14,6 +14,7 @@ import com.eimsound.audioprocessor.*
 import com.eimsound.daw.api.*
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.audiosources.*
+import com.eimsound.daw.api.clips.*
 import com.eimsound.daw.components.*
 import com.eimsound.dsp.data.*
 import com.eimsound.dsp.data.midi.MidiNoteTimeRecorder

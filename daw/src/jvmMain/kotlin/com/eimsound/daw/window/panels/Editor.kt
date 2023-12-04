@@ -14,7 +14,7 @@ import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.eimsound.daw.api.EchoInMirror
-import com.eimsound.daw.api.ClipEditor
+import com.eimsound.daw.api.clips.ClipEditor
 import com.eimsound.daw.api.window.Panel
 import com.eimsound.daw.api.window.PanelDirection
 import com.eimsound.daw.components.Gap

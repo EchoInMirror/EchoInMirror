@@ -6,8 +6,8 @@ import androidx.compose.material.icons.filled.Tune
 import androidx.compose.ui.util.fastForEach
 import com.eimsound.dsp.data.midi.NoteMessage
 import com.eimsound.daw.api.EchoInMirror
-import com.eimsound.daw.api.MidiClip
-import com.eimsound.daw.api.TrackClip
+import com.eimsound.daw.api.clips.MidiClip
+import com.eimsound.daw.api.clips.TrackClip
 import com.eimsound.daw.commons.actions.ListDisabledAction
 import com.eimsound.daw.components.icons.PencilMinus
 import com.eimsound.daw.components.icons.PencilPlus

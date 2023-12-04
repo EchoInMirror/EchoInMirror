@@ -34,6 +34,7 @@ import com.eimsound.daw.actions.doClipsDisabledAction
 import com.eimsound.daw.actions.doClipsEditActionAction
 import com.eimsound.daw.actions.doClipsSplitAction
 import com.eimsound.daw.api.*
+import com.eimsound.daw.api.clips.*
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.components.LocalFloatingLayerProvider
 import com.eimsound.daw.components.utils.EditAction

@@ -15,7 +15,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.eimsound.daw.api.TrackClip
+import com.eimsound.daw.api.clips.TrackClip
 import com.eimsound.daw.components.NoteWidthSlider
 import com.eimsound.daw.components.TIMELINE_HEIGHT
 import com.eimsound.daw.components.utils.toOnSurfaceColor

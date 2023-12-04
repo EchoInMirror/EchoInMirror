@@ -9,6 +9,7 @@ import androidx.compose.ui.util.fastForEach
 import com.eimsound.audioprocessor.*
 import com.eimsound.daw.actions.GlobalEnvelopeEditorEventHandler
 import com.eimsound.daw.api.*
+import com.eimsound.daw.api.clips.*
 import com.eimsound.daw.api.controllers.DefaultParameterControllerFactory
 import com.eimsound.daw.api.controllers.ParameterController
 import com.eimsound.daw.api.processor.Track

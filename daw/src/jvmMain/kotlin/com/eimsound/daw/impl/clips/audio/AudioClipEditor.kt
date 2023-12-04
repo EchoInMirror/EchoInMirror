@@ -19,9 +19,9 @@ import com.eimsound.audioprocessor.oneBarPPQ
 import com.eimsound.audiosources.timeInSeconds
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.actions.GlobalEnvelopeEditorEventHandler
-import com.eimsound.daw.api.AudioClip
-import com.eimsound.daw.api.ClipEditor
-import com.eimsound.daw.api.TrackClip
+import com.eimsound.daw.api.clips.AudioClip
+import com.eimsound.daw.api.clips.ClipEditor
+import com.eimsound.daw.api.clips.TrackClip
 import com.eimsound.daw.components.*
 import com.eimsound.daw.dawutils.openMaxValue
 import com.eimsound.daw.impl.clips.EditorControls
