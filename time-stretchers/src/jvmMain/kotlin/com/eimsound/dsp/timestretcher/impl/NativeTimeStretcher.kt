@@ -18,8 +18,8 @@ private lateinit var destroy_time_stretcher: MethodHandle // (void*) -> void
 private lateinit var time_stretcher_process: MethodHandle // (void*, float**, float**, int) -> int
 private lateinit var time_stretcher_reset: MethodHandle // (void*) -> void
 private lateinit var time_stretcher_flush: MethodHandle // (void*, float**) -> int
-private lateinit var time_stretcher_set_speed_ratio: MethodHandle // (void*, double) -> void
-private lateinit var time_stretcher_set_semitones: MethodHandle // (void*, double) -> void
+private lateinit var time_stretcher_set_speed_ratio: MethodHandle // (void*, float) -> void
+private lateinit var time_stretcher_set_semitones: MethodHandle // (void*, float) -> void
 private lateinit var time_stretcher_get_max_frames_needed: MethodHandle // (void*) -> int
 private lateinit var time_stretcher_get_frames_needed: MethodHandle // (void*) -> int
 private lateinit var time_stretcher_is_initialized: MethodHandle // (void*) -> bool
@@ -78,14 +78,14 @@ private fun init(file: Path) {
         lib.lookup("time_stretcher_set_speed_ratio").orElseThrow(),
         FunctionDescriptor.ofVoid(
             ValueLayout.ADDRESS,
-            ValueLayout.JAVA_DOUBLE
+            ValueLayout.JAVA_FLOAT
         )
     )
     time_stretcher_set_semitones = linker.downcallHandle(
         lib.lookup("time_stretcher_set_semitones").orElseThrow(),
         FunctionDescriptor.ofVoid(
             ValueLayout.ADDRESS,
-            ValueLayout.JAVA_DOUBLE
+            ValueLayout.JAVA_FLOAT
         )
     )
     time_stretcher_get_max_frames_needed = linker.downcallHandle(
@@ -141,13 +141,13 @@ private class NativeTimeStretcher(name: String) : AbstractTimeStretcher(name) {
     private var inputBufferSize = 0
     private var isPlanar = false
 
-    override var speedRatio = 1.0
+    override var speedRatio = 1F
         set(value) {
             if (value == field) return
             time_stretcher_set_speed_ratio.invokeExact(pointer, value)
             field = value
         }
-    override var semitones = 0.0
+    override var semitones = 0F
         set(value) {
             if (value == field) return
             time_stretcher_set_semitones.invokeExact(pointer, value)
@@ -213,12 +213,17 @@ class NativeTimeStretcherFactory : TimeStretcherFactory {
     override val timeStretchers: List<String>
 
     init {
-        val file = Path(System.getProperty("eim.dsp.timestretchers.library.file"))
-        timeStretchers = if (file.exists()) {
-            init(file)
-            (get_all_time_stretchers.invokeExact() as MemoryAddress)
-                .getUtf8String(0L).split(",")
-        } else emptyList()
+        val str = System.getProperty("eim.dsp.timestretchers.library.file")
+        var list: List<String>? = null
+        if (str?.isNotEmpty() == true) {
+            val file = Path(str)
+            if (file.exists()) {
+                init(file)
+                list = (get_all_time_stretchers.invokeExact() as MemoryAddress)
+                    .getUtf8String(0L).split(",")
+            }
+        }
+        timeStretchers = list ?: emptyList()
     }
 
     override fun createTimeStretcher(name: String): TimeStretcher? =

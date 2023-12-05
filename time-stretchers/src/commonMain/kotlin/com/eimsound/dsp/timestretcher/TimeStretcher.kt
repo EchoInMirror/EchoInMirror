@@ -4,15 +4,15 @@ import kotlin.math.pow
 
 interface TimeStretcher : AutoCloseable {
     val name: String
-    var speedRatio: Double
-    var semitones: Double
+    var speedRatio: Float
+    var semitones: Float
     val maxFramesNeeded: Int
     val framesNeeded: Int
     val isInitialised: Boolean
     val numChannels: Int
     val samplesPerBlock: Int
 
-    val isDefaultParams get() = speedRatio == 1.0 && semitones == 0.0
+    val isDefaultParams get() = speedRatio == 1F && semitones == 0F
 
     fun initialise(sourceSampleRate: Float, samplesPerBlock: Int, numChannels: Int, isRealtime: Boolean = true)
     fun process(input: Array<FloatArray>, output: Array<FloatArray>, numSamples: Int): Int
@@ -35,4 +35,4 @@ abstract class AbstractTimeStretcher(override val name: String) : TimeStretcher 
     }
 }
 
-fun semitonesToRatio(semitones: Double) = 2.0.pow(semitones / 12.0)
+fun semitonesToRatio(semitones: Float) = 2F.pow(semitones / 12F)

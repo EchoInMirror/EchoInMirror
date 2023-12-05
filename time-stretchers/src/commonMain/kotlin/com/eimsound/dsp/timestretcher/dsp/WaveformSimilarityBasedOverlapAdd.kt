@@ -14,7 +14,7 @@ class WaveformSimilarityBasedOverlapAdd {
 
     private var sampleReq = 0
 
-    fun setSpeedRatio(value: Double) {
+    fun setSpeedRatio(value: Float) {
         val nominalSkip = value * (seekWindowLength - overlapLength)
         val intskip = (nominalSkip + 0.5).toInt()
         sampleReq = (max((intskip + overlapLength).toDouble(), seekWindowLength.toDouble()) + seekLength).toInt()

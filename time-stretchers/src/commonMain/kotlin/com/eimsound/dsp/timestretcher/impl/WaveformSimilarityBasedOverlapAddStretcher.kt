@@ -12,14 +12,14 @@ class WaveformSimilarityBasedOverlapAddStretcher : AbstractTimeStretcher("Wavefo
     private var channels = 0
     private var timeStretchers: Array<WaveformSimilarityBasedOverlapAdd> = emptyArray()
     private var resamplers: Array<Resampler> = emptyArray()
-    private var pitchRatio = 1.0
+    private var pitchRatio = 1F
     private var queues: Array<FIFOAudioBuffer> = emptyArray()
     private var tempBuffer = FloatArray(0)
     private var tempOutputBuffer = FloatArray(0)
 
-    override var speedRatio: Double = 1.0
+    override var speedRatio = 1F
         set(value) = timeStretchers.forEach { it.setSpeedRatio(value) }
-    override var semitones: Double = 0.0
+    override var semitones = 0F
         set(value) {
             field = value
             pitchRatio = semitonesToRatio(value)

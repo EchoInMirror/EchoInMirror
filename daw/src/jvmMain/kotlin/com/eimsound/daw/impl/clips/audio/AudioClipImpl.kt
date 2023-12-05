@@ -15,7 +15,7 @@ import com.eimsound.audiosources.*
 import com.eimsound.daw.api.*
 import com.eimsound.daw.api.clips.*
 import com.eimsound.daw.api.processor.Track
-import com.eimsound.daw.commons.json.asDouble
+import com.eimsound.daw.commons.json.asFloat
 import com.eimsound.daw.commons.json.asString
 import com.eimsound.daw.commons.json.putNotDefault
 import com.eimsound.daw.components.*
@@ -52,9 +52,9 @@ class AudioClipImpl(
         }
     override var timeStretcher: TimeStretcher? = null
     override val timeInSeconds: Float
-        get() = (target.timeInSeconds * (timeStretcher?.speedRatio ?: 1.0)).toFloat()
+        get() = target.timeInSeconds * (timeStretcher?.speedRatio ?: 1F)
     override val defaultDuration get() = EchoInMirror.currentPosition
-        .convertSamplesToPPQ((target.length * (timeStretcher?.speedRatio ?: 1.0)).roundToLong())
+        .convertSamplesToPPQ((target.length * (timeStretcher?.speedRatio ?: 1F)).roundToLong())
     override val maxDuration get() = defaultDuration
     private var _thumbnail by mutableStateOf<AudioThumbnail?>(null)
     override val thumbnail get() = _thumbnail ?: throw IllegalStateException("Thumbnail is not set")
@@ -85,7 +85,7 @@ class AudioClipImpl(
         timeStretcher?.apply {
             put("timeStretcher", name)
             putNotDefault("semitones", semitones)
-            if (speedRatio != 1.0) put("speedRatio", speedRatio)
+            if (speedRatio != 1F) put("speedRatio", speedRatio)
         }
         put("target", target.toJson())
         putNotDefault("volumeEnvelope", volumeEnvelope)
@@ -103,8 +103,8 @@ class AudioClipImpl(
             else {
                 this.timeStretcher?.close()
                 this.timeStretcher = timeStretcher
-                timeStretcher.semitones = json["semitones"]?.asDouble() ?: 0.0
-                timeStretcher.speedRatio = json["speedRatio"]?.asDouble() ?: 1.0
+                timeStretcher.semitones = json["semitones"]?.asFloat() ?: 0F
+                timeStretcher.speedRatio = json["speedRatio"]?.asFloat() ?: 1F
             }
         }
     }

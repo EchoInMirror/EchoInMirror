@@ -96,7 +96,7 @@ object Configuration : JsonSerializable {
         System.setProperty("eim.dsp.nativeaudioplugins.host", nativeHostPath.absolutePathString())
         System.setProperty("eim.dsp.nativeaudioplugins.host.x86", (if (Files.exists(x86Host)) x86Host else nativeHostPath).absolutePathString())
         System.setProperty("eim.dsp.nativeaudioplayer.file", nativeHostPath.absolutePathString())
-        System.setProperty("eim.dsp.timestretchers.library.file", "libEIMTimeStretchers.dylib")
+        System.setProperty("eim.dsp.timestretchers.library.file", "/Users/shirasawa/code/EIMTimeStretchers/cmake-build-debug/libEIMTimeStretchers.dylib")
         System.setProperty("eim.tempfiles.prefix", "EchoInMirror")
     }
 
