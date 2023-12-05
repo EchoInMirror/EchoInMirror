@@ -15,12 +15,11 @@ import kotlinx.serialization.json.*
 import org.apache.commons.lang3.SystemUtils
 import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.Paths
 import java.util.*
 import java.util.jar.Manifest
 import kotlin.io.path.*
 
-val WORKING_PATH: Path = Path.of(
+val WORKING_PATH = Path(
     if (SystemUtils.IS_OS_WINDOWS) System.getenv("AppData")
     else if(SystemUtils.IS_OS_MAC) System.getProperty("user.home") + "/Library/Application Support"
     else if(SystemUtils.IS_OS_LINUX) System.getenv("HOME") + "/.local"
@@ -78,17 +77,19 @@ object Configuration : JsonSerializable {
         } catch (ignored: Throwable) { }
         if (CONFIG_PATH.exists()) fromJsonFile(CONFIG_PATH)
         else save()
-        nativeHostPath = Paths.get(if (SystemUtils.IS_OS_MAC)
+        nativeHostPath = Path(if (SystemUtils.IS_OS_MAC)
             "/Users/shirasawa/code/EIMHost/cmake-build-debug/EIMHost_artefacts/Debug/EIMHost.app/Contents/MacOS/EIMHost"
             else "D:\\Cpp\\EIMPluginScanner\\build\\EIMHost_artefacts\\MinSizeRel\\EIMHost.exe")
         if (!Files.exists(nativeHostPath)) {
-            nativeHostPath = Paths.get(
-                if (SystemUtils.IS_OS_WINDOWS) "EIMHost-x64.exe"
+            nativeHostPath = Path(
+                if (SystemUtils.IS_OS_WINDOWS) "EIMHost.exe"
                 else if (SystemUtils.IS_OS_MAC) "EIMHost.app/Contents/MacOS/EIMHost"
                 else "EIMHost"
             )
         }
-        val x86Host = nativeHostPath.absolute().parent.resolve(nativeHostPath.name.replace("x64", "x86"))
+        val x86Host = if (SystemUtils.IS_OS_WINDOWS) {
+            nativeHostPath.absolute().parent.resolve("EIMHost-x86.exe")
+        } else nativeHostPath
 
         System.setProperty("com.microsoft.appcenter.crashes.uncaughtexception.autosend", "true")
         System.setProperty("com.microsoft.appcenter.preferences", ROOT_PATH.resolve("appCenterPreferences.json").absolutePathString())
@@ -96,8 +97,12 @@ object Configuration : JsonSerializable {
         System.setProperty("eim.dsp.nativeaudioplugins.host", nativeHostPath.absolutePathString())
         System.setProperty("eim.dsp.nativeaudioplugins.host.x86", (if (Files.exists(x86Host)) x86Host else nativeHostPath).absolutePathString())
         System.setProperty("eim.dsp.nativeaudioplayer.file", nativeHostPath.absolutePathString())
-        System.setProperty("eim.dsp.timestretchers.library.file", "/Users/shirasawa/code/EIMTimeStretchers/cmake-build-debug/libEIMTimeStretchers.dylib")
         System.setProperty("eim.tempfiles.prefix", "EchoInMirror")
+
+        val libraryExt = if (SystemUtils.IS_OS_WINDOWS) "dll" else if (SystemUtils.IS_OS_MAC) "dylib" else "so"
+        var timeStretcherLibraryFile = ROOT_PATH.resolve("/Users/shirasawa/code/EIMTimeStretchers/cmake-build-release/libEIMTimeStretchers.$libraryExt")
+        if (!timeStretcherLibraryFile.exists()) timeStretcherLibraryFile = Path("libEIMTimeStretchers.$libraryExt")
+        System.setProperty("eim.dsp.timestretchers.library.file", timeStretcherLibraryFile.absolutePathString())
     }
 
     fun save() { encodeJsonFile(CONFIG_PATH, true) }
@@ -130,7 +135,7 @@ object Configuration : JsonSerializable {
         json["isTimeDisplayInBeats"]?.asBoolean()?.let { isTimeDisplayInBeats = it }
         fileBrowserCustomRoots.clear()
         (json["fileBrowserCustomRoots"] as? JsonArray)?.let {
-            fileBrowserCustomRoots.addAll(it.fastMap { p -> Paths.get(p.asString()) })
+            fileBrowserCustomRoots.addAll(it.fastMap { p -> Path(p.asString()) })
         }
         json["fileBrowserShowSupFormatOnly"]?.asBoolean()?.let { fileBrowserShowSupFormatOnly = it }
         val id = json["userId"]?.asString()

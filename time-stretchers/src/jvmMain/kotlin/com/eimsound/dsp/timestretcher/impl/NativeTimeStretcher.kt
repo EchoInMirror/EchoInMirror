@@ -218,9 +218,13 @@ class NativeTimeStretcherFactory : TimeStretcherFactory {
         if (str?.isNotEmpty() == true) {
             val file = Path(str)
             if (file.exists()) {
-                init(file)
-                list = (get_all_time_stretchers.invokeExact() as MemoryAddress)
-                    .getUtf8String(0L).split(",")
+                try {
+                    init(file)
+                    list = (get_all_time_stretchers.invokeExact() as MemoryAddress)
+                        .getUtf8String(0L).split(",")
+                } catch (e: Throwable) {
+                    e.printStackTrace()
+                }
             }
         }
         timeStretchers = list ?: emptyList()
