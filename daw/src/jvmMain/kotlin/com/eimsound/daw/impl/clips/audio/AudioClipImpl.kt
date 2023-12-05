@@ -134,7 +134,8 @@ class AudioClipImpl(
         val bufferSize = buffers[0].size
         val tr = timeStretcher
         if (tr == null || tr.isDefaultParams) {
-            target.getSamples(position, bufferSize, buffers)
+            target.getSamples(playTime, bufferSize, buffers)
+            return
         } else if (pos.timeInSamples != lastPos + bufferSize) {
             position = (playTime * tr.speedRatio).roundToLong()
             fifo.clear()
@@ -189,7 +190,12 @@ class AudioClipFactoryImpl: AudioClipFactory {
     ) {
         val isDrawMinAndMax = noteWidth.value.value < LocalDensity.current.density
         Box {
-            Waveform(clip.clip.thumbnail, EchoInMirror.currentPosition, startPPQ, widthPPQ, clip.clip.volumeEnvelope, contentColor, isDrawMinAndMax)
+//            println(widthPPQ)
+            Waveform(
+                clip.clip.thumbnail, EchoInMirror.currentPosition, startPPQ, widthPPQ,
+                clip.clip.timeStretcher?.speedRatio ?: 1F,
+                clip.clip.volumeEnvelope, contentColor, isDrawMinAndMax
+            )
             remember(clip) {
                 EnvelopeEditor(clip.clip.volumeEnvelope, VOLUME_RANGE, 1F, true)
             }.Editor(startPPQ, contentColor, noteWidth, false, clipStartTime = clip.start, stroke = 0.5F, drawGradient = false)
