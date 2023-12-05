@@ -89,9 +89,10 @@ internal object AudioSettings : SettingTab {
                         { "$it 个采样" }
                     ) {
                         EchoInMirror.player?.close()
-                        EchoInMirror.currentPosition.setSampleRateAndBufferSize(
-                            EchoInMirror.currentPosition.sampleRate, it
-                        )
+//                        EchoInMirror.currentPosition.setSampleRateAndBufferSize(
+//                            EchoInMirror.currentPosition.sampleRate, it
+//                        )
+
                         reopenAudioDevice()
                     }
                 }
@@ -103,9 +104,8 @@ internal object AudioSettings : SettingTab {
                     ) {
                         sampleRate = it
                         EchoInMirror.player?.close()
-                        EchoInMirror.currentPosition.setSampleRateAndBufferSize(
-                            it, EchoInMirror.currentPosition.bufferSize
-                        )
+                        Configuration.preferredSampleRate = it
+
                         reopenAudioDevice()
                     }
                 }
@@ -132,7 +132,7 @@ internal object AudioSettings : SettingTab {
             Latency("输入延迟", EchoInMirror.player?.inputLatency ?: 0)
             Latency("输出延迟", EchoInMirror.player?.outputLatency ?: 0)
             Gap(8)
-            EchoInMirror.player?.controls()
+            EchoInMirror.player?.Controls()
         }
     }
 }
