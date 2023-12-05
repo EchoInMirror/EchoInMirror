@@ -1,6 +1,5 @@
 package com.eimsound.daw.components.app
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -16,22 +15,25 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.eimsound.audioprocessor.data.QUANTIFICATION_UNITS
+import com.eimsound.audioprocessor.data.getEditUnit
 import com.eimsound.daw.Configuration
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.EditorTool
 import com.eimsound.daw.components.*
 import com.eimsound.daw.components.IconButton
+import com.eimsound.daw.components.icons.Magnet
 import com.eimsound.daw.components.icons.MetronomeTick
 import com.eimsound.daw.dawutils.EDITOR_TOOL_ICONS
 
 private val TIME_VALUES = listOf("时间", "拍")
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun CurrentTime() {
-    Selector(TIME_VALUES, TIME_VALUES[if (Configuration.isTimeDisplayInBeats) 1 else 0], content = {
+    DropdownSelector(TIME_VALUES, TIME_VALUES[if (Configuration.isTimeDisplayInBeats) 1 else 0], content = {
         val a: String
         val b: String
         val c: String
@@ -51,6 +53,7 @@ private fun CurrentTime() {
         CustomOutlinedTextField(
             "${a}:${b}:${c}", { },
             Modifier.width(110.dp),
+            maxLines = 1,
             textStyle = MaterialTheme.typography.labelLarge.copy(LocalContentColor.current),
             suffix = {
                 Icon(Icons.Filled.ExpandMore, "Expand",
@@ -69,27 +72,40 @@ private fun CurrentTime() {
     }
 }
 
-//@Composable
-//private fun Quantification() {
-//    FloatingLayer({ _, close ->
-//        Surface(Modifier.width(IntrinsicSize.Min), MaterialTheme.shapes.extraSmall,
-//            shadowElevation = 6.dp, tonalElevation = 1.dp) {
-//            Column {
-//                quantificationUnits.forEach {
-//                    if (it.hasDividerAbove) Divider()
-//                    MenuItem({
-//                        close()
-//                        EchoInMirror.quantification = it
-//                    }, EchoInMirror.quantification == it) {
-//                        Text(it.name, fontWeight = if (it.isSpecial) FontWeight.Bold else FontWeight.Normal)
-//                    }
-//                }
-//            }
-//        }
-//    }) {
-//        AppBarItem(EchoInMirror.quantification.name, "吸附")
-//    }
-//}
+@Composable
+private fun Quantification() {
+    DropdownSelector(
+        QUANTIFICATION_UNITS, EchoInMirror.quantification,
+        isSelected = { it.getEditUnit(EchoInMirror.currentPosition) == EchoInMirror.editUnit },
+        itemContent = {
+            Text(it.name, fontWeight = if (it.isSpecial) FontWeight.Bold else null)
+        },
+        content = {
+            CustomOutlinedTextField(
+                EchoInMirror.quantification.name, { },
+                Modifier.width(100.dp),
+                readOnly = true,
+                maxLines = 1,
+                textStyle = MaterialTheme.typography.labelLarge.copy(LocalContentColor.current),
+                prefix = {
+                    Icon(Magnet, "Quantification", modifier = Modifier.size(15.dp).offset((-2).dp, 1.dp))
+                },
+                suffix = {
+                    Icon(Icons.Filled.ExpandMore, "Expand",
+                        Modifier.size(20.dp).pointerHoverIcon(PointerIcon.Hand).clip(CircleShape).clickable { }
+                    )
+                },
+                colors = TextFieldDefaults.colors(
+                    unfocusedIndicatorColor = MaterialTheme.colorScheme.outlineVariant,
+                    focusedIndicatorColor = MaterialTheme.colorScheme.outlineVariant,
+                ),
+                paddingValues = TextFieldDefaults.contentPaddingWithLabel(8.dp, 4.dp, 3.dp, 4.dp)
+            )
+        }
+    ) {
+        EchoInMirror.quantification = it
+    }
+}
 
 //@Composable
 //fun RootNote() {
@@ -142,6 +158,7 @@ private fun BPM() {
             EchoInMirror.currentPosition.bpm = it.toDoubleOrNull()?.coerceIn(1.0, 600.0) ?: return@CustomOutlinedTextField
         },
         Modifier.width(100.dp),
+        maxLines = 1,
         textStyle = MaterialTheme.typography.labelLarge.copy(LocalContentColor.current),
         prefix = {
             Icon(MetronomeTick, "BPM", modifier = Modifier.size(18.dp).offset())
@@ -219,7 +236,9 @@ private val CenterContent: @Composable RowScope.() -> Unit = {
 }
 
 private val RightContent: @Composable RowScope.() -> Unit = {
+    Gap(16)
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Quantification()
         CurrentTime()
         BPM()
     }
@@ -232,9 +251,9 @@ internal fun EimAppBar() {
     Surface(modifier = Modifier.fillMaxWidth().height(APP_BAR_HEIGHT), shadowElevation = 2.dp, tonalElevation = 2.dp) {
         Layout(
             {
-                Row(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically, content = LeftContent)
-                Row(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically, content = CenterContent)
-                Row(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically, content = RightContent)
+                Row(verticalAlignment = Alignment.CenterVertically, content = LeftContent)
+                Row(verticalAlignment = Alignment.CenterVertically, content = CenterContent)
+                Row(verticalAlignment = Alignment.CenterVertically, content = RightContent)
             },
             Modifier.padding(horizontal = 10.dp)
         ) { (left, center, right), constraints ->

@@ -1,13 +1,18 @@
 package com.eimsound.audioprocessor.data
 
 import com.eimsound.audioprocessor.CurrentPosition
+import com.eimsound.daw.commons.DividerAbove
 import kotlin.math.roundToInt
 
-data class Quantification(val name: String, val value: Int = 1, val isSpecial: Boolean = false,
-                          val timesSigNumerator: Boolean = false, val timesSigDenominator: Boolean = false,
-                          val hasDividerAbove: Boolean = false)
+data class Quantification(
+    val name: String, val value: Int = 1, val isSpecial: Boolean = false,
+    val timesSigNumerator: Boolean = false, val timesSigDenominator: Boolean = false,
+    override val hasDividerAbove: Boolean = false
+): DividerAbove {
+    override fun toString() = name
+}
 
-val quantificationUnits = arrayOf(
+val QUANTIFICATION_UNITS = listOf(
     Quantification("小节", isSpecial = true, timesSigNumerator = true),
     Quantification("节拍", isSpecial = true, hasDividerAbove = true),
     Quantification("1/2 拍", value = 2),
@@ -21,7 +26,7 @@ val quantificationUnits = arrayOf(
     Quantification("1/6 步", value = 6 * 16, timesSigDenominator = true),
     Quantification("无", value = 0, isSpecial = true, hasDividerAbove = true)
 )
-val defaultQuantification = quantificationUnits[4]
+val defaultQuantification = QUANTIFICATION_UNITS[4]
 
 fun Quantification.getEditUnit(ppq: Int, timeSigDenominator: Int, timeSigNumerator: Int): Int {
     if (value == 0) return 1

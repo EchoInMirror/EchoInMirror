@@ -64,7 +64,7 @@ private fun FloatingLayerProvider.openParameterSelector(processor: TrackAudioPro
                     mutableStateOf(if (lastModified == null) "" else "${lastModified.name} (${lastModified.id})")
                 }
                 tmpSelectedParameter = selectedParameter
-                Selector(remember(processor.handledParameters) {
+                DropdownSelector(remember(processor.handledParameters) {
                     val set = processor.handledParameters.mapTo(mutableSetOf()) { it.parameter }
                     processor.processor.parameters.mapNotNull { if (it in set) null else "${it.name} (${it.id})" }
                 }, selectedParameter, Modifier.weight(1F)) { selectedParameter = it }

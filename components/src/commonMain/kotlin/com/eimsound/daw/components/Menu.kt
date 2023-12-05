@@ -24,6 +24,8 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.eimsound.daw.commons.DividerAbove
+import com.eimsound.daw.commons.displayName
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -109,19 +111,36 @@ fun Menu(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
+
 @Composable
-fun Selector(
-    items: List<String>,
-    selected: String,
+fun <T : Any> DropdownSelector(
+    items: Collection<T>,
+    selected: T?,
     boxModifier: Modifier = Modifier,
     enabled: Boolean = true,
-    matcher: PointerMatcher = PointerMatcher.Primary,
+    isSelected: ((T) -> Boolean)? = null,
+    itemContent: (@Composable (T) -> Unit)? = null,
     content: (@Composable () -> Unit)? = null,
-    onSelected: (String) -> Unit,
+    onSelected: (T) -> Unit,
+) {
+    @OptIn(ExperimentalFoundationApi::class)
+    DropdownSelector(items, selected, boxModifier, enabled, PointerMatcher.Primary, isSelected, itemContent, content, onSelected)
+}
+
+@Composable
+fun <T : Any> DropdownSelector(
+    items: Collection<T>,
+    selected: T?,
+    boxModifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    @OptIn(ExperimentalFoundationApi::class) matcher: PointerMatcher = PointerMatcher.Primary,
+    isSelected: ((T) -> Boolean)? = null,
+    itemContent: (@Composable (T) -> Unit)? = null,
+    content: (@Composable () -> Unit)? = null,
+    onSelected: (T) -> Unit,
 ) {
     val filter = remember { mutableStateOf<String?>(null) }
-    FloatingLayer({ size, close ->
+    @OptIn(ExperimentalFoundationApi::class) FloatingLayer({ size, close ->
         Surface(
             Modifier.width(size.width).heightIn(max = 300.dp), MaterialTheme.shapes.extraSmall,
             shadowElevation = 5.dp, tonalElevation = 5.dp
@@ -130,15 +149,17 @@ fun Selector(
                 val state = rememberLazyListState()
                 val currentValue = filter.value
                 val items0 = remember(items, currentValue) { (if (currentValue == null) items else items
-                    .filter { it.contains(currentValue, true) }).distinct() }
+                    .filter { it.displayName.contains(currentValue, true) }).distinct() }
                 LazyColumn(state = state) {
                     items(items0) {
+                        if ((it as? DividerAbove)?.hasDividerAbove == true) Divider()
                         MenuItem({
                             close()
                             filter.value = null
                             onSelected(it)
-                        }, selected == it, modifier = Modifier.fillMaxWidth()) {
-                            Text(it)
+                        }, if (isSelected == null) it == selected else isSelected(it), modifier = Modifier.fillMaxWidth()) {
+                            if (itemContent == null) Text(it.displayName)
+                            else itemContent(it)
                         }
                     }
                 }
@@ -146,10 +167,11 @@ fun Selector(
             }
         }
     }, modifier = boxModifier, enabled = enabled, matcher = matcher, pass = PointerEventPass.Initial) {
-        if (content == null) CustomTextField(filter.value ?: selected, {
-            filter.value = it.ifEmpty { null }
-        }, Modifier.fillMaxWidth().pointerHoverIcon(PointerIcon.Hand))
-        else content()
+        if (content == null) CustomTextField(
+            filter.value ?: selected?.displayName ?: "",
+            { filter.value = it.ifEmpty { null } },
+            Modifier.fillMaxWidth().pointerHoverIcon(PointerIcon.Hand)
+        ) else content()
     }
 }
 

@@ -190,7 +190,6 @@ class AudioClipFactoryImpl: AudioClipFactory {
     ) {
         val isDrawMinAndMax = noteWidth.value.value < LocalDensity.current.density
         Box {
-//            println(widthPPQ)
             Waveform(
                 clip.clip.thumbnail, EchoInMirror.currentPosition, startPPQ, widthPPQ,
                 clip.clip.timeStretcher?.speedRatio ?: 1F,
