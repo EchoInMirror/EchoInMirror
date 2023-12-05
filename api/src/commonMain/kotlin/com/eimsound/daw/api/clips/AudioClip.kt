@@ -14,7 +14,7 @@ interface AudioClip : Clip, AutoCloseable {
     var target: AudioSource
     val timeInSeconds: Float
     @Transient
-    val timeStretcher: TimeStretcher
+    val timeStretcher: TimeStretcher?
     @Transient
     val thumbnail: AudioThumbnail
     val volumeEnvelope: EnvelopePointList

@@ -3,6 +3,7 @@ package com.eimsound.dsp.timestretcher
 import kotlin.math.pow
 
 interface TimeStretcher : AutoCloseable {
+    val name: String
     var speedRatio: Double
     var semitones: Double
     val maxFramesNeeded: Int
@@ -11,13 +12,15 @@ interface TimeStretcher : AutoCloseable {
     val numChannels: Int
     val samplesPerBlock: Int
 
+    val isDefaultParams get() = speedRatio == 1.0 && semitones == 0.0
+
     fun initialise(sourceSampleRate: Float, samplesPerBlock: Int, numChannels: Int, isRealtime: Boolean = true)
-    fun process(input: Array<FloatArray>, output: Array<FloatArray>): Int
+    fun process(input: Array<FloatArray>, output: Array<FloatArray>, numSamples: Int): Int
     fun flush(output: Array<FloatArray>): Int
     fun reset()
 }
 
-abstract class AbstractTimeStretcher : TimeStretcher {
+abstract class AbstractTimeStretcher(override val name: String) : TimeStretcher {
     final override var isInitialised = false
         private set
     final override var numChannels = 0

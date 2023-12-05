@@ -15,11 +15,15 @@ import com.eimsound.audiosources.*
 import com.eimsound.daw.api.*
 import com.eimsound.daw.api.clips.*
 import com.eimsound.daw.api.processor.Track
+import com.eimsound.daw.commons.json.asDouble
+import com.eimsound.daw.commons.json.asString
+import com.eimsound.daw.commons.json.putNotDefault
 import com.eimsound.daw.components.*
 import com.eimsound.dsp.data.*
 import com.eimsound.dsp.data.midi.MidiNoteTimeRecorder
 import com.eimsound.dsp.detectBPM
-import com.eimsound.dsp.timestretcher.impl.SoundTouchTimeStretcher
+import com.eimsound.dsp.timestretcher.TimeStretcher
+import com.eimsound.dsp.timestretcher.TimeStretcherManager
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
 import kotlinx.serialization.json.JsonElement
@@ -28,7 +32,6 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import java.nio.file.Path
 import kotlin.io.path.name
-import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlin.math.roundToLong
 
@@ -36,7 +39,7 @@ class AudioClipImpl(
     factory: ClipFactory<AudioClip>, target: AudioSource? = null
 ): AbstractClip<AudioClip>(factory), AudioClip {
     private var _target: AudioSource? = null
-    internal lateinit var fifo: AudioBufferQueue
+    private lateinit var fifo: AudioBufferQueue
     override var target: AudioSource
         get() = _target ?: throw IllegalStateException("Target is not set")
         set(value) {
@@ -44,13 +47,14 @@ class AudioClipImpl(
             close()
             _target = value
             _thumbnail = AudioThumbnail(value)
-            fifo = AudioBufferQueue(value.channels, 2048)
-            timeStretcher.initialise(target.sampleRate, EchoInMirror.currentPosition.bufferSize, target.channels)
+            fifo = AudioBufferQueue(value.channels, 20480)
+            timeStretcher?.initialise(target.sampleRate, EchoInMirror.currentPosition.bufferSize, target.channels)
         }
-    override val timeStretcher = SoundTouchTimeStretcher()
+    override var timeStretcher: TimeStretcher? = null
     override val timeInSeconds: Float
-        get() = (target.timeInSeconds * timeStretcher.speedRatio).toFloat()
-    override val defaultDuration get() = EchoInMirror.currentPosition.convertSamplesToPPQ((target.length * timeStretcher.speedRatio).roundToLong())
+        get() = (target.timeInSeconds * (timeStretcher?.speedRatio ?: 1.0)).toFloat()
+    override val defaultDuration get() = EchoInMirror.currentPosition
+        .convertSamplesToPPQ((target.length * (timeStretcher?.speedRatio ?: 1.0)).roundToLong())
     override val maxDuration get() = defaultDuration
     private var _thumbnail by mutableStateOf<AudioThumbnail?>(null)
     override val thumbnail get() = _thumbnail ?: throw IllegalStateException("Thumbnail is not set")
@@ -69,11 +73,20 @@ class AudioClipImpl(
         if (target != null) this.target = target
     }
 
-    override fun close() { _target?.close() }
+    override fun close() {
+        _target?.close()
+        timeStretcher?.close()
+        timeStretcher = null
+    }
 
     override fun toJson() = buildJsonObject {
         put("id", id)
         put("factory", factory.name)
+        timeStretcher?.apply {
+            put("timeStretcher", name)
+            putNotDefault("semitones", semitones)
+            if (speedRatio != 1.0) put("speedRatio", speedRatio)
+        }
         put("target", target.toJson())
         putNotDefault("volumeEnvelope", volumeEnvelope)
     }
@@ -83,35 +96,56 @@ class AudioClipImpl(
         json as JsonObject
         json["target"]?.let { target = AudioSourceManager.instance.createAudioSource(it as JsonObject) }
         json["volumeEnvelope"]?.let { volumeEnvelope.fromJson(it) }
+        json["timeStretcher"]?.let {
+            val name = it.asString()
+            val timeStretcher = TimeStretcherManager.createTimeStretcher(name)
+            if (timeStretcher == null) logger.warn { "Time stretcher \"$name\" not found" }
+            else {
+                this.timeStretcher?.close()
+                this.timeStretcher = timeStretcher
+                timeStretcher.semitones = json["semitones"]?.asDouble() ?: 0.0
+                timeStretcher.speedRatio = json["speedRatio"]?.asDouble() ?: 1.0
+            }
+        }
     }
 
-    internal var readySamplesStart = 0
-    internal var readySamplesEnd = 0
     private var tempInBuffers: Array<FloatArray> = emptyArray()
     private var tempOutBuffers: Array<FloatArray> = emptyArray()
-    internal var position = 0L
-    internal fun fillNextBlock(bufferSize: Int, channels: Int): Int {
-        val needed = timeStretcher.framesNeeded
+    private var position = 0L
+    private var lastPos = -1L
+    private fun fillNextBlock(channels: Int) {
+        val tr = timeStretcher ?: return
+        val needed = tr.framesNeeded
 
         val numRead = if (needed >= 0) {
             if (tempInBuffers.size != channels || tempInBuffers[0].size < needed)
                 tempInBuffers = Array(target.channels) { FloatArray(needed) }
-            tempInBuffers.clear()
-            if (needed > 0) position += target.getSamples(position, needed, tempInBuffers)
-            if (tempOutBuffers.size != channels || tempOutBuffers[0].size < bufferSize)
-                tempOutBuffers = Array(target.channels) { FloatArray(bufferSize) }
+            val read = target.getSamples(position, needed, tempInBuffers)
+            if (read > 0) position += read
 
-            timeStretcher.process(tempInBuffers, tempOutBuffers)
+            tr.process(tempInBuffers, tempOutBuffers, needed)
         } else {
-            timeStretcher.flush(tempOutBuffers)
+            tr.flush(tempOutBuffers)
         }
 
         if (numRead > 0) fifo.push(tempOutBuffers, 0, numRead)
-
-        readySamplesStart = 0
-        readySamplesEnd = numRead
-
-        return numRead
+    }
+    internal fun processBlock(pos: CurrentPosition, playTime: Long, buffers: Array<FloatArray>) {
+        val bufferSize = buffers[0].size
+        val tr = timeStretcher
+        if (tr == null || tr.isDefaultParams) {
+            target.getSamples(position, bufferSize, buffers)
+        } else if (pos.timeInSamples != lastPos + bufferSize) {
+            position = (playTime * tr.speedRatio).roundToLong()
+            fifo.clear()
+            tr.reset()
+        }
+        lastPos = pos.timeInSamples
+        val channels = buffers.size
+        if (tempOutBuffers.size != channels || tempOutBuffers[0].size < bufferSize)
+            tempOutBuffers = Array(channels) { FloatArray(bufferSize) }
+        while (fifo.available < bufferSize) fillNextBlock(channels)
+        fifo.pop(buffers)
     }
 }
 
@@ -135,28 +169,15 @@ class AudioClipFactoryImpl: AudioClipFactory {
         clip: TrackClip<AudioClip>, buffers: Array<FloatArray>, position: CurrentPosition,
         midiBuffer: ArrayList<Int>, noteRecorder: MidiNoteTimeRecorder
     ) {
-        runBlocking(Dispatchers.Default + CoroutineName("AudioClipFactoryImpl.processBlock")) {
-            val c = clip.clip as? AudioClipImpl ?: return@runBlocking
-            var start = 0
-            var numSamples = position.bufferSize
-            val clipTime = clip.time - clip.start
-            c.position = ((position.timeInSamples - position.convertPPQToSamples(clipTime)) * c.timeStretcher.speedRatio).roundToLong()
-            while (numSamples > 0) {
-                val numReady = min(numSamples, c.readySamplesEnd - c.readySamplesStart)
-
-                if (numReady > 0) {
-                    c.fifo.pop(buffers, start, numReady)
-
-                    c.readySamplesStart += numReady
-                    start += numReady
-                    numSamples -= numReady
-                } else c.fillNextBlock(numSamples, buffers.size)
-            }
-            val volume = clip.clip.volumeEnvelope.getValue(position.timeInPPQ - clipTime, 1F)
-            repeat(buffers.size) { i ->
-                repeat(buffers[i].size) { j ->
-                    buffers[i][j] *= volume
-                }
+        val c = clip.clip as? AudioClipImpl ?: return
+        val clipTime = clip.time - clip.start
+        val playTime = position.timeInSamples - position.convertPPQToSamples(clipTime)
+        if (playTime < 0) return
+        c.processBlock(position, playTime, buffers)
+        val volume = clip.clip.volumeEnvelope.getValue(position.timeInPPQ - clipTime, 1F)
+        repeat(buffers.size) { i ->
+            repeat(buffers[i].size) { j ->
+                buffers[i][j] *= volume
             }
         }
     }

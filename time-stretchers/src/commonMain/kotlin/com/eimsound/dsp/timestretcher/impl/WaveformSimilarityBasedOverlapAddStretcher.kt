@@ -8,7 +8,7 @@ import com.eimsound.dsp.timestretcher.semitonesToRatio
 import kotlin.math.ceil
 
 @Suppress("unused")
-class WaveformSimilarityBasedOverlapAddStretcher : AbstractTimeStretcher() {
+class WaveformSimilarityBasedOverlapAddStretcher : AbstractTimeStretcher("WaveformSimilarityBasedOverlapAddStretcher") {
     private var channels = 0
     private var timeStretchers: Array<WaveformSimilarityBasedOverlapAdd> = emptyArray()
     private var resamplers: Array<Resampler> = emptyArray()
@@ -28,7 +28,6 @@ class WaveformSimilarityBasedOverlapAddStretcher : AbstractTimeStretcher() {
     override val maxFramesNeeded = 40960
     override val framesNeeded get() = timeStretchers[0].run {
         if (inputBufferSize != tempBuffer.size) tempBuffer = FloatArray(inputBufferSize)
-//        var outputSize = samplesPerBlock
         if (outputBufferSize != tempOutputBuffer.size) tempOutputBuffer = FloatArray(outputBufferSize)
         inputBufferSize * ceil(samplesPerBlock / (outputBufferSize / pitchRatio)).toInt()
     }
@@ -44,7 +43,7 @@ class WaveformSimilarityBasedOverlapAddStretcher : AbstractTimeStretcher() {
         timeStretchers.forEach { it.applyNewParameters(sourceSampleRate) }
     }
 
-    override fun process(input: Array<FloatArray>, output: Array<FloatArray>): Int {
+    override fun process(input: Array<FloatArray>, output: Array<FloatArray>, numSamples: Int): Int {
 //        val framesNeeded = framesNeeded
 
         val timeStretcher = timeStretchers[0]

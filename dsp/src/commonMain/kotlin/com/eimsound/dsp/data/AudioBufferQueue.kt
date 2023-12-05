@@ -58,4 +58,9 @@ class AudioBufferQueue(
         if (popPos >= cacheSize) popPos -= cacheSize
         else if (popPos < 0) popPos += cacheSize
     }
+
+    fun clear() {
+        pushPos = 0
+        popPos = 0
+    }
 }
