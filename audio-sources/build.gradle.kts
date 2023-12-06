@@ -3,10 +3,6 @@ plugins {
     kotlin("plugin.serialization") version "1.9.20"
 }
 
-repositories {
-    maven("https://mvn.0110.be/releases")
-}
-
 kotlin {
     val jvmVersion = extra["jvm.version"] as String
     jvmToolchain(jvmVersion.toInt())

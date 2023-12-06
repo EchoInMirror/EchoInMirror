@@ -130,6 +130,7 @@ fun ApplicationScope.MainWindow() {
         false
     }) {
         InitEditorTools()
+        initWindowDecoration()
         if (SystemUtils.IS_OS_MAC) {
             window.rootPane.putClientProperty("apple.awt.fullWindowContent", true)
             window.rootPane.putClientProperty("apple.awt.transparentTitleBar", true)

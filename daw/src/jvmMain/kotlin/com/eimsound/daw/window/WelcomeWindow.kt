@@ -14,10 +14,7 @@ import com.eimsound.daw.VERSION
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.components.*
 import com.eimsound.daw.components.utils.clickableWithIcon
-import com.eimsound.daw.dawutils.Logo
-import com.eimsound.daw.dawutils.TIME_FORMATTER
-import com.eimsound.daw.dawutils.TIME_PRETTIER
-import com.eimsound.daw.dawutils.randomColor
+import com.eimsound.daw.dawutils.*
 import com.eimsound.daw.recentProjects
 import com.eimsound.daw.utils.*
 import java.awt.Dimension
@@ -108,6 +105,7 @@ val welcomeWindowTabs = mutableStateListOf<Tab>(Projects())
 @Composable
 fun ApplicationScope.ProjectWindow() {
     Window(::exitApplication, icon = Logo, title = "Echo In Mirror (v$VERSION)") {
+        initWindowDecoration()
         window.minimumSize = Dimension(860, 700)
         val floatingLayerProvider = remember { FloatingLayerProvider() }
         CompositionLocalProvider(LocalFloatingLayerProvider.provides(floatingLayerProvider)) {

@@ -4,10 +4,6 @@ plugins {
     id("org.jetbrains.compose")
 }
 
-repositories {
-    maven("https://mvn.0110.be/releases")
-}
-
 kotlin {
     val jvmVersion = extra["jvm.version"] as String
     jvmToolchain(jvmVersion.toInt())
