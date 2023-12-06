@@ -96,5 +96,12 @@ class EchoInMirrorImpl : IEchoInMirror {
         settingsTabsLoader.reload()
     }
 
+    override fun close() {
+        player?.close()
+        bus?.close()
+        player = null
+        bus = null
+    }
+
     override val editUnit get() = quantification.getEditUnit(currentPosition)
 }
