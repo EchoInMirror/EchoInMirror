@@ -18,7 +18,9 @@ import com.eimsound.daw.components.Filled
 import com.eimsound.daw.components.FloatingLayer
 import com.eimsound.daw.components.MenuItem
 import com.eimsound.daw.components.icons.*
+import com.eimsound.daw.components.utils.absoluteError
 import com.eimsound.daw.components.utils.clickableWithIcon
+import com.eimsound.daw.components.utils.warning
 import com.eimsound.daw.dawutils.Border
 import com.eimsound.daw.dawutils.border
 import com.eimsound.daw.dawutils.formatDuration
@@ -103,6 +105,22 @@ private fun ProjectName() {
 }
 
 @Composable
+private fun AudioDevice() {
+    val player = EchoInMirror.player
+    val sampleRateEqual = player == null || player.sampleRate == EchoInMirror.currentPosition.sampleRate
+    StatusBarItem(
+        "AudioDevice",
+        if (player == null) Icons.Default.HeadsetOff else Icons.Default.Headset,
+        if (player == null) MaterialTheme.colorScheme.absoluteError
+            else if (sampleRateEqual) null else MaterialTheme.colorScheme.warning,
+        onClick = { EchoInMirror.windowManager.dialogs[SettingsWindow] = true }
+    ) {
+        if (player != null) Text((if (sampleRateEqual) "" else "采样率不匹配: ") + player.name,
+            color = if (sampleRateEqual) Color.Unspecified else MaterialTheme.colorScheme.warning)
+    }
+}
+
+@Composable
 internal fun StatusBar() {
     Surface(tonalElevation = 4.dp) {
         val border = Border(0.6.dp, MaterialTheme.colorScheme.onSurfaceVariant.copy(0.2F))
@@ -118,6 +136,7 @@ internal fun StatusBar() {
                         Text(formatDuration(EchoInMirror.bus!!.project.timeCost.toLong()))
                     }
                     Filled()
+                    AudioDevice()
                     BusChannelType()
                     StatusBarItem("CpuLoad", Icons.Filled.Memory) {
                         Text(((EchoInMirror.player?.cpuLoad ?: 0F) * 100).roundToInt().toString() + "%")

@@ -27,6 +27,7 @@ import com.eimsound.daw.components.*
 import com.eimsound.daw.components.IconButton
 import com.eimsound.daw.components.icons.Magnet
 import com.eimsound.daw.components.icons.MetronomeTick
+import com.eimsound.daw.components.utils.absoluteError
 import com.eimsound.daw.dawutils.EDITOR_TOOL_ICONS
 
 private val TIME_VALUES = listOf("时间", "拍")
@@ -213,7 +214,7 @@ private val CenterContent: @Composable RowScope.() -> Unit = {
             contentDescription = "Stop"
         )
     }
-    IconButton({ }, colors = IconButtonDefaults.iconButtonColors(contentColor = MaterialTheme.colorScheme.error)) {
+    IconButton({ }, colors = IconButtonDefaults.iconButtonColors(contentColor = MaterialTheme.colorScheme.absoluteError)) {
         Icon(
             imageVector = Icons.Filled.FiberManualRecord,
             contentDescription = "Record"

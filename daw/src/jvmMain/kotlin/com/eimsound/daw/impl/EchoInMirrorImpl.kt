@@ -22,13 +22,16 @@ import com.eimsound.daw.plugin.EIMPluginManager
 import com.eimsound.daw.commons.ExperimentalEIMApi
 import com.eimsound.daw.window.dialogs.settings.settingsTabsLoader
 import com.eimsound.audiosources.AudioSourceManager
+import com.eimsound.daw.utils.observableMutableStateOf
 import com.microsoft.appcenter.crashes.Crashes
 import kotlinx.coroutines.runBlocking
 
 class EchoInMirrorImpl : IEchoInMirror {
     override val currentPosition = CurrentPositionImpl(isMainPosition = true)
     override var bus: Bus? by mutableStateOf(null)
-    override var player: AudioPlayer? by mutableStateOf(null)
+    override var player: AudioPlayer? by observableMutableStateOf(null) {
+        it?.onClose { player = null }
+    }
 //    var player: AudioPlayer = JvmAudioPlayer(currentPosition, bus)
 
     override val commandManager = CommandManagerImpl()
