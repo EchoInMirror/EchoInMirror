@@ -128,7 +128,9 @@ private fun init(file: Path) {
     )
 }
 
-private class NativeTimeStretcher(name: String) : AbstractTimeStretcher(name) {
+private class NativeTimeStretcher(
+    name: String, speedRatio: Float = 1F, semitones: Float = 0F
+) : AbstractTimeStretcher(name) {
     private val cleaner = Cleaner.create().apply { register(this, ::close) }
     private val session = MemorySession.openShared(cleaner)
 
@@ -141,13 +143,13 @@ private class NativeTimeStretcher(name: String) : AbstractTimeStretcher(name) {
     private var inputBufferSize = 0
     private var isPlanar = false
 
-    override var speedRatio = 1F
+    override var speedRatio = speedRatio
         set(value) {
             if (value == field) return
             time_stretcher_set_speed_ratio.invokeExact(pointer, value)
             field = value
         }
-    override var semitones = 0F
+    override var semitones = semitones
         set(value) {
             if (value == field) return
             time_stretcher_set_semitones.invokeExact(pointer, value)
@@ -164,6 +166,8 @@ private class NativeTimeStretcher(name: String) : AbstractTimeStretcher(name) {
         outputBuffersPtr = session.allocateArray(ValueLayout.JAVA_FLOAT, samplesPerBlock.toLong() * numChannels)
             .apply { outputBuffers = asByteBuffer().order(ByteOrder.nativeOrder()).asFloatBuffer() }
         isPlanar = time_stretcher_is_planar.invokeExact(pointer) as Boolean
+        if (speedRatio != 1F) time_stretcher_set_speed_ratio.invokeExact(pointer, speedRatio)
+        if (semitones != 0F) time_stretcher_set_semitones.invokeExact(pointer, semitones)
     }
 
     override fun process(input: Array<FloatArray>, output: Array<FloatArray>, numSamples: Int): Int {
@@ -200,6 +204,9 @@ private class NativeTimeStretcher(name: String) : AbstractTimeStretcher(name) {
         session.close()
     }
 
+    override fun copy() = NativeTimeStretcher(name, speedRatio, semitones).also {
+        if (isInitialised) it.initialise(sourceSampleRate, samplesPerBlock, numChannels, isRealtime)
+    }
     private fun readOutput(output: Array<FloatArray>, numSamples: Int) {
         outputBuffers.rewind()
         if (isPlanar) repeat(numChannels) { i -> outputBuffers.get(output[i], 0, numSamples) }

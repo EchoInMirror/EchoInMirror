@@ -17,6 +17,8 @@ class WaveformSimilarityBasedOverlapAddStretcher : AbstractTimeStretcher("Wavefo
     private var tempBuffer = FloatArray(0)
     private var tempOutputBuffer = FloatArray(0)
 
+    init { throw Exception("Not implemented yet") }
+
     override var speedRatio = 1F
         set(value) = timeStretchers.forEach { it.setSpeedRatio(value) }
     override var semitones = 0F
@@ -74,5 +76,10 @@ class WaveformSimilarityBasedOverlapAddStretcher : AbstractTimeStretcher("Wavefo
         timeStretchers = emptyArray()
         resamplers = emptyArray()
         queues = emptyArray()
+    }
+
+    override fun copy() = WaveformSimilarityBasedOverlapAddStretcher().also {
+        it.semitones = semitones
+        it.speedRatio = speedRatio
     }
 }

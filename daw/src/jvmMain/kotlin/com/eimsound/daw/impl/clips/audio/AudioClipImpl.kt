@@ -1,12 +1,11 @@
 package com.eimsound.daw.impl.clips.audio
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.GraphicEq
 import androidx.compose.material.icons.outlined.MusicNote
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
@@ -59,6 +58,7 @@ class AudioClipImpl(
     private var _thumbnail by mutableStateOf<AudioThumbnail?>(null)
     override val thumbnail get() = _thumbnail ?: throw IllegalStateException("Thumbnail is not set")
     override val volumeEnvelope = DefaultEnvelopePointList()
+    override val icon = Icons.Outlined.GraphicEq
     override val name: String
         get() {
             var source: AudioSource? = target
@@ -85,7 +85,7 @@ class AudioClipImpl(
         timeStretcher?.apply {
             put("timeStretcher", name)
             putNotDefault("semitones", semitones)
-            if (speedRatio != 1F) put("speedRatio", speedRatio)
+            putNotDefault("speedRatio", speedRatio, 1F)
         }
         put("target", target.toJson())
         putNotDefault("volumeEnvelope", volumeEnvelope)
@@ -148,6 +148,29 @@ class AudioClipImpl(
         while (fifo.available < bufferSize) fillNextBlock(channels)
         fifo.pop(buffers)
     }
+
+    suspend fun detectBPM(snackbarProvider: SnackbarProvider? = null): Int = withContext(Dispatchers.IO) {
+        val bpm = detectBPM(target.copy())
+        if (bpm.isEmpty()) {
+            snackbarProvider?.enqueueSnackbar("采样时间过短!", SnackbarType.Error)
+            return@withContext -1
+        }
+        snackbarProvider?.enqueueSnackbar {
+            Text("检测到速度: ")
+            val color = LocalContentColor.current.copy(0.5F)
+            bpm.firstOrNull()?.let {
+                Text(it.first.toString())
+                Text("(${(it.second * 100).roundToInt()}%)", color = color)
+            }
+            bpm.subList(1, bpm.size).forEach {
+                Text(
+                    ", ${it.first}(${(it.second * 100).roundToInt()}%)",
+                    color = color
+                )
+            }
+        }
+        bpm.firstOrNull()?.first ?: -1
+    }
 }
 
 private val logger = KotlinLogging.logger { }
@@ -204,37 +227,9 @@ class AudioClipFactoryImpl: AudioClipFactory {
     @Composable
     override fun MenuContent(clips: List<TrackClip<*>>, close: () -> Unit) {
         val trackClip = clips.firstOrNull { it.clip is AudioClip } ?: return
-        val clip = trackClip.clip as AudioClip
-        val snackbarProvider = LocalSnackbarProvider.current
 
-        Divider()
-        MenuItem({
-            close()
-            @OptIn(DelicateCoroutinesApi::class)
-            GlobalScope.launch(Dispatchers.IO) {
-                val bpm = detectBPM(clip.target.copy())
-                if (bpm.isEmpty()) {
-                    snackbarProvider.enqueueSnackbar("采样时间过短!", SnackbarType.Error)
-                    return@launch
-                }
-                snackbarProvider.enqueueSnackbar {
-                    Text("检测到速度: ")
-                    val color = LocalContentColor.current.copy(0.5F)
-                    bpm.firstOrNull()?.let {
-                        Text(it.first.toString())
-                        Text("(${(it.second * 100).roundToInt()}%)", color = color)
-                    }
-                    bpm.subList(1, bpm.size).forEach {
-                        Text(
-                            ", ${it.first}(${(it.second * 100).roundToInt()}%)",
-                            color = color
-                        )
-                    }
-                }
-            }
-        }, modifier = Modifier.fillMaxWidth()) {
-            Text("检测速度")
-        }
+        @Suppress("UNCHECKED_CAST")
+        EditorControls(trackClip as TrackClip<AudioClip>)
     }
 
     override fun split(clip: TrackClip<AudioClip>, time: Int): ClipSplitResult<AudioClip> {
@@ -253,6 +248,7 @@ class AudioClipFactoryImpl: AudioClipFactory {
 
     override fun copy(clip: AudioClip) = createClip(clip.target.copy()).apply {
         volumeEnvelope.addAll(clip.volumeEnvelope.copy())
+        timeStretcher = clip.timeStretcher?.copy()
     }
 
     override fun merge(clips: Collection<TrackClip<*>>): List<ClipActionResult<AudioClip>> = emptyList()

@@ -111,24 +111,47 @@ fun Menu(
     }
 }
 
-
 @Composable
-fun <T : Any> DropdownSelector(
+fun <T : Any> OutlinedDropdownSelector(
+    onSelected: (T) -> Unit,
     items: Collection<T>,
     selected: T?,
     boxModifier: Modifier = Modifier,
     enabled: Boolean = true,
     isSelected: ((T) -> Boolean)? = null,
     itemContent: (@Composable (T) -> Unit)? = null,
+    label: String? = null,
     content: (@Composable () -> Unit)? = null,
-    onSelected: (T) -> Unit,
 ) {
     @OptIn(ExperimentalFoundationApi::class)
-    DropdownSelector(items, selected, boxModifier, enabled, PointerMatcher.Primary, isSelected, itemContent, content, onSelected)
+    DropdownSelector(
+        onSelected, items, selected, boxModifier, enabled, PointerMatcher.Primary,
+        isSelected, itemContent, label, true, content
+    )
 }
 
 @Composable
 fun <T : Any> DropdownSelector(
+    onSelected: (T) -> Unit,
+    items: Collection<T>,
+    selected: T?,
+    boxModifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    isSelected: ((T) -> Boolean)? = null,
+    itemContent: (@Composable (T) -> Unit)? = null,
+    label: String? = null,
+    content: (@Composable () -> Unit)? = null,
+) {
+    @OptIn(ExperimentalFoundationApi::class)
+    DropdownSelector(
+        onSelected, items, selected, boxModifier, enabled, PointerMatcher.Primary,
+        isSelected, itemContent, label, false, content
+    )
+}
+
+@Composable
+fun <T : Any> DropdownSelector(
+    onSelected: (T) -> Unit,
     items: Collection<T>,
     selected: T?,
     boxModifier: Modifier = Modifier,
@@ -136,8 +159,9 @@ fun <T : Any> DropdownSelector(
     @OptIn(ExperimentalFoundationApi::class) matcher: PointerMatcher = PointerMatcher.Primary,
     isSelected: ((T) -> Boolean)? = null,
     itemContent: (@Composable (T) -> Unit)? = null,
+    label: String? = null,
+    isOutlined: Boolean = false,
     content: (@Composable () -> Unit)? = null,
-    onSelected: (T) -> Unit,
 ) {
     val filter = remember { mutableStateOf<String?>(null) }
     @OptIn(ExperimentalFoundationApi::class) FloatingLayer({ size, close ->
@@ -167,11 +191,19 @@ fun <T : Any> DropdownSelector(
             }
         }
     }, modifier = boxModifier, enabled = enabled, matcher = matcher, pass = PointerEventPass.Initial) {
-        if (content == null) CustomTextField(
-            filter.value ?: selected?.displayName ?: "",
-            { filter.value = it.ifEmpty { null } },
-            Modifier.fillMaxWidth().pointerHoverIcon(PointerIcon.Hand)
-        ) else content()
+        if (content == null) {
+            if (isOutlined) CustomOutlinedTextField(
+                filter.value ?: selected?.displayName ?: "",
+                { filter.value = it.ifEmpty { null } },
+                boxModifier.pointerHoverIcon(PointerIcon.Hand),
+                label = if (label == null) null else ({ Text(label) }),
+            ) else CustomTextField(
+                filter.value ?: selected?.displayName ?: "",
+                { filter.value = it.ifEmpty { null } },
+                boxModifier.pointerHoverIcon(PointerIcon.Hand),
+                label = if (label == null) null else ({ Text(label) }),
+            )
+        } else content()
     }
 }
 

@@ -8,6 +8,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Piano
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -83,10 +84,11 @@ internal fun EditorControls(editor: DefaultMidiClipEditor) {
         Surface(Modifier.fillMaxWidth().height(TIMELINE_HEIGHT), shadowElevation = 2.dp, tonalElevation = 4.dp, color = color) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 val textColor = color.toOnSurfaceColor()
+                Icon(Icons.Default.Piano, null, Modifier.size(26.dp).padding(start = 8.dp), textColor)
                 Text(
                     remember(track) {
                         if (track == null) null else dfsTrackIndex(EchoInMirror.bus!!, track, "")?.trimStart('.')
-                    } ?: "?", Modifier.padding(horizontal = 8.dp),
+                    } ?: "?", Modifier.padding(horizontal = 6.dp),
                     color = textColor,
                     fontWeight = FontWeight.Bold,
                     fontSize = MaterialTheme.typography.labelLarge.fontSize

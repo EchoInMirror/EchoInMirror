@@ -1,6 +1,5 @@
 package com.eimsound.daw.components
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -28,7 +27,7 @@ fun BasicAudioParameterView(parameters: List<AudioProcessorParameter>, uuid: UUI
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 private fun FloatingLayerProvider.openParameterSelector(processor: TrackAudioProcessorWrapper) {
     val key = Any()
     var tmpSelectedParameter = ""
@@ -64,10 +63,14 @@ private fun FloatingLayerProvider.openParameterSelector(processor: TrackAudioPro
                     mutableStateOf(if (lastModified == null) "" else "${lastModified.name} (${lastModified.id})")
                 }
                 tmpSelectedParameter = selectedParameter
-                DropdownSelector(remember(processor.handledParameters) {
-                    val set = processor.handledParameters.mapTo(mutableSetOf()) { it.parameter }
-                    processor.processor.parameters.mapNotNull { if (it in set) null else "${it.name} (${it.id})" }
-                }, selectedParameter, Modifier.weight(1F)) { selectedParameter = it }
+                DropdownSelector(
+                    { selectedParameter = it },
+                    remember(processor.handledParameters) {
+                        val set = processor.handledParameters.mapTo(mutableSetOf()) { it.parameter }
+                        processor.processor.parameters.mapNotNull { if (it in set) null else "${it.name} (${it.id})" }
+                    },
+                    selectedParameter, Modifier.weight(1F)
+                )
                 IconButton({
                     // TODO: convert to action
                     val cur = selectedParameter

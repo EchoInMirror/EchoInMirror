@@ -2,6 +2,8 @@
 
 package com.eimsound.daw.commons.json
 
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.isUnspecified
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.*
@@ -19,6 +21,7 @@ inline fun JsonElement.asLong() = jsonPrimitive.long
 inline fun JsonElement.asDouble() = jsonPrimitive.double
 inline fun JsonElement.asBoolean() = jsonPrimitive.boolean
 inline fun JsonElement.asFloat() = jsonPrimitive.float
+inline fun JsonElement.asColor() = Color(jsonPrimitive.long.toULong())
 val JsonIgnoreDefaults = Json { ignoreUnknownKeys = true; encodeDefaults = false }
 @OptIn(ExperimentalSerializationApi::class)
 val JsonPrettier = Json { ignoreUnknownKeys = true; encodeDefaults = false; prettyPrint = true; prettyPrintIndent = "  " }
@@ -82,5 +85,8 @@ inline fun JsonObjectBuilder.putNotDefault(key: String, value: Boolean?) { if (v
 inline fun JsonObjectBuilder.putNotDefault(key: String, value: Double?) { if (value != null && value != 0.0) put(key, value) }
 inline fun JsonObjectBuilder.putNotDefault(key: String, value: Float?, defaultValue: Float = 0F) {
     if (value != null && value != defaultValue) put(key, value)
+}
+inline fun JsonObjectBuilder.putNotDefault(key: String, value: Color?) {
+    if (value != null && !value.isUnspecified) put(key, value.value.toLong())
 }
 inline fun JsonObjectBuilder.putNotDefault(key: String, value: Long?) { if (value != null && value != 0L) put(key, value) }

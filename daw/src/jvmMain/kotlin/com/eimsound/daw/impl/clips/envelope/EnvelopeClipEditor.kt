@@ -25,7 +25,7 @@ import com.eimsound.daw.api.clips.TrackClip
 import com.eimsound.daw.components.*
 import com.eimsound.daw.dawutils.SHOULD_SCROLL_REVERSE
 import com.eimsound.daw.dawutils.openMaxValue
-import com.eimsound.daw.impl.clips.EditorControls
+import com.eimsound.daw.components.EditorControls
 import com.eimsound.daw.utils.range
 
 class EnvelopeClipEditor(private val clip: TrackClip<EnvelopeClip>) : ClipEditor {

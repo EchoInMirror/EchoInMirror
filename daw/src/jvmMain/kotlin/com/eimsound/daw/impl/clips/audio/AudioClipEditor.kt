@@ -23,7 +23,7 @@ import com.eimsound.daw.api.clips.ClipEditor
 import com.eimsound.daw.api.clips.TrackClip
 import com.eimsound.daw.components.*
 import com.eimsound.daw.dawutils.openMaxValue
-import com.eimsound.daw.impl.clips.EditorControls
+import com.eimsound.daw.components.EditorControls
 import com.eimsound.daw.utils.range
 
 class AudioClipEditor(private val clip: TrackClip<AudioClip>) : ClipEditor {
@@ -38,7 +38,7 @@ class AudioClipEditor(private val clip: TrackClip<AudioClip>) : ClipEditor {
     @Composable
     override fun Editor() {
         Row(Modifier.fillMaxSize()) {
-            EditorControls(clip, noteWidth) { }
+            EditorControls(clip, noteWidth) { EditorControls(clip) }
             Surface(shadowElevation = 2.dp) {
                 Box(Modifier.fillMaxSize()) {
                     EditorContent()
@@ -55,12 +55,15 @@ class AudioClipEditor(private val clip: TrackClip<AudioClip>) : ClipEditor {
     private fun EditorContent() {
         Column(Modifier.fillMaxSize()) {
             val range = remember(clip.start, clip.duration) { clip.start..(clip.start + clip.duration) }
+            val timeScaleFactor = remember { arrayOf(0F) }.apply {
+                this[0] = clip.clip.target.sampleRate / EchoInMirror.currentPosition.sampleRate
+            }
             Timeline(Modifier.zIndex(3F), noteWidth, horizontalScrollState, range, 0.dp,
                 EchoInMirror.editUnit, EchoInMirror.currentPosition.oneBarPPQ,
                 { EchoInMirror.currentPosition.timeInPPQ = it }
             ) {
                 val maxPPQ = EchoInMirror.currentPosition
-                    .convertSecondsToPPQ(clip.clip.timeInSeconds).toInt()
+                    .convertSecondsToPPQ(clip.clip.timeInSeconds * timeScaleFactor[0]).toInt()
                 clip.start = it.first.coerceIn(0, maxPPQ)
                 clip.duration = it.range.coerceIn(0, maxPPQ)
                 clip.track?.clips?.update()
@@ -73,11 +76,11 @@ class AudioClipEditor(private val clip: TrackClip<AudioClip>) : ClipEditor {
                     val noteWidthPx = noteWidthValue.toPx()
                     val scrollXPPQ = horizontalScrollState.value / noteWidthPx
                     val maxPPQ = EchoInMirror.currentPosition
-                        .convertSecondsToPPQ(clip.clip.timeInSeconds).toFloat()
+                        .convertSecondsToPPQ(clip.clip.timeInSeconds * timeScaleFactor[0]).toFloat()
                     val widthPPQ = (contentWidth / noteWidthPx).coerceAtMost(maxPPQ)
                     remember(maxPPQ, noteWidthValue, LocalDensity.current, widthPPQ) {
-                        horizontalScrollState.openMaxValue = (((maxPPQ - widthPPQ) *
-                                noteWidthValue.toPx()).toInt()).coerceAtLeast(0)
+                        horizontalScrollState.openMaxValue = ((maxPPQ - widthPPQ) *
+                                noteWidthValue.toPx()).toInt().coerceAtLeast(0)
                     }
                     EchoInMirror.currentPosition.apply {
                         EditorGrid(noteWidth, horizontalScrollState, range, ppq, timeSigDenominator, timeSigNumerator)

@@ -34,7 +34,14 @@ private val TIME_VALUES = listOf("时间", "拍")
 
 @Composable
 private fun CurrentTime() {
-    DropdownSelector(TIME_VALUES, TIME_VALUES[if (Configuration.isTimeDisplayInBeats) 1 else 0], content = {
+    DropdownSelector(
+        {
+            Configuration.isTimeDisplayInBeats = it == TIME_VALUES[1]
+            Configuration.save()
+        },
+        TIME_VALUES,
+        TIME_VALUES[if (Configuration.isTimeDisplayInBeats) 1 else 0]
+    ) {
         val a: String
         val b: String
         val c: String
@@ -67,44 +74,39 @@ private fun CurrentTime() {
             ),
             paddingValues = TextFieldDefaults.contentPaddingWithLabel(8.dp, 4.dp, 3.dp, 4.dp)
         )
-    }) {
-        Configuration.isTimeDisplayInBeats = it == TIME_VALUES[1]
-        Configuration.save()
     }
 }
 
 @Composable
 private fun Quantification() {
     DropdownSelector(
+        { EchoInMirror.quantification = it },
         QUANTIFICATION_UNITS, EchoInMirror.quantification,
         isSelected = { it.getEditUnit(EchoInMirror.currentPosition) == EchoInMirror.editUnit },
         itemContent = {
             Text(it.name, fontWeight = if (it.isSpecial) FontWeight.Bold else null)
-        },
-        content = {
-            CustomOutlinedTextField(
-                EchoInMirror.quantification.name, { },
-                Modifier.width(100.dp),
-                readOnly = true,
-                maxLines = 1,
-                textStyle = MaterialTheme.typography.labelLarge.copy(LocalContentColor.current),
-                prefix = {
-                    Icon(Magnet, "Quantification", modifier = Modifier.size(15.dp).offset((-2).dp, 1.dp))
-                },
-                suffix = {
-                    Icon(Icons.Filled.ExpandMore, "Expand",
-                        Modifier.size(20.dp).pointerHoverIcon(PointerIcon.Hand).clip(CircleShape).clickable { }
-                    )
-                },
-                colors = TextFieldDefaults.colors(
-                    unfocusedIndicatorColor = MaterialTheme.colorScheme.outlineVariant,
-                    focusedIndicatorColor = MaterialTheme.colorScheme.outlineVariant,
-                ),
-                paddingValues = TextFieldDefaults.contentPaddingWithLabel(8.dp, 4.dp, 3.dp, 4.dp)
-            )
         }
     ) {
-        EchoInMirror.quantification = it
+        CustomOutlinedTextField(
+            EchoInMirror.quantification.name, { },
+            Modifier.width(100.dp),
+            readOnly = true,
+            maxLines = 1,
+            textStyle = MaterialTheme.typography.labelLarge.copy(LocalContentColor.current),
+            prefix = {
+                Icon(Magnet, "Quantification", modifier = Modifier.size(15.dp).offset((-2).dp, 1.dp))
+            },
+            suffix = {
+                Icon(Icons.Filled.ExpandMore, "Expand",
+                    Modifier.size(20.dp).pointerHoverIcon(PointerIcon.Hand).clip(CircleShape).clickable { }
+                )
+            },
+            colors = TextFieldDefaults.colors(
+                unfocusedIndicatorColor = MaterialTheme.colorScheme.outlineVariant,
+                focusedIndicatorColor = MaterialTheme.colorScheme.outlineVariant,
+            ),
+            paddingValues = TextFieldDefaults.contentPaddingWithLabel(8.dp, 4.dp, 3.dp, 4.dp)
+        )
     }
 }
 
