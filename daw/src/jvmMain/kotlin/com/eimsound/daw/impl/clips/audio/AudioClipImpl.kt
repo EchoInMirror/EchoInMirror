@@ -47,9 +47,15 @@ class AudioClipImpl(
             _target = value
             _thumbnail = AudioThumbnail(value)
             fifo = AudioBufferQueue(value.channels, 20480)
-            timeStretcher?.initialise(target.sampleRate, EchoInMirror.currentPosition.bufferSize, target.channels)
+            timeStretcher?.initialise(value.sampleRate, EchoInMirror.currentPosition.bufferSize, value.channels)
         }
     override var timeStretcher: TimeStretcher? = null
+        set(value) {
+            if (field == value) return
+            field?.close()
+            field = value
+            value?.initialise(target.sampleRate, EchoInMirror.currentPosition.bufferSize, target.channels)
+        }
     override val timeInSeconds: Float
         get() = target.timeInSeconds * (timeStretcher?.speedRatio ?: 1F)
     override val defaultDuration get() = EchoInMirror.currentPosition
@@ -113,8 +119,8 @@ class AudioClipImpl(
     private var tempOutBuffers: Array<FloatArray> = emptyArray()
     private var position = 0L
     private var lastPos = -1L
-    private fun fillNextBlock(channels: Int) {
-        val tr = timeStretcher ?: return
+    private fun fillNextBlock(channels: Int): Int {
+        val tr = timeStretcher ?: return 0
         val needed = tr.framesNeeded
 
         val numRead = if (needed >= 0) {
@@ -129,6 +135,7 @@ class AudioClipImpl(
         }
 
         if (numRead > 0) fifo.push(tempOutBuffers, 0, numRead)
+        return numRead
     }
     internal fun processBlock(pos: CurrentPosition, playTime: Long, buffers: Array<FloatArray>) {
         val bufferSize = buffers[0].size
@@ -145,7 +152,7 @@ class AudioClipImpl(
         val channels = buffers.size
         if (tempOutBuffers.size != channels || tempOutBuffers[0].size < bufferSize)
             tempOutBuffers = Array(channels) { FloatArray(bufferSize) }
-        while (fifo.available < bufferSize) fillNextBlock(channels)
+        while (fifo.available < bufferSize) if (fillNextBlock(channels) <= 0) break
         fifo.pop(buffers)
     }
 

@@ -18,10 +18,15 @@ import kotlinx.coroutines.launch
 @OptIn(DelicateCoroutinesApi::class)
 @Composable
 internal fun EditorControls(clip: TrackClip<AudioClip>) {
-    Column(Modifier.widthIn(200.dp).padding(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(Modifier.widthIn(220.dp).padding(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             val snackbarProvider = LocalSnackbarProvider.current
-            CustomOutlinedTextField("", { }, Modifier.weight(1F).height(40.dp), label = { Text("文件速度") })
+            CustomOutlinedTextField(
+                "", { },
+                Modifier.weight(1F).height(40.dp),
+                label = { Text("文件速度") },
+                singleLine = true
+            )
             TextButton(onClick = {
                 val c = clip.clip as? AudioClipImpl ?: return@TextButton
                 GlobalScope.launch { c.detectBPM(snackbarProvider) }
@@ -30,13 +35,24 @@ internal fun EditorControls(clip: TrackClip<AudioClip>) {
             }
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
-            CustomOutlinedTextField("1.0", { }, Modifier.height(40.dp).weight(1F), label = { Text("变速") })
+            val timeStretcher = clip.clip.timeStretcher
+            CustomOutlinedTextField(
+                "%.2f".format(timeStretcher?.speedRatio ?: 1F),
+                { timeStretcher?.speedRatio = it.toFloatOrNull() ?: 1F },
+                Modifier.height(40.dp).weight(1F), label = { Text("变速") },
+                singleLine = true
+            )
             Gap(8)
-            CustomOutlinedTextField("0", { }, Modifier.height(40.dp).weight(1F), label = { Text("变调") })
+            CustomOutlinedTextField(
+                "%.2f".format(timeStretcher?.semitones ?: 0F),
+                { timeStretcher?.semitones = it.toFloatOrNull() ?: 0F },
+                Modifier.height(40.dp).weight(1F), label = { Text("变调") },
+                singleLine = true
+            )
             TextButton(onClick = { }) {
                 Text("变调到...")
             }
         }
-        OutlinedDropdownSelector({}, TimeStretcherManager.timeStretchers, "", Modifier.height(40.dp).fillMaxWidth(), label = "变速算法")
+        OutlinedDropdownSelector({}, TimeStretcherManager.timeStretchers, TimeStretcherManager.timeStretchers[0], Modifier.height(40.dp).fillMaxWidth(), label = "变速算法")
     }
 }

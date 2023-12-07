@@ -98,6 +98,7 @@ class ClipsEditAction(
             }
         }
         tracks.forEach {
+            it.clips.sort()
             it.clips.update()
             it.onSuddenChange()
         }

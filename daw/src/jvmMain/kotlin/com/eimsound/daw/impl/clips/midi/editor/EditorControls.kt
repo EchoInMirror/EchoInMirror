@@ -115,11 +115,16 @@ internal fun EditorControls(editor: DefaultMidiClipEditor) {
                 val velocity = if (editor.selectedNotes.isEmpty()) DefaultMidiClipEditor.defaultVelocity else
                         (cur ?: editor.selectedNotes.first()).velocity
                 val trueValue = velocity + (if (editor.selectedNotes.isEmpty()) 0 else delta)
-                CustomTextField(trueValue.toString(), { str ->
-                    val v = str.toIntOrNull()?.coerceIn(0, 127) ?: return@CustomTextField
-                    if (editor.selectedNotes.isEmpty()) DefaultMidiClipEditor.defaultVelocity = v
-                    else editor.clip.clip.doNoteVelocityAction(editor.selectedNotes.toTypedArray(), v - velocity)
-                }, Modifier.width(60.dp).padding(end = 10.dp), label = { Text("力度") })
+                CustomTextField(
+                    trueValue.toString(), { str ->
+                        val v = str.toIntOrNull()?.coerceIn(0, 127) ?: return@CustomTextField
+                        if (editor.selectedNotes.isEmpty()) DefaultMidiClipEditor.defaultVelocity = v
+                        else editor.clip.clip.doNoteVelocityAction(editor.selectedNotes.toTypedArray(), v - velocity)
+                    },
+                    Modifier.width(60.dp).padding(end = 10.dp),
+                    label = { Text("力度") },
+                    singleLine = true,
+                )
                 Slider(trueValue.toFloat() / 127,
                     {
                         if (editor.selectedNotes.isEmpty()) DefaultMidiClipEditor.defaultVelocity = (it * 127).roundToInt()

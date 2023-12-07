@@ -61,7 +61,7 @@ private fun CurrentTime() {
         CustomOutlinedTextField(
             "${a}:${b}:${c}", { },
             Modifier.width(110.dp),
-            maxLines = 1,
+            singleLine = true,
             textStyle = MaterialTheme.typography.labelLarge.copy(LocalContentColor.current),
             suffix = {
                 Icon(Icons.Filled.ExpandMore, "Expand",
@@ -91,7 +91,7 @@ private fun Quantification() {
             EchoInMirror.quantification.name, { },
             Modifier.width(100.dp),
             readOnly = true,
-            maxLines = 1,
+            singleLine = true,
             textStyle = MaterialTheme.typography.labelLarge.copy(LocalContentColor.current),
             prefix = {
                 Icon(Magnet, "Quantification", modifier = Modifier.size(15.dp).offset((-2).dp, 1.dp))
@@ -161,7 +161,7 @@ private fun BPM() {
             EchoInMirror.currentPosition.bpm = it.toDoubleOrNull()?.coerceIn(1.0, 600.0) ?: return@CustomOutlinedTextField
         },
         Modifier.width(100.dp),
-        maxLines = 1,
+        singleLine = true,
         textStyle = MaterialTheme.typography.labelLarge.copy(LocalContentColor.current),
         prefix = {
             Icon(MetronomeTick, "BPM", modifier = Modifier.size(18.dp).offset())

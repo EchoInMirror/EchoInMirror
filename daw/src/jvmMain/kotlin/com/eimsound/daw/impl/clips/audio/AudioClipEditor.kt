@@ -2,6 +2,8 @@ package com.eimsound.daw.impl.clips.audio
 
 import androidx.compose.foundation.HorizontalScrollbar
 import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.material3.MaterialTheme
@@ -70,7 +72,11 @@ class AudioClipEditor(private val clip: TrackClip<AudioClip>) : ClipEditor {
             }
             var contentWidth by remember { mutableStateOf(0) }
             val density = LocalDensity.current
-            Box(Modifier.fillMaxSize().onGloballyPositioned { contentWidth = it.size.width }) {
+            Box(
+                Modifier.fillMaxSize().onGloballyPositioned { contentWidth = it.size.width }
+                    .scrollable(horizontalScrollState, Orientation.Horizontal, reverseDirection = true)
+                    .scalableNoteWidth(noteWidth, horizontalScrollState)
+            ) {
                 val noteWidthValue = noteWidth.value
                 with(density) {
                     val noteWidthPx = noteWidthValue.toPx()
@@ -95,7 +101,7 @@ class AudioClipEditor(private val clip: TrackClip<AudioClip>) : ClipEditor {
                         color, modifier = Modifier.width(noteWidthValue * widthPPQ)
                     )
                     envelopeEditor.Editor(
-                        0F, color, noteWidth, true, clipStartTime = clip.start, drawGradient = false
+                        scrollXPPQ, color, noteWidth, true, clipStartTime = clip.start, drawGradient = false
                     )
                     Box {
                         PlayHead(noteWidth, horizontalScrollState,

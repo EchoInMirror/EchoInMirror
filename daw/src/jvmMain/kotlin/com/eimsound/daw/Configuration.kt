@@ -100,7 +100,7 @@ object Configuration : JsonSerializable {
         System.setProperty("eim.tempfiles.prefix", "EchoInMirror")
 
         val libraryExt = if (SystemUtils.IS_OS_WINDOWS) "dll" else if (SystemUtils.IS_OS_MAC) "dylib" else "so"
-        var timeStretcherLibraryFile = ROOT_PATH.resolve("/Users/shirasawa/code/EIMTimeStretchers/cmake-build-release/libEIMTimeStretchers.$libraryExt")
+        var timeStretcherLibraryFile = ROOT_PATH.resolve("/Users/shirasawa/code/EIMTimeStretchers/cmake-build-debug/libEIMTimeStretchers.$libraryExt")
         if (!timeStretcherLibraryFile.exists()) timeStretcherLibraryFile = Path("libEIMTimeStretchers.$libraryExt")
         System.setProperty("eim.dsp.timestretchers.library.file", timeStretcherLibraryFile.absolutePathString())
     }

@@ -32,7 +32,7 @@ class AudioBufferQueue(
     }
 
     fun pop(buffers: Array<FloatArray>) {
-        pop(buffers, 0, buffers[0].size)
+        pop(buffers, 0, buffers[0].size.coerceAtMost(available))
     }
 
     fun pop(buffers: Array<FloatArray>, offset: Int, length: Int) {

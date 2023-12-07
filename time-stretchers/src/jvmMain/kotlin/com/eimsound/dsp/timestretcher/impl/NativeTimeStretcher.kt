@@ -142,25 +142,27 @@ private class NativeTimeStretcher(
     private lateinit var outputBuffers: FloatBuffer
     private var inputBufferSize = 0
     private var isPlanar = false
+    private var isClosed = false
 
     override var speedRatio = speedRatio
         set(value) {
-            if (value == field) return
+            if (isClosed || value == field) return
             time_stretcher_set_speed_ratio.invokeExact(pointer, value)
             field = value
         }
     override var semitones = semitones
         set(value) {
-            if (value == field) return
+            if (isClosed || value == value) return
             time_stretcher_set_semitones.invokeExact(pointer, value)
             field = value
         }
     override val maxFramesNeeded
-        get() = time_stretcher_get_max_frames_needed.invokeExact(pointer) as Int
+        get() = if (isClosed) 0 else time_stretcher_get_max_frames_needed.invokeExact(pointer) as Int
     override val framesNeeded
-        get() = time_stretcher_get_frames_needed.invokeExact(pointer) as Int
+        get() = if (isClosed) 0 else time_stretcher_get_frames_needed.invokeExact(pointer) as Int
 
     override fun initialise(sourceSampleRate: Float, samplesPerBlock: Int, numChannels: Int, isRealtime: Boolean) {
+        if (isClosed) return
         super.initialise(sourceSampleRate, samplesPerBlock, numChannels, isRealtime)
         time_stretcher_initialise.invokeExact(pointer, sourceSampleRate, samplesPerBlock, numChannels, isRealtime)
         outputBuffersPtr = session.allocateArray(ValueLayout.JAVA_FLOAT, samplesPerBlock.toLong() * numChannels)
@@ -171,7 +173,7 @@ private class NativeTimeStretcher(
     }
 
     override fun process(input: Array<FloatArray>, output: Array<FloatArray>, numSamples: Int): Int {
-        if (!isInitialised) return 0
+        if (isClosed || !isInitialised) return 0
         if (inputBufferSize < numSamples * numChannels) {
             inputBufferSize = numSamples.coerceAtLeast(maxFramesNeeded) * numChannels
             inputBuffersPtr = session.allocateArray(ValueLayout.JAVA_FLOAT, inputBufferSize.toLong())
@@ -188,24 +190,26 @@ private class NativeTimeStretcher(
     }
 
     override fun flush(output: Array<FloatArray>): Int {
-        if (!isInitialised) return 0
+        if (isClosed || !isInitialised) return 0
         return (time_stretcher_flush.invokeExact(pointer, outputBuffersPtr) as Int).apply {
             readOutput(output, this)
         }
     }
 
     override fun reset() {
-        if (!isInitialised) return
+        if (isClosed || !isInitialised) return
         time_stretcher_reset.invokeExact(pointer)
     }
 
     override fun close() {
+        if (isClosed) return
+        isClosed = true
         destroy_time_stretcher.invokeExact(pointer)
         session.close()
     }
 
     override fun copy() = NativeTimeStretcher(name, speedRatio, semitones).also {
-        if (isInitialised) it.initialise(sourceSampleRate, samplesPerBlock, numChannels, isRealtime)
+        if (isClosed || isInitialised) it.initialise(sourceSampleRate, samplesPerBlock, numChannels, isRealtime)
     }
     private fun readOutput(output: Array<FloatArray>, numSamples: Int) {
         outputBuffers.rewind()

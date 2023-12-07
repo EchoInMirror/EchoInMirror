@@ -7,9 +7,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposeWindow
+import androidx.compose.ui.focus.*
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.*
@@ -109,6 +111,7 @@ private fun SaveProjectWarningDialog() {
 }
 
 val mainWindowState = WindowState()
+private var checkHasFocus = { false }
 
 private val logger = KotlinLogging.logger("MainWindow")
 @OptIn(ExperimentalComposeUiApi::class)
@@ -117,7 +120,7 @@ fun MainWindow() {
     Window({
         EchoInMirror.windowManager.closeMainWindow()
     }, mainWindowState, icon = Logo, title = "Echo In Mirror (v$VERSION)", onKeyEvent = {
-        if (it.type != KeyEventType.KeyUp) return@Window false
+        if (it.type != KeyEventType.KeyUp || checkHasFocus()) return@Window false
         var keys = (if (it.key == Key.Backspace) Key.Delete.keyCode else it.key.keyCode).toString()
         if (it.isCrossPlatformCtrlPressed) keys = "${Key.CtrlLeft.keyCode} $keys"
         if (it.isShiftPressed) keys = "${Key.ShiftLeft.keyCode} $keys"
@@ -125,6 +128,13 @@ fun MainWindow() {
         EchoInMirror.commandManager.executeCommand(keys)
         false
     }) {
+        val focusManager = LocalFocusManager.current
+        remember(focusManager) {
+            checkHasFocus = {
+                @Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
+                (focusManager as? FocusOwnerImpl)?.rootFocusNode?.focusState?.isFocused == false
+            }
+        }
         InitEditorTools()
         initWindowDecoration()
         if (SystemUtils.IS_OS_MAC) {

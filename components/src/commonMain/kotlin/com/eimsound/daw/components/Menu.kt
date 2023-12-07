@@ -197,11 +197,13 @@ fun <T : Any> DropdownSelector(
                 { filter.value = it.ifEmpty { null } },
                 boxModifier.pointerHoverIcon(PointerIcon.Hand),
                 label = if (label == null) null else ({ Text(label) }),
+                singleLine = true
             ) else CustomTextField(
                 filter.value ?: selected?.displayName ?: "",
                 { filter.value = it.ifEmpty { null } },
                 boxModifier.pointerHoverIcon(PointerIcon.Hand),
                 label = if (label == null) null else ({ Text(label) }),
+                singleLine = true,
             )
         } else content()
     }
@@ -226,7 +228,7 @@ fun MenuHeader(
             color = LocalContentColor.current.copy(alpha = if (enable) 1F else 0.7F),
             fontWeight = FontWeight.ExtraBold
         ) else BasicTextField(title, onChange,
-            Modifier.weight(1F).padding(start = 4.dp), maxLines = 1,
+            Modifier.weight(1F).padding(start = 4.dp), singleLine = true,
             textStyle = MaterialTheme.typography.titleSmall.copy(
                 LocalContentColor.current.copy(if (enable) 1F else 0.7F),
                 fontWeight = FontWeight.ExtraBold

@@ -14,13 +14,11 @@ kotlin {
     sourceSets {
         named("commonMain") {
             dependencies {
-                implementation("com.tianscar.soundtouch:soundtouch-jni-core:1.0.6")
                 implementation("be.tarsos.dsp:core:${extra["eim.dependencies.tarsos"]}")
             }
         }
         named("jvmMain") {
             dependencies {
-                implementation("com.tianscar.soundtouch:soundtouch-jni-javase:1.0.6")
             }
         }
     }
