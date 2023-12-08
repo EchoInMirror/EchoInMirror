@@ -96,7 +96,7 @@ class AudioClipEditor(private val clip: TrackClip<AudioClip>) : ClipEditor {
                         clip.clip.thumbnail,
                         EchoInMirror.currentPosition,
                         scrollXPPQ, widthPPQ,
-                        clip.clip.timeStretcher?.speedRatio ?: 1F,
+                        clip.clip.speedRatio.value,
                         clip.clip.volumeEnvelope,
                         color, modifier = Modifier.width(noteWidthValue * widthPPQ)
                     )

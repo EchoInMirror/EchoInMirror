@@ -47,19 +47,49 @@ class AudioClipImpl(
             _target = value
             _thumbnail = AudioThumbnail(value)
             fifo = AudioBufferQueue(value.channels, 20480)
-            timeStretcher?.initialise(value.sampleRate, EchoInMirror.currentPosition.bufferSize, value.channels)
+            stretcher?.initialise(value.sampleRate, EchoInMirror.currentPosition.bufferSize, value.channels)
         }
-    override var timeStretcher: TimeStretcher? = null
+    private var stretcher: TimeStretcher? = null
         set(value) {
             if (field == value) return
             field?.close()
+            if (value == null) {
+                field = null
+                return
+            }
+            value.initialise(target.sampleRate, EchoInMirror.currentPosition.bufferSize, target.channels)
+            value.semitones = semitones.value
+            value.speedRatio = speedRatio.value
             field = value
-            value?.initialise(target.sampleRate, EchoInMirror.currentPosition.bufferSize, target.channels)
         }
     override val timeInSeconds: Float
-        get() = target.timeInSeconds * (timeStretcher?.speedRatio ?: 1F)
+        get() = target.timeInSeconds * (stretcher?.speedRatio ?: 1F)
+    override val speedRatio = SimpleAudioProcessorParameter("speedRatio", initialValue = 1F) {
+        stretcher?.speedRatio = it.value
+    }
+    override val semitones = SimpleAudioProcessorParameter("Semitones") {
+        stretcher?.semitones = it.value
+    }
+    private var timeStretcherName by mutableStateOf("")
+    override var timeStretcher
+        get() = timeStretcherName
+        set(value) {
+            value.ifEmpty {
+                stretcher?.close()
+                stretcher = null
+                timeStretcherName = ""
+                return
+            }
+            try {
+                stretcher = TimeStretcherManager.createTimeStretcher(value) ?: return
+                timeStretcherName = value
+            } catch (e: Exception) {
+                logger.warn(e) { "Failed to create time stretcher \"$value\"" }
+            }
+        }
+    override var bpm by mutableStateOf(0F)
     override val defaultDuration get() = EchoInMirror.currentPosition
-        .convertSamplesToPPQ((target.length * (timeStretcher?.speedRatio ?: 1F)).roundToLong())
+        .convertSamplesToPPQ((target.length * (stretcher?.speedRatio ?: 1F)).roundToLong())
     override val maxDuration get() = defaultDuration
     private var _thumbnail by mutableStateOf<AudioThumbnail?>(null)
     override val thumbnail get() = _thumbnail ?: throw IllegalStateException("Thumbnail is not set")
@@ -81,20 +111,19 @@ class AudioClipImpl(
 
     override fun close() {
         _target?.close()
-        timeStretcher?.close()
-        timeStretcher = null
+        stretcher?.close()
+        stretcher = null
     }
 
     override fun toJson() = buildJsonObject {
         put("id", id)
         put("factory", factory.name)
-        timeStretcher?.apply {
-            put("timeStretcher", name)
-            putNotDefault("semitones", semitones)
-            putNotDefault("speedRatio", speedRatio, 1F)
-        }
         put("target", target.toJson())
+        putNotDefault("timeStretcher", timeStretcher)
+        putNotDefault("speedRatio", speedRatio.value, 1F)
+        putNotDefault("semitones", semitones.value)
         putNotDefault("volumeEnvelope", volumeEnvelope)
+        putNotDefault("bpm", bpm)
     }
 
     override fun fromJson(json: JsonElement) {
@@ -102,17 +131,19 @@ class AudioClipImpl(
         json as JsonObject
         json["target"]?.let { target = AudioSourceManager.instance.createAudioSource(it as JsonObject) }
         json["volumeEnvelope"]?.let { volumeEnvelope.fromJson(it) }
+        json["bpm"]?.let { bpm = it.asFloat() }
         json["timeStretcher"]?.let {
             val name = it.asString()
             val timeStretcher = TimeStretcherManager.createTimeStretcher(name)
             if (timeStretcher == null) logger.warn { "Time stretcher \"$name\" not found" }
             else {
-                this.timeStretcher?.close()
-                this.timeStretcher = timeStretcher
-                timeStretcher.semitones = json["semitones"]?.asFloat() ?: 0F
-                timeStretcher.speedRatio = json["speedRatio"]?.asFloat() ?: 1F
+                this.timeStretcher = name
+                stretcher?.close()
+                stretcher = timeStretcher
             }
         }
+        semitones.setValue(json["semitones"]?.asFloat() ?: 0F, false)
+        speedRatio.setValue(json["speedRatio"]?.asFloat() ?: 1F, false)
     }
 
     private var tempInBuffers: Array<FloatArray> = emptyArray()
@@ -120,7 +151,7 @@ class AudioClipImpl(
     private var position = 0L
     private var lastPos = -1L
     private fun fillNextBlock(channels: Int): Int {
-        val tr = timeStretcher ?: return 0
+        val tr = stretcher ?: return 0
         val needed = tr.framesNeeded
 
         val numRead = if (needed >= 0) {
@@ -139,7 +170,7 @@ class AudioClipImpl(
     }
     internal fun processBlock(pos: CurrentPosition, playTime: Long, buffers: Array<FloatArray>) {
         val bufferSize = buffers[0].size
-        val tr = timeStretcher
+        val tr = stretcher
         if (tr == null || tr.isDefaultParams) {
             target.getSamples(playTime, bufferSize, buffers)
             return
@@ -222,7 +253,8 @@ class AudioClipFactoryImpl: AudioClipFactory {
         Box {
             Waveform(
                 clip.clip.thumbnail, EchoInMirror.currentPosition, startPPQ, widthPPQ,
-                clip.clip.timeStretcher?.speedRatio ?: 1F,
+//                clip.clip.timeStretcher?.speedRatio ?: 1F,
+                1F,
                 clip.clip.volumeEnvelope, contentColor, isDrawMinAndMax
             )
             remember(clip) {
@@ -255,7 +287,7 @@ class AudioClipFactoryImpl: AudioClipFactory {
 
     override fun copy(clip: AudioClip) = createClip(clip.target.copy()).apply {
         volumeEnvelope.addAll(clip.volumeEnvelope.copy())
-        timeStretcher = clip.timeStretcher?.copy()
+//        timeStretcher = clip.timeStretcher?.copy()
     }
 
     override fun merge(clips: Collection<TrackClip<*>>): List<ClipActionResult<AudioClip>> = emptyList()

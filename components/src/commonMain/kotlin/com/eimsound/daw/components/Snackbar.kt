@@ -1,12 +1,10 @@
 package com.eimsound.daw.components
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.*
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Error
 import androidx.compose.material.icons.outlined.Info
@@ -16,9 +14,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastForEachReversed
 import com.eimsound.daw.components.utils.*
 import kotlinx.coroutines.delay
 
@@ -50,6 +50,34 @@ private class Snackbar(
 val GlobalSnackbarProvider = SnackbarProvider()
 val LocalSnackbarProvider = staticCompositionLocalOf { GlobalSnackbarProvider }
 
+@Composable
+private fun SnackbarAnim(snackbar: Snackbar) {
+    val height = remember { arrayOf(0) }
+    val anim by animateFloatAsState(
+        if (height[0] == 0 || snackbar.isVisible) 1F else 0F,
+        spring(stiffness = Spring.StiffnessMediumLow)
+    )
+    AnimatedVisibility(snackbar.isVisible,
+        Modifier.onGloballyPositioned { if (it.size.height > height[0]) height[0] = it.size.height }
+            .run { if (height[0] > 0) height(LocalDensity.current.run { (height[0] * anim).toDp() }) else this },
+        enter = slideInHorizontally { it },
+        exit = slideOutHorizontally { it }
+    ) {
+        SnackbarItem(snackbar)
+    }
+}
+
+@Composable
+private fun SnackbarItem(snackbar: Snackbar) {
+    val color = snackbar.type.toColor()
+    Surface(Modifier.padding(8.dp), MaterialTheme.shapes.small, color, color.toOnSurfaceColor(), 16.dp, 8.dp) {
+        Row(Modifier.padding(8.dp, 8.dp, 16.dp, 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(snackbar.type.icon, snackbar.type.name, Modifier.padding(end = 8.dp))
+            snackbar.content(this)
+        }
+    }
+}
+
 class SnackbarProvider {
     private var snackbars by mutableStateOf<List<Snackbar>>(listOf())
 
@@ -66,31 +94,19 @@ class SnackbarProvider {
         snackbars += Snackbar(SnackbarType.Error, duration) { Text("发生错误: ${error.message}") }
     }
 
-    @OptIn(ExperimentalFoundationApi::class)
     @Composable
     fun SnackbarsContainer(modifier: Modifier = Modifier) {
-        BoxWithConstraints(modifier) {
-            LazyColumn(Modifier.widthIn(max = 500.dp).fillMaxHeight().rotate(180f)) {
-                items(snackbars, key = { it }) { snackbar ->
+        Column(modifier.widthIn(max = 500.dp), horizontalAlignment = Alignment.End) {
+            snackbars.fastForEachReversed { snackbar ->
+                key(snackbar) {
                     LaunchedEffect(snackbar) {
                         snackbar.isVisible = true
                         delay(snackbar.duration.toLong())
                         snackbar.isVisible = false
-                        delay(500)
+                        delay(400)
                         snackbars -= snackbar
                     }
-                    val color = snackbar.type.toColor()
-                    AnimatedVisibility(snackbar.isVisible, Modifier.rotate(180f).animateItemPlacement(),
-                        enter = slideInHorizontally { it },
-                        exit = slideOutHorizontally { it }
-                    ) {
-                        Surface(Modifier.padding(8.dp), MaterialTheme.shapes.small, color, color.toOnSurfaceColor(), 16.dp, 8.dp) {
-                            Row(Modifier.padding(8.dp, 8.dp, 16.dp, 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Icon(snackbar.type.icon, snackbar.type.name, Modifier.padding(end = 8.dp))
-                                snackbar.content(this)
-                            }
-                        }
-                    }
+                    SnackbarAnim(snackbar)
                 }
             }
         }
