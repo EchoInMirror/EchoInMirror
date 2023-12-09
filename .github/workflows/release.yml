@@ -28,7 +28,7 @@ jobs:
           java-version: 19
 
       - name: Set plugin version
-        run: version='${{ github.ref }}' && sed -i "s/0\.0\.0/${version:10}/" gradle.properties
+        run: version='${{ github.event.release.tag_name }}' && sed -i "s/0\.0\.0/${version:10}/" gradle.properties
         shell: bash
 
       - name: Build with Gradle
@@ -38,7 +38,8 @@ jobs:
           ./gradlew :daw:shadowJar
           cp daw/build/libs/daw.jar package/EchoInMirror.jar
           cp -R release-bin/. package/
-          cp -R daw/EIMHost-x64.exe package/EIMHost-x64.exe
+          cp libEIMTimeStretchers.dll package/libEIMTimeStretchers.dll
+          cp daw/EIMHost-x64.exe package/EIMHost-x64.exe
           curl https://github.com/EchoInMirror/EIMHost/releases/latest/download/EIMHost-x86.exe -o package/EIMHost-x86.exe -L
         env:
           APP_CENTER_SECRET: ${{ secrets.APP_CENTER_SECRET }}
