@@ -47,7 +47,7 @@ class SnapshotStateSet<T> private constructor(
 }
 
 /**
- * Create a instance of [MutableSet]<T> that is observable and can be snapshot.
+ * Create an instance of [MutableSet]<T> that is observable and can be snapshot.
  */
 fun <T> mutableStateSetOf(vararg elements: T) = SnapshotStateSet(*elements)
 

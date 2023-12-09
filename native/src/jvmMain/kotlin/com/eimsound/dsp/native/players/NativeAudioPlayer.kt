@@ -132,7 +132,6 @@ class NativeAudioPlayer(
         }
     }
 
-    @Suppress("DuplicatedCode")
     override fun run() {
         use {
             while (process != null) {

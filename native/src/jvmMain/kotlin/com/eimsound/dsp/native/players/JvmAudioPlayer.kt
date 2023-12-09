@@ -71,7 +71,6 @@ class JvmAudioPlayer(
         super.close()
     }
 
-    @Suppress("DuplicatedCode")
     override fun run() {
         val sampleBits = getSampleBits(bits)
         try {

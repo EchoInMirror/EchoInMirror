@@ -3,6 +3,7 @@ package com.eimsound.daw.components.icons
 import androidx.compose.material.icons.materialIcon
 import androidx.compose.material.icons.materialPath
 
+@Suppress("BooleanLiteralArgument")
 val Magnet = materialIcon(name = "EIM.Magnet") {
     materialPath {
         moveTo(3.00000F, 7.00000F)

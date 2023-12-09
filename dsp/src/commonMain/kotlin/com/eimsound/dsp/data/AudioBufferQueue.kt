@@ -35,6 +35,7 @@ class AudioBufferQueue(
         pop(buffers, 0, buffers[0].size.coerceAtMost(available))
     }
 
+    @Suppress("MemberVisibilityCanBePrivate")
     fun pop(buffers: Array<FloatArray>, offset: Int, length: Int) {
         if (buffers.size != channels) {
             buffers.forEach { it.fill(0F) }

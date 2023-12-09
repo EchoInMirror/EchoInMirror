@@ -138,7 +138,7 @@ class NotesSplitAction(
     override val icon = Icons.Default.Edit
 
     override suspend fun undo(): Boolean {
-        clip.notes.removeAll(newNotes)
+        clip.notes.removeAll(newNotes.toSet())
         modifiedNotes.fastForEach { it.first.duration = it.second }
         clip.notes.update()
         return true

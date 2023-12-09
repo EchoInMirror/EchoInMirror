@@ -86,9 +86,7 @@ open class DefaultNoteMessage(
         else time - other.time
 }
 
-@Suppress("unused")
 fun NoteMessage.toNoteOnEvent(channel: Int = 0) = noteOn(channel, note, velocity)
-@Suppress("unused")
 fun NoteMessage.toNoteOffEvent(channel: Int = 0) = noteOff(channel, note)
 fun NoteMessage.toNoteOnRawData(channel: Int = 0) = 0x90 or channel or (note shl 8) or (velocity shl 16)
 fun NoteMessage.toNoteOffRawData(channel: Int = 0) = 0x80 or (70 shl 16) or channel or (note shl 8)

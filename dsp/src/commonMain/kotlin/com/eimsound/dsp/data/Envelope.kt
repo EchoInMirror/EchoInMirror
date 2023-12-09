@@ -23,7 +23,6 @@ enum class EnvelopeType {
                     controlPoint1 = value0
                     controlPoint2 = value1
                 } else {
-                    @Suppress("DuplicatedCode")
                     val dy = (value1 - value0).absoluteValue * -tension
                     if (value0 > value1) {
                         controlPoint1 = value0 - dy

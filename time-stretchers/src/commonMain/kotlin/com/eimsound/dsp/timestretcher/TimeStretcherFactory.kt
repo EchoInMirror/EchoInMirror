@@ -10,11 +10,11 @@ interface TimeStretcherFactory {
     fun createTimeStretcher(name: String): TimeStretcher?
 }
 
-@Suppress("unused", "MemberVisibilityCanBePrivate")
 object TimeStretcherManager {
     private val factories by lazy { ServiceLoader.load(TimeStretcherFactory::class.java).toList() }
     val timeStretchers get() = factories.flatMap { it.timeStretchers }
 
+    @Suppress("unused")
     fun createTimeStretcher() = timeStretchers.firstOrNull()?.let { createTimeStretcher(it) }
         ?: throw NoSuchElementException("No time stretchers found")
     fun createTimeStretcher(name: String): TimeStretcher? {

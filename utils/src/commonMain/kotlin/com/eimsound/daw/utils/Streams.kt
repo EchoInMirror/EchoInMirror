@@ -65,6 +65,7 @@ class ByteBufOutputStream(private val isBigEndian: Boolean, stream: OutputStream
         }
         write(writeBuffer, 0, 4)
     }
+    @Suppress("MemberVisibilityCanBePrivate")
     fun writeLong(value: Long) {
         if (isBigEndian) {
             writeBuffer[0] = (value ushr 56).toByte()

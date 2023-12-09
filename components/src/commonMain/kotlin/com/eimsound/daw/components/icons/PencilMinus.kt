@@ -3,6 +3,7 @@ package com.eimsound.daw.components.icons
 import androidx.compose.material.icons.materialIcon
 import androidx.compose.material.icons.materialPath
 
+@Suppress("DuplicatedCode")
 val PencilMinus = materialIcon(name = "EIM.PencilMinus") {
     materialPath {
         moveTo(20.70000F, 7.00000F)

@@ -176,7 +176,7 @@ class ClipsMergeAction(clips: List<TrackClip<*>>) : UndoableAction {
 
     override suspend fun undo(): Boolean {
         newClips.forEach { (track, clips) ->
-            track.clips.removeAll(clips)
+            track.clips.removeAll(clips.toSet())
         }
         newClips.clear()
 

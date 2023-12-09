@@ -33,6 +33,7 @@ jobs:
           sed -i "s/0\.0\.0/${{ github.event.release.tag_name }}/" gradle.properties
           mkdir package
           ./gradlew :daw:shadowJar
+          ./gradlew --stop
           cp daw/build/libs/daw.jar package/EchoInMirror.jar
           cp -R release-bin/. package/
           curl https://github.com/EchoInMirror/EIMHost/releases/latest/download/EIMHost-x86.exe -o package/EIMHost-x86.exe -L
