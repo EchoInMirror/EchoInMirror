@@ -41,20 +41,20 @@ internal fun EditorControls(clip: TrackClip<AudioClip>) {
         val timeStretchers = TimeStretcherManager.timeStretchers
         Row(verticalAlignment = Alignment.CenterVertically) {
             CustomOutlinedTextField(
-                "%.2f".format(c.speedRatio.value),
+                "%.2f".format(c.speedRatio),
                 {
                     c.timeStretcher.ifEmpty { c.timeStretcher = timeStretchers.firstOrNull() ?: "" }
-                    c.speedRatio.value = it.toFloatOrNull() ?: 1F
+                    c.speedRatio = it.toFloatOrNull() ?: 1F
                 },
                 Modifier.height(40.dp).weight(1F), label = { Text("变速") },
                 singleLine = true
             )
             Gap(8)
             CustomOutlinedTextField(
-                "%.2f".format(c.semitones.value),
+                "%.2f".format(c.semitones),
                 {
                     c.timeStretcher.ifEmpty { c.timeStretcher = timeStretchers.firstOrNull() ?: "" }
-                    c.semitones.value = it.toFloatOrNull() ?: 0F
+                    c.semitones = it.toFloatOrNull() ?: 0F
                 },
                 Modifier.height(40.dp).weight(1F), label = { Text("变调") },
                 singleLine = true

@@ -18,6 +18,7 @@ import com.eimsound.daw.commons.json.asFloat
 import com.eimsound.daw.commons.json.asString
 import com.eimsound.daw.commons.json.putNotDefault
 import com.eimsound.daw.components.*
+import com.eimsound.daw.utils.observableMutableStateOf
 import com.eimsound.dsp.data.*
 import com.eimsound.dsp.data.midi.MidiNoteTimeRecorder
 import com.eimsound.dsp.detectBPM
@@ -58,17 +59,17 @@ class AudioClipImpl(
                 return
             }
             value.initialise(target.sampleRate, EchoInMirror.currentPosition.bufferSize, target.channels)
-            value.semitones = semitones.value
-            value.speedRatio = speedRatio.value
+            value.semitones = semitones
+            value.speedRatio = speedRatio
             field = value
         }
     override val timeInSeconds: Float
         get() = target.timeInSeconds * (stretcher?.speedRatio ?: 1F)
-    override val speedRatio = SimpleAudioProcessorParameter("speedRatio", initialValue = 1F) {
-        stretcher?.speedRatio = it.value
+    override var speedRatio by observableMutableStateOf(1F) {
+        stretcher?.speedRatio = it
     }
-    override val semitones = SimpleAudioProcessorParameter("Semitones") {
-        stretcher?.semitones = it.value
+    override var semitones by observableMutableStateOf(0F) {
+        stretcher?.semitones = it
     }
     private var timeStretcherName by mutableStateOf("")
     override var timeStretcher
@@ -87,7 +88,7 @@ class AudioClipImpl(
                 logger.warn(e) { "Failed to create time stretcher \"$value\"" }
             }
         }
-    override var bpm by mutableStateOf(0F)
+    override var bpm = 0F
     override val defaultDuration get() = EchoInMirror.currentPosition
         .convertSamplesToPPQ((target.length * (stretcher?.speedRatio ?: 1F)).roundToLong())
     override val maxDuration get() = defaultDuration
@@ -120,8 +121,8 @@ class AudioClipImpl(
         put("factory", factory.name)
         put("target", target.toJson())
         putNotDefault("timeStretcher", timeStretcher)
-        putNotDefault("speedRatio", speedRatio.value, 1F)
-        putNotDefault("semitones", semitones.value)
+        putNotDefault("speedRatio", speedRatio, 1F)
+        putNotDefault("semitones", semitones)
         putNotDefault("volumeEnvelope", volumeEnvelope)
         putNotDefault("bpm", bpm)
     }
@@ -142,8 +143,8 @@ class AudioClipImpl(
                 stretcher = timeStretcher
             }
         }
-        semitones.setValue(json["semitones"]?.asFloat() ?: 0F, false)
-        speedRatio.setValue(json["speedRatio"]?.asFloat() ?: 1F, false)
+        semitones = json["semitones"]?.asFloat() ?: 0F
+        speedRatio = json["speedRatio"]?.asFloat() ?: 1F
     }
 
     private var tempInBuffers: Array<FloatArray> = emptyArray()
@@ -253,8 +254,7 @@ class AudioClipFactoryImpl: AudioClipFactory {
         Box {
             Waveform(
                 clip.clip.thumbnail, EchoInMirror.currentPosition, startPPQ, widthPPQ,
-//                clip.clip.timeStretcher?.speedRatio ?: 1F,
-                1F,
+                clip.clip.speedRatio,
                 clip.clip.volumeEnvelope, contentColor, isDrawMinAndMax
             )
             remember(clip) {
@@ -287,7 +287,10 @@ class AudioClipFactoryImpl: AudioClipFactory {
 
     override fun copy(clip: AudioClip) = createClip(clip.target.copy()).apply {
         volumeEnvelope.addAll(clip.volumeEnvelope.copy())
-//        timeStretcher = clip.timeStretcher?.copy()
+        bpm = clip.bpm
+        speedRatio = clip.speedRatio
+        semitones = clip.semitones
+        timeStretcher = clip.timeStretcher
     }
 
     override fun merge(clips: Collection<TrackClip<*>>): List<ClipActionResult<AudioClip>> = emptyList()

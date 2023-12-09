@@ -1,6 +1,5 @@
 package com.eimsound.daw.api.clips
 
-import com.eimsound.audioprocessor.AudioProcessorParameter
 import com.eimsound.audiosources.AudioSource
 import com.eimsound.dsp.data.AudioThumbnail
 import com.eimsound.dsp.data.EnvelopePointList
@@ -13,8 +12,8 @@ import java.nio.file.Path
 interface AudioClip : Clip, AutoCloseable {
     var target: AudioSource
     val timeInSeconds: Float
-    val speedRatio: AudioProcessorParameter
-    val semitones: AudioProcessorParameter
+    var speedRatio: Float
+    var semitones: Float
     var timeStretcher: String
     var bpm: Float
     @Transient
