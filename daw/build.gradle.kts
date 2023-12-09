@@ -101,18 +101,6 @@ project(":daw") {
             downloadFileFromGithub("EIMHost", "EIMHost", "EIMHost-Linux")
         }
     }
-
-    task<Copy>("downloadTimeStretcher") {
-        val os = org.gradle.nativeplatform.platform.internal.DefaultNativePlatform.getCurrentOperatingSystem()
-        if (os.isWindows) {
-            downloadFileFromGithub("EIMTimeStretchers", "libEIMTimeStretchers.dll")
-        } else if (os.isMacOsX) {
-            downloadFileFromGithub("EIMTimeStretchers", "libEIMTimeStretchers.dylib",
-                if (isArm) "libEIMTimeStretchers.dylib" else "libEIMTimeStretchers-x86.dylib")
-        } else {
-//            downloadTimeStretcher("so")
-        }
-    }
 }
 
 tasks.withType<Jar> {

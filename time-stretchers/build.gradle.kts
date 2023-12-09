@@ -2,6 +2,10 @@ plugins {
     kotlin("multiplatform")
 }
 
+repositories {
+    maven("https://jitpack.io")
+}
+
 kotlin {
     val jvmVersion = extra["jvm.version"] as String
     jvmToolchain(jvmVersion.toInt())
@@ -19,6 +23,7 @@ kotlin {
         }
         named("jvmMain") {
             dependencies {
+                implementation("com.github.EchoInMirror:EIMTimeStretchers:0.0.2")
             }
         }
     }

@@ -151,14 +151,15 @@ class AudioClipImpl(
     private var tempOutBuffers: Array<FloatArray> = emptyArray()
     private var position = 0L
     private var lastPos = -1L
-    private fun fillNextBlock(channels: Int): Int {
-        val tr = stretcher ?: return 0
+    private fun fillNextBlock(channels: Int): Boolean {
+        val tr = stretcher ?: return true
         val needed = tr.framesNeeded
+        var read = 0
 
         val numRead = if (needed >= 0) {
             if (tempInBuffers.size != channels || tempInBuffers[0].size < needed)
                 tempInBuffers = Array(target.channels) { FloatArray(needed) }
-            val read = target.getSamples(position, needed, tempInBuffers)
+            read = target.getSamples(position, needed, tempInBuffers)
             if (read > 0) position += read
 
             tr.process(tempInBuffers, tempOutBuffers, needed)
@@ -167,7 +168,7 @@ class AudioClipImpl(
         }
 
         if (numRead > 0) fifo.push(tempOutBuffers, 0, numRead)
-        return numRead
+        return numRead < 1 && read < 1
     }
     internal fun processBlock(pos: CurrentPosition, playTime: Long, buffers: Array<FloatArray>) {
         val bufferSize = buffers[0].size
@@ -184,7 +185,7 @@ class AudioClipImpl(
         val channels = buffers.size
         if (tempOutBuffers.size != channels || tempOutBuffers[0].size < bufferSize)
             tempOutBuffers = Array(channels) { FloatArray(bufferSize) }
-        while (fifo.available < bufferSize) if (fillNextBlock(channels) <= 0) break
+        while (fifo.available < bufferSize) if (fillNextBlock(channels)) break
         fifo.pop(buffers)
     }
 
