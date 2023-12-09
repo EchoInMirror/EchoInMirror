@@ -35,8 +35,8 @@ jobs:
           ./gradlew :daw:shadowJar
           cp daw/build/libs/daw.jar package/EchoInMirror.jar
           cp -R release-bin/. package/
-          cp daw/EIMHost-x64.exe package/EIMHost-x64.exe
           curl https://github.com/EchoInMirror/EIMHost/releases/latest/download/EIMHost-x86.exe -o package/EIMHost-x86.exe -L
+          curl https://github.com/EchoInMirror/EIMHost/releases/latest/download/EIMHost-x64.exe -o package/EIMHost-x64.exe -L
         env:
           APP_CENTER_SECRET: ${{ secrets.APP_CENTER_SECRET }}
 
@@ -51,9 +51,9 @@ jobs:
       - name: Download bellsoft jre
         shell: bash
         run: |
-          curl https://download.bell-sw.com/java/19.0.2+9/bellsoft-jre19.0.2+9-windows-amd64.zip -O -L
-          unzip -d ./package bellsoft-jre19.0.2+9-windows-amd64.zip
-          mv package/jre-19.0.2 package/jre
+          curl https://download.bell-sw.com/java/21.0.1+12/bellsoft-jre21.0.1+12-windows-amd64.zip -O -L
+          unzip -d ./package bellsoft-jre21.0.1+12-windows-amd64.zip
+          mv package/jre-21.0.1 package/jre
 
       - name: Package
         run: |
