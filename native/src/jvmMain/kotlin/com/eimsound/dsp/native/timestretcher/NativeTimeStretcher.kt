@@ -1,4 +1,4 @@
-package com.eimsound.dsp.timestretcher.impl
+package com.eimsound.dsp.native.timestretcher
 
 import com.eimsound.dsp.timestretcher.TimeStretcher
 import com.eimsound.dsp.timestretcher.TimeStretcherFactory

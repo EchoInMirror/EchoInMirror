@@ -1,20 +1,18 @@
 package com.eimsound.daw.dawutils
 
 import androidx.compose.ui.graphics.Color
-import java.lang.foreign.Addressable
+import java.lang.foreign.Arena
 import java.lang.foreign.FunctionDescriptor
 import java.lang.foreign.Linker
-import java.lang.foreign.MemorySession
 import java.lang.foreign.SymbolLookup
 import java.lang.foreign.ValueLayout
 import kotlin.math.roundToLong
 
-private val session by lazy { MemorySession.openImplicit() }
 private val DwmSetWindowAttribute by lazy {
     val linker = Linker.nativeLinker()
-    val kernel = SymbolLookup.libraryLookup("dwmapi.dll", session)
+    val kernel = SymbolLookup.libraryLookup("dwmapi.dll", Arena.global())
     linker.downcallHandle(
-        kernel.lookup("DwmSetWindowAttribute").orElseThrow(),
+        kernel.find("DwmSetWindowAttribute").orElseThrow(),
         FunctionDescriptor.of(
             ValueLayout.JAVA_LONG,
             ValueLayout.JAVA_LONG,
@@ -30,10 +28,10 @@ internal enum class WindowColorType(val value: Int) {
 }
 internal fun windowsSetWindowColor(handle: Long, color: Color, type: WindowColorType = WindowColorType.CAPTION) = try {
     (DwmSetWindowAttribute.invokeExact(handle, type.value,
-        session.allocate(
+        Arena.ofAuto().allocate(
             ValueLayout.JAVA_LONG,
             (color.blue * 255).roundToLong() shl 16 or ((color.green * 255).roundToLong() shl 8) or ((color.red * 255).roundToLong() shl 0)
-        ) as Addressable, 4) as Long) >= 0
+        ), 4) as Long) >= 0
 } catch (ignored: Throwable) {
     false
 }

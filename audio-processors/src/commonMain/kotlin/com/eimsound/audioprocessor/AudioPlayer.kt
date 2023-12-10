@@ -94,6 +94,7 @@ abstract class AbstractAudioPlayer(
 
 interface AudioPlayerFactory {
     val name: String
+    val isEnabled: Boolean
     suspend fun getPlayers(): List<String>
     fun create(
         name: String, currentPosition: MutableCurrentPosition, processor: AudioProcessor,

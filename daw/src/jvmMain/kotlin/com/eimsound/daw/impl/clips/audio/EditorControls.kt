@@ -65,7 +65,7 @@ internal fun EditorControls(clip: TrackClip<AudioClip>) {
         }
         OutlinedDropdownSelector(
             { c.timeStretcher = it },
-            timeStretchers, c.timeStretcher.ifEmpty { timeStretchers.first() },
+            timeStretchers, c.timeStretcher.ifEmpty { timeStretchers.firstOrNull() },
             Modifier.height(40.dp).fillMaxWidth(), label = "变速算法"
         )
     }

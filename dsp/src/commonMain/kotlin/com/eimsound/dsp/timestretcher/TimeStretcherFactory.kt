@@ -3,7 +3,7 @@ package com.eimsound.dsp.timestretcher
 import java.util.ServiceLoader
 
 /**
- * @see com.eimsound.dsp.timestretcher.impl.NativeTimeStretcherFactory
+ * @see com.eimsound.dsp.native.timestretcher.NativeTimeStretcherFactory
  */
 interface TimeStretcherFactory {
     val timeStretchers: List<String>

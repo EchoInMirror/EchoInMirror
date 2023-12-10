@@ -1,6 +1,6 @@
 plugins {
     kotlin("multiplatform")
-    kotlin("plugin.serialization") version "1.9.20"
+    kotlin("plugin.serialization") version System.getProperty("kotlinVersion")
     id("org.jetbrains.compose")
 }
 
@@ -16,7 +16,6 @@ kotlin {
     sourceSets {
         named("commonMain") {
             dependencies {
-                compileOnly(project(":time-stretchers"))
                 api(project(":audio-sources"))
                 api(project(":audio-processors"))
                 api(project(":utils"))

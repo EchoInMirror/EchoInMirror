@@ -2,7 +2,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("org.jetbrains.compose") apply false
-    kotlin("multiplatform") version "1.9.20" apply false
+    kotlin("multiplatform") version System.getProperty("kotlinVersion") apply false
     `maven-publish`
 }
 

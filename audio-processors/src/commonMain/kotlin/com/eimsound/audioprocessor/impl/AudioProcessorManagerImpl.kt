@@ -20,7 +20,7 @@ class AudioProcessorManagerImpl: AudioProcessorManager {
 
     override fun reload() {
         factories.clear()
-        ServiceLoader.load(AudioProcessorFactory::class.java).forEach { factories[it.name] = it }
+        ServiceLoader.load(AudioProcessorFactory::class.java).filter { it.isEnabled }.forEach { factories[it.name] = it }
     }
 
     override suspend fun createAudioProcessor(factory: String, description: AudioProcessorDescription): AudioProcessor {

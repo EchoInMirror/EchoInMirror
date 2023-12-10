@@ -61,6 +61,7 @@ class DefaultTrackFactory : TrackFactory<Track> {
     override val name = "DefaultTrackFactory"
     override val displayName = "默认"
     override val descriptions = setOf(DefaultTrackDescription)
+    override val isEnabled = true
 
     override suspend fun createAudioProcessor(description: AudioProcessorDescription): TrackImpl {
         defaultTrackLogger.info { "Creating track ${description.identifier}" }

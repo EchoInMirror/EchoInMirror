@@ -244,6 +244,8 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
 
     private fun getNativeHostPath(isX86: Boolean = false) = Paths.get(System.getProperty("eim.dsp.nativeaudioplugins.host" +
             (if (isX86) ".x86" else ""))).absolutePathString()
+
+    override val isEnabled get() = Path(getNativeHostPath()).exists()
     fun getNativeHostPath(description: NativeAudioPluginDescription) =
         getNativeHostPath(SystemUtils.IS_OS_WINDOWS && description.isX86)
     private fun getNativeHostPath(path: String) = getNativeHostPath(SystemUtils.IS_OS_WINDOWS && File(path).isX86PEFile())

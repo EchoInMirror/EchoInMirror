@@ -123,6 +123,8 @@ class JvmAudioPlayer(
 
 class JvmAudioPlayerFactory : AudioPlayerFactory {
     override val name = "JVM"
+    override val isEnabled = true
+
     override suspend fun getPlayers() = AudioSystem.getMixerInfo().mapNotNull {
         if (AudioSystem.getMixer(it).sourceLineInfo.any { i -> i is DataLine.Info }) it.name
         else null

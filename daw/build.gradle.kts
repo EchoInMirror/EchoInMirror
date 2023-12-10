@@ -7,7 +7,7 @@ import java.net.URI
 
 plugins {
     kotlin("multiplatform")
-    kotlin("plugin.serialization") version "1.9.20"
+    kotlin("plugin.serialization") version System.getProperty("kotlinVersion")
     id("org.jetbrains.compose")
     id("com.github.johnrengelman.shadow") version "8.1.1"
     id("java")
@@ -37,7 +37,6 @@ kotlin {
                 api(project(":api"))
                 api(project(":native"))
                 api(project(":audio-sources"))
-                api(project(":time-stretchers"))
 
                 api(compose.desktop.currentOs) {
                     exclude("org.jetbrains.compose.material")

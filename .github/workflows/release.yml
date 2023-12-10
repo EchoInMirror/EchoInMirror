@@ -21,19 +21,20 @@ jobs:
       - name: Check out git repository
         uses: actions/checkout@v3
 
-      - name: Set up JDK 19
+      - name: Set up JDK 21
         uses: actions/setup-java@v3
         with:
           distribution: liberica
-          java-version: 19
+          java-version: 21
 
       - name: Build
         shell: bash
         run: |
           sed -i "s/0\.0\.0/${{ github.event.release.tag_name }}/" gradle.properties
+          sed -i "s/--add-exports=java.desktop\/com.apple.eawt.event=ALL-UNNAMED//" release-bin/.vmoptions 
           mkdir package
           ./gradlew :daw:shadowJar
-          ./gradlew --stop
+          ./gradlaaew --stop
           cp daw/build/libs/daw.jar package/EchoInMirror.jar
           cp -R release-bin/. package/
           curl https://github.com/EchoInMirror/EIMHost/releases/latest/download/EIMHost-x86.exe -o package/EIMHost-x86.exe -L

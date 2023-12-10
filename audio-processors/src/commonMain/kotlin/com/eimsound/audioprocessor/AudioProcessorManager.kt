@@ -39,6 +39,7 @@ private val audioProcessorFactoryLogger = KotlinLogging.logger("AudioProcessorFa
 @Serializable(with = AudioProcessorFactoryNameSerializer::class)
 interface AudioProcessorFactory<T: AudioProcessor> : IDisplayName {
     val name: String
+    val isEnabled: Boolean
     val descriptions: Set<AudioProcessorDescription>
     suspend fun createAudioProcessor(description: AudioProcessorDescription): T
     suspend fun createAudioProcessor(path: Path): T
