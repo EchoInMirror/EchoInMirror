@@ -132,3 +132,9 @@ fun NumberInputArrows(onValueChange: (value: Int) -> Unit) {
             .pointerHoverIcon(PointerIcon.Hand).clip(CircleShape).clickable { onValueChange(-1) })
     }
 }
+
+@Composable
+fun textFieldGrayColors() = TextFieldDefaults.colors(
+    unfocusedIndicatorColor = MaterialTheme.colorScheme.outlineVariant,
+//        focusedIndicatorColor = MaterialTheme.colorScheme.outline,
+)

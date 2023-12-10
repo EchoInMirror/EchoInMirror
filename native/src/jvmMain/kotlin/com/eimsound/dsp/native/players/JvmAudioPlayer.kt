@@ -19,8 +19,9 @@ class JvmAudioPlayer(
     private val mixer: Mixer.Info,
     currentPosition: MutableCurrentPosition,
     processor: AudioProcessor,
-    preferredSampleRate: Int?
-) : AbstractAudioPlayer(factory, mixer.name, 2, currentPosition, processor, preferredSampleRate), Runnable {
+    preferredSampleRate: Int?,
+    preferredBufferSize: Int?,
+) : AbstractAudioPlayer(factory, mixer.name, 2, currentPosition, processor, preferredSampleRate, preferredBufferSize), Runnable {
     private var thread: Thread? = null
     private var sdl: SourceDataLine? = null
     private val bits = 2
@@ -44,6 +45,10 @@ class JvmAudioPlayer(
         try {
             if (!availableSampleRates.contains(sampleRate)) {
                 sampleRate = availableSampleRates.getOrNull(availableSampleRates.lowerBound { it < currentPosition.sampleRate })
+                    ?: throw LineUnavailableException("Failed to open audio player!")
+            }
+            if (!availableBufferSizes.contains(bufferSize)) {
+                bufferSize = availableBufferSizes.getOrNull(availableBufferSizes.lowerBound { it < currentPosition.bufferSize })
                     ?: throw LineUnavailableException("Failed to open audio player!")
             }
             tryOpenAudioDevice()
@@ -108,13 +113,13 @@ class JvmAudioPlayer(
     private fun tryOpenAudioDevice() {
         val af = AudioFormat(AudioFormat.Encoding.PCM_SIGNED, sampleRate.toFloat(), bits * 8, channels,
             bits * channels, sampleRate.toFloat(), false)
-        val bufferSize = currentPosition.bufferSize
         val catchBufferSize = channels * bufferSize * bits
         this.sdl = AudioSystem.getSourceDataLine(af, mixer).apply {
             open(af, catchBufferSize)
             start()
         }
         outputLatency = (bufferSize * 1.5).roundToInt()
+        currentPosition.bufferSize = bufferSize
         inputLatency = outputLatency
         outputBuffer = ByteArray(catchBufferSize)
         runBlocking { prepareToPlay() }
@@ -131,15 +136,16 @@ class JvmAudioPlayerFactory : AudioPlayerFactory {
     }
     override fun create(
         name: String, currentPosition: MutableCurrentPosition, processor: AudioProcessor,
-        preferredSampleRate: Int?
+        preferredSampleRate: Int?, preferredBufferSize: Int?,
     ): JvmAudioPlayer {
         val info = AudioSystem.getMixerInfo()
         val target = info.find { it.name == name }
         var le: Throwable? = null
-        return if (target != null) JvmAudioPlayer(this, target, currentPosition, processor, preferredSampleRate)
+        return if (target != null)
+            JvmAudioPlayer(this, target, currentPosition, processor, preferredSampleRate, preferredBufferSize)
         else info.firstNotNullOfOrNull {
             try {
-                JvmAudioPlayer(this, it, currentPosition, processor, preferredSampleRate)
+                JvmAudioPlayer(this, it, currentPosition, processor, preferredSampleRate, preferredBufferSize)
             } catch (e: Throwable) {
                 le = e
                 null

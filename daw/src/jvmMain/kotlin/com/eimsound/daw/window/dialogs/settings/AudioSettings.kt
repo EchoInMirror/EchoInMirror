@@ -53,61 +53,65 @@ internal object AudioSettings : SettingTab {
 
     @Composable
     override fun content() {
+        val colors = textFieldGrayColors()
         Column {
             SettingsSection("设备与音频设置") {
                 SettingsCard("音频工厂") {
-                    SettingsMenu(
+                    AutoWidthOutlinedDropdownSelector(
+                        {
+                            if (Configuration.audioDeviceFactoryName == it) return@AutoWidthOutlinedDropdownSelector
+                            EchoInMirror.player?.close()
+                            Configuration.audioDeviceName = ""
+                            Configuration.audioDeviceFactoryName = it
+                            reopenAudioDevice()
+                        },
                         AudioPlayerManager.instance.factories.keys,
-                        Configuration.audioDeviceFactoryName
-                    ) {
-                        if (Configuration.audioDeviceFactoryName == it) return@SettingsMenu
-                        EchoInMirror.player?.close()
-                        Configuration.audioDeviceName = ""
-                        Configuration.audioDeviceFactoryName = it
-                        reopenAudioDevice()
-                    }
+                        Configuration.audioDeviceFactoryName,
+                        colors = colors
+                    )
                 }
                 SettingsCard("音频设备") {
                     var playerNames by remember { mutableStateOf(emptyList<String>()) }
                     LaunchedEffect(Configuration.audioDeviceName) {
                         playerNames = AudioPlayerManager.instance.factories[Configuration.audioDeviceFactoryName]!!.getPlayers()
                     }
-                    SettingsMenu(
+                    AutoWidthOutlinedDropdownSelector(
+                        {
+                            if (Configuration.audioDeviceName == it) return@AutoWidthOutlinedDropdownSelector
+                            EchoInMirror.player?.close()
+                            Configuration.audioDeviceName = it
+                            reopenAudioDevice()
+                        },
                         playerNames,
-                        Configuration.audioDeviceName
-                    ) {
-                        if (Configuration.audioDeviceName == it) return@SettingsMenu
-                        EchoInMirror.player?.close()
-                        Configuration.audioDeviceName = it
-                        reopenAudioDevice()
-                    }
+                        Configuration.audioDeviceName,
+                        colors = colors
+                    )
                 }
                 SettingsCard("缓冲区大小") {
-                    SettingsMenu(
-                        EchoInMirror.player?.availableBufferSizes?.toList(),
-                        EchoInMirror.currentPosition.bufferSize,
-                        { "$it 个采样" }
-                    ) {
-                        EchoInMirror.player?.close()
-//                        EchoInMirror.currentPosition.setSampleRateAndBufferSize(
-//                            EchoInMirror.currentPosition.sampleRate, it
-//                        )
+                    AutoWidthOutlinedDropdownSelector(
+                        {
+                            EchoInMirror.player?.close()
+                            Configuration.preferredBufferSize = it
 
-                        reopenAudioDevice()
-                    }
+                            reopenAudioDevice()
+                        },
+                        EchoInMirror.player?.availableBufferSizes ?: emptyList(),
+                        EchoInMirror.player?.bufferSize,
+                        colors = colors
+                    )
                 }
                 SettingsCard("采样率") {
-                    var sampleRate by remember { mutableStateOf(EchoInMirror.currentPosition.sampleRate) }
-                    SettingsMenu(
-                        EchoInMirror.player?.availableSampleRates?.toList(),
-                        sampleRate,
-                    ) {
-                        sampleRate = it
-                        EchoInMirror.player?.close()
-                        Configuration.preferredSampleRate = it
+                    AutoWidthOutlinedDropdownSelector(
+                        {
+                            EchoInMirror.player?.close()
+                            Configuration.preferredSampleRate = it
 
-                        reopenAudioDevice()
-                    }
+                            reopenAudioDevice()
+                        },
+                        EchoInMirror.player?.availableSampleRates ?: emptyList(),
+                        EchoInMirror.player?.sampleRate,
+                        colors = colors
+                    )
                 }
                 if (SystemUtils.IS_OS_WINDOWS) SettingsCard("后台共享音频设备") {
                     Switch(

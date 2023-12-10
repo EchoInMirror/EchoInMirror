@@ -45,6 +45,7 @@ object Configuration : JsonSerializable {
     var audioDeviceFactoryName by mutableStateOf("")
     var audioDeviceName by mutableStateOf("")
     var preferredSampleRate by mutableStateOf(-1)
+    var preferredBufferSize by mutableStateOf(-1)
     var autoCutOver0db by mutableStateOf(true)
     var isTimeDisplayInBeats by mutableStateOf(false)
     var themeMode by observableMutableStateOf(2) {
@@ -113,6 +114,7 @@ object Configuration : JsonSerializable {
         put("audioDeviceFactoryName", audioDeviceFactoryName)
         put("audioDeviceName", audioDeviceName)
         put("preferredSampleRate", preferredSampleRate)
+        put("preferredBufferSize", preferredBufferSize)
         put("autoCutOver0db", autoCutOver0db)
         put("themeMode", themeMode)
         put("isTimeDisplayInBeats", isTimeDisplayInBeats)
@@ -126,6 +128,7 @@ object Configuration : JsonSerializable {
         json["audioDeviceFactoryName"]?.asString()?.let { audioDeviceFactoryName = it }
         json["audioDeviceName"]?.asString()?.let { audioDeviceName = it }
         json["preferredSampleRate"]?.asInt()?.let { preferredSampleRate = it }
+        json["preferredBufferSize"]?.asInt()?.let { preferredBufferSize = it }
         json["autoCutOver0db"]?.asBoolean()?.let { autoCutOver0db = it }
         json["themeMode"]?.asInt()?.let {
             themeMode = it

@@ -18,6 +18,7 @@ interface AudioPlayer : AutoCloseable {
     val availableSampleRates: List<Int>
     val availableBufferSizes: List<Int>
     val sampleRate: Int
+    val bufferSize: Int
 
     @Composable fun Controls()
     fun onClose(callback: () -> Unit)
@@ -30,6 +31,7 @@ abstract class AbstractAudioPlayer(
     val currentPosition: MutableCurrentPosition,
     private val processor: AudioProcessor,
     preferredSampleRate: Int? = null,
+    preferredBufferSize: Int? = null,
 ) : AudioPlayer {
     final override var cpuLoad by mutableStateOf(0F)
         private set
@@ -38,6 +40,8 @@ abstract class AbstractAudioPlayer(
     private var times = 0
     private var closeCallback: (() -> Unit)? = null
     override var sampleRate by mutableStateOf(preferredSampleRate ?: currentPosition.sampleRate)
+        protected set
+    override var bufferSize by mutableStateOf(preferredBufferSize ?: currentPosition.bufferSize)
         protected set
     override val availableSampleRates = listOf(44100, 48000, 88200, 96000)
     override val availableBufferSizes = listOf(256, 512, 1024, 2048, 4096)
@@ -98,7 +102,7 @@ interface AudioPlayerFactory {
     suspend fun getPlayers(): List<String>
     fun create(
         name: String, currentPosition: MutableCurrentPosition, processor: AudioProcessor,
-        preferredSampleRate: Int? = null,
+        preferredSampleRate: Int? = null, preferredBufferSize: Int? = null,
     ): AudioPlayer
 }
 
@@ -113,7 +117,7 @@ interface AudioPlayerManager : Reloadable {
 
     fun create(
         factory: String, name: String, currentPosition: MutableCurrentPosition, processor: AudioProcessor,
-        preferredSampleRate: Int? = null,
+        preferredSampleRate: Int? = null, preferredBufferSize: Int? = null,
     ): AudioPlayer
     fun createDefaultPlayer(currentPosition: MutableCurrentPosition, processor: AudioProcessor): AudioPlayer
 }

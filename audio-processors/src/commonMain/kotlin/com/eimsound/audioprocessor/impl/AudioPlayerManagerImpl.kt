@@ -16,7 +16,8 @@ class AudioPlayerManagerImpl : AudioPlayerManager {
         currentPosition: MutableCurrentPosition,
         processor: AudioProcessor,
         preferredSampleRate: Int?,
-    ) = factories[factory]?.create(name, currentPosition, processor, preferredSampleRate)
+        preferredBufferSize: Int?,
+    ) = factories[factory]?.create(name, currentPosition, processor, preferredSampleRate, preferredBufferSize)
         ?: throw NoSuchFactoryException(factory)
 
     override fun createDefaultPlayer(currentPosition: MutableCurrentPosition, processor: AudioProcessor): AudioPlayer {

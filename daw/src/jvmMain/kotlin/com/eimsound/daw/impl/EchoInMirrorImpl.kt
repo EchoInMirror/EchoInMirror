@@ -66,6 +66,8 @@ class EchoInMirrorImpl : IEchoInMirror {
                     Configuration.audioDeviceFactoryName,
                     Configuration.audioDeviceName, currentPosition, bus!!,
                     if (Configuration.preferredSampleRate > 0) Configuration.preferredSampleRate
+                    else null,
+                    if (Configuration.preferredBufferSize > 0) Configuration.preferredBufferSize
                     else null
                 )
             } catch (e: Exception) {
@@ -84,6 +86,10 @@ class EchoInMirrorImpl : IEchoInMirror {
         }
         if (Configuration.preferredSampleRate != ret.sampleRate) {
             Configuration.preferredSampleRate = -1
+            flag = true
+        }
+        if (Configuration.preferredBufferSize != ret.bufferSize) {
+            Configuration.preferredBufferSize = -1
             flag = true
         }
         if (flag) Configuration.save()

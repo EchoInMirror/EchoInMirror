@@ -68,10 +68,7 @@ private fun CurrentTime() {
                     Modifier.size(20.dp).pointerHoverIcon(PointerIcon.Hand).clip(CircleShape).clickable { }
                 )
             },
-            colors = TextFieldDefaults.colors(
-                unfocusedIndicatorColor = MaterialTheme.colorScheme.outlineVariant,
-                focusedIndicatorColor = MaterialTheme.colorScheme.outlineVariant,
-            ),
+            colors = textFieldGrayColors(),
             paddingValues = TextFieldDefaults.contentPaddingWithLabel(8.dp, 4.dp, 3.dp, 4.dp)
         )
     }
@@ -81,7 +78,7 @@ private fun CurrentTime() {
 private fun Quantification() {
     DropdownSelector(
         { EchoInMirror.quantification = it },
-        QUANTIFICATION_UNITS, EchoInMirror.quantification,
+        QUANTIFICATION_UNITS, EchoInMirror.quantification, Modifier.pointerHoverIcon(PointerIcon.Hand),
         isSelected = { it.getEditUnit(EchoInMirror.currentPosition) == EchoInMirror.editUnit },
         itemContent = {
             Text(it.name, fontWeight = if (it.isSpecial) FontWeight.Bold else null)
@@ -101,10 +98,7 @@ private fun Quantification() {
                     Modifier.size(20.dp).pointerHoverIcon(PointerIcon.Hand).clip(CircleShape).clickable { }
                 )
             },
-            colors = TextFieldDefaults.colors(
-                unfocusedIndicatorColor = MaterialTheme.colorScheme.outlineVariant,
-                focusedIndicatorColor = MaterialTheme.colorScheme.outlineVariant,
-            ),
+            colors = textFieldGrayColors(),
             paddingValues = TextFieldDefaults.contentPaddingWithLabel(8.dp, 4.dp, 3.dp, 4.dp)
         )
     }
@@ -171,10 +165,7 @@ private fun BPM() {
                 EchoInMirror.currentPosition.bpm = (EchoInMirror.currentPosition.bpm + it).coerceIn(1.0, 600.0)
             }
         },
-        colors = TextFieldDefaults.colors(
-            unfocusedIndicatorColor = MaterialTheme.colorScheme.outlineVariant,
-            focusedIndicatorColor = MaterialTheme.colorScheme.outlineVariant,
-        ),
+        colors = textFieldGrayColors(),
         keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
         paddingValues = TextFieldDefaults.contentPaddingWithLabel(6.dp, 6.dp, 3.dp, 4.dp)
     )

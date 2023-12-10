@@ -25,6 +25,7 @@ import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -128,12 +129,47 @@ fun <T : Any> OutlinedDropdownSelector(
     isSelected: ((T) -> Boolean)? = null,
     itemContent: (@Composable (T) -> Unit)? = null,
     label: String? = null,
+    readonly: Boolean = false,
+    colors: TextFieldColors? = null,
     content: (@Composable () -> Unit)? = null,
 ) {
     @OptIn(ExperimentalFoundationApi::class)
     DropdownSelector(
         onSelected, items, selected, boxModifier, enabled, PointerMatcher.Primary,
-        isSelected, itemContent, label, true, content
+        isSelected, itemContent, label, true, readonly, colors, content
+    )
+}
+
+@Composable
+fun <T : Any> AutoWidthOutlinedDropdownSelector(
+    onSelected: (T) -> Unit,
+    items: Collection<T>,
+    selected: T?,
+    boxModifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    isSelected: ((T) -> Boolean)? = null,
+    itemContent: (@Composable (T) -> Unit)? = null,
+    label: String? = null,
+    colors: TextFieldColors? = null
+) {
+    var modifier = boxModifier
+    val textMeasurer = rememberTextMeasurer()
+    val textWidth = remember(items, items.size) {
+        (items.maxOfOrNull { textMeasurer.measure(it.displayName).size.width.dp } ?: 0.dp) + 32.dp
+    }
+    val maxWidth = if (textWidth > 256.dp) 256.dp else textWidth
+    modifier = modifier.width(maxWidth)
+    OutlinedDropdownSelector(
+        onSelected,
+        items,
+        selected,
+        modifier,
+        enabled,
+        isSelected,
+        itemContent,
+        label,
+        readonly = true,
+        colors
     )
 }
 
@@ -147,12 +183,14 @@ fun <T : Any> DropdownSelector(
     isSelected: ((T) -> Boolean)? = null,
     itemContent: (@Composable (T) -> Unit)? = null,
     label: String? = null,
+    readOnly: Boolean = false,
+    colors: TextFieldColors? = null,
     content: (@Composable () -> Unit)? = null,
 ) {
     @OptIn(ExperimentalFoundationApi::class)
     DropdownSelector(
         onSelected, items, selected, boxModifier, enabled, PointerMatcher.Primary,
-        isSelected, itemContent, label, false, content
+        isSelected, itemContent, label, false, readOnly, colors, content
     )
 }
 
@@ -168,6 +206,8 @@ fun <T : Any> DropdownSelector(
     itemContent: (@Composable (T) -> Unit)? = null,
     label: String? = null,
     isOutlined: Boolean = false,
+    readonly: Boolean = false,
+    colors: TextFieldColors? = null,
     content: (@Composable () -> Unit)? = null,
 ) {
     val filter = remember { mutableStateOf<String?>(null) }
@@ -205,6 +245,8 @@ fun <T : Any> DropdownSelector(
                 boxModifier.pointerHoverIcon(PointerIcon.Hand),
                 label = if (label == null) null else ({ Text(label) }),
                 singleLine = true,
+                readOnly = readonly,
+                colors = colors ?: TextFieldDefaults.colors(),
                 suffix = {
                     Icon(
                         Icons.Filled.ExpandMore, "Expand",
@@ -217,6 +259,8 @@ fun <T : Any> DropdownSelector(
                 boxModifier.pointerHoverIcon(PointerIcon.Hand),
                 label = if (label == null) null else ({ Text(label) }),
                 singleLine = true,
+                readOnly = readonly,
+                colors = colors ?: TextFieldDefaults.colors(),
                 suffix = {
                     Icon(
                         Icons.Filled.ExpandMore, "Expand",

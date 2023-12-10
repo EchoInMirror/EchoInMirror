@@ -499,8 +499,6 @@ class EnvelopeEditor(
             val range = valueRange.range
             val hoveredId = hoveredIndex
 
-            println(selectedPoints.firstOrNull())
-
             // draw points
             val tmpOffsetX = offsetX
             val tmpOffsetY = offsetY

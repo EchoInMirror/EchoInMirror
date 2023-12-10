@@ -27,6 +27,7 @@ class NativeAudioPlayer(
     currentPosition: MutableCurrentPosition,
     processor: AudioProcessor,
     preferredSampleRate: Int?,
+    preferredBufferSize: Int?,
     execFile: String,
     enabledSharedMemory: Boolean = IS_SHM_SUPPORTED &&
             System.getProperty("eim.dsp.nativeaudioplayer.sharedmemory", "1") != "false",
@@ -63,7 +64,7 @@ class NativeAudioPlayer(
                     add(Json.encodeToString(type))
                 }
                 add("-B")
-                add(currentPosition.bufferSize.toString())
+                add(preferredBufferSize.toString())
                 add("-R")
                 add(preferredSampleRate.toString())
                 sharedMemory?.let {
@@ -179,7 +180,7 @@ class NativeAudioPlayer(
         inputLatency = inputStream.readVarInt()
         outputLatency = inputStream.readVarInt()
         sampleRate = inputStream.readVarInt()
-        val bufferSize = inputStream.readVarInt()
+        bufferSize = inputStream.readVarInt()
         currentPosition.bufferSize = bufferSize
         availableSampleRates = List(inputStream.readVarInt()) { inputStream.readVarInt() }
         availableBufferSizes = List(inputStream.readVarInt()) { inputStream.readVarInt() }
@@ -211,19 +212,19 @@ class NativeAudioPlayerFactory : AudioPlayerFactory {
     }
     override fun create(
         name: String, currentPosition: MutableCurrentPosition, processor: AudioProcessor,
-        preferredSampleRate: Int?
+        preferredSampleRate: Int?, preferredBufferSize: Int?,
     ) = try {
         "\\[(.+?)] ".toRegex().find(name)?.let {
             NativeAudioPlayer(this,
                 it.groupValues[1],
                 name.substring(it.range.last + 1),
-                currentPosition, processor, preferredSampleRate, execFile
+                currentPosition, processor, preferredSampleRate, preferredBufferSize, execFile
             )
         }
     } catch (e: Throwable) {
         e.printStackTrace()
         null
     } ?: NativeAudioPlayer(this, "", "",
-        currentPosition, processor, preferredSampleRate, execFile
+        currentPosition, processor, preferredSampleRate, preferredBufferSize, execFile
     )
 }

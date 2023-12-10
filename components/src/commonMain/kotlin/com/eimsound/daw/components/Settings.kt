@@ -1,68 +1,23 @@
 package com.eimsound.daw.components
+
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.input.pointer.PointerIcon
-import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 
-private val EXPANDER_PADDING_HORIZONTAL = 16.dp
 private val EXPANDER_PADDING_VERTICAL = 8.dp
 private val EXPANDER_CARD_GAP = 4.dp
 private val LIST_HEIGHT = 36.dp
 private val CARD_HEIGHT = 64.dp
-private val EXPAND_ICON_SIZE = 20.dp
-private val MENU_MAX_WIDTH = 256.dp
 
-@Composable
-fun <T> SettingsMenu(
-    items: Collection<T>?,
-    selected: T,
-    toString: (T) -> String = { it.toString() },
-    onSelect: (T) -> Unit
-) {
-    if (items == null) return
-    val textMeasurer = rememberTextMeasurer()
-    val itemsMap = items.associateBy { toString(it) }
-    val textWidth = (items.maxOfOrNull { textMeasurer.measure(toString(it)).size.width.dp } ?: 0.dp) + EXPANDER_PADDING_HORIZONTAL * 2
-    val maxWidth = if (textWidth > MENU_MAX_WIDTH) MENU_MAX_WIDTH else textWidth
-    OutlinedDropdownSelector(
-        { itemsMap[it]?.let { selected -> onSelect(selected) } },
-        itemsMap.keys,
-        selected = toString(selected),
-    ) {
-        CustomOutlinedTextField(
-            toString(selected), { },
-            Modifier.width(maxWidth).height(LIST_HEIGHT).pointerHoverIcon(PointerIcon.Hand),
-            readOnly = true,
-            textStyle = MaterialTheme.typography.labelLarge.copy(LocalContentColor.current),
-            suffix = {
-                Icon(Icons.Filled.ExpandMore, "Expand",
-                    Modifier.size(EXPAND_ICON_SIZE).pointerHoverIcon(PointerIcon.Hand).clip(CircleShape)
-                        .clickable { }
-                )
-            },
-            colors = TextFieldDefaults.colors(
-                unfocusedIndicatorColor = MaterialTheme.colorScheme.outlineVariant,
-                focusedIndicatorColor = MaterialTheme.colorScheme.outlineVariant,
-            ),
-            paddingValues = TextFieldDefaults.contentPaddingWithLabel(8.dp, 4.dp, 3.dp, 4.dp)
-        )
-    }
-}
 
 @Composable
 fun SettingsSection(
@@ -89,7 +44,8 @@ fun SettingsCard(
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.background(MaterialTheme.colorScheme.surface).padding(EXPANDER_PADDING_HORIZONTAL, EXPANDER_PADDING_VERTICAL)
+            modifier = Modifier.background(MaterialTheme.colorScheme.surface)
+                .padding(16.dp, EXPANDER_PADDING_VERTICAL)
         ) {
             Text(header)
             Filled()
