@@ -19,7 +19,7 @@ jobs:
             ${{ runner.os }}-gradle-
 
       - name: Check out git repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up JDK 21
         uses: actions/setup-java@v3
@@ -36,9 +36,9 @@ jobs:
           ./gradlew :daw:shadowJar
           ./gradlew --stop
           cp daw/build/libs/daw.jar package/EchoInMirror.jar
-          cp -R release-bin/. package/
+          cp -R release-bin/ package/
           curl https://github.com/EchoInMirror/EIMHost/releases/latest/download/EIMHost-x86.exe -o package/EIMHost-x86.exe -L
-          curl https://github.com/EchoInMirror/EIMHost/releases/latest/download/EIMHost-x64.exe -o package/EIMHost-x64.exe -L
+          curl https://github.com/EchoInMirror/EIMHost/releases/latest/download/EIMHost-x64.exe -o package/EIMHost.exe -L
         env:
           APP_CENTER_SECRET: ${{ secrets.APP_CENTER_SECRET }}
 

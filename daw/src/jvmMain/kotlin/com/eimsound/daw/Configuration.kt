@@ -79,7 +79,7 @@ object Configuration : JsonSerializable {
         else save()
         nativeHostPath = Path(if (SystemUtils.IS_OS_MAC)
             "/Users/shirasawa/code/EIMHost/cmake-build-debug/EIMHost_artefacts/Debug/EIMHost.app/Contents/MacOS/EIMHost"
-            else "D:\\Cpp\\EIMPluginScanner\\build\\EIMHost_artefacts\\MinSizeRel\\EIMHost.exe")
+            else "D:\\Cpp\\EIMPluginScanner\\build\\EIMHost_artefacts\\Debug\\EIMHost.exe")
         if (!Files.exists(nativeHostPath)) {
             nativeHostPath = Path(
                 if (SystemUtils.IS_OS_WINDOWS) "EIMHost.exe"

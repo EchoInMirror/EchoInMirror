@@ -122,7 +122,11 @@ class CommandManagerImpl : CommandManager {
 
     override fun getKeysOfCommand(command: Command) =
         customCommands.firstNotNullOfOrNull { (key, value) ->
-            if (value == command.name) key.split(" ").map { Key(it.toInt()) }.toTypedArray()
-            else null
+            if (value == command.name) try {
+                return@firstNotNullOfOrNull key.split(" ").map { Key(it.toInt()) }.toTypedArray()
+            } catch (e: Throwable) {
+                e.printStackTrace()
+            }
+            null
         } ?: command.keyBindings
 }

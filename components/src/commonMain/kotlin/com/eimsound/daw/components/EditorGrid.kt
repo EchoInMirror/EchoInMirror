@@ -24,10 +24,10 @@ fun EditorGrid(
 ) {
     var beatsOutlineColor = MaterialTheme.colorScheme.surfaceVariant
     val barsOutlineColor = MaterialTheme.colorScheme.outlineVariant
-    var stepsOutlineColor = beatsOutlineColor.copy(0.5F)
+    var stepsOutlineColor = beatsOutlineColor.copy(0.8F)
     if (barsOutlineColor == beatsOutlineColor) {
         beatsOutlineColor = stepsOutlineColor
-        stepsOutlineColor = stepsOutlineColor.copy(0.2F)
+        stepsOutlineColor = stepsOutlineColor.copy(0.4F)
     }
     val eightBarsOutlineColor = MaterialTheme.colorScheme.outline.copy(0.7F)
     val rangeColor = MaterialTheme.colorScheme.primary.copy(0.07F)
@@ -67,7 +67,7 @@ fun EditorGrid(
                 },
                 Offset(x, 0F),
                 Offset(x, size.height),
-                density / 2
+                density
             )
         }
     }
