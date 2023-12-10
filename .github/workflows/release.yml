@@ -34,7 +34,7 @@ jobs:
           sed -i "s/--add-exports=java.desktop\/com.apple.eawt.event=ALL-UNNAMED//" release-bin/.vmoptions 
           mkdir package
           ./gradlew :daw:shadowJar
-          ./gradlaaew --stop
+          ./gradlew --stop
           cp daw/build/libs/daw.jar package/EchoInMirror.jar
           cp -R release-bin/. package/
           curl https://github.com/EchoInMirror/EIMHost/releases/latest/download/EIMHost-x86.exe -o package/EIMHost-x86.exe -L
