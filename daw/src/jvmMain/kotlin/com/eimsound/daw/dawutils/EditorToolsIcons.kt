@@ -20,6 +20,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.LayoutDirection
 import com.eimsound.daw.api.EditorTool
 import com.eimsound.daw.components.icons.Eraser
+import org.apache.commons.lang3.SystemUtils
 import java.awt.Point
 import java.awt.Toolkit
 import kotlin.math.roundToInt
@@ -40,7 +41,9 @@ fun InitEditorTools() {
     val density = LocalDensity.current
     val toolkit = Toolkit.getDefaultToolkit()
     val d = toolkit.getBestCursorSize((10 * density.density).roundToInt(), (10 * density.density).roundToInt())
-    val size = Size(d.width.toFloat() - 2, d.height.toFloat() - 2)
+    val padding = if (SystemUtils.IS_OS_WINDOWS) 5 * density.density else 1F
+    val size = Size(d.width.toFloat() - padding * 2, d.height.toFloat() - padding * 2)
+    val borderColor = ColorFilter.tint(Color.White)
     EDITOR_TOOL_ICONS.run {
         forEachIndexed { i, it ->
             if (i == 0) return@forEachIndexed
@@ -50,9 +53,11 @@ fun InitEditorTools() {
                 CanvasDrawScope().draw(density, LayoutDirection.Ltr, Canvas(img), size) {
                     with(p) {
                         repeat(3) { i -> repeat(3) { j ->
-                            translate(i.toFloat(), j.toFloat()) { draw(size, colorFilter = ColorFilter.tint(Color.White)) }
+                            translate(padding + i - 1, padding + j - 1) {
+                                draw(size, colorFilter = borderColor)
+                            }
                         } }
-                        translate(1F, 1F) { draw(size) }
+                        translate(padding, padding) { draw(size) }
                     }
                 }
                 val hotSpot = TOOLS_HOT_SPOTS[i - 1]
