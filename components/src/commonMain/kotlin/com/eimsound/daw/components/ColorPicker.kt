@@ -10,10 +10,7 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.drag
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
-import androidx.compose.material3.Surface
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -25,6 +22,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.eimsound.daw.components.utils.HsvColor
+import com.eimsound.daw.components.utils.randomColor
 import java.lang.Double.min
 import kotlin.math.*
 
@@ -334,3 +332,34 @@ private fun MagnifierSelectionCircle(modifier: Modifier, color: HsvColor) {
         content = {}
     )
 }
+
+private val KEY = Any()
+
+fun FloatingLayerProvider.openColorPicker(
+    initialColor: Color = randomColor(), onCancel: (() -> Unit)? = null, onChange: (Color) -> Unit
+) {
+    closeFloatingLayer(KEY)
+    openFloatingLayer({
+        closeFloatingLayer(KEY)
+        onCancel?.invoke()
+    }, key = KEY, hasOverlay = true) {
+        Dialog {
+            var currentColor by remember { mutableStateOf(HsvColor.from(initialColor)) }
+            ColorPicker(currentColor, Modifier.size(200.dp)) {
+                currentColor = it
+                onChange(it.toColor())
+            }
+            Row(Modifier.fillMaxWidth().padding(end = 10.dp),
+                horizontalArrangement = Arrangement.End) {
+                TextButton({
+                    closeFloatingLayer(KEY)
+                    onCancel?.invoke()
+                }) { Text("取消") }
+                TextButton({
+                    closeFloatingLayer(KEY)
+                }) { Text("确认") }
+            }
+        }
+    }
+}
+

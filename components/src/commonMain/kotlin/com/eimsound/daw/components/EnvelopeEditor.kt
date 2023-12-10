@@ -651,20 +651,18 @@ class EnvelopeEditor(
         openEditorMenu(offset + positionInRoot, this@EnvelopeEditor) { close ->
             points.read()
             val currentPoint = (if (selectedPoints.contains(point)) point else selectedPoints.firstOrNull()) ?: return@openEditorMenu
-            MenuItem(padding = PaddingValues(12.dp, 12.dp, 12.dp, 0.dp)) {
-                Text("值:")
-                Filled()
-                CustomTextField(
-                    if (isFloat) floatToFixed(currentPoint.value) else currentPoint.value.toInt().toString(),
-                    {
-                        val value = it.toFloatOrNull()?.coerceIn(valueRange) ?: return@CustomTextField
-                        eventHandler?.onMovePoints(this@EnvelopeEditor, selectedPoints.toList(), 0,
-                            (if (isFloat) value else round(value)) - currentPoint.value)
-                    },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true
-                )
-            }
+            CustomOutlinedTextField(
+                if (isFloat) floatToFixed(currentPoint.value) else currentPoint.value.toInt().toString(),
+                {
+                    val value = it.toFloatOrNull()?.coerceIn(valueRange) ?: return@CustomOutlinedTextField
+                    eventHandler?.onMovePoints(this@EnvelopeEditor, selectedPoints.toList(), 0,
+                        (if (isFloat) value else round(value)) - currentPoint.value)
+                },
+                Modifier.fillMaxWidth().padding(16.dp, 16.dp, 16.dp, 4.dp),
+                label = { Text("值") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                singleLine = true
+            )
             MenuItem(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                 EnvelopeType.entries.forEach {
                     EnvelopeTypeToggleButton(it, currentPoint.type == it) { checked ->

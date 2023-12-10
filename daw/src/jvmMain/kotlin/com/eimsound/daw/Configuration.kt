@@ -88,7 +88,7 @@ object Configuration : JsonSerializable {
             )
         }
         val x86Host = if (SystemUtils.IS_OS_WINDOWS) {
-            nativeHostPath.absolute().parent.resolve("EIMHost-x86.exe")
+            nativeHostPath.absolute().parent.resolve(nativeHostPath.name.removeSuffix(".exe") + "-x86.exe")
         } else nativeHostPath
 
         System.setProperty("com.microsoft.appcenter.crashes.uncaughtexception.autosend", "true")

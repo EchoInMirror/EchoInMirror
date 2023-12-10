@@ -11,6 +11,10 @@ pluginManagement {
     }
 }
 
+buildscript {
+    System.setProperty("kotlin.version", extra["kotlin.version"] as String)
+}
+
 rootProject.name = "EchoInMirror"
 
 include(

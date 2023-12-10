@@ -20,7 +20,7 @@ import com.eimsound.daw.api.Command
 import com.eimsound.daw.components.icons.KeyboardShift
 import java.awt.event.KeyEvent
 
-val DEFAULT_ICON_MODIFIER = Modifier.size(18.dp).padding(top = 2.dp)
+val DEFAULT_ICON_MODIFIER = Modifier.size(16.dp)
 val DEFAULT_COMMAND_NAME_MODIFIER = Modifier.padding(start = 4.dp)
 
 @Composable
@@ -62,7 +62,10 @@ fun CommandMenuItem(
     onClick: () -> Unit
 ) {
     MenuItem(onClick, enabled = enabled, modifier = Modifier.fillMaxWidth()) {
-        command.icon?.let { Icon(it, it.name, iconModifier) }
+        command.icon?.let {
+            Icon(it, it.name, iconModifier)
+            Gap(2)
+        }
         Text(command.displayName, DEFAULT_COMMAND_NAME_MODIFIER)
         suffix?.invoke()
         Filled(Modifier.widthIn(12.dp))

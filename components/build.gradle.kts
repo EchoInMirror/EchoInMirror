@@ -2,7 +2,7 @@ import org.jetbrains.compose.ComposeBuildConfig
 
 plugins {
     kotlin("multiplatform")
-    kotlin("plugin.serialization") version System.getProperty("kotlinVersion")
+    kotlin("plugin.serialization") version System.getProperty("kotlin.version")
     id("org.jetbrains.compose")
 }
 

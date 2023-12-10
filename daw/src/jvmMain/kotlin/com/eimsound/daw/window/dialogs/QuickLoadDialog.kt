@@ -239,7 +239,10 @@ fun FloatingLayerProvider.openQuickLoadDialog(onClose: ((AudioProcessorDescripti
                                     val factory = descriptionsToFactory[it] ?: return@DescList null
                                     setFloatingLayerShow(KEY, false)
                                     AudioProcessorDescriptionAndFactory(it, factory)
-                                }, onDragEnd = { closeFloatingLayer(KEY) }
+                                }, onDragEnd = {
+                                    closeFloatingLayer(KEY)
+                                    println(2333)
+                                }
                             ) { desc ->
                                 if (desc == null) return@DescList
                                 if (onClose != null && selectedDescription == desc) {

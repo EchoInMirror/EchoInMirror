@@ -7,7 +7,7 @@ import java.net.URI
 
 plugins {
     kotlin("multiplatform")
-    kotlin("plugin.serialization") version System.getProperty("kotlinVersion")
+    kotlin("plugin.serialization") version System.getProperty("kotlin.version")
     id("org.jetbrains.compose")
     id("io.github.goooler.shadow") version "8.1.2"
     id("java")

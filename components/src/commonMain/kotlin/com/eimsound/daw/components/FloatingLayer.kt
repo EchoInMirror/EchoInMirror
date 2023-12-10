@@ -46,7 +46,11 @@ class FloatingLayerProvider {
     }
 
     fun closeFloatingLayer(key: Any) {
-        floatingLayers.fastForEach { if (it.key == key) it.isClosed = true }
+        floatingLayers.fastForEach {
+            if (it.key != key) return@fastForEach
+            if (it.isShow) it.isClosed = true
+            else floatingLayers = floatingLayers.filter { f -> it != f }
+        }
     }
 
     fun setFloatingLayerShow(key: Any, show: Boolean) {

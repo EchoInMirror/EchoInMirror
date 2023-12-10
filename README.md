@@ -1,4 +1,4 @@
-# Echo In Mirror [![Release](https://github.com/EchoInMirror/EchoInMirror/actions/workflows/release.yml/badge.svg)](https://github.com/EchoInMirror/EchoInMirror/actions/workflows/release.yml) ![Lines of code](https://img.shields.io/tokei/lines/github/EchoInMirror/EchoInMirror)
+# Echo In Mirror [![Release](https://github.com/EchoInMirror/EchoInMirror/actions/workflows/release.yml/badge.svg)](https://github.com/EchoInMirror/EchoInMirror/actions/workflows/release.yml) ![GitHub release (with filter)](https://img.shields.io/github/v/release/EchoInMirror/EchoInMirror) ![GitHub (Pre-)Release Date](https://img.shields.io/github/release-date-pre/EchoInMirror/EchoInMirror) ![GitHub last commit (by committer)](https://img.shields.io/github/last-commit/EchoInMirror/EchoInMirror)
 
 An open source DAW (Digital Audio Workstation) written in pure Kotlin.
 
@@ -14,7 +14,7 @@ An open source DAW (Digital Audio Workstation) written in pure Kotlin.
 - [x] ASIO support
 - [x] MIDI edit
 - [x] Latency compensation
-- [ ] Audio edit
+- [x] Audio edit
 - [ ] Audio recording
 - [ ] Midi input
 - [ ] Plugin api
@@ -24,7 +24,7 @@ An open source DAW (Digital Audio Workstation) written in pure Kotlin.
 
 ## Requirement
 
-- Java 19
+- Java 21
 
 ## Build
 

@@ -52,12 +52,30 @@ fun openFolderBrowser(parent: Component? = null, callback: (File?) -> Unit) {
     }
 }
 
-fun openInExplorer(file: File) = Desktop.getDesktop().open(file)
-fun openInBrowser(uri: URI) = Desktop.getDesktop().browse(uri)
+fun openInExplorer(file: File) {
+    try {
+        if (!file.exists()) return
+        Desktop.getDesktop().open(file)
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
+}
+fun openInBrowser(uri: URI) {
+    try {
+        Desktop.getDesktop().browse(uri)
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
+}
 fun selectInExplorer(file: File) {
-    Desktop.getDesktop().apply {
-        if (isSupported(Desktop.Action.BROWSE_FILE_DIR)) browseFileDirectory(file)
-        else if (SystemUtils.IS_OS_WINDOWS) Runtime.getRuntime().exec(arrayOf("explorer.exe", "/select,\"${file.absolutePath}\""))
+    try {
+        if (!file.exists()) return
+        Desktop.getDesktop().apply {
+            if (isSupported(Desktop.Action.BROWSE_FILE_DIR)) browseFileDirectory(file)
+            else if (SystemUtils.IS_OS_WINDOWS) Runtime.getRuntime().exec(arrayOf("explorer.exe", "/select,\"${file.absolutePath}\""))
+        }
+    } catch (e: Exception) {
+        e.printStackTrace()
     }
 }
 
@@ -66,3 +84,5 @@ fun Modifier.clearFocus() = composed {
     val manager = LocalFocusManager.current
     onPointerEvent(PointerEventType.Press) { manager.clearFocus(true) }
 }
+
+inline fun <T : Any> Modifier.ifNotNull(value: T?, block: Modifier.(T) -> Modifier) = if (value == null) this else block(value)

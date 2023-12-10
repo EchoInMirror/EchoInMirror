@@ -15,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
@@ -26,7 +27,7 @@ private val DEFAULT_PADDING = TextFieldDefaults.contentPaddingWithLabel(
     start = 8.dp,
     top = 6.dp,
     end = 8.dp,
-    bottom = 4.dp,
+    bottom = 6.dp,
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -124,10 +125,10 @@ fun ReadonlyTextField(modifier: Modifier = Modifier, enabled: Boolean = false, c
 
 @Composable
 fun NumberInputArrows(onValueChange: (value: Int) -> Unit) {
-    Column(Modifier.height(IntrinsicSize.Max), Arrangement.SpaceAround) {
-        Icon(Icons.Filled.ExpandLess, "add", Modifier.size(14.dp).pointerHoverIcon(PointerIcon.Hand)
-            .clip(CircleShape).clickable { onValueChange(1) })
-        Icon(Icons.Filled.ExpandMore, "minus", Modifier.offset(y = (-4).dp).size(14.dp).
-        pointerHoverIcon(PointerIcon.Hand).clip(CircleShape).clickable { onValueChange(-1) })
+    Column(verticalArrangement = Arrangement.SpaceAround) {
+        Icon(Icons.Filled.ExpandLess, "add", Modifier.size(10.dp).scale(1.4F)
+            .pointerHoverIcon(PointerIcon.Hand).clip(CircleShape).clickable { onValueChange(1) })
+        Icon(Icons.Filled.ExpandMore, "minus", Modifier.size(10.dp).scale(1.4F)
+            .pointerHoverIcon(PointerIcon.Hand).clip(CircleShape).clickable { onValueChange(-1) })
     }
 }

@@ -106,10 +106,10 @@ fun FloatingLayerProvider.openAudioProcessorMenu(
         MenuHeader(
             p.name, !p.processor.isDisabled,
             if (p.processor.description.isInstrument) Icons.Default.Piano else Icons.Default.SettingsInputHdmi,
-            { p.name = it }
-        ) {
-            CustomCheckbox(!p.processor.isDisabled, { p.processor.isDisabled = !it }, Modifier.padding(start = 8.dp))
-        }
-        Divider()
+            onChange = { p.name = it },
+            titleContent = {
+                CustomCheckbox(!p.processor.isDisabled, { p.processor.isDisabled = !it }, Modifier.padding(start = 8.dp))
+            }
+        )
     }
 }

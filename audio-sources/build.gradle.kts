@@ -1,6 +1,6 @@
 plugins {
     kotlin("multiplatform")
-    kotlin("plugin.serialization") version System.getProperty("kotlinVersion")
+    kotlin("plugin.serialization") version System.getProperty("kotlin.version")
 }
 
 kotlin {

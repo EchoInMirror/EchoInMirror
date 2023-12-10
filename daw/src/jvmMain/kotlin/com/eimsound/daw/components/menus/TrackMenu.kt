@@ -84,9 +84,10 @@ fun FloatingLayerProvider.openTrackMenu(
             )
         }
     }) {
-        MenuHeader(track.name, !track.isDisabled, Icons.Default.ViewList, { track.name = it }) {
-            CustomCheckbox(!track.isDisabled, { track.isDisabled = !it }, Modifier)
-        }
-        Divider()
+        MenuHeader(
+            track.name, !track.isDisabled, Icons.Default.ViewList, track.color, { track.name = it },
+            onColorChange = { track.color = it },
+            titleContent = { CustomCheckbox(!track.isDisabled, { track.isDisabled = !it }, Modifier) }
+        )
     }
 }

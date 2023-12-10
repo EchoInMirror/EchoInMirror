@@ -39,9 +39,9 @@ import com.eimsound.daw.components.IconButton
 import com.eimsound.daw.components.VolumeSlider
 import com.eimsound.daw.components.icons.Crown
 import com.eimsound.daw.components.menus.openTrackMenu
+import com.eimsound.daw.components.openColorPicker
 import com.eimsound.daw.components.utils.*
 import com.eimsound.daw.utils.isCrossPlatformAltPressed
-import com.eimsound.daw.window.dialogs.openColorPicker
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlin.math.roundToInt

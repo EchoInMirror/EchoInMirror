@@ -115,9 +115,9 @@ internal fun EditorControls(editor: DefaultMidiClipEditor) {
                 val velocity = if (editor.selectedNotes.isEmpty()) DefaultMidiClipEditor.defaultVelocity else
                         (cur ?: editor.selectedNotes.first()).velocity
                 val trueValue = velocity + (if (editor.selectedNotes.isEmpty()) 0 else delta)
-                CustomTextField(
+                CustomOutlinedTextField(
                     trueValue.toString(), { str ->
-                        val v = str.toIntOrNull()?.coerceIn(0, 127) ?: return@CustomTextField
+                        val v = str.toIntOrNull()?.coerceIn(0, 127) ?: return@CustomOutlinedTextField
                         if (editor.selectedNotes.isEmpty()) DefaultMidiClipEditor.defaultVelocity = v
                         else editor.clip.clip.doNoteVelocityAction(editor.selectedNotes.toTypedArray(), v - velocity)
                     },
