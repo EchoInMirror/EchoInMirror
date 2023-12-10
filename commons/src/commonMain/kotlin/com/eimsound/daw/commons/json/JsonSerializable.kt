@@ -24,7 +24,7 @@ inline fun JsonElement.asFloat() = jsonPrimitive.float
 inline fun JsonElement.asColor() = Color(jsonPrimitive.long.toULong())
 val JsonIgnoreDefaults = Json { ignoreUnknownKeys = true; encodeDefaults = false }
 @OptIn(ExperimentalSerializationApi::class)
-val JsonPrettier = Json { ignoreUnknownKeys = true; encodeDefaults = false; prettyPrint = true; prettyPrintIndent = "  " }
+val JsonPrettier = Json { ignoreUnknownKeys = true; encodeDefaults = false; prettyPrint = true; prettyPrintIndent = "" }
 
 interface JsonSerializable {
     fun toJson(): JsonElement
@@ -56,6 +56,35 @@ fun JsonSerializable.fromJsonFile(file: Path) {
     fromJson(Json.parseToJsonElement(file.inputStream().use { it.reader().readText() }))
 }
 
+inline fun <T: JsonSerializable> MutableCollection<T>.fromJson(json: JsonArray?, block: () -> T) {
+    clear()
+    if (json != null) addAll(json.map { block().apply { fromJson(it) } })
+}
+inline fun <K, T: JsonSerializable> MutableMap<K, T>.fromJson(json: JsonObject?, block: (String) -> Pair<K, T>) {
+    clear()
+    if (json != null) putAll(json.map { (k, v) -> block(k).apply { second.fromJson(v) } })
+}
+inline fun <T: JsonSerializable> MutableMap<Int, T>.fromIntKeyJson(json: JsonObject?, block: () -> T) {
+    clear()
+    if (json != null) putAll(json.map { (k, v) -> k.toInt() to block().apply { fromJson(v) } })
+}
+inline fun <T: JsonSerializable> MutableMap<Float, T>.fromFloatKeyJson(json: JsonObject?, block: () -> T) {
+    clear()
+    if (json != null) putAll(json.map { (k, v) -> k.toFloat() to block().apply { fromJson(v) } })
+}
+inline fun <T: JsonSerializable> MutableMap<Double, T>.fromDoubleKeyJson(json: JsonObject?, block: () -> T) {
+    clear()
+    if (json != null) putAll(json.map { (k, v) -> k.toDouble() to block().apply { fromJson(v) } })
+}
+inline fun <T: JsonSerializable> MutableMap<String, T>.fromStringKeyJson(json: JsonObject?, block: () -> T) {
+    clear()
+    if (json != null) putAll(json.map { (k, v) -> k to block().apply { fromJson(v) } })
+}
+fun <T: JsonSerializable> Collection<T>.toJsonArray() = JsonArray(map { it.toJson() })
+fun <K : Any> Map<K, JsonSerializable>.toJson() = JsonObject(mutableMapOf<String, JsonElement>().also { map ->
+    this@toJson.forEach { (k, v) -> map[k.toString()] = v.toJson() }
+})
+
 fun Path.toJsonElement() = Json.parseToJsonElement(inputStream().use { it.reader().readText() })
 @OptIn(ExperimentalSerializationApi::class)
 inline fun <reified T> File.toJson() = Json.decodeFromStream<T>(inputStream())
@@ -69,6 +98,9 @@ inline fun JsonObjectBuilder.putNotDefault(key: String, value: Collection<String
 }
 inline fun JsonObjectBuilder.putNotDefault(key: String, value: List<JsonElement>?) {
     if (!value.isNullOrEmpty()) put(key, JsonArray(value))
+}
+inline fun <K: Any> JsonObjectBuilder.putNotDefault(key: String, value: Map<K, JsonSerializable>?) {
+    if (!value.isNullOrEmpty()) put(key, value.toJson())
 }
 inline fun JsonObjectBuilder.putNotDefault(key: String, value: Collection<JsonSerializable>?) {
     if (!value.isNullOrEmpty()) put(key, JsonArray(value.map(JsonSerializable::toJson)))

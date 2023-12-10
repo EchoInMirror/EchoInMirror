@@ -14,7 +14,6 @@ import com.eimsound.daw.commons.actions.Restorable
 import com.eimsound.daw.commons.json.*
 import com.eimsound.dsp.data.DefaultEnvelopePointList
 import com.eimsound.dsp.data.EnvelopePointList
-import com.eimsound.dsp.data.fromJson
 import com.eimsound.dsp.data.putNotDefault
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -78,8 +77,7 @@ data class DefaultHandledParameter(
     }
 
     override fun fromJson(json: JsonElement) {
-        json as JsonObject
-        points.fromJson(json["points"])
+        json.jsonObject["points"]?.let { points.fromJson(it) }
     }
 }
 

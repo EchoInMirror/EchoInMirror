@@ -17,6 +17,7 @@ import com.eimsound.audioprocessor.convertSamplesToPPQ
 import com.eimsound.daw.api.*
 import com.eimsound.daw.api.clips.*
 import com.eimsound.daw.api.processor.Track
+import com.eimsound.daw.commons.json.fromIntKeyJson
 import com.eimsound.daw.components.EnvelopeEditor
 import com.eimsound.daw.impl.clips.midi.editor.DefaultMidiClipEditor
 import com.eimsound.daw.utils.lowerBound
@@ -46,7 +47,7 @@ class MidiClipImpl(factory: ClipFactory<MidiClip>) : AbstractClip<MidiClip>(fact
         put("id", id)
         put("factory", factory.name)
         putNotDefault("notes", notes)
-        putNotDefault("events", Json.encodeToJsonElement<MidiCCEvents>(events))
+        putNotDefault("events", events)
     }
 
     override fun fromJson(json: JsonElement) {
@@ -60,9 +61,7 @@ class MidiClipImpl(factory: ClipFactory<MidiClip>) : AbstractClip<MidiClip>(fact
         }
         json["events"]?.let {
             val e2: MutableMidiCCEvents = hashMapOf()
-            Json.decodeFromJsonElement<MidiCCEvents>(it).forEach { (id, points) ->
-                e2[id] = DefaultEnvelopePointList().apply { addAll(points) }
-            }
+            events.fromIntKeyJson(it.jsonObject) { DefaultEnvelopePointList() }
             events.putAll(e2)
         }
     }

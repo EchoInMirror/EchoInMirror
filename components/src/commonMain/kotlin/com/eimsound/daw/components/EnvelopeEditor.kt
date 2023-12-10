@@ -33,16 +33,16 @@ import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.util.fastForEach
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.EditorTool
-import com.eimsound.daw.commons.json.JsonIgnoreDefaults
 import com.eimsound.daw.commons.MultiSelectableEditor
 import com.eimsound.daw.commons.SerializableEditor
+import com.eimsound.daw.commons.json.fromJsonString
+import com.eimsound.daw.commons.json.toJsonString
 import com.eimsound.daw.components.utils.EditAction
 import com.eimsound.daw.components.utils.calculateContrastRatio
 import com.eimsound.daw.utils.*
 import com.eimsound.dsp.data.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.serialization.encodeToString
 import kotlin.collections.ArrayDeque
 import kotlin.math.*
 
@@ -129,6 +129,9 @@ private fun Density.getSelectedPoint(
         if (checkIsSelectedPoint(points.getOrNull(pointIndex - 1))) pointIndex - 1 else -1
 }
 
+/**
+ * @see com.eimsound.daw.actions.GlobalEnvelopeEditorEventHandler
+ */
 interface EnvelopeEditorEventHandler {
     fun onAddPoints(editor: EnvelopeEditor, points: BaseEnvelopePointList)
     fun onPastePoints(editor: EnvelopeEditor, points: BaseEnvelopePointList): BaseEnvelopePointList
@@ -199,13 +202,12 @@ class EnvelopeEditor(
         selectedPoints.clear()
         selectedPoints.addAll(result)
     }
-    override fun copyAsString() = if (selectedPoints.isEmpty()) "" else JsonIgnoreDefaults.encodeToString(
-        SerializableEnvelopePointList(EchoInMirror.currentPosition.ppq, copyAsObject())
-    )
+    override fun copyAsString() = if (selectedPoints.isEmpty()) ""
+        else SerializableEnvelopePointList(EchoInMirror.currentPosition.ppq, copyAsObject()).toJsonString()
 
     override fun pasteFromString(value: String) {
         try {
-            val paste = JsonIgnoreDefaults.decodeFromString<SerializableEnvelopePointList>(value)
+            val paste = SerializableEnvelopePointList().apply { fromJsonString(value) }
             val factor = EchoInMirror.currentPosition.ppq.toDouble() / paste.ppq
             paste.points.fastForEach { it.time = (it.time * factor).roundToInt() }
             val result = eventHandler?.onPastePoints(this, paste.points) ?: return
@@ -263,14 +265,17 @@ class EnvelopeEditor(
                                 event.changes[0].position,
                                 if (isPointExists) points[pointId] else null,
                             )
-                            continue
+                            return
                         }
                         if (isPencil) {
                             selectedPoints.clear()
                             action = EditAction.BRUSH
                             break
                         } else if (isPointExists) {
-                            if (!selectedPoints.contains(points[pointId])) selectedPoints.clear()
+                            if (!selectedPoints.contains(points[pointId])) {
+                                selectedPoints.clear()
+                                selectedPoints.add(points[pointId])
+                            }
                             currentAdjustingPoint = pointId
                             action = EditAction.RESIZE
                             break
@@ -287,13 +292,15 @@ class EnvelopeEditor(
                         hoveredIndex = tmpId
                         if (event.buttons.isSecondaryPressed) {
                             floatingLayerProvider.openMenu(event.changes[0].position, points[tmpId])
-                            continue
+                            return
                         }
                         action = EditAction.MOVE
                         break
                     }
-                    continue
+                    return
                 }
+
+                else -> return
             }
         } while (!event.changes.fastAll(PointerInputChange::changedToDownIgnoreConsumed))
         val down = event.changes[0]
@@ -491,6 +498,8 @@ class EnvelopeEditor(
             points.read()
             val range = valueRange.range
             val hoveredId = hoveredIndex
+
+            println(selectedPoints.firstOrNull())
 
             // draw points
             val tmpOffsetX = offsetX

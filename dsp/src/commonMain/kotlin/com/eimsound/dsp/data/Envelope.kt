@@ -2,10 +2,7 @@ package com.eimsound.dsp.data
 
 import androidx.compose.runtime.mutableStateOf
 import com.eimsound.daw.commons.IManualState
-import kotlinx.serialization.EncodeDefault
-import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
+import com.eimsound.daw.commons.json.*
 import kotlinx.serialization.json.*
 import kotlin.math.absoluteValue
 
@@ -54,45 +51,66 @@ enum class EnvelopeType {
         }
 }
 
-@Serializable
-data class EnvelopePoint(
-    var time: Int,
-    var value: Float,
-    var tension: Float = 0F,
+class EnvelopePoint(
+    var time: Int = 0,
+    var value: Float = 0F,
+    tension: Float = 0F,
     var type: EnvelopeType = EnvelopeType.SMOOTH
-): Comparable<EnvelopePoint> {
+): Comparable<EnvelopePoint>, JsonSerializable {
     override fun compareTo(other: EnvelopePoint) = time.compareTo(other.time)
+    var tension = tension
+        set(value) { field = value.coerceIn(-1F, 1F) }
+    fun copy(time: Int = this.time, value: Float = this.value, tension: Float = this.tension, type: EnvelopeType = this.type) =
+        EnvelopePoint(time, value, tension, type)
+
+    override fun toJson() = buildJsonArray {
+        add(time)
+        add(value)
+        add(tension)
+        if (type != EnvelopeType.SMOOTH) add(type.ordinal)
+    }
+
+    override fun fromJson(json: JsonElement) {
+        val array = json.jsonArray
+        time = array[0].asInt()
+        value = array[1].asFloat()
+        tension = array[2].asFloat()
+        type = if (array.size > 3) EnvelopeType.entries[array[3].asInt()] else EnvelopeType.SMOOTH
+    }
+
+    override fun toString() = "EnvelopePoint(time=$time, value=$value, tension=$tension, type=$type)"
 }
 
 typealias BaseEnvelopePointList = List<EnvelopePoint>
 typealias MutableBaseEnvelopePointList = MutableList<EnvelopePoint>
 
-@Serializable
-data class SerializableEnvelopePointList(val ppq: Int, val points: BaseEnvelopePointList) {
-    @OptIn(ExperimentalSerializationApi::class)
-    @Suppress("unused")
-    @EncodeDefault
-    val className = "EnvelopePointList"
+class SerializableEnvelopePointList(
+    var ppq: Int = 96, var points: BaseEnvelopePointList = emptyList()
+): JsonSerializable {
+    override fun toJson() = buildJsonObject {
+        put("ppq", ppq)
+        put("points", points)
+        put("className", "EnvelopePointList")
+    }
+    override fun fromJson(json: JsonElement) {
+        val obj = json.jsonObject
+        ppq = obj["ppq"]?.asInt() ?: 96
+        points = obj["points"]?.let { mutableListOf<EnvelopePoint>().apply { fromJson(it) } } ?: emptyList()
+    }
 }
 
 fun JsonObjectBuilder.put(key: String, value: BaseEnvelopePointList?) {
-    put(key, Json.encodeToJsonElement(value))
+    if (value == null) put(key, JsonArray(emptyList()))
+    else put(key, value.toJsonArray())
 }
 fun JsonObjectBuilder.putNotDefault(key: String, value: BaseEnvelopePointList?) {
-    if (!value.isNullOrEmpty()) put(key, Json.encodeToJsonElement(value))
+    if (!value.isNullOrEmpty()) put(key, value.toJsonArray())
 }
 
-@Serializable
-sealed interface EnvelopePointList : MutableBaseEnvelopePointList, IManualState, BaseEnvelopePointList {
+sealed interface EnvelopePointList : MutableBaseEnvelopePointList, IManualState, JsonSerializable {
     fun copy(): EnvelopePointList
     fun split(time: Int, offsetStart: Int = 0): Pair<BaseEnvelopePointList, BaseEnvelopePointList>
     fun getValue(position: Int, defaultValue: Float = 0F): Float
-}
-
-fun EnvelopePointList.fromJson(json: JsonElement?) {
-    clear()
-    if (json != null) addAll(Json.decodeFromJsonElement<BaseEnvelopePointList>(json))
-    update()
 }
 
 fun BaseEnvelopePointList.toMutableEnvelopePointList() = DefaultEnvelopePointList().apply { addAll(this@toMutableEnvelopePointList) }
@@ -112,7 +130,6 @@ private inline fun <T> List<T>.lowerBound(comparator: (T) -> Boolean): Int {
     return l
 }
 
-@Serializable
 class DefaultEnvelopePointList : EnvelopePointList, ArrayList<EnvelopePoint>() {
     @Transient
     private var modification = mutableStateOf(0)
@@ -164,6 +181,9 @@ class DefaultEnvelopePointList : EnvelopePointList, ArrayList<EnvelopePoint>() {
 
     override fun update() { modification.value++ }
     override fun read() { modification.value }
+
+    override fun fromJson(json: JsonElement) { fromJson(json.jsonArray) { EnvelopePoint() } }
+    override fun toJson() = toJsonArray()
 }
 
 @Suppress("unused")
