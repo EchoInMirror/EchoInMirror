@@ -1,5 +1,4 @@
 package com.eimsound.daw.components
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -28,7 +27,6 @@ private val CARD_HEIGHT = 64.dp
 private val EXPAND_ICON_SIZE = 20.dp
 private val MENU_MAX_WIDTH = 256.dp
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun <T> SettingsMenu(
     items: Collection<T>?,
@@ -36,33 +34,34 @@ fun <T> SettingsMenu(
     toString: (T) -> String = { it.toString() },
     onSelect: (T) -> Unit
 ) {
+    if (items == null) return
     val textMeasurer = rememberTextMeasurer()
-    val itemsMap = items!!.associateBy { toString(it) }
+    val itemsMap = items.associateBy { toString(it) }
     val textWidth = (items.maxOfOrNull { textMeasurer.measure(toString(it)).size.width.dp } ?: 0.dp) + EXPANDER_PADDING_HORIZONTAL * 2
     val maxWidth = if (textWidth > MENU_MAX_WIDTH) MENU_MAX_WIDTH else textWidth
-    Selector(
+    OutlinedDropdownSelector(
+        { itemsMap[it]?.let { selected -> onSelect(selected) } },
         itemsMap.keys,
         selected = toString(selected),
-        content = {
-            CustomOutlinedTextField(
-                toString(selected), { },
-                Modifier.width(maxWidth).height(LIST_HEIGHT).pointerHoverIcon(PointerIcon.Hand),
-                readOnly = true,
-                textStyle = MaterialTheme.typography.labelLarge.copy(LocalContentColor.current),
-                suffix = {
-                    Icon(Icons.Filled.ExpandMore, "Expand",
-                        Modifier.size(EXPAND_ICON_SIZE).pointerHoverIcon(PointerIcon.Hand).clip(CircleShape)
-                            .clickable { }
-                    )
-                },
-                colors = TextFieldDefaults.colors(
-                    unfocusedIndicatorColor = MaterialTheme.colorScheme.outlineVariant,
-                    focusedIndicatorColor = MaterialTheme.colorScheme.outlineVariant,
-                ),
-                paddingValues = TextFieldDefaults.contentPaddingWithLabel(8.dp, 4.dp, 3.dp, 4.dp)
-            )
-        },
-    ) { itemsMap[it]?.let { selected -> onSelect(selected) } }
+    ) {
+        CustomOutlinedTextField(
+            toString(selected), { },
+            Modifier.width(maxWidth).height(LIST_HEIGHT).pointerHoverIcon(PointerIcon.Hand),
+            readOnly = true,
+            textStyle = MaterialTheme.typography.labelLarge.copy(LocalContentColor.current),
+            suffix = {
+                Icon(Icons.Filled.ExpandMore, "Expand",
+                    Modifier.size(EXPAND_ICON_SIZE).pointerHoverIcon(PointerIcon.Hand).clip(CircleShape)
+                        .clickable { }
+                )
+            },
+            colors = TextFieldDefaults.colors(
+                unfocusedIndicatorColor = MaterialTheme.colorScheme.outlineVariant,
+                focusedIndicatorColor = MaterialTheme.colorScheme.outlineVariant,
+            ),
+            paddingValues = TextFieldDefaults.contentPaddingWithLabel(8.dp, 4.dp, 3.dp, 4.dp)
+        )
+    }
 }
 
 @Composable
