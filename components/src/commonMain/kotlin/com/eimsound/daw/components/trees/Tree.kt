@@ -83,19 +83,25 @@ fun TreeItem(
 @Composable
 fun DictionaryNode(file: Path, depth: Int = 0, showSupFormatOnly: Boolean = false) {
     var expanded by remember { mutableStateOf(false) }
-    val list = remember(file) {
-        try {
-            file.listDirectoryEntries()
-                .filter { !it.isHidden() }
-                .sortedWith(compareBy({ !it.isDirectory() }, { it.name }))
-        } catch (ignored: Throwable) {
-            null
+    var list: List<Path>? by remember { mutableStateOf(null) }
+    val isExpandable = !list.isNullOrEmpty()
+    LaunchedEffect(file) {
+        withContext(Dispatchers.IO) {
+            list = try {
+                file.listDirectoryEntries()
+                    .filter { !it.isHidden() }
+                    .sortedWith(compareBy({ !it.isDirectory() }, { it.name }))
+            } catch (ignored: Throwable) {
+                null
+            }
         }
     }
-    val isExpandable = !list.isNullOrEmpty()
     TreeItem(
         file.name.ifEmpty {
-            if (depth == 0) "根目录" else "未命名"
+            if (depth == 0) {
+                val str = file.pathString
+                if (str == "/") "根目录" else str
+            } else "未命名"
         },
         file,
         if (expanded) Icons.Filled.FolderOpen else Icons.Outlined.Folder,
@@ -105,7 +111,7 @@ fun DictionaryNode(file: Path, depth: Int = 0, showSupFormatOnly: Boolean = fals
             { expanded = !expanded }
         } else null
     )
-    if (expanded) list!!.fastForEach { FileNode(it, depth + 1, showSupFormatOnly) }
+    if (expanded) list?.fastForEach { key(it) { FileNode(it, depth + 1, showSupFormatOnly) } }
 }
 
 @Composable

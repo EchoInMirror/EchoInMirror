@@ -2,7 +2,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("org.jetbrains.compose") apply false
-    kotlin("multiplatform") version "1.9.20" apply false
+    kotlin("multiplatform") version System.getProperty("kotlinVersion") apply false
     `maven-publish`
 }
 
@@ -12,6 +12,7 @@ allprojects {
     repositories {
         mavenCentral()
         maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
+        maven("https://mvn.0110.be/releases")
     }
 }
 

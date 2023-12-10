@@ -1,3 +1,5 @@
+@file:Suppress("BooleanLiteralArgument", "DuplicatedCode")
+
 package com.eimsound.daw.components.icons
 
 import androidx.compose.material.icons.materialIcon

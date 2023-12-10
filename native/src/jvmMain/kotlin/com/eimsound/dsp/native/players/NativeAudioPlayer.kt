@@ -16,7 +16,9 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.EOFException
 import java.nio.ByteBuffer
+import java.nio.file.Files
 import java.util.*
+import kotlin.io.path.Path
 
 private val logger = KotlinLogging.logger {  }
 class NativeAudioPlayer(
@@ -132,7 +134,6 @@ class NativeAudioPlayer(
         }
     }
 
-    @Suppress("DuplicatedCode")
     override fun run() {
         use {
             while (process != null) {
@@ -203,6 +204,7 @@ class NativeAudioPlayer(
 class NativeAudioPlayerFactory : AudioPlayerFactory {
     private val execFile get() = System.getProperty("eim.dsp.nativeaudioplayer.file")
     override val name = "Native"
+    override val isEnabled get() = execFile != null && Files.exists(Path(execFile))
     override suspend fun getPlayers() = withContext(Dispatchers.IO) {
         ProcessBuilder(execFile, "-O", "-A").start().inputStream
             .readAllBytes().decodeToString().split("\$EIM\$").filter { it.isNotEmpty() }

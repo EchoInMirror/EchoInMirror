@@ -63,7 +63,6 @@ class NativeAudioPluginSettings: SettingTab {
         }) { Text(if (scanningJob == null) "搜索" else "取消") }
     }
 
-    @Suppress("DuplicatedCode")
     @Composable
     override fun content() {
         Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {

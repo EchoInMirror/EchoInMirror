@@ -1,5 +1,3 @@
-@file:Suppress("DuplicatedCode")
-
 package com.eimsound.daw.commons.actions
 
 import androidx.compose.ui.graphics.vector.ImageVector

@@ -20,6 +20,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.*
@@ -83,7 +84,7 @@ fun Timeline(modifier: Modifier = Modifier, noteWidth: MutableState<Dp>, scrollS
         val onRangeChangeValue by rememberUpdatedState(onRangeChange)
         val onTimeChangeValue by rememberUpdatedState(onTimeChange)
 
-        Canvas(Modifier.fillMaxSize().pointerInput(Unit) {
+        Canvas(Modifier.fillMaxSize().graphicsLayer { }.pointerInput(Unit) {
             awaitEachGesture {
                 var event: PointerEvent
                 do {

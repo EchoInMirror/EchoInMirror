@@ -67,7 +67,7 @@ abstract class AbstractAudioProcessorParameter(
 
 open class SimpleAudioProcessorParameter(
     override val id: String,
-    override val name: String,
+    override val name: String = id,
     final override val range: FloatRange = 0F..1F,
     final override val initialValue: Float = range.start,
     override val label: String = "",

@@ -46,7 +46,6 @@ import kotlinx.serialization.encodeToString
 import kotlin.collections.ArrayDeque
 import kotlin.math.*
 
-@Suppress("DuplicatedCode")
 fun EnvelopeType.toPath(
     height: Float, tension: Float, x0: Float, x1: Float,
     value0: Float, value1: Float
@@ -70,6 +69,7 @@ fun EnvelopeType.toPath(
                 controlPoint2X = x1 - dx
                 controlPoint2Y = value1
             } else {
+                @Suppress("DuplicatedCode")
                 val dy = (value1 - value0).absoluteValue * -tension
                 if (value0 > value1) {
                     controlPoint1Y = value0 - dy
@@ -654,11 +654,16 @@ class EnvelopeEditor(
             MenuItem(padding = PaddingValues(12.dp, 12.dp, 12.dp, 0.dp)) {
                 Text("值:")
                 Filled()
-                CustomTextField(if (isFloat) floatToFixed(currentPoint.value) else currentPoint.value.toInt().toString(), {
-                    val value = it.toFloatOrNull()?.coerceIn(valueRange) ?: return@CustomTextField
-                    eventHandler?.onMovePoints(this@EnvelopeEditor, selectedPoints.toList(), 0,
-                        (if (isFloat) value else round(value)) - currentPoint.value)
-                }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
+                CustomTextField(
+                    if (isFloat) floatToFixed(currentPoint.value) else currentPoint.value.toInt().toString(),
+                    {
+                        val value = it.toFloatOrNull()?.coerceIn(valueRange) ?: return@CustomTextField
+                        eventHandler?.onMovePoints(this@EnvelopeEditor, selectedPoints.toList(), 0,
+                            (if (isFloat) value else round(value)) - currentPoint.value)
+                    },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true
+                )
             }
             MenuItem(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                 EnvelopeType.entries.forEach {

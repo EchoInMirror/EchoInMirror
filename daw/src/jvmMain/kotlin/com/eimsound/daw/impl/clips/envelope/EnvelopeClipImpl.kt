@@ -1,5 +1,7 @@
 package com.eimsound.daw.impl.clips.envelope
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Timeline
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
@@ -28,6 +30,7 @@ class EnvelopeClipImpl(factory: ClipFactory<EnvelopeClip>): AbstractClip<Envelop
     override val envelope = DefaultEnvelopePointList()
     override val controllers = mutableStateListOf<ParameterController>()
     override val isExpandable = true
+    override val icon = Icons.Default.Timeline
 
     override fun toJson() = buildJsonObject {
         put("id", id)

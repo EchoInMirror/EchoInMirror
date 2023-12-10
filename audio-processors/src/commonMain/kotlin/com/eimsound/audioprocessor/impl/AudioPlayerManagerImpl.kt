@@ -26,6 +26,6 @@ class AudioPlayerManagerImpl : AudioPlayerManager {
 
     override fun reload() {
         factories.clear()
-        factories.putAll(ServiceLoader.load(AudioPlayerFactory::class.java).associateBy { it.name })
+        factories.putAll(ServiceLoader.load(AudioPlayerFactory::class.java).filter { it.isEnabled }.associateBy { it.name })
     }
 }

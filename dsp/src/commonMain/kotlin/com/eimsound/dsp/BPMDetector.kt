@@ -8,8 +8,10 @@ import kotlin.math.roundToInt
 
 fun detectBPM(source: AudioSource): List<Pair<Int, Float>> {
     var cnt = 0
-    val list = groupByTempo(source.sampleRate, identifyIntervals(findPeaks(LowPassedAudioSource(source))))
-        .entries.sortedByDescending { it.value }.subList(0, 3)
+    var list = groupByTempo(source.sampleRate, identifyIntervals(findPeaks(LowPassedAudioSource(source))))
+        .entries.sortedByDescending { it.value }
+    if (list.isEmpty()) return emptyList()
+    if (list.size > 3) list = list.subList(0, 3)
     list.forEach { cnt += it.value }
     return list.map { Pair(it.key, it.value.toFloat() / cnt) }
 }

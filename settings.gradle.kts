@@ -18,7 +18,6 @@ include(
     ":components",
     ":utils",
     ":audio-sources",
-    ":time-stretchers",
     ":dsp",
     ":audio-processors",
     ":native",

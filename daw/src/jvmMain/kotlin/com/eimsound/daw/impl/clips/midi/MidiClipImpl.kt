@@ -34,6 +34,7 @@ import javax.sound.midi.MidiSystem
 
 class MidiClipImpl(factory: ClipFactory<MidiClip>) : AbstractClip<MidiClip>(factory), MidiClip {
     override val name = "MIDI 片段"
+    override val icon = Icons.Outlined.Piano
     override val notes = DefaultNoteMessageList()
     override val events: MutableMidiCCEvents = mutableStateMapOf()
     override val isExpandable = true

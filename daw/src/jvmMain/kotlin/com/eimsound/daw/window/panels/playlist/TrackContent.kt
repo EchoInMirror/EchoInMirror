@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Divider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
@@ -263,7 +264,7 @@ private fun Playlist.ClipItem(it: TrackClip<*>, track: Track, index: Int) {
                     }
                 ) {
                     if (!deletionList.contains(it)) {
-                        val trackColor = curTrack.color
+                        val color = it.color ?: curTrack.color
                         var isDisabled = curTrack.isDisabled
                         if (!isDisabled) {
                             val tmp = it.isDisabled
@@ -273,7 +274,7 @@ private fun Playlist.ClipItem(it: TrackClip<*>, track: Track, index: Int) {
                         Column(
                             Modifier
                                 .fillMaxSize()
-                                .background(trackColor.copy(if (isDisabled) 0.4F else 0.7F), MaterialTheme.shapes.extraSmall)
+                                .background(color.copy(if (isDisabled) 0.4F else 0.7F), MaterialTheme.shapes.extraSmall)
                                 .run {
                                     if (isSelected) border(
                                         2.dp, MaterialTheme.colorScheme.primary,
@@ -287,17 +288,21 @@ private fun Playlist.ClipItem(it: TrackClip<*>, track: Track, index: Int) {
                                     else this
                                 }
                         ) {
-                            val contentColor = trackColor.toOnSurfaceColor()
+                            val contentColor = color.toOnSurfaceColor()
                             if (curOrMovingTrackHeight.value >= 40) {
-                                Text(
-                                    it.clip.name.ifEmpty { track.name },
-                                    Modifier.fillMaxWidth()
-                                        .background(if (isDisabled) trackColor.copy(0.5F) else trackColor)
-                                        .padding(horizontal = 4.dp),
-                                    contentColor, style = MaterialTheme.typography.labelMedium,
-                                    maxLines = 1, overflow = TextOverflow.Ellipsis,
-                                    textDecoration = if (isDisabled) TextDecoration.LineThrough else null
-                                )
+                                Box(Modifier.fillMaxWidth().background(if (isDisabled) color.copy(0.5F) else color)) {
+                                    Row(Modifier.padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                                        it.clip.icon?.let { icon ->
+                                            Icon(icon, it.clip.name, Modifier.size(15.dp).padding(end = 2.dp), contentColor)
+                                        }
+                                        Text(
+                                            it.clip.name.ifEmpty { track.name },
+                                            color = contentColor, style = MaterialTheme.typography.labelMedium,
+                                            maxLines = 1, overflow = TextOverflow.Ellipsis,
+                                            textDecoration = if (isDisabled) TextDecoration.LineThrough else null
+                                        )
+                                    }
+                                }
                             }
                             @Suppress("UNCHECKED_CAST")
                             (it.clip.factory as ClipFactory<Clip>).PlaylistContent(

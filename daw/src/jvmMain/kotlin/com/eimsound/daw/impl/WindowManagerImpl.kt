@@ -19,15 +19,19 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.nio.file.Path
 import kotlin.io.path.absolutePathString
+import kotlin.system.exitProcess
 
+@Suppress("PropertyName")
 class WindowManagerImpl: WindowManager {
     override val dialogs = mutableStateMapOf<@Composable () -> Unit, Boolean>()
     override val panels = mutableStateListOf(Mixer, Editor, FileSystemBrowser, UndoList, TrackView)
     override var mainWindow: ComposeWindow? = null
     override var activePanel: Panel? by mutableStateOf(null)
     override var isMainWindowOpened by mutableStateOf(false)
+    override var isSaveProjectWarningDialogOpened by mutableStateOf(false)
     override var globalException: GlobalException? by mutableStateOf(null)
     var floatingLayerProvider: FloatingLayerProvider? = null
+    var _exitApplication: () -> Unit = { exitProcess(0) }
     private var _isDarkTheme by mutableStateOf(true)
     override var isDarkTheme
         get() = _isDarkTheme
@@ -56,17 +60,18 @@ class WindowManagerImpl: WindowManager {
         }
     }
 
-    override fun closeMainWindow(isExit: Boolean) {
+    override fun closeMainWindow(force: Boolean) {
+        if (isMainWindowOpened && !force && !IS_DEBUG && EchoInMirror.bus?.project?.saved == false) {
+            isSaveProjectWarningDialogOpened = true
+            return
+        }
         isMainWindowOpened = false
         floatingLayerProvider = null
         try {
             mainWindow?.dispose()
         } catch (ignored: Throwable) { }
         mainWindow = null
-        EchoInMirror.player?.close()
-        EchoInMirror.bus?.close()
-        EchoInMirror.player = null
-        EchoInMirror.bus = null
+        exitApplication()
     }
 
     @OptIn(DelicateCoroutinesApi::class)
@@ -92,5 +97,10 @@ class WindowManagerImpl: WindowManager {
             val player = EchoInMirror.createAudioPlayer()
             EchoInMirror.player = player
         }
+    }
+
+    override fun exitApplication() {
+        EchoInMirror.close()
+        _exitApplication()
     }
 }

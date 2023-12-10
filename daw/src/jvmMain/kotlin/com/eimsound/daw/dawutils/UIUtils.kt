@@ -1,14 +1,20 @@
 package com.eimsound.daw.dawutils
 
 import androidx.compose.foundation.ScrollState
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.surfaceColorAtElevation
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.platform.ClipboardManager
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.FrameWindowScope
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.window.Panel
 import org.apache.commons.lang3.SystemUtils
@@ -143,3 +149,17 @@ fun randomColor() = com.eimsound.daw.components.utils.randomColor(!EchoInMirror.
 fun Panel.isActive() = EchoInMirror.windowManager.activePanel == this
 
 val SHOULD_SCROLL_REVERSE = SystemUtils.IS_OS_MAC_OSX
+
+@Composable
+fun FrameWindowScope.initWindowDecoration() {
+    if (SystemUtils.IS_OS_WINDOWS) {
+        val outlineColor = MaterialTheme.colorScheme.outlineVariant
+        val titleColor = MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp)
+        val textColor = MaterialTheme.colorScheme.onSurface.compositeOver(titleColor)
+        LaunchedEffect(window.windowHandle, titleColor, outlineColor, textColor) {
+            windowsSetWindowColor(window.windowHandle, titleColor)
+            windowsSetWindowColor(window.windowHandle, outlineColor, WindowColorType.BORDER)
+            windowsSetWindowColor(window.windowHandle, textColor, WindowColorType.TEXT)
+        }
+    }
+}

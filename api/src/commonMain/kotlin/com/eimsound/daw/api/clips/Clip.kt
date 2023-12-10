@@ -1,5 +1,6 @@
 package com.eimsound.daw.api.clips
 
+import androidx.compose.ui.graphics.vector.ImageVector
 import com.eimsound.daw.commons.json.*
 import com.eimsound.daw.utils.*
 import kotlinx.serialization.Transient
@@ -9,6 +10,7 @@ import kotlinx.serialization.json.JsonObject
 interface Clip : JsonSerializable {
     val id: String
     val name: String
+    val icon: ImageVector?
     val factory: ClipFactory<*>
     @Transient
     val defaultDuration: Int
@@ -27,6 +29,7 @@ abstract class AbstractClip<T: Clip>(override val factory: ClipFactory<T>) : Cli
     override val defaultDuration = -1
     override val maxDuration = -1
     override val duration get() = maxDuration
+    override val icon: ImageVector? = null
 
     override fun toString(): String {
         return "MidiClipImpl(factory=$factory, id='$id')"

@@ -1,6 +1,7 @@
 package com.eimsound.daw.api.clips
 
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.graphics.Color
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.commons.Disabled
 import com.eimsound.daw.commons.IManualState
@@ -20,6 +21,7 @@ interface TrackClip<T: Clip> : JsonSerializable, Disabled, Comparable<TrackClip<
     var currentIndex: Int
     @Transient
     var track: Track?
+    var color: Color?
 
     fun reset()
     fun copy(time: Int = this.time, duration: Int = this.duration, start: Int = this.start,

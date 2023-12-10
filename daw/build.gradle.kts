@@ -7,17 +7,15 @@ import java.net.URI
 
 plugins {
     kotlin("multiplatform")
-    kotlin("plugin.serialization") version "1.9.20"
+    kotlin("plugin.serialization") version System.getProperty("kotlinVersion")
     id("org.jetbrains.compose")
-    id("com.github.johnrengelman.shadow") version "8.1.1"
+    id("io.github.goooler.shadow") version "8.1.2"
     id("java")
 }
 
 repositories {
     mavenCentral()
     maven("https://jitpack.io")
-    maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
-    maven("https://mvn.0110.be/releases")
 }
 
 kotlin {
@@ -39,7 +37,6 @@ kotlin {
                 api(project(":api"))
                 api(project(":native"))
                 api(project(":audio-sources"))
-                api(project(":time-stretchers"))
 
                 api(compose.desktop.currentOs) {
                     exclude("org.jetbrains.compose.material")
@@ -72,10 +69,10 @@ compose.desktop {
     }
 }
 
-fun downloadEIMHost(ext: String, appendExt: Boolean = false): Boolean {
-    val file = File(if (appendExt) "EIMHost-$ext" else "EIMHost")
+fun downloadFileFromGithub(repo: String, destName: String, sourceName: String = destName): Boolean {
+    val file = File(destName)
     if (!File("src").exists() || file.exists()) return false
-    val connection = URI.create("https://github.com/EchoInMirror/EIMHost/releases/latest/download/EIMHost-$ext")
+    val connection = URI.create("https://github.com/EchoInMirror/$repo/releases/latest/download/$sourceName")
         .toURL().openConnection() as HttpURLConnection
     connection.connect()
     val input = connection.inputStream
@@ -86,18 +83,21 @@ fun downloadEIMHost(ext: String, appendExt: Boolean = false): Boolean {
     return true
 }
 
+val isArm by lazy { System.getProperty("os.arch") == "aarch64" }
+
 project(":daw") {
     task<Copy>("downloadEIMHost") {
         val os = org.gradle.nativeplatform.platform.internal.DefaultNativePlatform.getCurrentOperatingSystem()
         if (os.isWindows) {
-            downloadEIMHost("x64.exe", true)
-//          downloadEIMHost("x86.exe", true)
+            downloadFileFromGithub("EIMHost", "EIMHost.exe", "EIMHost-x64.exe")
+//            downloadFileFromGithub("EIMHost", "EIMHost-x86.exe", "EIMHost-x86.exe")
         } else if (os.isMacOsX) {
-            if (downloadEIMHost("MacOS.zip", true)) {
+            if (downloadFileFromGithub("EIMHost", "EIMHost-MacOS.zip",
+                    if (isArm) "EIMHost-MacOS.zip" else "EIMHost-MacOS-x86.zip")) {
                 from(zipTree(File("EIMHost-MacOS.zip"))).into(".")
             }
         } else {
-            downloadEIMHost("Linux")
+            downloadFileFromGithub("EIMHost", "EIMHost", "EIMHost-Linux")
         }
     }
 }
@@ -133,4 +133,5 @@ tasks.withType<JavaExec> {
 // Run before build
 tasks.withType<GradleBuild> {
     dependsOn(":downloadEIMHost")
+    dependsOn(":downloadTimeStretcher")
 }

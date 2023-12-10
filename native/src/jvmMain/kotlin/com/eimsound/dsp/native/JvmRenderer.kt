@@ -24,6 +24,7 @@ private fun getJvmAudioFormat(format: RenderFormat) = when (format) {
 
 private val logger = KotlinLogging.logger { }
 class JvmRenderer(private val renderTarget: Renderable) : Renderer {
+    private var fullLengthInPPQ = 0
     override suspend fun start(
         range: IntRange,
         sampleRate: Int,
@@ -43,7 +44,7 @@ class JvmRenderer(private val renderTarget: Renderable) : Renderer {
         val channels = 2
         val bits0 = bits / 8
         val position = RenderPosition(ppq, sampleRate, range)
-        val fullLengthInPPQ = range.range
+        fullLengthInPPQ = range.range
         val fullLength = channels * bits0 * position.convertPPQToSamples(fullLengthInPPQ)
         val buffers =
             arrayOf(FloatArray(position.bufferSize), FloatArray(position.bufferSize))
@@ -86,13 +87,7 @@ class JvmRenderer(private val renderTarget: Renderable) : Renderer {
                         }
 
                         output.flush()
-                        position.timeInSamples += position.bufferSize
-                        position.timeInSeconds =
-                            position.timeInSamples.toDouble() / position.sampleRate
-                        position.ppqPosition = position.timeInSeconds / 60.0 * position.bpm
-                        position.timeInPPQ = (position.ppqPosition * position.ppq).toInt()
-
-                        callback(((position.timeInPPQ - range.first).toFloat() / fullLengthInPPQ).coerceAtMost(0.9999F))
+                        processNextBlock(position, range, callback)
                     }
                 } catch (e: Throwable) {
                     logger
@@ -131,13 +126,7 @@ class JvmRenderer(private val renderTarget: Renderable) : Renderer {
                             }
                         }
 
-                        position.timeInSamples += position.bufferSize
-                        position.timeInSeconds =
-                            position.timeInSamples.toDouble() / position.sampleRate
-                        position.ppqPosition = position.timeInSeconds / 60.0 * position.bpm
-                        position.timeInPPQ = (position.ppqPosition * position.ppq).toInt()
-
-                        callback(((position.timeInPPQ - range.first).toFloat() / fullLengthInPPQ).coerceAtMost(0.9999F))
+                        processNextBlock(position, range, callback)
                     }
                 AudioSystem.write(
                     AudioInputStream(
@@ -152,5 +141,14 @@ class JvmRenderer(private val renderTarget: Renderable) : Renderer {
             this.renderTarget.onRenderEnd()
             callback(1F)
         }
+    }
+
+    private fun processNextBlock(position: RenderPosition, range: IntRange, callback: (Float) -> Unit) {
+        position.timeInSamples += position.bufferSize
+        position.timeInSeconds = position.timeInSamples.toDouble() / position.sampleRate
+        position.ppqPosition = position.timeInSeconds / 60.0 * position.bpm
+        position.timeInPPQ = (position.ppqPosition * position.ppq).toInt()
+
+        callback(((position.timeInPPQ - range.first).toFloat() / fullLengthInPPQ).coerceAtMost(0.9999F))
     }
 }

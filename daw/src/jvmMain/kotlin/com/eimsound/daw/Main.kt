@@ -4,9 +4,7 @@ import android.app.Application
 import androidx.compose.foundation.LocalScrollbarStyle
 import androidx.compose.foundation.ScrollbarStyle
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.*
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.application
@@ -17,8 +15,10 @@ import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.controllers.DefaultParameterControllerFactory
 import com.eimsound.daw.api.clips.defaultEnvelopeClipFactory
 import com.eimsound.daw.commons.ExperimentalEIMApi
+import com.eimsound.daw.components.app.EIMTray
 import com.eimsound.daw.components.controllers.parameterControllerCreateClipHandler
 import com.eimsound.daw.components.icons.EIMLogo
+import com.eimsound.daw.impl.WindowManagerImpl
 import com.eimsound.daw.window.CrashWindow
 import com.eimsound.daw.window.MainWindow
 import com.eimsound.daw.window.ProjectWindow
@@ -53,6 +53,7 @@ fun main() {
         System.setProperty("apple.laf.useScreenMenuBar", "true")
         System.setProperty("apple.awt.application.name", "EchoInMirror")
         System.setProperty("apple.awt.application.appearance", "system")
+        System.setProperty("apple.awt.enableTemplateImages", "true")
         System.setProperty("com.apple.mrj.application.apple.menu.about.name", "EchoInMirror")
     }
 
@@ -65,7 +66,7 @@ fun main() {
     val windowManager = EchoInMirror.windowManager
     Runtime.getRuntime().addShutdownHook(thread(false) {
         androidApplication?.close()
-        windowManager.closeMainWindow(true)
+        EchoInMirror.close()
     })
 
     if (!File("test_project").exists()) File("test_project").mkdir()
@@ -88,6 +89,8 @@ fun main() {
     }
 
     application {
+        (windowManager as WindowManagerImpl)._exitApplication = ::exitApplication
+        EIMTray()
         MaterialTheme(if (windowManager.isDarkTheme) darkColorScheme() else lightColorScheme()) {
             val color = MaterialTheme.colorScheme.onSurface
             CompositionLocalProvider(

@@ -188,7 +188,11 @@ private fun FloatingLayerProvider.openEventSelectorDialog(events: MutableMidiCCE
                 }
                 Box {
                     var cc by remember { mutableStateOf(1) }
-                    TextField(cc.toString(), { cc = it.toIntOrNull()?.coerceIn(1, 127) ?: 1 }, Modifier.width(140.dp),
+                    TextField(
+                        cc.toString(),
+                        { cc = it.toIntOrNull()?.coerceIn(1, 127) ?: 1 },
+                        Modifier.width(140.dp),
+                        singleLine = true,
                         leadingIcon = { Text("CC") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         trailingIcon = {

@@ -23,6 +23,7 @@ class EIMAudioProcessorFactory : AudioProcessorFactory<AudioProcessor> {
     override val name = EIMAudioProcessorFactoryName
     override val displayName = "内置"
     override val descriptions = setOf(KarplusStrongSynthesizerDescription)
+    override val isEnabled = true
     private val audioProcessors = descriptions.associateBy { it.name }
 
     override suspend fun createAudioProcessor(description: AudioProcessorDescription): AudioProcessor {

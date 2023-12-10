@@ -3,11 +3,13 @@ package com.eimsound.daw.impl.clips
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
 import com.eimsound.daw.api.clips.Clip
 import com.eimsound.daw.api.clips.ClipFactory
 import com.eimsound.daw.api.clips.TrackClip
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.commons.json.asBoolean
+import com.eimsound.daw.commons.json.asColor
 import com.eimsound.daw.commons.json.asInt
 import com.eimsound.daw.commons.json.putNotDefault
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -16,13 +18,15 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 
 private val logger = KotlinLogging.logger {  }
-class TrackClipImpl <T: Clip> (override val clip: T, time: Int = 0, duration: Int = 0, start: Int = 0,
-                               track: Track? = null) : TrackClip<T> {
+class TrackClipImpl <T: Clip> (
+    override val clip: T, time: Int = 0, duration: Int = 0, start: Int = 0, track: Track? = null
+) : TrackClip<T> {
     override var time by mutableStateOf(time)
     override var duration by mutableStateOf(duration)
     override var isDisabled by mutableStateOf(false)
     private var _start by mutableStateOf(start)
     override var track by mutableStateOf(track)
+    override var color: Color? by mutableStateOf(null)
 
     override var start: Int
         get() = _start
@@ -42,6 +46,7 @@ class TrackClipImpl <T: Clip> (override val clip: T, time: Int = 0, duration: In
         putNotDefault("duration", duration)
         putNotDefault("start", start)
         putNotDefault("isDisabled", isDisabled)
+        putNotDefault("color", color)
         put("clip", clip.toJson())
     }
 
@@ -51,6 +56,7 @@ class TrackClipImpl <T: Clip> (override val clip: T, time: Int = 0, duration: In
         json["duration"]?.asInt()?.let { duration = it }
         json["start"]?.asInt()?.let { start = it }
         json["isDisabled"]?.asBoolean()?.let { isDisabled = it }
+        json["color"]?.asColor().let { color = it }
     }
 
     @Suppress("UNCHECKED_CAST")

@@ -7,13 +7,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposeWindow
+import androidx.compose.ui.focus.*
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.*
-import com.eimsound.daw.IS_DEBUG
 import com.eimsound.daw.VERSION
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.window.GlobalException
@@ -71,13 +72,12 @@ private fun MainWindowContent(window: ComposeWindow) {
     }
 }
 
-private var saveProjectDialogOpen by mutableStateOf(false)
-
 @Composable
-private fun SaveProjectWarningDialog(exit: () -> Unit) {
+private fun SaveProjectWarningDialog() {
     val windowState = rememberDialogState(width = 400.dp, height = 160.dp)
-    if (saveProjectDialogOpen) DialogWindow({
-        saveProjectDialogOpen = false
+    val windowManager = EchoInMirror.windowManager
+    if (windowManager.isSaveProjectWarningDialogOpened) DialogWindow({
+        windowManager.isSaveProjectWarningDialogOpened = false
     }, windowState, resizable = false, title = "是否保存项目并退出?"
     ) {
         Surface(Modifier.fillMaxSize(), tonalElevation = 4.dp) {
@@ -85,18 +85,21 @@ private fun SaveProjectWarningDialog(exit: () -> Unit) {
                 Text("当前还没有保存项目, 是否需要保存项目并退出?", Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
                 Gap(20)
                 Row {
-                    TextButton(exit, colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)) {
+                    TextButton(
+                        windowManager::exitApplication,
+                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                    ) {
                         Text("不保存")
                     }
                     Filled()
-                    TextButton({ saveProjectDialogOpen = false }) {
+                    TextButton({ windowManager.isSaveProjectWarningDialogOpened = false }) {
                         Text("取消")
                     }
                     Gap(4)
                     Button({
                         runBlocking {
                             EchoInMirror.bus?.save()
-                            exit()
+                            windowManager.exitApplication()
                         }
                     }) {
                         Text("保存并退出")
@@ -108,20 +111,16 @@ private fun SaveProjectWarningDialog(exit: () -> Unit) {
 }
 
 val mainWindowState = WindowState()
+private var checkHasFocus = { false }
 
 private val logger = KotlinLogging.logger("MainWindow")
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun ApplicationScope.MainWindow() {
-    val exitApp = {
-        EchoInMirror.windowManager.closeMainWindow(true)
-        exitApplication()
-    }
+fun MainWindow() {
     Window({
-        if (!IS_DEBUG && EchoInMirror.bus?.project?.saved == false) saveProjectDialogOpen = true
-        else exitApp()
+        EchoInMirror.windowManager.closeMainWindow()
     }, mainWindowState, icon = Logo, title = "Echo In Mirror (v$VERSION)", onKeyEvent = {
-        if (it.type != KeyEventType.KeyUp) return@Window false
+        if (it.type != KeyEventType.KeyUp || checkHasFocus()) return@Window false
         var keys = (if (it.key == Key.Backspace) Key.Delete.keyCode else it.key.keyCode).toString()
         if (it.isCrossPlatformCtrlPressed) keys = "${Key.CtrlLeft.keyCode} $keys"
         if (it.isShiftPressed) keys = "${Key.ShiftLeft.keyCode} $keys"
@@ -129,7 +128,15 @@ fun ApplicationScope.MainWindow() {
         EchoInMirror.commandManager.executeCommand(keys)
         false
     }) {
+        val focusManager = LocalFocusManager.current
+        remember(focusManager) {
+            checkHasFocus = {
+                @Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
+                (focusManager as? FocusOwnerImpl)?.rootFocusNode?.focusState?.isFocused == false
+            }
+        }
         InitEditorTools()
+        initWindowDecoration()
         if (SystemUtils.IS_OS_MAC) {
             window.rootPane.putClientProperty("apple.awt.fullWindowContent", true)
             window.rootPane.putClientProperty("apple.awt.transparentTitleBar", true)
@@ -146,7 +153,7 @@ fun ApplicationScope.MainWindow() {
             windowManager.globalException = GlobalException(it, Crashes.trackCrash(it, Thread.currentThread(), null))
         }
 
-        SaveProjectWarningDialog(exitApp)
+        SaveProjectWarningDialog()
 
         Box {
             MainWindowContent(window)

@@ -3,7 +3,7 @@ name: Release
 on:
   release:
     types:
-      - created
+      - published
 
 jobs:
   release:
@@ -19,27 +19,26 @@ jobs:
             ${{ runner.os }}-gradle-
 
       - name: Check out git repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Set up JDK 19
+      - name: Set up JDK 21
         uses: actions/setup-java@v3
         with:
           distribution: liberica
-          java-version: 19
+          java-version: 21
 
-      - name: Set plugin version
-        run: version='${{ github.ref }}' && sed -i "s/0\.0\.0/${version:10}/" gradle.properties
-        shell: bash
-
-      - name: Build with Gradle
+      - name: Build
         shell: bash
         run: |
+          sed -i "s/0\.0\.0/${{ github.event.release.tag_name }}/" gradle.properties
+          sed -i "s/--add-exports=java.desktop\/com.apple.eawt.event=ALL-UNNAMED//" release-bin/.vmoptions 
           mkdir package
           ./gradlew :daw:shadowJar
+          ./gradlew --stop
           cp daw/build/libs/daw.jar package/EchoInMirror.jar
-          cp -R release-bin/. package/
-          cp -R daw/EIMHost-x64.exe package/EIMHost-x64.exe
+          cp -R release-bin/ package/
           curl https://github.com/EchoInMirror/EIMHost/releases/latest/download/EIMHost-x86.exe -o package/EIMHost-x86.exe -L
+          curl https://github.com/EchoInMirror/EIMHost/releases/latest/download/EIMHost-x64.exe -o package/EIMHost.exe -L
         env:
           APP_CENTER_SECRET: ${{ secrets.APP_CENTER_SECRET }}
 
@@ -54,9 +53,9 @@ jobs:
       - name: Download bellsoft jre
         shell: bash
         run: |
-          curl https://download.bell-sw.com/java/19.0.2+9/bellsoft-jre19.0.2+9-windows-amd64.zip -O -L
-          unzip -d ./package bellsoft-jre19.0.2+9-windows-amd64.zip
-          mv package/jre-19.0.2 package/jre
+          curl https://download.bell-sw.com/java/21.0.1+12/bellsoft-jre21.0.1+12-windows-amd64.zip -O -L
+          unzip -d ./package bellsoft-jre21.0.1+12-windows-amd64.zip
+          mv package/jre-21.0.1 package/jre
 
       - name: Package
         run: |

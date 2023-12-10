@@ -2,6 +2,9 @@
 test_project*
 *.wav
 *.log
+*.dll
+*.so
+*.dylib
 /logs
 ffmpeg
 

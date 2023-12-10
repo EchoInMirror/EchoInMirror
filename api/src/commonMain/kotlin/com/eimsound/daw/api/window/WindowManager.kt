@@ -18,10 +18,12 @@ interface WindowManager {
     var isDarkTheme: Boolean
     var activePanel: Panel?
     val isMainWindowOpened: Boolean
+    var isSaveProjectWarningDialogOpened: Boolean
     var globalException: GlobalException?
 
     fun registerPanel(panel: Panel)
     fun unregisterPanel(panel: Panel)
     fun openProject(path: Path)
-    fun closeMainWindow(isExit: Boolean = false)
+    fun closeMainWindow(force: Boolean = false)
+    fun exitApplication()
 }

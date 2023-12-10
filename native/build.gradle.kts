@@ -1,6 +1,6 @@
 plugins {
     kotlin("multiplatform")
-    kotlin("plugin.serialization") version "1.9.20"
+    kotlin("plugin.serialization") version System.getProperty("kotlinVersion")
     id("org.jetbrains.compose")
 }
 
@@ -24,12 +24,14 @@ kotlin {
         }
         named("jvmMain") {
             dependencies {
+                compileOnly(project(":dsp"))
                 implementation(project(":utils"))
                 implementation(compose.runtime)
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${extra["eim.dependencies.kotlinx.coroutines"]}")
                 implementation("org.apache.commons:commons-lang3:${extra["eim.dependencies.commons.lang"]}")
                 implementation("org.slf4j:slf4j-api:${extra["eim.dependencies.slf4j"]}")
-                implementation("com.github.ShirasawaSama:JavaSharedMemory:0.1.5")
+                implementation("com.github.ShirasawaSama:JavaSharedMemory:0.2.0")
+                implementation("com.github.EchoInMirror:EIMTimeStretchers:0.1.1")
 
                 compileOnly(compose.material3)
                 compileOnly(compose.materialIconsExtended)

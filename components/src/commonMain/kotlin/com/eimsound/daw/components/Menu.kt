@@ -5,7 +5,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -14,6 +17,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.UiComposable
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerIcon
@@ -24,6 +28,8 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.eimsound.daw.commons.DividerAbove
+import com.eimsound.daw.commons.displayName
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -109,19 +115,60 @@ fun Menu(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun Selector(
-    items: Collection<String>,
-    selected: String,
+fun <T : Any> OutlinedDropdownSelector(
+    onSelected: (T) -> Unit,
+    items: Collection<T>,
+    selected: T?,
     boxModifier: Modifier = Modifier,
     enabled: Boolean = true,
-    matcher: PointerMatcher = PointerMatcher.Primary,
+    isSelected: ((T) -> Boolean)? = null,
+    itemContent: (@Composable (T) -> Unit)? = null,
+    label: String? = null,
     content: (@Composable () -> Unit)? = null,
-    onSelected: (String) -> Unit,
+) {
+    @OptIn(ExperimentalFoundationApi::class)
+    DropdownSelector(
+        onSelected, items, selected, boxModifier, enabled, PointerMatcher.Primary,
+        isSelected, itemContent, label, true, content
+    )
+}
+
+@Composable
+fun <T : Any> DropdownSelector(
+    onSelected: (T) -> Unit,
+    items: Collection<T>,
+    selected: T?,
+    boxModifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    isSelected: ((T) -> Boolean)? = null,
+    itemContent: (@Composable (T) -> Unit)? = null,
+    label: String? = null,
+    content: (@Composable () -> Unit)? = null,
+) {
+    @OptIn(ExperimentalFoundationApi::class)
+    DropdownSelector(
+        onSelected, items, selected, boxModifier, enabled, PointerMatcher.Primary,
+        isSelected, itemContent, label, false, content
+    )
+}
+
+@Composable
+fun <T : Any> DropdownSelector(
+    onSelected: (T) -> Unit,
+    items: Collection<T>,
+    selected: T?,
+    boxModifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    @OptIn(ExperimentalFoundationApi::class) matcher: PointerMatcher = PointerMatcher.Primary,
+    isSelected: ((T) -> Boolean)? = null,
+    itemContent: (@Composable (T) -> Unit)? = null,
+    label: String? = null,
+    isOutlined: Boolean = false,
+    content: (@Composable () -> Unit)? = null,
 ) {
     val filter = remember { mutableStateOf<String?>(null) }
-    FloatingLayer({ size, close ->
+    @OptIn(ExperimentalFoundationApi::class) FloatingLayer({ size, close ->
         Surface(
             Modifier.width(size.width).heightIn(max = 300.dp), MaterialTheme.shapes.extraSmall,
             shadowElevation = 5.dp, tonalElevation = 5.dp
@@ -130,15 +177,17 @@ fun Selector(
                 val state = rememberLazyListState()
                 val currentValue = filter.value
                 val items0 = remember(items, currentValue) { (if (currentValue == null) items else items
-                    .filter { it.contains(currentValue, true) }).distinct() }
+                    .filter { it.displayName.contains(currentValue, true) }).distinct() }
                 LazyColumn(state = state) {
                     items(items0) {
+                        if ((it as? DividerAbove)?.hasDividerAbove == true) Divider()
                         MenuItem({
                             close()
                             filter.value = null
                             onSelected(it)
-                        }, selected == it, modifier = Modifier.fillMaxWidth()) {
-                            Text(it)
+                        }, if (isSelected == null) it == selected else isSelected(it), modifier = Modifier.fillMaxWidth()) {
+                            if (itemContent == null) Text(it.displayName)
+                            else itemContent(it)
                         }
                     }
                 }
@@ -146,10 +195,33 @@ fun Selector(
             }
         }
     }, modifier = boxModifier, enabled = enabled, matcher = matcher, pass = PointerEventPass.Initial) {
-        if (content == null) CustomTextField(filter.value ?: selected, {
-            filter.value = it.ifEmpty { null }
-        }, Modifier.fillMaxWidth().pointerHoverIcon(PointerIcon.Hand))
-        else content()
+        if (content == null) {
+            if (isOutlined) CustomOutlinedTextField(
+                filter.value ?: selected?.displayName ?: "",
+                { filter.value = it.ifEmpty { null } },
+                boxModifier.pointerHoverIcon(PointerIcon.Hand),
+                label = if (label == null) null else ({ Text(label) }),
+                singleLine = true,
+                suffix = {
+                    Icon(
+                        Icons.Filled.ExpandMore, "Expand",
+                        Modifier.size(20.dp).pointerHoverIcon(PointerIcon.Hand).clip(CircleShape).clickable { }
+                    )
+                }
+            ) else CustomTextField(
+                filter.value ?: selected?.displayName ?: "",
+                { filter.value = it.ifEmpty { null } },
+                boxModifier.pointerHoverIcon(PointerIcon.Hand),
+                label = if (label == null) null else ({ Text(label) }),
+                singleLine = true,
+                suffix = {
+                    Icon(
+                        Icons.Filled.ExpandMore, "Expand",
+                        Modifier.size(20.dp).pointerHoverIcon(PointerIcon.Hand).clip(CircleShape).clickable { }
+                    )
+                }
+            )
+        } else content()
     }
 }
 
@@ -172,7 +244,7 @@ fun MenuHeader(
             color = LocalContentColor.current.copy(alpha = if (enable) 1F else 0.7F),
             fontWeight = FontWeight.ExtraBold
         ) else BasicTextField(title, onChange,
-            Modifier.weight(1F).padding(start = 4.dp), maxLines = 1,
+            Modifier.weight(1F).padding(start = 4.dp), singleLine = true,
             textStyle = MaterialTheme.typography.titleSmall.copy(
                 LocalContentColor.current.copy(if (enable) 1F else 0.7F),
                 fontWeight = FontWeight.ExtraBold

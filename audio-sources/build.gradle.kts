@@ -1,10 +1,6 @@
 plugins {
     kotlin("multiplatform")
-    kotlin("plugin.serialization") version "1.9.20"
-}
-
-repositories {
-    maven("https://mvn.0110.be/releases")
+    kotlin("plugin.serialization") version System.getProperty("kotlinVersion")
 }
 
 kotlin {

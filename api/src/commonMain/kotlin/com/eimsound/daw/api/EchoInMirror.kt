@@ -40,6 +40,7 @@ interface IEchoInMirror {
     fun createAudioPlayer(): AudioPlayer
 
     fun reloadServices()
+    fun close()
 
     val editUnit: Int
 }

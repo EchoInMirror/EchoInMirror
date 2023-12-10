@@ -205,7 +205,8 @@ private fun RowScope.TrackCollapsedButton(track: Track) {
 @Composable
 private fun TrackName(track: Track) {
     BasicTextField(track.name, { track.name = it },
-        Modifier.fillMaxWidth(), maxLines = 1,
+        Modifier.fillMaxWidth(),
+        singleLine = true,
         textStyle = MaterialTheme.typography.labelLarge.copy(
             if (track.isDisabled) LocalContentColor.current.copy(alpha = 0.5F) else LocalContentColor.current,
             textDecoration = if (track.isDisabled) TextDecoration.LineThrough else null

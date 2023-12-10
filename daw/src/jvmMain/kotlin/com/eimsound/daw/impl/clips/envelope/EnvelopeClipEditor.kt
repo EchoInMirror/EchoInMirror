@@ -25,12 +25,11 @@ import com.eimsound.daw.api.clips.TrackClip
 import com.eimsound.daw.components.*
 import com.eimsound.daw.dawutils.SHOULD_SCROLL_REVERSE
 import com.eimsound.daw.dawutils.openMaxValue
-import com.eimsound.daw.impl.clips.EditorControls
+import com.eimsound.daw.components.EditorControls
 import com.eimsound.daw.utils.range
 
 class EnvelopeClipEditor(private val clip: TrackClip<EnvelopeClip>) : ClipEditor {
     val noteWidth = mutableStateOf(0.4.dp)
-    @Suppress("MemberVisibilityCanBePrivate")
     val horizontalScrollState = ScrollState(0).apply {
         openMaxValue = (noteWidth.value * EchoInMirror.currentPosition.projectDisplayPPQ).value.toInt()
     }
