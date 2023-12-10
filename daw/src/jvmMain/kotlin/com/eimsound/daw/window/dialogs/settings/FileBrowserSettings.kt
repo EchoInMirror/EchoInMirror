@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import com.eimsound.daw.Configuration
 import com.eimsound.daw.components.Gap
 import com.eimsound.daw.components.SettingTab
+import com.eimsound.daw.components.SettingsSection
 import com.eimsound.daw.components.SettingsCard
 import com.eimsound.daw.components.SettingsListManager
 import com.eimsound.daw.utils.CurrentWindow
@@ -30,7 +31,7 @@ internal object FileBrowserSettings : SettingTab {
         val window = CurrentWindow.current
 
         Column {
-            SettingSection("文件浏览器的自定义文件夹") {
+            SettingsSection("文件浏览器的自定义文件夹") {
                 SettingsListManager(
                     Configuration.fileBrowserCustomRoots,
                     addButtonText = "添加文件夹",
@@ -48,28 +49,17 @@ internal object FileBrowserSettings : SettingTab {
                 )
             }
             Gap(16)
-            SettingSection("文件浏览器的个性化配置项") {
+            SettingsSection("文件浏览器的个性化配置项") {
                 SettingsCard("只显示受支持格式的文件") {
-                    Switch(checked = Configuration.fileBrowserShowSupFormatOnly, onCheckedChange = {
-                        Configuration.fileBrowserShowSupFormatOnly = it
-                        Configuration.save()
-                    })
+                    Switch(
+                        Configuration.fileBrowserShowSupFormatOnly,
+                        {
+                            Configuration.fileBrowserShowSupFormatOnly = it
+                            Configuration.save()
+                        }
+                    )
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun SettingSection(
-    title: String? = null,
-    content: @Composable () -> Unit
-){
-    Column {
-        if (title != null){
-            Text(title, style = MaterialTheme.typography.bodyMedium)
-            Gap(8)
-        }
-        content()
     }
 }
