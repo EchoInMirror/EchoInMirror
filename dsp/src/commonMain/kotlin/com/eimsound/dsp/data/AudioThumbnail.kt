@@ -12,8 +12,8 @@ import kotlinx.coroutines.launch
 import org.mapdb.DBMaker
 import org.mapdb.HTreeMap
 import java.io.File
-import java.io.IOException
 import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -82,16 +82,15 @@ class AudioThumbnail private constructor(
         }
     }
 
-    @OptIn(DelicateCoroutinesApi::class)
-    constructor(data: ByteBuffer): this(data.long, data.get().toInt(), data.long, data.float, data.int, data.int) {
-        GlobalScope.launch(Dispatchers.IO) {
-            repeat(channels) {
-                data.get(minTree[it], 1, size)
-                data.get(maxTree[it], 1, size)
-            }
-            buildTree()
-            modification++
+    constructor(data: ByteBuffer): this(
+        data.order(ByteOrder.LITTLE_ENDIAN).long, data.get().toInt(), data.long, data.float, data.int, data.int
+    ) {
+        repeat(channels) {
+            data.get(minTree[it], 1, size)
+            data.get(maxTree[it], 1, size)
         }
+        buildTree()
+        modification++
     }
 
     fun read() { modification }
@@ -153,7 +152,7 @@ class AudioThumbnail private constructor(
     }
 
     fun toByteArray(): ByteArray {
-        val data = ByteBuffer.allocate(29 + channels * size * 2)
+        val data = ByteBuffer.allocate(29 + channels * size * 2).order(ByteOrder.LITTLE_ENDIAN)
             .putLong(modifiedTime) // 8
             .put(channels.toByte()) // 1
             .putLong(lengthInSamples) // 8
@@ -175,11 +174,10 @@ class AudioThumbnail private constructor(
 }
 
 class AudioThumbnailCache(
-    file: File, private val samplesPerThumbSample: Int = DEFAULT_SAMPLES_PRE_THUMB_SAMPLE
+    private val file: File, private val samplesPerThumbSample: Int = DEFAULT_SAMPLES_PRE_THUMB_SAMPLE
 ): AutoCloseable {
     @Suppress("UNCHECKED_CAST")
-    private val db = DBMaker.fileDB(file).fileMmapEnableIfSupported().closeOnJvmShutdown().make()
-        .hashMap("audioThumbnails").expireMaxSize(200).createOrOpen() as HTreeMap<String, ByteArray>
+    private val db = DBMaker.memoryDB().make().hashMap("audioThumbnails").expireMaxSize(200).createOrOpen() as HTreeMap<String, ByteArray>
 
     operator fun get(key: String) = db[key]?.let { AudioThumbnail(ByteBuffer.wrap(it)) }
     operator fun set(key: String, time: Long = Files.getLastModifiedTime(Paths.get(key)).toMillis(), value: AudioThumbnail) {
@@ -211,7 +209,7 @@ class AudioThumbnailCache(
             )
             set(file.toString(), time, value)
             return value
-        } catch (e: IOException) {
+        } catch (e: Throwable) {
             e.printStackTrace()
             onComplete?.invoke(e)
             return null

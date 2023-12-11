@@ -10,7 +10,8 @@ interface Renderable {
     fun onRenderEnd()
 }
 
-enum class RenderFormat(val extend: String, val isLossLess: Boolean = true) {
+@Suppress("unused")
+enum class RenderFormat(val extension: String, val isLossLess: Boolean = true) {
     WAV("wav"),
     MP3("mp3", false),
     FLAC("flac"),

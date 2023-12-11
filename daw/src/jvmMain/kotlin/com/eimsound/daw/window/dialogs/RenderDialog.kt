@@ -111,11 +111,11 @@ val ExportDialog = @Composable {
                                                 },
                                                 renderFormat == it,
                                                 modifier = Modifier.fillMaxWidth()
-                                            ) { Text(it.extend) }
+                                            ) { Text(it.extension) }
                                         }
                                     }) {
                                         Text(
-                                            renderFormat.extend
+                                            renderFormat.extension
                                         )
                                     }
                                 }
@@ -183,7 +183,7 @@ val ExportDialog = @Composable {
                             }
 
 
-                            if (renderFormat.extend == "flac") {
+                            if (renderFormat.extension == "flac") {
                                 Spacer(Modifier.width(10.dp))
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
@@ -231,7 +231,7 @@ val ExportDialog = @Composable {
                                 if (filename.isEmpty()) return@Button
                                 val renderer = EchoInMirror.bus?.let { JvmRenderer(it) }
                                 val curPosition = EchoInMirror.currentPosition
-                                val audioFile = File("./${filename}.${renderFormat.extend}")
+                                val audioFile = File("./${filename}.${renderFormat.extension}")
 
                                 isRendering = true
                                 renderStartTime = System.currentTimeMillis()
@@ -273,7 +273,7 @@ val ExportDialog = @Composable {
                             Row {
                                 if (isRendering && renderProcess < 1f) Text("取消")
                                 else if (isRendering && renderProcess >= 1f) Text("确认")
-                                else Text("导出到 $filename.${renderFormat.extend}")
+                                else Text("导出到 $filename.${renderFormat.extension}")
                             }
                         }
                     }

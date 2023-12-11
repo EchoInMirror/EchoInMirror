@@ -179,12 +179,17 @@ class AudioClipImpl(
         val offset = if (playTime < 0) {
             time = 0
             position = 0
+            lastPos = -1
             (pos.bufferSize + playTime).coerceAtLeast(0).toInt()
         } else 0
         if (tr == null || tr.isDefaultParams) {
+            if (pos.timeInSamples != lastPos + bufferSize) {
+                position = time
+            }
             target.getSamples(position, offset, bufferSize, buffers)
             position += bufferSize
             pauseProcessor.processPause(buffers, offset, bufferSize, pos.timeToPause)
+            lastPos = pos.timeInSamples
             return
         } else if (pos.timeInSamples != lastPos + bufferSize) {
             position = (time * tr.speedRatio).roundToLong()
