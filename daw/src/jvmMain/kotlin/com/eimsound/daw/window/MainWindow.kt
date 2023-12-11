@@ -74,11 +74,11 @@ private fun MainWindowContent(window: ComposeWindow) {
 
 @Composable
 private fun SaveProjectWarningDialog() {
-    val windowState = rememberDialogState(width = 400.dp, height = 160.dp)
+    val windowState = rememberDialogState(width = 360.dp, height = 200.dp)
     val windowManager = EchoInMirror.windowManager
     if (windowManager.isSaveProjectWarningDialogOpened) DialogWindow({
         windowManager.isSaveProjectWarningDialogOpened = false
-    }, windowState, resizable = false, title = "是否保存项目并退出?"
+    }, windowState, title = "是否保存项目并退出?"
     ) {
         Surface(Modifier.fillMaxSize(), tonalElevation = 4.dp) {
             Column(Modifier.padding(20.dp)) {

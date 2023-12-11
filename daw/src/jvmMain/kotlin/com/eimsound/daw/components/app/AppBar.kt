@@ -1,8 +1,6 @@
 package com.eimsound.daw.components.app
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -11,7 +9,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.layout.Layout
@@ -63,11 +60,7 @@ private fun CurrentTime() {
             Modifier.width(110.dp),
             singleLine = true,
             textStyle = MaterialTheme.typography.labelLarge.copy(LocalContentColor.current),
-            suffix = {
-                Icon(Icons.Filled.ExpandMore, "Expand",
-                    Modifier.size(20.dp).pointerHoverIcon(PointerIcon.Hand).clip(CircleShape).clickable { }
-                )
-            },
+            suffix = { ExpandIcon(it) },
             colors = textFieldGrayColors(),
             paddingValues = TextFieldDefaults.contentPaddingWithLabel(8.dp, 4.dp, 3.dp, 4.dp)
         )
@@ -93,11 +86,7 @@ private fun Quantification() {
             prefix = {
                 Icon(Magnet, "Quantification", modifier = Modifier.size(15.dp).offset((-2).dp, 1.dp))
             },
-            suffix = {
-                Icon(Icons.Filled.ExpandMore, "Expand",
-                    Modifier.size(20.dp).pointerHoverIcon(PointerIcon.Hand).clip(CircleShape).clickable { }
-                )
-            },
+            suffix = { ExpandIcon(it) },
             colors = textFieldGrayColors(),
             paddingValues = TextFieldDefaults.contentPaddingWithLabel(8.dp, 4.dp, 3.dp, 4.dp)
         )

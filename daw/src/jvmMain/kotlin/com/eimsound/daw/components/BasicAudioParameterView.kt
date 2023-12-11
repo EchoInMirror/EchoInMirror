@@ -31,7 +31,7 @@ fun BasicAudioParameterView(parameters: List<AudioProcessorParameter>, uuid: UUI
 private fun FloatingLayerProvider.openParameterSelector(processor: TrackAudioProcessorWrapper) {
     val key = Any()
     var tmpSelectedParameter = ""
-    val close = { closeFloatingLayer(key) }
+    val close: () -> Unit = { closeFloatingLayer(key) }
     openFloatingLayer(::closeFloatingLayer, key = key, hasOverlay = true) {
         Dialog({
             close()

@@ -1,5 +1,6 @@
 package com.eimsound.daw.components
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -18,12 +19,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.UiComposable
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextDecoration
@@ -90,7 +93,7 @@ fun DropdownMenu(
     boxModifier: Modifier = Modifier,
     enabled: Boolean = true,
     matcher: PointerMatcher = PointerMatcher.Primary,
-    content: @Composable BoxScope.() -> Unit,
+    content: @Composable BoxScope.(Boolean) -> Unit,
 ) {
     FloatingLayer({ size, close ->
         Surface(
@@ -131,7 +134,7 @@ fun <T : Any> OutlinedDropdownSelector(
     label: String? = null,
     readonly: Boolean = false,
     colors: TextFieldColors? = null,
-    content: (@Composable () -> Unit)? = null,
+    content: (@Composable (Boolean) -> Unit)? = null,
 ) {
     @OptIn(ExperimentalFoundationApi::class)
     DropdownSelector(
@@ -152,25 +155,25 @@ fun <T : Any> AutoWidthOutlinedDropdownSelector(
     label: String? = null,
     colors: TextFieldColors? = null
 ) {
-    var modifier = boxModifier
-    val textMeasurer = rememberTextMeasurer()
-    val textWidth = remember(items, items.size) {
-        (items.maxOfOrNull { textMeasurer.measure(it.displayName).size.width.dp } ?: 0.dp) + 32.dp
+    BoxWithConstraints {
+        val textMeasurer = rememberTextMeasurer()
+        val density = LocalDensity.current
+        OutlinedDropdownSelector(
+            onSelected,
+            items,
+            selected,
+            boxModifier.width(remember(items, items.size, constraints.maxWidth, density) {
+                density.run { ((items.maxOfOrNull { textMeasurer.measure(it.displayName).size.width } ?: 200) + 140)
+                    .coerceAtMost(constraints.maxWidth).toDp() }
+            }),
+            enabled,
+            isSelected,
+            itemContent,
+            label,
+            readonly = true,
+            colors
+        )
     }
-    val maxWidth = if (textWidth > 256.dp) 256.dp else textWidth
-    modifier = modifier.width(maxWidth)
-    OutlinedDropdownSelector(
-        onSelected,
-        items,
-        selected,
-        modifier,
-        enabled,
-        isSelected,
-        itemContent,
-        label,
-        readonly = true,
-        colors
-    )
 }
 
 @Composable
@@ -185,12 +188,21 @@ fun <T : Any> DropdownSelector(
     label: String? = null,
     readOnly: Boolean = false,
     colors: TextFieldColors? = null,
-    content: (@Composable () -> Unit)? = null,
+    content: (@Composable (Boolean) -> Unit)? = null,
 ) {
     @OptIn(ExperimentalFoundationApi::class)
     DropdownSelector(
         onSelected, items, selected, boxModifier, enabled, PointerMatcher.Primary,
         isSelected, itemContent, label, false, readOnly, colors, content
+    )
+}
+
+@Composable
+fun ExpandIcon(isExpanded: Boolean = false) {
+    Icon(
+        Icons.Filled.ExpandMore, "Expand",
+        Modifier.size(20.dp).pointerHoverIcon(PointerIcon.Hand).clip(CircleShape)
+            .rotate(animateFloatAsState(if (isExpanded) 180F else 360F).value).clickable { }
     )
 }
 
@@ -208,7 +220,7 @@ fun <T : Any> DropdownSelector(
     isOutlined: Boolean = false,
     readonly: Boolean = false,
     colors: TextFieldColors? = null,
-    content: (@Composable () -> Unit)? = null,
+    content: (@Composable (Boolean) -> Unit)? = null,
 ) {
     val filter = remember { mutableStateOf<String?>(null) }
     @OptIn(ExperimentalFoundationApi::class) FloatingLayer({ size, close ->
@@ -241,34 +253,24 @@ fun <T : Any> DropdownSelector(
         if (content == null) {
             if (isOutlined) CustomOutlinedTextField(
                 filter.value ?: selected?.displayName ?: "",
-                { filter.value = it.ifEmpty { null } },
+                { v -> filter.value = v.ifEmpty { null } },
                 boxModifier.pointerHoverIcon(PointerIcon.Hand),
                 label = if (label == null) null else ({ Text(label) }),
                 singleLine = true,
                 readOnly = readonly,
                 colors = colors ?: TextFieldDefaults.colors(),
-                suffix = {
-                    Icon(
-                        Icons.Filled.ExpandMore, "Expand",
-                        Modifier.size(20.dp).pointerHoverIcon(PointerIcon.Hand).clip(CircleShape).clickable { }
-                    )
-                }
+                suffix = { ExpandIcon(it) }
             ) else CustomTextField(
                 filter.value ?: selected?.displayName ?: "",
-                { filter.value = it.ifEmpty { null } },
+                { v -> filter.value = v.ifEmpty { null } },
                 boxModifier.pointerHoverIcon(PointerIcon.Hand),
                 label = if (label == null) null else ({ Text(label) }),
                 singleLine = true,
                 readOnly = readonly,
                 colors = colors ?: TextFieldDefaults.colors(),
-                suffix = {
-                    Icon(
-                        Icons.Filled.ExpandMore, "Expand",
-                        Modifier.size(20.dp).pointerHoverIcon(PointerIcon.Hand).clip(CircleShape).clickable { }
-                    )
-                }
+                suffix = { ExpandIcon(it) }
             )
-        } else content()
+        } else content(it)
     }
 }
 

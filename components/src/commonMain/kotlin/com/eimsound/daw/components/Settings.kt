@@ -48,6 +48,7 @@ fun SettingsCard(
                 .padding(16.dp, EXPANDER_PADDING_VERTICAL)
         ) {
             Text(header)
+            Gap(16)
             Filled()
             content()
         }

@@ -45,12 +45,15 @@ class FloatingLayerProvider {
         return k
     }
 
-    fun closeFloatingLayer(key: Any) {
+    fun closeFloatingLayer(key: Any): Boolean {
+        var closed = false
         floatingLayers.fastForEach {
             if (it.key != key) return@fastForEach
             if (it.isShow) it.isClosed = true
             else floatingLayers = floatingLayers.filter { f -> it != f }
+            closed = true
         }
+        return closed
     }
 
     fun setFloatingLayerShow(key: Any, show: Boolean) {
@@ -119,7 +122,7 @@ val LocalFloatingLayerProvider = staticCompositionLocalOf { FloatingLayerProvide
 @Composable
 fun FloatingLayer(
     layerContent: @Composable (DpSize, () -> Unit) -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true,
-    hasOverlay: Boolean = false, isCentral: Boolean = false, content: @Composable BoxScope.() -> Unit
+    hasOverlay: Boolean = false, isCentral: Boolean = false, content: @Composable BoxScope.(Boolean) -> Unit
 ) {
     @OptIn(ExperimentalFoundationApi::class)
     FloatingLayer(layerContent, modifier, enabled, hasOverlay, isCentral, PointerMatcher.Primary, content = content)
@@ -130,11 +133,15 @@ fun FloatingLayer(
 fun FloatingLayer(
     layerContent: @Composable (DpSize, () -> Unit) -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true,
     hasOverlay: Boolean = false, isCentral: Boolean = false, matcher: PointerMatcher = PointerMatcher.Primary,
-    pass: PointerEventPass = PointerEventPass.Main, content: @Composable BoxScope.() -> Unit
+    pass: PointerEventPass = PointerEventPass.Main, content: @Composable BoxScope.(Boolean) -> Unit
 ) {
     val id = remember { Any() }
+    var isOpened by remember { mutableStateOf(false) }
     val localFloatingLayerProvider = LocalFloatingLayerProvider.current
-    val closeLayer = remember { { localFloatingLayerProvider.closeFloatingLayer(id) } }
+    val closeLayer = remember { {
+        isOpened = false
+        localFloatingLayerProvider.closeFloatingLayer(id)
+    } }
     val offset = remember { arrayOf(Offset.Zero) }
     val size = remember { arrayOf(Size.Zero) }
     Box((if (isCentral) modifier else modifier.onGloballyPositioned {
@@ -146,13 +153,14 @@ fun FloatingLayer(
                 while (true) {
                     val event = awaitPointerEvent(pass)
                     if (event.type != PointerEventType.Press || !matcher.matches(event)) continue
+                    isOpened = true
                     localFloatingLayerProvider.openFloatingLayer({ closeLayer() },
                         if (isCentral) null else offset[0] + Offset(0f, size[0].height), id, hasOverlay
                     ) { layerContent(size[0].toDpSize(), closeLayer) }
                 }
             }
         }
-    ) { content() }
+    ) { content(isOpened) }
 }
 
 @Composable
@@ -201,7 +209,7 @@ fun FloatingLayerProvider.openEditorMenu(
     lastMenuOpenedTime = t
 
     val key = Any()
-    val close = { closeFloatingLayer(key) }
+    val close: () -> Unit = { closeFloatingLayer(key) }
 
     openFloatingLayer({ close() }, position, key, overflow = true) {
         Dialog {

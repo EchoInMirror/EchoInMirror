@@ -84,18 +84,13 @@ private fun saveFavoriteAudioProcessors() {
     }
 }
 
-private var isQuickLoadDialogOpen = false
 fun FloatingLayerProvider.openQuickLoadDialog(onClose: ((AudioProcessorDescriptionAndFactory?) -> Unit)? = null) {
-    if (isQuickLoadDialogOpen) {
-        closeFloatingLayer(KEY)
-        return
-    }
+    if (closeFloatingLayer(KEY)) return
     loadFavoriteAudioProcessors()
-    isQuickLoadDialogOpen = true
     openFloatingLayer({
         closeFloatingLayer(KEY)
         onClose?.invoke(null)
-    }, key = KEY, afterClose = { isQuickLoadDialogOpen = false }) {
+    }, key = KEY) {
         val favoriteIconColors = IconButtonDefaults.iconToggleButtonColors(
             contentColor = MaterialTheme.colorScheme.outline,
             checkedContentColor = MaterialTheme.colorScheme.warning
