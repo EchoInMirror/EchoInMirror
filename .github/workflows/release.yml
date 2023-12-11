@@ -34,13 +34,24 @@ jobs:
           sed -i "s/--add-exports=java.desktop\/com.apple.eawt.event=ALL-UNNAMED//" release-bin/.vmoptions 
           mkdir package
           ./gradlew :daw:shadowJar
-          ./gradlew --stop
-          cp daw/build/libs/daw.jar package/EchoInMirror.jar
-          cp -R release-bin/ package/
-          curl https://github.com/EchoInMirror/EIMHost/releases/latest/download/EIMHost-x86.exe -o package/EIMHost-x86.exe -L
-          curl https://github.com/EchoInMirror/EIMHost/releases/latest/download/EIMHost-x64.exe -o package/EIMHost.exe -L
         env:
           APP_CENTER_SECRET: ${{ secrets.APP_CENTER_SECRET }}
+
+      - name: Upload jar to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: daw/build/libs/daw.jar
+          asset_name: EchoInMirror-win64.jar
+          tag: ${{ github.ref }}
+
+      - name: Copy files
+        shell: bash
+        run: |
+          cp daw/build/libs/daw.jar package/EchoInMirror.jar
+          cp -R release-bin/* package/
+          curl https://github.com/EchoInMirror/EIMHost/releases/latest/download/EIMHost-x86.exe -o package/EIMHost-x86.exe -L
+          curl https://github.com/EchoInMirror/EIMHost/releases/latest/download/EIMHost-x64.exe -o package/EIMHost.exe -L
 
       - name: Download ffmpeg
         shell: bash
@@ -71,10 +82,6 @@ jobs:
           asset_name: EchoInMirror-win64.zip
           tag: ${{ github.ref }}
 
-      - name: Upload jar to release
-        uses: svenstaro/upload-release-action@v2
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: EchoInMirror/EchoInMirror.jar
-          asset_name: EchoInMirror-win64.jar
-          tag: ${{ github.ref }}
+      - name: Stop gradle
+        shell: bash
+        run: ./gradlew --stop
