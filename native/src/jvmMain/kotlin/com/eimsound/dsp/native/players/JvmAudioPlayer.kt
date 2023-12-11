@@ -17,7 +17,7 @@ private val FORMATS by lazy {
 class JvmAudioPlayer(
     factory: JvmAudioPlayerFactory,
     private val mixer: Mixer.Info,
-    currentPosition: MutableCurrentPosition,
+    currentPosition: MutablePlayPosition,
     processor: AudioProcessor,
     preferredSampleRate: Int?,
     preferredBufferSize: Int?,
@@ -135,7 +135,7 @@ class JvmAudioPlayerFactory : AudioPlayerFactory {
         else null
     }
     override fun create(
-        name: String, currentPosition: MutableCurrentPosition, processor: AudioProcessor,
+        name: String, currentPosition: MutablePlayPosition, processor: AudioProcessor,
         preferredSampleRate: Int?, preferredBufferSize: Int?,
     ): JvmAudioPlayer {
         val info = AudioSystem.getMixerInfo()

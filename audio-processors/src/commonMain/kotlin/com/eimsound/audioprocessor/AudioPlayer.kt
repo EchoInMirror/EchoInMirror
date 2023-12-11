@@ -28,7 +28,7 @@ abstract class AbstractAudioPlayer(
     override val factory: AudioPlayerFactory,
     override val name: String,
     final override val channels: Int,
-    val currentPosition: MutableCurrentPosition,
+    val currentPosition: MutablePlayPosition,
     private val processor: AudioProcessor,
     preferredSampleRate: Int? = null,
     preferredBufferSize: Int? = null,
@@ -101,7 +101,7 @@ interface AudioPlayerFactory {
     val isEnabled: Boolean
     suspend fun getPlayers(): List<String>
     fun create(
-        name: String, currentPosition: MutableCurrentPosition, processor: AudioProcessor,
+        name: String, currentPosition: MutablePlayPosition, processor: AudioProcessor,
         preferredSampleRate: Int? = null, preferredBufferSize: Int? = null,
     ): AudioPlayer
 }
@@ -116,8 +116,8 @@ interface AudioPlayerManager : Reloadable {
     val factories: Map<String, AudioPlayerFactory>
 
     fun create(
-        factory: String, name: String, currentPosition: MutableCurrentPosition, processor: AudioProcessor,
+        factory: String, name: String, currentPosition: MutablePlayPosition, processor: AudioProcessor,
         preferredSampleRate: Int? = null, preferredBufferSize: Int? = null,
     ): AudioPlayer
-    fun createDefaultPlayer(currentPosition: MutableCurrentPosition, processor: AudioProcessor): AudioPlayer
+    fun createDefaultPlayer(currentPosition: MutablePlayPosition, processor: AudioProcessor): AudioPlayer
 }

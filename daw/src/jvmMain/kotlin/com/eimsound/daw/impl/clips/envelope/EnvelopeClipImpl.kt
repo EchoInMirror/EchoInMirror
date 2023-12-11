@@ -73,7 +73,7 @@ class EnvelopeClipFactoryImpl: EnvelopeClipFactory {
     override fun getEditor(clip: TrackClip<EnvelopeClip>) = EnvelopeClipEditor(clip)
 
     override fun processBlock(
-        clip: TrackClip<EnvelopeClip>, buffers: Array<FloatArray>, position: CurrentPosition,
+        clip: TrackClip<EnvelopeClip>, buffers: Array<FloatArray>, position: PlayPosition,
         midiBuffer: ArrayList<Int>, noteRecorder: MidiNoteTimeRecorder
     ) {
         val clipTime = clip.time - clip.start

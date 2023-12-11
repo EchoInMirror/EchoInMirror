@@ -5,7 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import com.eimsound.audioprocessor.AudioProcessorDescription
-import com.eimsound.audioprocessor.CurrentPosition
+import com.eimsound.audioprocessor.PlayPosition
 import com.eimsound.daw.Configuration
 import com.eimsound.daw.api.ProjectInformation
 import com.eimsound.daw.api.processor.*
@@ -144,7 +144,7 @@ class BusImpl(
 
     override suspend fun processBlock(
         buffers: Array<FloatArray>,
-        position: CurrentPosition,
+        position: PlayPosition,
         midiBuffer: ArrayList<Int>
     ) {
         super.processBlock(buffers, position, midiBuffer)

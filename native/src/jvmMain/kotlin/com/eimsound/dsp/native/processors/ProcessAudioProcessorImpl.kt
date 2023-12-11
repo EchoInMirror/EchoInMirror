@@ -61,7 +61,7 @@ open class ProcessAudioProcessorImpl(
     protected val modifiedParameterMutex = Mutex()
     private val modifiedParameter = hashSetOf<Int>()
 
-    override suspend fun processBlock(buffers: Array<FloatArray>, position: CurrentPosition, midiBuffer: ArrayList<Int>) {
+    override suspend fun processBlock(buffers: Array<FloatArray>, position: PlayPosition, midiBuffer: ArrayList<Int>) {
         withContext(Dispatchers.IO) {
             val output = outputStream
             if (!isLaunched || output == null) return@withContext
@@ -317,7 +317,7 @@ open class ProcessAudioProcessorImpl(
         }
     }
 
-    private fun handleInput(id: Int, position: CurrentPosition) {
+    private fun handleInput(id: Int, position: PlayPosition) {
         val input = inputStream!!
         when (id) {
             2 -> position.isPlaying = input.readBoolean() // transport play

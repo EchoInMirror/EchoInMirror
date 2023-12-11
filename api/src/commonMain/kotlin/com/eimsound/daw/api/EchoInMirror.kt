@@ -3,7 +3,7 @@ package com.eimsound.daw.api
 import androidx.compose.runtime.*
 import androidx.compose.ui.input.pointer.PointerIcon
 import com.eimsound.audioprocessor.AudioPlayer
-import com.eimsound.audioprocessor.MutableCurrentPosition
+import com.eimsound.audioprocessor.MutablePlayPosition
 import com.eimsound.dsp.data.AudioThumbnailCache
 import com.eimsound.audioprocessor.data.Quantification
 import com.eimsound.daw.api.clips.TrackClip
@@ -20,7 +20,7 @@ val EchoInMirror = ServiceLoader.load(IEchoInMirror::class.java).first()!!
  * @see com.eimsound.daw.impl.EchoInMirrorImpl
  */
 interface IEchoInMirror {
-    val currentPosition: MutableCurrentPosition
+    val currentPosition: MutablePlayPosition
     var bus: Bus?
     var player: AudioPlayer?
 //    var player: AudioPlayer = JvmAudioPlayer(currentPosition, bus)

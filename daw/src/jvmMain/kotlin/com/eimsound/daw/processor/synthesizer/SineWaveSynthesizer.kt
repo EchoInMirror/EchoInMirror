@@ -5,7 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.eimsound.audioprocessor.AudioProcessor
 import com.eimsound.audioprocessor.AudioProcessorFactory
-import com.eimsound.audioprocessor.CurrentPosition
+import com.eimsound.audioprocessor.PlayPosition
 import com.eimsound.dsp.data.midi.MidiEvent
 import com.eimsound.audioprocessor.interfaces.Volume
 import com.eimsound.daw.impl.processor.EIMAudioProcessorDescription
@@ -24,7 +24,7 @@ class SineWaveSynthesizer(
         get() = _volume
         set(value) { _volume = value.coerceAtLeast(0F) }
 
-    override suspend fun processBlock(buffers: Array<FloatArray>, position: CurrentPosition, midiBuffer: ArrayList<Int>) {
+    override suspend fun processBlock(buffers: Array<FloatArray>, position: PlayPosition, midiBuffer: ArrayList<Int>) {
         var midiIndex = 0
         for (i in 0 until position.bufferSize) {
             while (midiIndex < midiBuffer.size && midiBuffer[midiIndex + 1] <= i) {

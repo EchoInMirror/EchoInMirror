@@ -24,7 +24,7 @@ private val logger = KotlinLogging.logger {  }
 class NativeAudioPlayer(
     factory: NativeAudioPlayerFactory,
     type: String, name: String,
-    currentPosition: MutableCurrentPosition,
+    currentPosition: MutablePlayPosition,
     processor: AudioProcessor,
     preferredSampleRate: Int?,
     preferredBufferSize: Int?,
@@ -211,7 +211,7 @@ class NativeAudioPlayerFactory : AudioPlayerFactory {
             .readAllBytes().decodeToString().split("\$EIM\$").filter { it.isNotEmpty() }
     }
     override fun create(
-        name: String, currentPosition: MutableCurrentPosition, processor: AudioProcessor,
+        name: String, currentPosition: MutablePlayPosition, processor: AudioProcessor,
         preferredSampleRate: Int?, preferredBufferSize: Int?,
     ) = try {
         "\\[(.+?)] ".toRegex().find(name)?.let {

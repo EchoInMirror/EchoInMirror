@@ -1,12 +1,12 @@
 package com.eimsound.daw.dawutils
 
-import com.eimsound.audioprocessor.CurrentPosition
+import com.eimsound.audioprocessor.PlayPosition
 import com.eimsound.audioprocessor.convertPPQToSamples
 import com.eimsound.daw.utils.lowerBound
 import com.eimsound.dsp.data.midi.*
 
 fun processMIDIBuffer(
-    notes: List<NoteMessage>, position: CurrentPosition, midiBuffer: ArrayList<Int>, startTime: Int,
+    notes: List<NoteMessage>, position: PlayPosition, midiBuffer: ArrayList<Int>, startTime: Int,
     timeInSamples: Long, noteRecorder: MidiNoteTimeRecorder, currentIndex: Int,
 ): Int {
     var index = currentIndex

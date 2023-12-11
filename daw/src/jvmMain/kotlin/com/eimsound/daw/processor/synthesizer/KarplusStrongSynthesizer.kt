@@ -5,7 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.eimsound.audioprocessor.AbstractAudioProcessor
 import com.eimsound.audioprocessor.AudioProcessorFactory
-import com.eimsound.audioprocessor.CurrentPosition
+import com.eimsound.audioprocessor.PlayPosition
 import com.eimsound.dsp.data.midi.MidiEvent
 import com.eimsound.audioprocessor.interfaces.Volume
 import com.eimsound.daw.impl.processor.EIMAudioProcessorDescription
@@ -26,7 +26,7 @@ class KarplusStrongSynthesizer(factory: AudioProcessorFactory<*>, volume: Float 
 
     override var latency = 44800 * 3
 
-    override suspend fun processBlock(buffers: Array<FloatArray>, position: CurrentPosition, midiBuffer: ArrayList<Int>) {
+    override suspend fun processBlock(buffers: Array<FloatArray>, position: PlayPosition, midiBuffer: ArrayList<Int>) {
         if (cacheSize > 0) {
             val size = cacheSize.coerceAtMost(buffers[0].size)
             for (i in 0 until size) {

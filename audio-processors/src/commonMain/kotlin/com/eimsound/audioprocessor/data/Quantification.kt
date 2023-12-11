@@ -1,6 +1,6 @@
 package com.eimsound.audioprocessor.data
 
-import com.eimsound.audioprocessor.CurrentPosition
+import com.eimsound.audioprocessor.PlayPosition
 import com.eimsound.daw.commons.DividerAbove
 import kotlin.math.roundToInt
 
@@ -35,5 +35,5 @@ fun Quantification.getEditUnit(ppq: Int, timeSigDenominator: Int, timeSigNumerat
     if (timesSigNumerator) ret *= timeSigNumerator
     return ret.roundToInt().coerceAtLeast(1)
 }
-fun Quantification.getEditUnit(position: CurrentPosition) = getEditUnit(position.ppq, position.timeSigDenominator,
+fun Quantification.getEditUnit(position: PlayPosition) = getEditUnit(position.ppq, position.timeSigDenominator,
     position.timeSigNumerator)

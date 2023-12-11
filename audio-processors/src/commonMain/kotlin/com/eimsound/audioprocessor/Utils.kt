@@ -27,3 +27,24 @@ fun Array<FloatArray>.mixWith(source: Array<FloatArray>, volume: Float, limit: F
 }
 
 fun Array<FloatArray>.clear() { repeat(size) { this[it].fill(0F) } }
+
+class PauseProcessor {
+    private var step = 0F
+    private var cur = 0F
+    fun processPause(buffers: Array<FloatArray>, offset: Int, length: Int, timeInSamples: Int) {
+        if (timeInSamples > 0 && cur <= 0F) {
+            cur = 1F
+            step = 1F / timeInSamples
+        }
+        if (timeInSamples > 0) {
+            buffers.forEach {
+                var c = cur
+                for (i in offset until length) {
+                    it[i] *= c
+                    c -= step
+                }
+            }
+            cur -= step * length
+        }
+    }
+}

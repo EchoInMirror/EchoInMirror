@@ -27,7 +27,7 @@ import com.microsoft.appcenter.crashes.Crashes
 import kotlinx.coroutines.runBlocking
 
 class EchoInMirrorImpl : IEchoInMirror {
-    override val currentPosition = CurrentPositionImpl(isMainPosition = true)
+    override val currentPosition = PlayPositionImpl(isMainPosition = true)
     override var bus: Bus? by mutableStateOf(null)
     override var player: AudioPlayer? by observableMutableStateOf(null) {
         it?.onClose { player = null }

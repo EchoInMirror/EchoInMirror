@@ -4,7 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
-import com.eimsound.audioprocessor.CurrentPosition
+import com.eimsound.audioprocessor.PlayPosition
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.commons.MultiSelectableEditor
 import com.eimsound.daw.commons.SerializableEditor
@@ -36,7 +36,7 @@ interface ClipFactory<T: Clip> {
     fun createClip(): T
     fun createClip(path: Path, json: JsonObject): T
     fun processBlock(
-        clip: TrackClip<T>, buffers: Array<FloatArray>, position: CurrentPosition,
+        clip: TrackClip<T>, buffers: Array<FloatArray>, position: PlayPosition,
         midiBuffer: ArrayList<Int>, noteRecorder: MidiNoteTimeRecorder
     )
     fun save(clip: T, path: Path) { }

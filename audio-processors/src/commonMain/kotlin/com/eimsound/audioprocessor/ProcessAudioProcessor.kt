@@ -8,7 +8,7 @@ interface ProcessAudioProcessor: AudioProcessor {
     suspend fun launch(execFile: String, preset: String?, vararg commands: String): Boolean
 }
 
-fun CurrentPosition.toFlags(): Int {
+fun PlayPosition.toFlags(): Int {
     var flags = 0
     if (isPlaying) flags = flags or 1
     if (isLooping) flags = flags or 2

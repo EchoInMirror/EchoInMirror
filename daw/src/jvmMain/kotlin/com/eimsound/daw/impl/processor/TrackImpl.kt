@@ -70,7 +70,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
 
     override suspend fun processBlock(
         buffers: Array<FloatArray>,
-        position: CurrentPosition,
+        position: PlayPosition,
         midiBuffer: ArrayList<Int>
     ) = withContext(Dispatchers.Default) {
         if (isDisabled) return@withContext
@@ -127,7 +127,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
     }
 
     private suspend fun processSubTracks(
-        position: CurrentPosition, buffers: Array<FloatArray>, midiBuffer: ArrayList<Int>
+        position: PlayPosition, buffers: Array<FloatArray>, midiBuffer: ArrayList<Int>
     ) = withContext(Dispatchers.Default) {
         if (subTracks.isEmpty()) return@withContext 0
         trackBuffers.checkSize(subTracks.size, 2, position.bufferSize)
@@ -166,7 +166,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         maxLatency
     }
 
-    private fun processClips(position: CurrentPosition, buffers: Array<FloatArray>, midiBuffer: ArrayList<Int>) {
+    private fun processClips(position: PlayPosition, buffers: Array<FloatArray>, midiBuffer: ArrayList<Int>) {
         val bufferSize = position.bufferSize
         noteRecorder.processBlock(bufferSize, midiBuffer)
         val startTime = position.timeInPPQ

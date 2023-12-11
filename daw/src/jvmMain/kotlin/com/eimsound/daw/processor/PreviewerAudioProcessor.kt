@@ -4,7 +4,7 @@ import com.eimsound.audioprocessor.*
 import com.eimsound.audiosources.*
 import com.eimsound.daw.dawutils.processMIDIBuffer
 import com.eimsound.dsp.data.midi.*
-import com.eimsound.daw.impl.CurrentPositionImpl
+import com.eimsound.daw.impl.PlayPositionImpl
 import com.eimsound.daw.impl.processor.eimAudioProcessorFactory
 import com.eimsound.daw.processor.synthesizer.SineWaveSynthesizer
 
@@ -25,7 +25,7 @@ class PreviewerAudioProcessor(factory: AudioProcessorFactory<*>) : AbstractAudio
     private var tempBuffers = Array(2) { FloatArray(1024) }
 
     var volume by sineWaveSynthesizer::volume
-    val position = CurrentPositionImpl(this).apply {
+    val position = PlayPositionImpl(this).apply {
         isPlaying = true
         isProjectLooping = false
     }
@@ -34,7 +34,7 @@ class PreviewerAudioProcessor(factory: AudioProcessorFactory<*>) : AbstractAudio
         get() = position.timeInPPQ.toDouble() / position.projectRange.last
         set(value) { position.timeInPPQ = (value * position.projectRange.last).toInt() }
 
-    override suspend fun processBlock(buffers: Array<FloatArray>, position: CurrentPosition, midiBuffer: ArrayList<Int>) {
+    override suspend fun processBlock(buffers: Array<FloatArray>, position: PlayPosition, midiBuffer: ArrayList<Int>) {
         if (position.bpm != this.position.bpm) this.position.bpm = position.bpm
         if (!this.position.isPlaying) return
         val notes = midiPreviewTarget

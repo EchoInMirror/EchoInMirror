@@ -170,7 +170,9 @@ class AudioClipImpl(
         if (numRead > 0) fifo.push(tempOutBuffers, 0, numRead)
         return numRead < 1 && read < 1
     }
-    internal fun processBlock(pos: CurrentPosition, playTime: Long, buffers: Array<FloatArray>) {
+
+    private val pauseProcessor = PauseProcessor()
+    internal fun processBlock(pos: PlayPosition, playTime: Long, buffers: Array<FloatArray>) {
         var bufferSize = buffers[0].size
         val tr = stretcher
         var time = playTime
@@ -182,6 +184,7 @@ class AudioClipImpl(
         if (tr == null || tr.isDefaultParams) {
             target.getSamples(position, offset, bufferSize, buffers)
             position += bufferSize
+            pauseProcessor.processPause(buffers, offset, bufferSize, pos.timeToPause)
             return
         } else if (pos.timeInSamples != lastPos + bufferSize) {
             position = (time * tr.speedRatio).roundToLong()
@@ -196,6 +199,7 @@ class AudioClipImpl(
         if (bufferSize == 0) return
         while (fifo.available < bufferSize) if (fillNextBlock(channels)) break
         fifo.pop(buffers, offset, bufferSize)
+        pauseProcessor.processPause(buffers, offset, bufferSize, pos.timeToPause)
     }
 
     suspend fun detectBPM(snackbarProvider: SnackbarProvider? = null): Int = withContext(Dispatchers.IO) {
@@ -247,7 +251,7 @@ class AudioClipFactoryImpl: AudioClipFactory {
     override fun getEditor(clip: TrackClip<AudioClip>) = AudioClipEditor(clip)
 
     override fun processBlock(
-        clip: TrackClip<AudioClip>, buffers: Array<FloatArray>, position: CurrentPosition,
+        clip: TrackClip<AudioClip>, buffers: Array<FloatArray>, position: PlayPosition,
         midiBuffer: ArrayList<Int>, noteRecorder: MidiNoteTimeRecorder
     ) {
         val c = clip.clip as? AudioClipImpl ?: return

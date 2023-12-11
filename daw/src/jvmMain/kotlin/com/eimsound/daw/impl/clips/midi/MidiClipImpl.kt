@@ -12,7 +12,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.util.fastForEach
-import com.eimsound.audioprocessor.CurrentPosition
+import com.eimsound.audioprocessor.PlayPosition
 import com.eimsound.audioprocessor.convertSamplesToPPQ
 import com.eimsound.daw.api.*
 import com.eimsound.daw.api.clips.*
@@ -89,7 +89,7 @@ class MidiClipFactoryImpl : MidiClipFactory {
     override fun getEditor(clip: TrackClip<MidiClip>) = DefaultMidiClipEditor(clip)
 
     override fun processBlock(
-        clip: TrackClip<MidiClip>, buffers: Array<FloatArray>, position: CurrentPosition,
+        clip: TrackClip<MidiClip>, buffers: Array<FloatArray>, position: PlayPosition,
         midiBuffer: ArrayList<Int>, noteRecorder: MidiNoteTimeRecorder
     ) {
         val c = clip.clip as MidiClipImpl

@@ -44,7 +44,7 @@ interface Track : AudioProcessor, Pan, Volume, MidiEventHandler, Colorable, Rend
 
     override suspend fun processBlock(
         buffers: Array<FloatArray>,
-        position: CurrentPosition,
+        position: PlayPosition,
         midiBuffer: ArrayList<Int>
     )
 }

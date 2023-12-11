@@ -5,7 +5,7 @@ import java.io.File
 
 interface Renderable {
     val isRendering: Boolean
-    suspend fun processBlock(buffers: Array<FloatArray>, position: CurrentPosition, midiBuffer: ArrayList<Int>)
+    suspend fun processBlock(buffers: Array<FloatArray>, position: PlayPosition, midiBuffer: ArrayList<Int>)
     fun onRenderStart()
     fun onRenderEnd()
 }
@@ -35,13 +35,14 @@ interface Renderer {
 }
 
 private val logger = KotlinLogging.logger("RenderPosition")
-class RenderPosition(override var ppq: Int, override val sampleRate: Int, range: IntRange) : CurrentPosition {
+class RenderPosition(override var ppq: Int, override val sampleRate: Int, range: IntRange) : PlayPosition {
     override var bpm = 140.0
     override var timeInSeconds = 0.0
     override var ppqPosition = 0.0
     override val bufferSize = 1024
     override var timeSigNumerator = 4
     override var timeSigDenominator = 4
+    override val timeToPause = 0
     override var projectRange = range
         set(_) = logger.warn { "Modify projectRange is not supported in RenderPosition" }
     override var loopingRange = range

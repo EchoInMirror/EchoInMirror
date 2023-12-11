@@ -11,7 +11,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.graphicsLayer
-import com.eimsound.audioprocessor.CurrentPosition
+import com.eimsound.audioprocessor.PlayPosition
 import com.eimsound.audioprocessor.convertPPQToSeconds
 import com.eimsound.dsp.data.AudioThumbnail
 import com.eimsound.dsp.data.EnvelopePointList
@@ -149,7 +149,7 @@ private fun DrawScope.drawDefault(
 
 @Composable
 fun Waveform(
-    thumbnail: AudioThumbnail, position: CurrentPosition,
+    thumbnail: AudioThumbnail, position: PlayPosition,
     startPPQ: Float, widthPPQ: Float, timeScale: Float = 1F,
     volumeEnvelope: EnvelopePointList? = null,
     color: Color = MaterialTheme.colorScheme.primary,

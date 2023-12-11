@@ -3,20 +3,21 @@ package com.eimsound.daw.impl
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.eimsound.audioprocessor.MutableCurrentPosition
+import com.eimsound.audioprocessor.MutablePlayPosition
 import com.eimsound.audioprocessor.SuddenChangeListener
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.utils.observableMutableStateOf
 
-class CurrentPositionImpl(
+class PlayPositionImpl(
     private val suddenChangeListener: SuddenChangeListener? = null,
     private val isMainPosition: Boolean = false
-): MutableCurrentPosition {
+): MutablePlayPosition {
     override var bpm by mutableStateOf(140.0)
     override var timeInSeconds by mutableStateOf(0.0)
     override var ppq by mutableStateOf(96)
     override var bufferSize = 1024
     override var sampleRate = 44100
+    override var timeToPause = 0
     override var timeSigNumerator by mutableStateOf(4)
     override var timeSigDenominator by mutableStateOf(4)
     override var loopingRange by mutableStateOf(0..0)
@@ -27,10 +28,20 @@ class CurrentPositionImpl(
     override var isRecording by mutableStateOf(false)
     override val isRealtime = true
     override var isProjectLooping by mutableStateOf(true)
-
-    override var isPlaying by observableMutableStateOf(false) {
+    private var _isPlaying by observableMutableStateOf(false) {
         (if (isMainPosition) EchoInMirror.bus else suddenChangeListener)?.onSuddenChange()
     }
+
+    override var isPlaying
+        get() = _isPlaying
+        set(value) {
+            if (value == _isPlaying) return
+            if (value) _isPlaying = true
+            else {
+                timeToPause = 2048
+                lastTime = 0
+            }
+        }
 
     private var _timeInSamples = 0L
     override var timeInSamples
@@ -66,12 +77,18 @@ class CurrentPositionImpl(
             (if (isMainPosition) EchoInMirror.bus else suddenChangeListener)?.onSuddenChange()
         }
 
+    private var lastTime = 0
     private fun checkTimeInPPQ() {
         if (_timeInPPQ !in projectRange) if (isProjectLooping) {
             _timeInPPQ = projectRange.first
         } else {
             isPlaying = false
             _timeInPPQ = projectRange.last
+        }
+        if (timeToPause > 0) {
+            if (_timeInPPQ > lastTime && timeToPause > 0) timeToPause -= bufferSize
+            if (timeToPause <= 0) _isPlaying = false
+            lastTime = _timeInPPQ
         }
     }
 }
