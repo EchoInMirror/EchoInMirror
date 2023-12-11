@@ -341,17 +341,27 @@ private fun SubTrackContents(index: Int, track: Track, playlist: Playlist): Int 
     return i - index
 }
 
-private fun Density.createNewClip(playlist: Playlist, track: Track, x: Float) {
+private fun Density.createNewClip(
+    playlist: Playlist, track: Track, x: Float,
+    clip: Clip = ClipManager.instance.defaultMidiClipFactory.createClip(),
+    editUnit: Int = EchoInMirror.currentPosition.oneBarPPQ,
+    len: Int = EchoInMirror.currentPosition.oneBarPPQ,
+    start: Int = 0
+) {
     playlist.selectedClips.clear()
-    val len = EchoInMirror.currentPosition.oneBarPPQ
-    val clip = ClipManager.instance.createTrackClip(
-        ClipManager.instance.defaultMidiClipFactory.createClip(),
-        (x / playlist.noteWidth.value.toPx()).fitInUnitFloor(len),
+    val newClip = ClipManager.instance.createTrackClip(
+        clip,
+        ((x + playlist.horizontalScrollState.value) / playlist.noteWidth.value.toPx()).fitInUnitFloor(editUnit),
         len,
-        0,
+        start,
         track
     )
-    listOf(clip).doClipsAmountAction(false)
+    listOf(newClip).doClipsAmountAction(false)
+    playlist.selectedClips.clear()
+    playlist.selectedClips.add(newClip)
+}
+private fun Density.dupeClip(playlist: Playlist, track: Track, x: Float, clip: TrackClip<*>) {
+    createNewClip(playlist, track, x, clip.clip.copy(), EchoInMirror.editUnit, clip.duration, clip.start)
 }
 
 @Composable
@@ -381,7 +391,11 @@ internal fun TrackContent(playlist: Playlist, track: Track, index: Int): Int {
                                     event.previousUptimeMillis
                                 }
                             }
-                            EditorTool.PENCIL -> createNewClip(playlist, track, event.position.x)
+                            EditorTool.PENCIL -> {
+                                val clip = playlist.selectedClips.firstOrNull()
+                                if (clip == null) createNewClip(playlist, track, event.position.x)
+                                else dupeClip(playlist, track, event.position.x, clip)
+                            }
                             else -> { }
                         }
                     }

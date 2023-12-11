@@ -20,6 +20,7 @@ interface Clip : JsonSerializable {
     val maxDuration: Int
     @Transient
     val duration: Int
+    fun copy(): Clip
 }
 
 abstract class AbstractClip<T: Clip>(override val factory: ClipFactory<T>) : Clip {

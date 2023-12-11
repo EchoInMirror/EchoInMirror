@@ -9,6 +9,7 @@ import com.eimsound.dsp.data.EnvelopePointList
 interface EnvelopeClip : Clip {
     val envelope: EnvelopePointList
     val controllers: MutableList<ParameterController>
+    override fun copy(): EnvelopeClip
 }
 
 /**

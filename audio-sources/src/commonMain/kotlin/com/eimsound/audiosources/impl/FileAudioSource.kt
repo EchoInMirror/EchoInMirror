@@ -120,8 +120,8 @@ class DefaultFileAudioSource(override val factory: FileAudioSourceFactory<*>, ov
         }
     }
 
-    override fun getSamples(start: Long, length: Int, buffers: Array<FloatArray>): Int {
-        memoryAudioSource?.let { return@getSamples it.getSamples(start, length, buffers) }
+    override fun getSamples(start: Long, offset: Int, length: Int, buffers: Array<FloatArray>): Int {
+        memoryAudioSource?.let { return@getSamples it.getSamples(start, offset, length, buffers) }
 
         val stream = stream ?: return 0
         val consumed: Int
@@ -130,7 +130,7 @@ class DefaultFileAudioSource(override val factory: FileAudioSourceFactory<*>, ov
                 flacDecoder?.seek(start.coerceIn(0, this.length - 1))
                 buffer.empty()
             }
-            consumed = readFromByteArray(buffers, length)
+            consumed = readFromByteArray(buffers, offset, length)
             lastPos = start
         } else {
             val len = this.length
@@ -143,7 +143,7 @@ class DefaultFileAudioSource(override val factory: FileAudioSourceFactory<*>, ov
                     stream.skip(start * frameSize)
                 }
             }
-            consumed = readFromByteArray(buffers, length)
+            consumed = readFromByteArray(buffers, offset, length)
             lastPos = start
         }
         return consumed
@@ -199,7 +199,7 @@ class DefaultFileAudioSource(override val factory: FileAudioSourceFactory<*>, ov
         return if (bytesRead < 1) -1 else bytesRead
     }
 
-    private fun readFromByteArray(buffers: Array<FloatArray>, sampleCount: Int): Int {
+    private fun readFromByteArray(buffers: Array<FloatArray>, offset: Int, sampleCount: Int): Int {
         // read into temporary byte buffer
         var byteBufferSize = sampleCount * frameSize
         var lTempBuffer = tempBuffer
@@ -226,7 +226,7 @@ class DefaultFileAudioSource(override val factory: FileAudioSourceFactory<*>, ov
         if (readSamples > 0) {
             // convert
             FloatSampleTools.byte2float(
-                lTempBuffer, 0, buffers, 0,
+                lTempBuffer, 0, buffers, offset,
                 readSamples, newFormat, false
             )
         }

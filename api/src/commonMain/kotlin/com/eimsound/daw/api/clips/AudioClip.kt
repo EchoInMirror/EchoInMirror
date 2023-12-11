@@ -19,6 +19,7 @@ interface AudioClip : Clip, AutoCloseable {
     @Transient
     val thumbnail: AudioThumbnail
     val volumeEnvelope: EnvelopePointList
+    override fun copy(): AudioClip
 }
 
 /**

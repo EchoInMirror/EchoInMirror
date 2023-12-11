@@ -13,7 +13,7 @@ fun detectPitch(source: AudioSource, bufferSize: Int = 2048): String? {
     var pitch = 0F
     var probability = 0F
     for(j in 0 until len / bufferSize) {
-        source.getSamples(j * bufferSize.toLong(), bufferSize, buffers)
+        source.getSamples(j * bufferSize.toLong(), 0, bufferSize, buffers)
         if (source.channels == 2) repeat(bufferSize) { i ->
             buffers[0][i] = (buffers[0][i] + buffers[1][i]) / 2
         }

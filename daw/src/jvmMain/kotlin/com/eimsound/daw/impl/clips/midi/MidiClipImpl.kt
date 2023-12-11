@@ -66,8 +66,11 @@ class MidiClipImpl(factory: ClipFactory<MidiClip>) : AbstractClip<MidiClip>(fact
         }
     }
 
-    override fun toString(): String {
-        return "MidiClipImpl(factory=$factory, notes=${notes.size}, id='$id')"
+    override fun toString() = "MidiClipImpl(factory=$factory, notes=${notes.size}, id='$id')"
+
+    override fun copy() = MidiClipImpl(factory).also {
+        it.notes.addAll(notes.copy())
+        it.events.putAll(events.copy())
     }
 }
 
@@ -166,11 +169,6 @@ class MidiClipFactoryImpl : MidiClipFactory {
     }
 
     override fun toString() = "MidiClipFactoryImpl"
-
-    override fun copy(clip: MidiClip) = MidiClipImpl(this).apply {
-        notes.addAll(clip.notes.copy())
-        events.putAll(clip.events.copy())
-    }
 
     override fun canMerge(clip: TrackClip<*>) = clip.clip is MidiClip
     override fun merge(clips: Collection<TrackClip<*>>): List<ClipActionResult<MidiClip>> {

@@ -148,7 +148,7 @@ fun randomColor() = com.eimsound.daw.components.utils.randomColor(!EchoInMirror.
 
 fun Panel.isActive() = EchoInMirror.windowManager.activePanel == this
 
-val SHOULD_SCROLL_REVERSE = SystemUtils.IS_OS_MAC_OSX
+val SHOULD_ZOOM_REVERSE = SystemUtils.IS_OS_MAC_OSX
 
 @Composable
 fun FrameWindowScope.initWindowDecoration() {

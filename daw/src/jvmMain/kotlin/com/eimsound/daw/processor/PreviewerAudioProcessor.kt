@@ -20,7 +20,7 @@ class PreviewerAudioProcessor(factory: AudioProcessorFactory<*>) : AbstractAudio
     private var currentIndex = -1
     private val noteRecorder = MidiNoteTimeRecorder()
     private val sineWaveSynthesizer =
-        SineWaveSynthesizer(AudioProcessorManager.instance.eimAudioProcessorFactory, true, 0.5F)
+        SineWaveSynthesizer(AudioProcessorManager.instance.eimAudioProcessorFactory, true, 0.2F)
     private var audioPreviewTarget: ResampledAudioSource? = null
     private var tempBuffers = Array(2) { FloatArray(1024) }
 
@@ -50,7 +50,7 @@ class PreviewerAudioProcessor(factory: AudioProcessorFactory<*>) : AbstractAudio
             this.position.timeInSamples += position.bufferSize
         } else if (audio != null) {
             audio.resampleFactor = position.sampleRate.toDouble() / audio.source!!.sampleRate
-            audio.getSamples(this.position.timeInSamples, this.position.bufferSize, tempBuffers)
+            audio.getSamples(this.position.timeInSamples, 0, this.position.bufferSize, tempBuffers)
             buffers.mixWith(tempBuffers, volume, 1F)
             this.position.timeInSamples += position.bufferSize
         }

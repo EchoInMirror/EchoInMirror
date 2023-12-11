@@ -125,9 +125,12 @@ tasks.withType<ShadowJar> {
 tasks.withType<JavaExec> {
     jvmArgs(
         "--enable-preview",
-        "--enable-native-access=ALL-UNNAMED",
-        "--add-exports=java.desktop/com.apple.eawt.event=ALL-UNNAMED"
+        "--enable-native-access=ALL-UNNAMED"
     )
+    val os = org.gradle.nativeplatform.platform.internal.DefaultNativePlatform.getCurrentOperatingSystem()
+    if (os.isMacOsX) {
+        jvmArgs("--add-exports=java.desktop/com.apple.eawt.event=ALL-UNNAMED")
+    }
 }
 
 // Run before build

@@ -44,7 +44,6 @@ import com.eimsound.daw.components.KEYBOARD_KEYS
 import com.eimsound.daw.components.LocalFloatingLayerProvider
 import com.eimsound.daw.components.dragdrop.dropTarget
 import com.eimsound.daw.components.utils.*
-import com.eimsound.daw.dawutils.SHOULD_SCROLL_REVERSE
 import com.eimsound.daw.dawutils.editorToolHoverIcon
 import com.eimsound.daw.dawutils.openMaxValue
 import com.eimsound.daw.utils.mapValue
@@ -105,7 +104,7 @@ internal fun NotesEditorCanvas(editor: DefaultMidiClipEditor) {
     editor.apply {
         Box(
             Modifier.fillMaxSize().clipToBounds().background(MaterialTheme.colorScheme.background)
-                .scrollable(verticalScrollState, Orientation.Vertical, reverseDirection = SHOULD_SCROLL_REVERSE)
+                .scrollable(verticalScrollState, Orientation.Vertical, reverseDirection = true)
                 .onGloballyPositioned { offsetOfRoot = it.positionInRoot() }
                 .pointerInput(coroutineScope, editor) {
                     handleMouseEvent(coroutineScope, editor, floatingLayerProvider)

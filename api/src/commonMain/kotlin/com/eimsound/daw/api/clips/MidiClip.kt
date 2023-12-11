@@ -17,6 +17,7 @@ fun MutableMidiCCEvents.copy() = mutableMapOf<Int, EnvelopePointList>().also {
 interface MidiClip : Clip {
     val notes: NoteMessageList
     val events: MutableMidiCCEvents
+    override fun copy(): MidiClip
 }
 
 /**

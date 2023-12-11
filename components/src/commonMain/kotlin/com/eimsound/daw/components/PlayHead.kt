@@ -35,7 +35,6 @@ import com.eimsound.daw.components.utils.HorizontalResize
 import com.eimsound.daw.components.utils.x
 import com.eimsound.daw.utils.fitInUnit
 import com.eimsound.daw.utils.range
-import org.apache.commons.lang3.SystemUtils
 
 private val BOTTOM = ParagraphStyle(lineHeight = 16.sp,
     lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Bottom, LineHeightStyle.Trim.FirstLineTop))
@@ -65,7 +64,7 @@ fun Timeline(modifier: Modifier = Modifier, noteWidth: MutableState<Dp>, scrollS
     tmpArr[1] = barPPQ
     Surface(
         modifier.height(TIMELINE_HEIGHT).fillMaxWidth().zIndex(2F)
-            .scrollable(scrollState, Orientation.Horizontal, reverseDirection = SystemUtils.IS_OS_MAC_OSX)
+            .scrollable(scrollState, Orientation.Horizontal, reverseDirection = true)
             .pointerHoverIcon(PointerIcon.HorizontalResize),
         shadowElevation = 5.dp, tonalElevation = 4.dp
     ) {

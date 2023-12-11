@@ -20,12 +20,12 @@ class DefaultMemoryAudioSource(
             this(factory, source.run {
                 val len = source.length.toInt()
                 val sampleBuffer = Array(source.channels) { FloatArray(len) }
-                source.getSamples(0, len, sampleBuffer)
+                source.getSamples(0, 0, len, sampleBuffer)
                 source.close()
                 sampleBuffer
             }, source.sampleRate)
 
-    override fun getSamples(start: Long, length: Int, buffers: Array<FloatArray>): Int {
+    override fun getSamples(start: Long, offset: Int, length: Int, buffers: Array<FloatArray>): Int {
         val len = this.length
         if (start > len || start < 0) return 0
         var consumed = 0

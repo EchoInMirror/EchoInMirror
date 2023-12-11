@@ -12,20 +12,30 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.text.*
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.util.fastForEach
 import com.eimsound.daw.components.utils.warning
 import com.eimsound.daw.commons.ExperimentalEIMApi
 import com.eimsound.daw.api.LevelMeter
+
+// Math.sqrt(10.0 ** (value / 20)) / 1.4
+val levelMarks1_40 = arrayOf(
+    0.71428573F,
+    0.50567555F,
+    0.3579909F,
+)
 
 @OptIn(ExperimentalEIMApi::class)
 @Composable
 fun Level(
     peak: LevelMeter,
     modifier: Modifier = Modifier.height(80.dp),
-    stroke: Float = 5f,
-    gapWidth: Float = 4f,
+    stroke: Dp = 3.dp,
+    gapWidth: Dp = 2.dp,
     color: Color = MaterialTheme.colorScheme.primary,
     colorTrack: Color = color.copy(alpha = 0.3f)
 ) {
@@ -33,20 +43,29 @@ fun Level(
     val left = peak.left
     val right = peak.right
     val warningColor = MaterialTheme.colorScheme.warning
+    val markColor = color.copy(0.5F)
     val leftColor by animateColorAsState(left.getLevelColor(color, color, warningColor), tween(200))
     val rightColor by animateColorAsState(right.getLevelColor(color, color, warningColor), tween(200))
     val aniLeft by animateFloatAsState(left.toDisplayPercentage())
     val aniRight by animateFloatAsState(right.toDisplayPercentage())
-    Canvas(modifier.width((stroke * 2 + gapWidth).dp)) {
+    val markColorLighter = colorTrack.compositeOver(MaterialTheme.colorScheme.surface).copy(0.4F)
+    Canvas(modifier.width(stroke * 2 + gapWidth)) {
         val height = size.height
-        drawLine(colorTrack, Offset(0f, 0f), Offset(0f, height), stroke, StrokeCap.Round)
+        val strokePx = stroke.toPx()
+        val rightXDp = rightX.toPx()
+        drawLine(colorTrack, Offset(0f, 0f), Offset(0f, height), strokePx, StrokeCap.Round)
         if (aniLeft > 0.0001F) drawLine(leftColor,
             Offset(0f, height * (1F - aniLeft)),
-            Offset(0f, height), stroke, StrokeCap.Round)
-        drawLine(colorTrack, Offset(rightX, 0f), Offset(rightX, size.height), stroke, StrokeCap.Round)
+            Offset(0f, height), strokePx, StrokeCap.Round)
+        drawLine(colorTrack, Offset(rightXDp, 0f), Offset(rightXDp, size.height), strokePx, StrokeCap.Round)
         if (aniRight > 0.0001F) drawLine(rightColor,
-            Offset(rightX, height * (1F - aniRight)),
-            Offset(rightX, height), stroke, StrokeCap.Round)
+            Offset(rightXDp, height * (1F - aniRight)),
+            Offset(rightXDp, height), strokePx, StrokeCap.Round)
+        levelMarks1_40.forEach {
+            val y = height * (1 - it)
+            drawCircle(if (aniLeft > it) markColorLighter else markColor, strokePx / 2, Offset(0F, y))
+            drawCircle(if (aniRight > it) markColorLighter else markColor, strokePx / 2, Offset(rightXDp, y))
+        }
     }
 }
 
@@ -67,7 +86,7 @@ fun LevelHints(
     Canvas(modifier) {
         val top = size.height * 2 / 7
         val height = size.height * 5 / 7
-        levelMarks.forEach { (value, label) ->
+        levelMarks.fastForEach { (value, label) ->
             val y = height * (100F - value) / 100F + top
             val result = measurer.measure(
                 AnnotatedString(label),

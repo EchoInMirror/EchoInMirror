@@ -78,27 +78,7 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
             midiBuffer.addAll(pendingMidiBuffer)
             pendingMidiBuffer.clear()
         }
-        if (position.isPlaying) {
-            val bufferSize = position.bufferSize
-            noteRecorder.processBlock(bufferSize, midiBuffer)
-            val startTime = position.timeInPPQ
-            val blockEndSample = position.timeInSamples + bufferSize
-            if (lastClipIndex == -1) lastClipIndex = clips.lowerBound { it.time < startTime }
-            if (lastClipIndex > 0) lastClipIndex--
-            for (i in lastClipIndex..clips.lastIndex) {
-                val clip = clips[i]
-                val startTimeInSamples = position.convertPPQToSamples(clip.time)
-                val endTimeInSamples = position.convertPPQToSamples(clip.time + clip.duration)
-                if (endTimeInSamples < position.timeInSamples) {
-                    lastClipIndex = i + 1
-                    continue
-                }
-                if (clip.isDisabled) continue
-                if (startTimeInSamples > blockEndSample) break
-                @Suppress("TYPE_MISMATCH")
-                clip.clip.factory.processBlock(clip, buffers, position, midiBuffer, noteRecorder)
-            }
-        }
+        if (position.isPlaying) processClips(position, buffers, midiBuffer)
         var tempLatency = 0
         preProcessorsChain.fastForEach {
             if (!it.processor.isDisabled) {
@@ -184,6 +164,28 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         buffers[1].copyInto(buffers[1])
 
         maxLatency
+    }
+
+    private fun processClips(position: CurrentPosition, buffers: Array<FloatArray>, midiBuffer: ArrayList<Int>) {
+        val bufferSize = position.bufferSize
+        noteRecorder.processBlock(bufferSize, midiBuffer)
+        val startTime = position.timeInPPQ
+        val blockEndSample = position.timeInSamples + bufferSize
+        if (lastClipIndex == -1) lastClipIndex = clips.lowerBound { it.time < startTime }
+        if (lastClipIndex > 0) lastClipIndex--
+        for (i in lastClipIndex..clips.lastIndex) {
+            val clip = clips[i]
+            val startTimeInSamples = position.convertPPQToSamples(clip.time)
+            val endTimeInSamples = position.convertPPQToSamples(clip.time + clip.duration)
+            if (endTimeInSamples < position.timeInSamples) {
+                lastClipIndex = i + 1
+                continue
+            }
+            if (clip.isDisabled) continue
+            if (startTimeInSamples > blockEndSample) break
+            @Suppress("TYPE_MISMATCH")
+            clip.clip.factory.processBlock(clip, buffers, position, midiBuffer, noteRecorder)
+        }
     }
 
     override suspend fun prepareToPlay(sampleRate: Int, bufferSize: Int) {

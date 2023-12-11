@@ -42,7 +42,6 @@ interface ClipFactory<T: Clip> {
     fun save(clip: T, path: Path) { }
     fun getEditor(clip: TrackClip<T>): ClipEditor?
     fun split(clip: TrackClip<T>, time: Int): ClipSplitResult<T>
-    fun copy(clip: T): T
     fun merge(clips: Collection<TrackClip<*>>): List<ClipActionResult<T>>
     fun canMerge(clip: TrackClip<*>): Boolean
 

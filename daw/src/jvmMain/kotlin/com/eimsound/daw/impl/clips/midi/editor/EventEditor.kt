@@ -45,7 +45,6 @@ import com.eimsound.daw.components.utils.clickableWithIcon
 import com.eimsound.daw.utils.FloatRange
 import com.eimsound.daw.commons.MultiSelectableEditor
 import com.eimsound.daw.commons.SerializableEditor
-import com.eimsound.daw.dawutils.SHOULD_SCROLL_REVERSE
 import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
 
@@ -286,7 +285,7 @@ internal fun EventEditor(editor: DefaultMidiClipEditor) {
             Row(Modifier.fillMaxSize()) {
                 EventHints(editor)
                 Box(Modifier.weight(1f).fillMaxHeight().background(MaterialTheme.colorScheme.background)
-                    .scrollable(horizontalScrollState, Orientation.Horizontal, reverseDirection = SHOULD_SCROLL_REVERSE)
+                    .scrollable(horizontalScrollState, Orientation.Horizontal, reverseDirection = true)
                     .scalableNoteWidth(noteWidth, horizontalScrollState)
                 ) {
                     val range = remember(clip.time, clip.duration) { clip.time..(clip.time + clip.duration) }

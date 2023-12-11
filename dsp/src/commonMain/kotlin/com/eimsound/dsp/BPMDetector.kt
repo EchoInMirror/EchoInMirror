@@ -87,7 +87,7 @@ private class LowPassedAudioSource(private val target: AudioSource) {
     val sampleRate = target.sampleRate
 
     fun process() {
-        target.getSamples(position, bufferSize, buffers)
+        target.getSamples(position, 0, bufferSize, buffers)
         if (target.channels > 1) {
             repeat (bufferSize) { i ->
                 buffers[0][i] = (buffers[0][i] + buffers[1][i]) / 2

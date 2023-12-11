@@ -52,6 +52,11 @@ class EnvelopeClipImpl(factory: ClipFactory<EnvelopeClip>): AbstractClip<Envelop
         }
         json["envelope"]?.let { envelope.fromJson(it) }
     }
+
+    override fun copy() = EnvelopeClipImpl(factory).also {
+        it.envelope.addAll(envelope.copy())
+        it.controllers.addAll(controllers)
+    }
 }
 
 private val logger = KotlinLogging.logger { }
@@ -114,10 +119,6 @@ class EnvelopeClipFactoryImpl: EnvelopeClipFactory {
         }
     }
 
-    override fun copy(clip: EnvelopeClip) = EnvelopeClipImpl(this).apply {
-        envelope.addAll(clip.envelope.copy())
-        controllers.addAll(clip.controllers)
-    }
     override fun save(clip: EnvelopeClip, path: Path) { }
 
     override fun toString() = "EnvelopeClipFactoryImpl"

@@ -15,7 +15,7 @@ interface AudioSource : JsonSerializable {
     val length: Long // timeInSamples
     val factory: AudioSourceFactory<*>
 
-    fun getSamples(start: Long, length: Int, buffers: Array<FloatArray>): Int
+    fun getSamples(start: Long, offset: Int, length: Int, buffers: Array<FloatArray>): Int
     fun copy(): AudioSource
 }
 

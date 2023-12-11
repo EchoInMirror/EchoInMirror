@@ -6,6 +6,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontStyle
@@ -62,11 +63,11 @@ fun <T> SettingsListManager(
     onAddButtonClick: (() -> Unit)? = null,
     onDelete: ((T) -> Unit)? = null,
 ) {
-    Surface(shape = MaterialTheme.shapes.small,
-    ) {
+    Surface(shape = MaterialTheme.shapes.small) {
+        val modifier = Modifier.background(MaterialTheme.colorScheme.surface).fillMaxWidth()
         Column {
             if (list.isEmpty()) {
-                MenuItem(modifier=Modifier.background(MaterialTheme.colorScheme.surface).fillMaxWidth()) {
+                MenuItem(modifier = modifier) {
                     Filled()
                     Text("暂无...",
                         color = MaterialTheme.colorScheme.onSurface.copy(0.5F),
@@ -74,18 +75,24 @@ fun <T> SettingsListManager(
                     )
                     Filled()
                 }
-            }
-            list.forEach {
-                MenuItem(modifier=Modifier.background(MaterialTheme.colorScheme.surface).fillMaxWidth()) {
-                    Text(it.toString())
-                    Filled()
-                    onDelete?.let { delete ->
-                        IconButton(onClick = { delete(it) }) {
-                            Icon(Icons.Filled.Delete, "删除")
+            } else {
+                list.forEach {
+                    key(it) {
+                        MenuItem(modifier = modifier) {
+                            Row(Modifier.padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Text(it.toString(), Modifier.weight(1F))
+                                Gap(16)
+                                onDelete?.let { delete ->
+                                    IconButton(onClick = { delete(it) }) {
+                                        Icon(Icons.Filled.Delete, "删除")
+
+                                    }
+                                }
+                            }
                         }
+                        Divider()
                     }
                 }
-                Divider()
             }
             onAddButtonClick?.let {
                 Button(it, Modifier.fillMaxWidth().height(LIST_HEIGHT), shape = MaterialTheme.shapes.extraSmall) {

@@ -17,6 +17,7 @@ import com.eimsound.audioprocessor.projectDisplayPPQ
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.components.gestures.onZoom
 import com.eimsound.daw.components.silder.Slider
+import com.eimsound.daw.dawutils.SHOULD_ZOOM_REVERSE
 import com.eimsound.daw.dawutils.openMaxValue
 import com.eimsound.daw.utils.isCrossPlatformAltPressed
 import com.eimsound.daw.utils.isCrossPlatformCtrlPressed
@@ -31,8 +32,9 @@ private fun calcZoom(
     noteWidth: MutableState<Dp>, horizontalScrollState: ScrollState
 ) {
     density.apply {
+        if (delta == 0F) return
         val value = noteWidth.value.value
-        val newValue = (if (delta > 0) value * scale else value / scale)
+        val newValue = (if (if (SHOULD_ZOOM_REVERSE) delta > 0 else delta < 0) value * scale else value / scale)
             .coerceIn(NOTE_WIDTH_RANGE)
         val oldX = (x + horizontalScrollState.value) / noteWidth.value.toPx()
         if (newValue != noteWidth.value.value) {

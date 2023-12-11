@@ -54,7 +54,7 @@ class AudioThumbnail private constructor(
             var pos = 0L
             var i = 1
             out@while (pos <= source.length) {
-                if (source.getSamples(pos, times * this@AudioThumbnail.samplesPerThumbSample, buffers) < 1) break
+                if (source.getSamples(pos, 0, times * this@AudioThumbnail.samplesPerThumbSample, buffers) < 1) break
                 for (k in 0 until times) {
                     val curIndex = k * this@AudioThumbnail.samplesPerThumbSample
                     repeat(channels) { ch ->

@@ -6,14 +6,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DoNotTouch
 import androidx.compose.material.icons.filled.QueueMusic
 import androidx.compose.material.icons.filled.SystemUpdateAlt
-import androidx.compose.material3.Divider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.input.pointer.*
@@ -47,10 +45,7 @@ import com.eimsound.daw.components.utils.toOnSurfaceColor
 import com.eimsound.daw.dawutils.editorToolHoverIcon
 import com.eimsound.daw.dawutils.openMaxValue
 import com.eimsound.daw.utils.*
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import java.nio.file.Path
 import java.util.*
 
@@ -224,7 +219,15 @@ class Playlist : Panel, MultiSelectableEditor {
             val path0 = path ?: return@GlobalDropTarget
             val handler = FileExtensionManager.getHandler(path0) ?: return@GlobalDropTarget
             getAllTrackHeights(density)
-            val track = trackHeights[binarySearchTrackByHeight(it.y).coerceAtMost(trackHeights.size - 1)].track
+            val index = binarySearchTrackByHeight(it.y)
+            if (index < 0) {
+                // TODO: create new track
+                return@GlobalDropTarget
+            } else if (index >= trackHeights.size) {
+                // TODO: create new track
+                println("TODO: create new track")
+            }
+            val track = trackHeights[index.coerceAtMost(trackHeights.size - 1)].track
             val time = ((it.x + horizontalScrollState.value) / density / noteWidth.value.value).fitInUnit(EchoInMirror.editUnit)
             trackHeights.clear()
 
@@ -291,6 +294,8 @@ class Playlist : Panel, MultiSelectableEditor {
             EchoInMirror.bus!!.subTracks.fastForEach {
                 key(it) { i += TrackContent(this@Playlist, it, i) }
             }
+
+            TextButton({ }, Modifier.fillMaxWidth().alpha(0F), enabled = false) { Text("创建轨道") }
         }
     }
 

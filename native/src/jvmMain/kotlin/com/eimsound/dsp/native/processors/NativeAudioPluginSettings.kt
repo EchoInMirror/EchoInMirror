@@ -124,11 +124,7 @@ class NativeAudioPluginSettings: SettingTab {
                         progress = apm.scannedCount.toFloat() / apm.allScanCount,
                     )
                     apm.scanningPlugins.keys.let {
-                        if (it.isNotEmpty()) {
-                            SettingsListManager(
-                                list = it
-                            )
-                        }
+                        if (it.isNotEmpty()) SettingsListManager(it)
                     }
                 }
             }

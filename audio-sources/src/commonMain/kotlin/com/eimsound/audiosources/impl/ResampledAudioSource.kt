@@ -20,9 +20,9 @@ class DefaultResampledAudioSource(
     private var nextStart = 0L
     private var sourceBuffers = Array(channels) { FloatArray(1024) }
 
-    override fun getSamples(start: Long, length: Int, buffers: Array<FloatArray>): Int {
+    override fun getSamples(start: Long, offset: Int, length: Int, buffers: Array<FloatArray>): Int {
         if (resampleFactor == 1.0 && timeStretchFactor == 1.0) {
-            source.getSamples(start, length, buffers)
+            source.getSamples(start, offset, length, buffers)
             return buffers[0].size
         }
         var sourceStart = (start * resampleFactor / timeStretchFactor).roundToLong()
@@ -32,11 +32,11 @@ class DefaultResampledAudioSource(
         val ch = channels.coerceAtMost(buffers.size)
         if (sourceBuffers[0].size < sourceLength || sourceBuffers.size < ch)
             sourceBuffers = Array(ch) { FloatArray(sourceLength) }
-        source.getSamples(sourceStart, sourceLength, sourceBuffers)
+        source.getSamples(sourceStart, 0, sourceLength, sourceBuffers)
         var consumed = 0
         repeat(ch) {
             consumed = resamplers[it].process(resampleFactor, sourceBuffers[it], 0, sourceLength, false,
-                buffers[it], 0, buffers[it].size).outputSamplesGenerated
+                buffers[it], offset, buffers[it].size).outputSamplesGenerated
         }
         return consumed
     }

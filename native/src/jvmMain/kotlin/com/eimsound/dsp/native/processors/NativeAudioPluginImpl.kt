@@ -80,20 +80,6 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
         scanned.addAll(skipList)
         descriptions.forEach { scanned.add(it.fileOrIdentifier) }
 
-        val scanDirectoryOnLinux = {directory: Path ->
-            if(directory.name.endsWith(".vst3")) {
-                pluginList.add(directory.absolutePathString())
-                FileVisitResult.SKIP_SUBTREE
-            }
-            FileVisitResult.CONTINUE
-        }
-
-        val scanDirectoryOnWindows = {_: Path ->
-            FileVisitResult.CONTINUE
-        }
-
-        val scanDirectory = if (SystemUtils.IS_OS_WINDOWS) scanDirectoryOnWindows else scanDirectoryOnLinux
-
         if (SystemUtils.IS_OS_MAC) {
             pluginList.addAll(getAudioUnitsForMacOS())
         } else {
@@ -102,13 +88,21 @@ class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
                     if (directory.name.startsWith(".")) {
                         FileVisitResult.SKIP_SUBTREE
                     } else {
-                        scanDirectory(directory)
+                        if (SystemUtils.IS_OS_WINDOWS) FileVisitResult.CONTINUE
+                        else if (directory.name.endsWith(".vst3")) { // Linux
+                            pluginList.add(directory.absolutePathString())
+                            FileVisitResult.SKIP_SUBTREE
+                        } else FileVisitResult.CONTINUE
                     }
                 }
                 onVisitFile { file, _ ->
                     if (pluginExtensions.contains(file.extension) && !scanned.contains(file.absolutePathString())) {
                         pluginList.add(file.absolutePathString())
                     }
+                    FileVisitResult.CONTINUE
+                }
+                onVisitFileFailed { file, err ->
+                    logger.error(err) { "Failed to scan file: $file" }
                     FileVisitResult.CONTINUE
                 }
             }

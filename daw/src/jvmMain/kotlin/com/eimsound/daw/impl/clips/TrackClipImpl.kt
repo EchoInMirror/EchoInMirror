@@ -5,7 +5,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import com.eimsound.daw.api.clips.Clip
-import com.eimsound.daw.api.clips.ClipFactory
 import com.eimsound.daw.api.clips.TrackClip
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.commons.json.asBoolean
@@ -19,22 +18,20 @@ import kotlinx.serialization.json.buildJsonObject
 
 private val logger = KotlinLogging.logger {  }
 class TrackClipImpl <T: Clip> (
-    override val clip: T, time: Int = 0, duration: Int = 0, start: Int = 0, track: Track? = null
+    override val clip: T, override var time: Int = 0, duration: Int = 0, start: Int = 0, track: Track? = null
 ) : TrackClip<T> {
-    override var time by mutableStateOf(time)
-    override var duration by mutableStateOf(duration)
+    override var duration = duration
+        get() = if (field <= 0) clip.defaultDuration else field
     override var isDisabled by mutableStateOf(false)
-    private var _start by mutableStateOf(start)
     override var track by mutableStateOf(track)
     override var color: Color? by mutableStateOf(null)
 
-    override var start: Int
-        get() = _start
+    override var start = start
         set(value) {
             if (value < 0 && !clip.isExpandable) {
-                _start = 0
+                field = 0
                 logger.warn { "Start of a clip cannot be negative: $this" }
-            } else _start = value
+            } else field = value
         }
     override var currentIndex = -1
     override fun reset() {
@@ -61,7 +58,7 @@ class TrackClipImpl <T: Clip> (
 
     @Suppress("UNCHECKED_CAST")
     override fun copy(time: Int, duration: Int, start: Int, clip: T, currentIndex: Int, track: Track?) =
-        TrackClipImpl((clip.factory as ClipFactory<T>).copy(clip), time, duration, start, track)
+        TrackClipImpl(clip.copy() as T, time, duration, start, track)
 
     override fun toString(): String {
         return "TrackClipImpl(clip=$clip, time=$time, duration=$duration)"
