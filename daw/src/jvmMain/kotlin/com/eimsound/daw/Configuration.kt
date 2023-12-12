@@ -27,7 +27,7 @@ val WORKING_PATH = Path(
 )
 val ROOT_PATH: Path = WORKING_PATH.resolve("EchoInMirror")
 val FAVORITE_AUDIO_PROCESSORS_PATH: Path = ROOT_PATH.resolve("favoriteAudioProcessors.json")
-val AUDIO_THUMBNAIL_CACHE_PATH: Path = ROOT_PATH.resolve("audioThumbnailCache.db")
+val AUDIO_THUMBNAIL_CACHE_PATH: Path = ROOT_PATH.resolve("audioThumbnailCaches")
 private val RECENT_PROJECT_PATH = ROOT_PATH.resolve("recentProjects.json")
 private val CONFIG_PATH = ROOT_PATH.resolve("config.json")
 

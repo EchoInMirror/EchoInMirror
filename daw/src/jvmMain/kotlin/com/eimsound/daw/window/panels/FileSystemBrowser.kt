@@ -180,7 +180,6 @@ object FileSystemBrowser : Panel {
         GlobalScope.launch {
             if (file.isDirectory()) return@launch
             val ext = file.extension.lowercase()
-            var hasContent = false
             try {
                 if (ext == "mid") {
                     val notes = withContext(Dispatchers.IO) {
@@ -189,25 +188,20 @@ object FileSystemBrowser : Panel {
                     component = { MidiView(notes) }
                     nodeName = file.name
                     fileBrowserPreviewer.setPreviewTarget(notes)
-                    hasContent = true
+                    if (autoPlay) fileBrowserPreviewer.position.isPlaying = true
                 } else if (AudioSourceManager.supportedFormats.contains(ext)) {
                     val audioSource = AudioSourceManager.createProxyFileSource(file)
-                    EchoInMirror.audioThumbnailCache[file, audioSource, {
+                    component = null
+                    EchoInMirror.audioThumbnailCache.get(file, audioSource) { audioThumbnail, _ ->
                         audioSource.position = 0
                         fileBrowserPreviewer.setPreviewTarget(audioSource)
-                    }]?.let {
-                        component = { Waveform(it) }
+                        if (audioThumbnail != null) component = { Waveform(audioThumbnail) }
                         nodeName = file.name
-                        hasContent = true
+                        if (autoPlay) fileBrowserPreviewer.position.isPlaying = true
                     }
                 }
             } catch (e: Exception) {
-                hasContent = false
                 e.printStackTrace()
-            }
-            if (hasContent) {
-                if (autoPlay) fileBrowserPreviewer.position.isPlaying = true
-            } else {
                 component = null
                 nodeName = null
                 fileBrowserPreviewer.clear()

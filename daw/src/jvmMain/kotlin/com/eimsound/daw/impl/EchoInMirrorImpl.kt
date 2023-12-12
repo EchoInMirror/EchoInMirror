@@ -37,7 +37,7 @@ class EchoInMirrorImpl : IEchoInMirror {
     override val commandManager = CommandManagerImpl()
     override val pluginManager = EIMPluginManager()
     override val windowManager = WindowManagerImpl()
-    override val audioThumbnailCache by lazy { AudioThumbnailCache(AUDIO_THUMBNAIL_CACHE_PATH.toFile()) }
+    override val audioThumbnailCache by lazy { AudioThumbnailCache(AUDIO_THUMBNAIL_CACHE_PATH) }
     override var quantification by mutableStateOf(defaultQuantification)
     override var editorTool by mutableStateOf(EditorTool.CURSOR)
     override val undoManager = DefaultUndoManager().apply {
