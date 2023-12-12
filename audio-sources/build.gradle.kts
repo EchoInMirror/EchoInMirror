@@ -14,6 +14,7 @@ kotlin {
     sourceSets {
         named("commonMain") {
             dependencies {
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${extra["eim.dependencies.kotlinx.coroutines"]}")
                 implementation("be.tarsos.dsp:core:${extra["eim.dependencies.tarsos"]}")
                 implementation("com.googlecode.soundlibs:mp3spi:1.9.5.4") {
                     exclude("com.googlecode.soundlibs", "tritonus_share")

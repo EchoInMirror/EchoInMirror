@@ -79,16 +79,17 @@ class PlayPositionImpl(
 
     private var lastTime = 0
     private fun checkTimeInPPQ() {
-        if (_timeInPPQ !in projectRange) if (isProjectLooping) {
-            _timeInPPQ = projectRange.first
-        } else {
-            isPlaying = false
-            _timeInPPQ = projectRange.last
-        }
         if (timeToPause > 0) {
             if (_timeInPPQ > lastTime && timeToPause > 0) timeToPause -= bufferSize
             if (timeToPause <= 0) _isPlaying = false
             lastTime = _timeInPPQ
+        } else if (_timeInPPQ !in projectRange) {
+            if (isProjectLooping) {
+                _timeInPPQ = projectRange.first
+            } else {
+                isPlaying = false
+                _timeInPPQ = projectRange.last
+            }
         }
     }
 }

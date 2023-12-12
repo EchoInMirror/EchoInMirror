@@ -131,7 +131,7 @@ class AudioClipImpl(
     override fun fromJson(json: JsonElement) {
         super.fromJson(json)
         json as JsonObject
-        json["file"]?.let { target = AudioSourceManager.createFileAudioSource(Path(it.asString())) }
+        json["file"]?.let { target = AudioSourceManager.createCachedFileSource(Path(it.asString())) }
         json["volumeEnvelope"]?.let { volumeEnvelope.fromJson(it) }
         json["bpm"]?.let { bpm = it.asFloat() }
         json["timeStretcher"]?.let {

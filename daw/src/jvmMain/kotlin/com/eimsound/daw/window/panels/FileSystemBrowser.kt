@@ -159,12 +159,20 @@ object FileSystemBrowser : Panel {
                     val interactionSource = remember { MutableInteractionSource() }
                     Box(Modifier.padding(horizontal = 4.dp), content = c)
                     Box(Modifier.fillMaxSize()
-                        .draggable(draggableState, Orientation.Horizontal, interactionSource = interactionSource)
+                        .draggable(
+                            draggableState, Orientation.Horizontal, interactionSource = interactionSource,
+                            onDragStopped = {
+                                fileBrowserPreviewer.position.isPlaying = true
+                            }
+                        )
                         .pointerInput(Unit) {
                             detectTapGestures({
                                 fileBrowserPreviewer.position.isProjectLooping =
                                     !fileBrowserPreviewer.position.isProjectLooping
-                            }) { fileBrowserPreviewer.playPosition = it.x / width[0].toDouble() }
+                            }) {
+                                fileBrowserPreviewer.playPosition = it.x / width[0].toDouble()
+                                fileBrowserPreviewer.position.isPlaying = true
+                            }
                         }
                         .pointerHoverIcon(PointerIcon.HorizontalResize)
                     ) {

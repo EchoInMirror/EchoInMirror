@@ -37,7 +37,7 @@ class DefaultFileAudioSource(override val file: Path) : FileAudioSource {
     override var length = 0L
         private set
     override val isClosed get() = stream == null
-    override val isRandomAccessible get() = isWav || isFlac
+    override val isRandomAccessible get() = stream?.markSupported() == true || isFlac
     private var _position = 0L
     override var position: Long
         get() = _position
@@ -46,8 +46,11 @@ class DefaultFileAudioSource(override val file: Path) : FileAudioSource {
             _position = value.coerceIn(0, length - 1)
 
             if (isFlac) {
-                flacDecoder?.seek(_position)
+                flacDecoder?.let { synchronized(it) { it.seek(_position) } }
                 buffer.empty()
+            } else if (isWav) {
+                stream?.reset()
+                stream?.skip(_position * frameSize)
             }
         }
 
@@ -58,18 +61,11 @@ class DefaultFileAudioSource(override val file: Path) : FileAudioSource {
     private var flacDecoder: FLACDecoder? = null
     private var pcmData: ByteData? = null
     private var tempBuffer: ByteArray? = null
+    private var isFloatData = false
     private lateinit var buffer: RingBuffer
 
     init {
         run {
-//            AudioSourceManager.instance.fileSourcesCache[file]?.get()?.let {
-//                memoryAudioSource = it
-//                sampleRate = it.sampleRate
-//                channels = it.channels
-//                length = it.length
-//                return@run
-//            }
-
             val randomStream = JFlacRandomFileInputStream(file.toFile())
             var format = AudioSystem.getAudioFileFormat(randomStream)
             if (format is MpegAudioFileFormat) {
@@ -86,13 +82,17 @@ class DefaultFileAudioSource(override val file: Path) : FileAudioSource {
             isFlac = format.type == FlacFileFormatType.FLAC
             sampleRate = format.format.sampleRate
             channels = format.format.channels
-            if (channels < 0 || length < 0) throw UnsupportedOperationException("Unsupported file!")
+            if (channels < 0 || length < 0) throw UnsupportedOperationException("Unsupported format: $format")
             frameSize = channels * (bits / 8)
             newFormat = AudioFormat(AudioFormat.Encoding.PCM_SIGNED, sampleRate, bits,
                 channels, frameSize, sampleRate, false)
+            isFloatData = format.format.encoding == AudioFormat.Encoding.PCM_FLOAT
 
             if (isWav) {
-                stream = AudioSystem.getAudioInputStream(randomStream).apply { mark(0) }
+                val s = AudioSystem.getAudioInputStream(randomStream).apply { mark(0) }
+                stream = if (format.format.encoding != AudioFormat.Encoding.PCM_SIGNED) {
+                    AudioSystem.getAudioInputStream(newFormat, s) ?: throw UnsupportedOperationException("Unsupported format: $format")
+                } else s
             } else if (isFlac) {
                 stream = randomStream
                 buffer = RingBuffer()
@@ -105,12 +105,6 @@ class DefaultFileAudioSource(override val file: Path) : FileAudioSource {
                     throw UnsupportedOperationException(e)
                 }
             }
-
-//            if (readAll) {
-//                isFirstTimeToClose = true
-//                memoryAudioSource = AudioSourceManager.instance.createMemorySource(this)
-//                AudioSourceManager.instance.fileSourcesCache[file] = WeakReference(memoryAudioSource!!)
-//            }
         }
     }
 
@@ -135,8 +129,11 @@ class DefaultFileAudioSource(override val file: Path) : FileAudioSource {
             var thisLen = len2
             if (thisLen > buffer.available) thisLen = buffer.available
             if (thisLen < frameSize) {
-                val frame = d.readNextFrame() ?: break
-                val data = d.decodeFrame(frame, pcmData)
+                val data = synchronized(d) {
+                    val frame = d.readNextFrame()
+                    if (frame == null) null
+                    else d.decodeFrame(frame, pcmData)
+                } ?: break
                 pcmData = data
                 buffer.resize(data.len * 2)
                 buffer.put(data.data, 0, data.len)
@@ -156,7 +153,9 @@ class DefaultFileAudioSource(override val file: Path) : FileAudioSource {
     }
 
     override fun nextBlock(buffers: Array<FloatArray>, length: Int, offset: Int): Int {
-        val sampleCount = length.coerceAtMost(buffers.firstOrNull()?.size ?: 0)
+        var sampleCount = length.coerceAtMost(buffers.firstOrNull()?.size ?: 0)
+        if (_position > this.length) return 0
+        else if (_position + sampleCount > this.length) sampleCount = (this.length - _position).toInt()
         // read into temporary byte buffer
         var byteBufferSize = sampleCount * frameSize
         var lTempBuffer = tempBuffer
