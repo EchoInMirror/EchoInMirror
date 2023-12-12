@@ -31,16 +31,17 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import java.nio.file.Path
+import kotlin.io.path.Path
 import kotlin.io.path.name
 import kotlin.math.roundToInt
 import kotlin.math.roundToLong
 
 class AudioClipImpl(
-    factory: ClipFactory<AudioClip>, target: AudioSource? = null
+    factory: ClipFactory<AudioClip>, target: FileAudioSource? = null
 ): AbstractClip<AudioClip>(factory), AudioClip {
-    private var _target: AudioSource? = null
+    private var _target: FileAudioSource? = null
     private lateinit var fifo: AudioBufferQueue
-    override var target: AudioSource
+    override var target: FileAudioSource
         get() = _target ?: throw IllegalStateException("Target is not set")
         set(value) {
             if (_target == value) return
@@ -95,16 +96,16 @@ class AudioClipImpl(
     private var _thumbnail by mutableStateOf<AudioThumbnail?>(null)
     override val thumbnail get() = _thumbnail ?: throw IllegalStateException("Thumbnail is not set")
     override val volumeEnvelope = DefaultEnvelopePointList()
+    override fun copy() = AudioClipImpl(factory, target.copy()).also {
+        it.volumeEnvelope.addAll(volumeEnvelope.copy())
+        it.bpm = bpm
+        it.speedRatio = speedRatio
+        it.semitones = semitones
+        it.timeStretcher = timeStretcher
+    }
+
     override val icon = Icons.Outlined.GraphicEq
-    override val name: String
-        get() {
-            var source: AudioSource? = target
-            while (source != null) {
-                if (source is FileAudioSource) return source.file.name
-                source = source.source
-            }
-            return ""
-        }
+    override val name get() = target.file.name
 
     init {
         if (target != null) this.target = target
@@ -119,7 +120,7 @@ class AudioClipImpl(
     override fun toJson() = buildJsonObject {
         put("id", id)
         put("factory", factory.name)
-        put("target", target.toJson())
+        put("file", target.file.toString())
         putNotDefault("timeStretcher", timeStretcher)
         putNotDefault("speedRatio", speedRatio, 1F)
         putNotDefault("semitones", semitones)
@@ -130,7 +131,7 @@ class AudioClipImpl(
     override fun fromJson(json: JsonElement) {
         super.fromJson(json)
         json as JsonObject
-        json["target"]?.let { target = AudioSourceManager.instance.createAudioSource(it as JsonObject) }
+        json["file"]?.let { target = AudioSourceManager.createFileAudioSource(Path(it.asString())) }
         json["volumeEnvelope"]?.let { volumeEnvelope.fromJson(it) }
         json["bpm"]?.let { bpm = it.asFloat() }
         json["timeStretcher"]?.let {
@@ -149,7 +150,6 @@ class AudioClipImpl(
 
     private var tempInBuffers: Array<FloatArray> = emptyArray()
     private var tempOutBuffers: Array<FloatArray> = emptyArray()
-    private var position = 0L
     private var lastPos = -1L
     private fun fillNextBlock(channels: Int): Boolean {
         val tr = stretcher ?: return true
@@ -159,8 +159,7 @@ class AudioClipImpl(
         val numRead = if (needed >= 0) {
             if (tempInBuffers.size != channels || tempInBuffers[0].size < needed)
                 tempInBuffers = Array(target.channels) { FloatArray(needed) }
-            read = target.getSamples(position, needed, tempInBuffers)
-            if (read > 0) position += read
+            read = target.nextBlock(tempInBuffers, needed)
 
             tr.process(tempInBuffers, tempOutBuffers, needed)
         } else {
@@ -170,23 +169,39 @@ class AudioClipImpl(
         if (numRead > 0) fifo.push(tempOutBuffers, 0, numRead)
         return numRead < 1 && read < 1
     }
-    internal fun processBlock(pos: CurrentPosition, playTime: Long, buffers: Array<FloatArray>) {
-        val bufferSize = buffers[0].size
+
+    private val pauseProcessor = PauseProcessor()
+    internal fun processBlock(pos: PlayPosition, playTime: Long, buffers: Array<FloatArray>) {
+        var bufferSize = buffers[0].size
+        var offset = 0
         val tr = stretcher
-        if (tr == null || tr.isDefaultParams) {
-            target.getSamples(playTime, bufferSize, buffers)
-            return
+        if (playTime < 0) {
+            lastPos = 0
+            target.position = 0
+            offset = (pos.bufferSize + playTime).coerceAtLeast(0).toInt()
         } else if (pos.timeInSamples != lastPos + bufferSize) {
-            position = (playTime * tr.speedRatio).roundToLong()
-            fifo.clear()
-            tr.reset()
+            target.position = if (tr == null || tr.isDefaultParams) playTime
+            else {
+                fifo.clear()
+                tr.reset()
+                (playTime * tr.speedRatio).roundToLong()
+            }
+        }
+
+        if (tr == null || tr.isDefaultParams) {
+            target.nextBlock(buffers, bufferSize, offset)
+            pauseProcessor.processPause(buffers, offset, bufferSize, pos.timeToPause)
+            return
         }
         lastPos = pos.timeInSamples
         val channels = buffers.size
         if (tempOutBuffers.size != channels || tempOutBuffers[0].size < bufferSize)
             tempOutBuffers = Array(channels) { FloatArray(bufferSize) }
+        if (playTime < 0) bufferSize = (-playTime).toInt().coerceAtMost(bufferSize)
+        if (bufferSize == 0) return
         while (fifo.available < bufferSize) if (fillNextBlock(channels)) break
-        fifo.pop(buffers)
+        fifo.pop(buffers, offset, bufferSize)
+        pauseProcessor.processPause(buffers, offset, bufferSize, pos.timeToPause)
     }
 
     suspend fun detectBPM(snackbarProvider: SnackbarProvider? = null): Int = withContext(Dispatchers.IO) {
@@ -216,11 +231,11 @@ class AudioClipImpl(
 private val logger = KotlinLogging.logger { }
 class AudioClipFactoryImpl: AudioClipFactory {
     override val name = "AudioClip"
-    override fun createClip(path: Path) = AudioClipImpl(this, AudioSourceManager.instance.createAudioSource(path))
+    override fun createClip(path: Path) = AudioClipImpl(this, AudioSourceManager.createCachedFileSource(path))
     override fun createClip() = AudioClipImpl(this).apply {
         logger.info { "Creating clip \"${this.id}\"" }
     }
-    override fun createClip(target: AudioSource) = AudioClipImpl(this, target).apply {
+    override fun createClip(target: FileAudioSource) = AudioClipImpl(this, target).apply {
         logger.info { "Creating clip \"${this.id}\" with target $target" }
     }
     override fun createClip(path: Path, json: JsonObject) = AudioClipImpl(this).apply {
@@ -230,7 +245,7 @@ class AudioClipFactoryImpl: AudioClipFactory {
     override fun getEditor(clip: TrackClip<AudioClip>) = AudioClipEditor(clip)
 
     override fun processBlock(
-        clip: TrackClip<AudioClip>, buffers: Array<FloatArray>, position: CurrentPosition,
+        clip: TrackClip<AudioClip>, buffers: Array<FloatArray>, position: PlayPosition,
         midiBuffer: ArrayList<Int>, noteRecorder: MidiNoteTimeRecorder
     ) {
         val c = clip.clip as? AudioClipImpl ?: return
@@ -274,7 +289,7 @@ class AudioClipFactoryImpl: AudioClipFactory {
 
     override fun split(clip: TrackClip<AudioClip>, time: Int): ClipSplitResult<AudioClip> {
         return object : ClipSplitResult<AudioClip> {
-            override val clip = copy(clip.clip) as AudioClip
+            override val clip = clip.clip.copy()
             override val start = time
             override fun revert() { }
         }
@@ -284,14 +299,6 @@ class AudioClipFactoryImpl: AudioClipFactory {
 
     override fun toString(): String {
         return "AudioClipFactoryImpl"
-    }
-
-    override fun copy(clip: AudioClip) = createClip(clip.target.copy()).apply {
-        volumeEnvelope.addAll(clip.volumeEnvelope.copy())
-        bpm = clip.bpm
-        speedRatio = clip.speedRatio
-        semitones = clip.semitones
-        timeStretcher = clip.timeStretcher
     }
 
     override fun merge(clips: Collection<TrackClip<*>>): List<ClipActionResult<AudioClip>> = emptyList()

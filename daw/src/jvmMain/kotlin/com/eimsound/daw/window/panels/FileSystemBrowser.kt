@@ -193,6 +193,7 @@ object FileSystemBrowser : Panel {
                 } else if (AudioSourceManager.supportedFormats.contains(ext)) {
                     val audioSource = AudioSourceManager.createProxyFileSource(file)
                     EchoInMirror.audioThumbnailCache[file, audioSource, {
+                        audioSource.position = 0
                         fileBrowserPreviewer.setPreviewTarget(audioSource)
                     }]?.let {
                         component = { Waveform(it) }
