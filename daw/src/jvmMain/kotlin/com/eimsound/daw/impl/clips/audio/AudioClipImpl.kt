@@ -159,7 +159,7 @@ class AudioClipImpl(
         val numRead = if (needed >= 0) {
             if (tempInBuffers.size != channels || tempInBuffers[0].size < needed)
                 tempInBuffers = Array(target.channels) { FloatArray(needed) }
-            read = target.getSamples(position, 0, needed, tempInBuffers)
+            read = target.getSamples(position, needed, tempInBuffers)
             if (read > 0) position += read
 
             tr.process(tempInBuffers, tempOutBuffers, needed)
@@ -170,29 +170,14 @@ class AudioClipImpl(
         if (numRead > 0) fifo.push(tempOutBuffers, 0, numRead)
         return numRead < 1 && read < 1
     }
-
-    private val pauseProcessor = PauseProcessor()
-    internal fun processBlock(pos: PlayPosition, playTime: Long, buffers: Array<FloatArray>) {
-        var bufferSize = buffers[0].size
+    internal fun processBlock(pos: CurrentPosition, playTime: Long, buffers: Array<FloatArray>) {
+        val bufferSize = buffers[0].size
         val tr = stretcher
-        var time = playTime
-        val offset = if (playTime < 0) {
-            time = 0
-            position = 0
-            lastPos = -1
-            (pos.bufferSize + playTime).coerceAtLeast(0).toInt()
-        } else 0
         if (tr == null || tr.isDefaultParams) {
-            if (pos.timeInSamples != lastPos + bufferSize) {
-                position = time
-            }
-            target.getSamples(position, offset, bufferSize, buffers)
-            position += bufferSize
-            pauseProcessor.processPause(buffers, offset, bufferSize, pos.timeToPause)
-            lastPos = pos.timeInSamples
+            target.getSamples(playTime, bufferSize, buffers)
             return
         } else if (pos.timeInSamples != lastPos + bufferSize) {
-            position = (time * tr.speedRatio).roundToLong()
+            position = (playTime * tr.speedRatio).roundToLong()
             fifo.clear()
             tr.reset()
         }
@@ -200,11 +185,8 @@ class AudioClipImpl(
         val channels = buffers.size
         if (tempOutBuffers.size != channels || tempOutBuffers[0].size < bufferSize)
             tempOutBuffers = Array(channels) { FloatArray(bufferSize) }
-        if (playTime < 0) bufferSize = (-playTime).toInt().coerceAtMost(bufferSize)
-        if (bufferSize == 0) return
         while (fifo.available < bufferSize) if (fillNextBlock(channels)) break
-        fifo.pop(buffers, offset, bufferSize)
-        pauseProcessor.processPause(buffers, offset, bufferSize, pos.timeToPause)
+        fifo.pop(buffers)
     }
 
     suspend fun detectBPM(snackbarProvider: SnackbarProvider? = null): Int = withContext(Dispatchers.IO) {
@@ -229,14 +211,6 @@ class AudioClipImpl(
         }
         bpm.firstOrNull()?.first ?: -1
     }
-
-    override fun copy() = AudioClipImpl(factory, target.copy()).also {
-        it.volumeEnvelope.addAll(volumeEnvelope.copy())
-        it.bpm = bpm
-        it.speedRatio = speedRatio
-        it.semitones = semitones
-        it.timeStretcher = timeStretcher
-    }
 }
 
 private val logger = KotlinLogging.logger { }
@@ -256,12 +230,13 @@ class AudioClipFactoryImpl: AudioClipFactory {
     override fun getEditor(clip: TrackClip<AudioClip>) = AudioClipEditor(clip)
 
     override fun processBlock(
-        clip: TrackClip<AudioClip>, buffers: Array<FloatArray>, position: PlayPosition,
+        clip: TrackClip<AudioClip>, buffers: Array<FloatArray>, position: CurrentPosition,
         midiBuffer: ArrayList<Int>, noteRecorder: MidiNoteTimeRecorder
     ) {
         val c = clip.clip as? AudioClipImpl ?: return
         val clipTime = clip.time - clip.start
         val playTime = position.timeInSamples - position.convertPPQToSamples(clipTime)
+        if (playTime < 0) return
         c.processBlock(position, playTime, buffers)
         val volume = clip.clip.volumeEnvelope.getValue(position.timeInPPQ - clipTime, 1F)
         repeat(buffers.size) { i ->
@@ -299,7 +274,7 @@ class AudioClipFactoryImpl: AudioClipFactory {
 
     override fun split(clip: TrackClip<AudioClip>, time: Int): ClipSplitResult<AudioClip> {
         return object : ClipSplitResult<AudioClip> {
-            override val clip = clip.clip.copy()
+            override val clip = copy(clip.clip) as AudioClip
             override val start = time
             override fun revert() { }
         }
@@ -309,6 +284,14 @@ class AudioClipFactoryImpl: AudioClipFactory {
 
     override fun toString(): String {
         return "AudioClipFactoryImpl"
+    }
+
+    override fun copy(clip: AudioClip) = createClip(clip.target.copy()).apply {
+        volumeEnvelope.addAll(clip.volumeEnvelope.copy())
+        bpm = clip.bpm
+        speedRatio = clip.speedRatio
+        semitones = clip.semitones
+        timeStretcher = clip.timeStretcher
     }
 
     override fun merge(clips: Collection<TrackClip<*>>): List<ClipActionResult<AudioClip>> = emptyList()

@@ -22,7 +22,7 @@ private fun findPeaks(data: LowPassedAudioSource): List<Long> {
     val minThreshold = 0.3
     val minPeaks = 15
     while (peaks.size < minPeaks && threshold >= minThreshold) {
-        data.position = 0
+        data.target.position = 0
         peaks = findPeaksAtThreshold(data, threshold)
         threshold -= 0.05
     }
@@ -32,17 +32,17 @@ private fun findPeaks(data: LowPassedAudioSource): List<Long> {
 
 private fun findPeaksAtThreshold(data: LowPassedAudioSource, threshold: Double): List<Long> {
     val peaks = mutableListOf<Long>()
-    while (data.position < data.length) {
+    while (data.target.position < data.length) {
         var i = 0
         data.process()
         while (i < data.bufferSize) {
             if (data.data[i] > threshold) {
-                peaks.add(data.position + i)
+                peaks.add(data.target.position + i)
                 i += (data.sampleRate / 4).roundToInt()
             }
             i++
         }
-        data.position += i
+        data.target.position += i
     }
     return peaks
 }
@@ -73,7 +73,7 @@ private fun groupByTempo(sampleRate: Float, intervals: Map<Long, Int>): Map<Int,
     return tempoCounts
 }
 
-private class LowPassedAudioSource(private val target: AudioSource) {
+private class LowPassedAudioSource(val target: AudioSource) {
     val bufferSize = 4096
     private val filter = LowPassFS(350F, target.sampleRate)
     private val buffers = Array(target.channels) { FloatArray(bufferSize) }
@@ -82,12 +82,11 @@ private class LowPassedAudioSource(private val target: AudioSource) {
     ).apply { floatBuffer = buffers[0] }
 
     val length = target.length
-    var position = 0L
     val data = buffers[0]
     val sampleRate = target.sampleRate
 
     fun process() {
-        target.getSamples(position, 0, bufferSize, buffers)
+        target.nextBlock(buffers, bufferSize)
         if (target.channels > 1) {
             repeat (bufferSize) { i ->
                 buffers[0][i] = (buffers[0][i] + buffers[1][i]) / 2

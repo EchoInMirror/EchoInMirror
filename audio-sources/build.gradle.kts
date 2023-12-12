@@ -1,6 +1,5 @@
 plugins {
     kotlin("multiplatform")
-    kotlin("plugin.serialization") version System.getProperty("kotlin.version")
 }
 
 kotlin {
@@ -15,7 +14,6 @@ kotlin {
     sourceSets {
         named("commonMain") {
             dependencies {
-                implementation(project(":commons"))
                 implementation("be.tarsos.dsp:core:${extra["eim.dependencies.tarsos"]}")
                 implementation("com.googlecode.soundlibs:mp3spi:1.9.5.4") {
                     exclude("com.googlecode.soundlibs", "tritonus_share")

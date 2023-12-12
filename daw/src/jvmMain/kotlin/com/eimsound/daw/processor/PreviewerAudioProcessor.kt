@@ -4,7 +4,7 @@ import com.eimsound.audioprocessor.*
 import com.eimsound.audiosources.*
 import com.eimsound.daw.dawutils.processMIDIBuffer
 import com.eimsound.dsp.data.midi.*
-import com.eimsound.daw.impl.PlayPositionImpl
+import com.eimsound.daw.impl.CurrentPositionImpl
 import com.eimsound.daw.impl.processor.eimAudioProcessorFactory
 import com.eimsound.daw.processor.synthesizer.SineWaveSynthesizer
 
@@ -20,21 +20,25 @@ class PreviewerAudioProcessor(factory: AudioProcessorFactory<*>) : AbstractAudio
     private var currentIndex = -1
     private val noteRecorder = MidiNoteTimeRecorder()
     private val sineWaveSynthesizer =
-        SineWaveSynthesizer(AudioProcessorManager.instance.eimAudioProcessorFactory, true, 0.2F)
+        SineWaveSynthesizer(AudioProcessorManager.instance.eimAudioProcessorFactory, true, 0.5F)
     private var audioPreviewTarget: ResampledAudioSource? = null
     private var tempBuffers = Array(2) { FloatArray(1024) }
+    private var fileSampleRate = 0F
 
     var volume by sineWaveSynthesizer::volume
-    val position = PlayPositionImpl(this).apply {
+    val position = CurrentPositionImpl(this).apply {
         isPlaying = true
         isProjectLooping = false
     }
     
     var playPosition
         get() = position.timeInPPQ.toDouble() / position.projectRange.last
-        set(value) { position.timeInPPQ = (value * position.projectRange.last).toInt() }
+        set(value) {
+            position.timeInPPQ = (value * position.projectRange.last).toInt()
+            audioPreviewTarget?.position = position.convertPPQToSamples(position.timeInPPQ)
+        }
 
-    override suspend fun processBlock(buffers: Array<FloatArray>, position: PlayPosition, midiBuffer: ArrayList<Int>) {
+    override suspend fun processBlock(buffers: Array<FloatArray>, position: CurrentPosition, midiBuffer: ArrayList<Int>) {
         if (position.bpm != this.position.bpm) this.position.bpm = position.bpm
         if (!this.position.isPlaying) return
         val notes = midiPreviewTarget
@@ -49,8 +53,8 @@ class PreviewerAudioProcessor(factory: AudioProcessorFactory<*>) : AbstractAudio
             sineWaveSynthesizer.processBlock(buffers, this.position, midiBuffer2)
             this.position.timeInSamples += position.bufferSize
         } else if (audio != null) {
-            audio.resampleFactor = position.sampleRate.toDouble() / audio.source!!.sampleRate
-            audio.getSamples(this.position.timeInSamples, 0, this.position.bufferSize, tempBuffers)
+            audio.factor = position.sampleRate.toDouble() / fileSampleRate
+            audio.nextBlock(tempBuffers, this.position.bufferSize)
             buffers.mixWith(tempBuffers, volume, 1F)
             this.position.timeInSamples += position.bufferSize
         }
@@ -70,8 +74,8 @@ class PreviewerAudioProcessor(factory: AudioProcessorFactory<*>) : AbstractAudio
         sineWaveSynthesizer.prepareToPlay(sampleRate, bufferSize)
         val audio = audioPreviewTarget
         if (audio != null) {
-            audio.resampleFactor = sampleRate.toDouble() / audio.source!!.sampleRate
-            position.projectRange = 0..position.convertSamplesToPPQ((audio.length * audio.resampleFactor).toLong())
+            audio.factor = sampleRate.toDouble() / sampleRate
+            position.projectRange = 0..position.convertSamplesToPPQ(audio.length * sampleRate)
         }
     }
 
@@ -86,9 +90,10 @@ class PreviewerAudioProcessor(factory: AudioProcessorFactory<*>) : AbstractAudio
         position.timeInPPQ = 0
         midiPreviewTarget = null
         audioPreviewTarget?.close()
+        fileSampleRate = target.sampleRate
         val factor = position.sampleRate.toDouble() / target.sampleRate
-        audioPreviewTarget = AudioSourceManager.instance.createResampledSource(target).apply {
-            this.resampleFactor = factor
+        audioPreviewTarget = AudioSourceManager.createResampledSource(target).apply {
+            this.factor = factor
         }
         position.projectRange = 0..position.convertSamplesToPPQ((target.length * factor).toLong())
     }

@@ -190,8 +190,8 @@ object FileSystemBrowser : Panel {
                     nodeName = file.name
                     fileBrowserPreviewer.setPreviewTarget(notes)
                     hasContent = true
-                } else if (AudioSourceManager.instance.supportedFormats.contains(ext)) {
-                    val audioSource = AudioSourceManager.instance.createAudioSource(file)
+                } else if (AudioSourceManager.supportedFormats.contains(ext)) {
+                    val audioSource = AudioSourceManager.createProxyFileSource(file)
                     EchoInMirror.audioThumbnailCache[file, audioSource, {
                         fileBrowserPreviewer.setPreviewTarget(audioSource)
                     }]?.let {

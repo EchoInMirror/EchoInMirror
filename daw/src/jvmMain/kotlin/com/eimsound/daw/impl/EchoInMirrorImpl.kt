@@ -99,7 +99,7 @@ class EchoInMirrorImpl : IEchoInMirror {
     override fun reloadServices() {
         AudioPlayerManager.instance.reload()
         AudioProcessorManager.instance.reload()
-        AudioSourceManager.instance.reload()
+        AudioSourceManager.reload()
         ClipManager.instance.reload()
         TrackManager.instance.reload()
         settingsTabsLoader.reload()

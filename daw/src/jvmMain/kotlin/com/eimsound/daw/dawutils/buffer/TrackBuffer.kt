@@ -12,7 +12,7 @@ class TrackBuffer(channels: Int, bufferSize: Int) {
             this.buffers = Array(channels) { FloatArray(bufferSize) }
         }
         repeat(buffers.size.coerceAtMost(this.buffers.size)) {
-            buffers[it].copyInto(this.buffers[it])
+            buffers[it].copyInto(this.buffers[it], startIndex = 0, endIndex = bufferSize.coerceAtMost(buffers[it].size))
         }
     }
 
