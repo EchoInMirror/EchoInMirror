@@ -12,7 +12,7 @@ fun processMIDIBuffer(
     var index = currentIndex
     if (index == -1) {
         // use binary search to find the first note that is after the start of the block
-        val startPPQ = position.timeInPPQ - startTime
+        val startPPQ = position.timeInPPQ - startTime - 1
         index = notes.lowerBound { it.time <= startPPQ }
     }
     val blockEndSample = timeInSamples + position.bufferSize

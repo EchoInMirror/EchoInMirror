@@ -55,6 +55,7 @@ class AudioClipEditor(private val clip: TrackClip<AudioClip>) : ClipEditor {
     @Composable
     private fun EditorContent() {
         Column(Modifier.fillMaxSize()) {
+            clip.track?.clips?.read()
             val range = remember(clip.start, clip.duration) { clip.start..(clip.start + clip.duration) }
             val timeScaleFactor = remember { arrayOf(0F) }.apply {
                 this[0] = clip.clip.target.sampleRate / EchoInMirror.currentPosition.sampleRate

@@ -169,9 +169,11 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
     private fun processClips(position: PlayPosition, buffers: Array<FloatArray>, midiBuffer: ArrayList<Int>) {
         val bufferSize = position.bufferSize
         noteRecorder.processBlock(bufferSize, midiBuffer)
-        val startTime = position.timeInPPQ
         val blockEndSample = position.timeInSamples + bufferSize
-        if (lastClipIndex == -1) lastClipIndex = clips.lowerBound { it.time < startTime }
+        if (lastClipIndex == -1) {
+            val startTime = position.timeInPPQ - 1
+            lastClipIndex = clips.lowerBound { it.time < startTime }
+        }
         if (lastClipIndex > 0) lastClipIndex--
         for (i in lastClipIndex..clips.lastIndex) {
             val clip = clips[i]

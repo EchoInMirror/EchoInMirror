@@ -52,6 +52,7 @@ class EnvelopeClipEditor(private val clip: TrackClip<EnvelopeClip>) : ClipEditor
     @Composable
     private fun EditorContent() {
         Column(Modifier.fillMaxSize()) {
+            clip.track?.clips?.read()
             val range = remember(clip.time, clip.duration) { clip.time..(clip.time + clip.duration) }
             Timeline(Modifier.zIndex(3F), noteWidth, horizontalScrollState, range, 0.dp, EchoInMirror.editUnit,
                 EchoInMirror.currentPosition.oneBarPPQ,

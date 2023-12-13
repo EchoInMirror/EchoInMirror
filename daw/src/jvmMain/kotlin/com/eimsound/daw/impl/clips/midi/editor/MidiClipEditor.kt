@@ -50,6 +50,7 @@ private fun EditorContent(editor: DefaultMidiClipEditor) {
                 Column(Modifier.fillMaxSize().clearFocus().scalableNoteWidth(noteWidth, horizontalScrollState)) {
                     val localDensity = LocalDensity.current
                     var contentWidth by remember { mutableStateOf(0.dp) }
+                    clip.track?.clips?.read()
                     val range = remember(clip.time, clip.duration) { clip.time..(clip.time + clip.duration) }
                     Timeline(Modifier.zIndex(3F), noteWidth, horizontalScrollState, range, 68.dp, EchoInMirror.editUnit,
                         EchoInMirror.currentPosition.oneBarPPQ,

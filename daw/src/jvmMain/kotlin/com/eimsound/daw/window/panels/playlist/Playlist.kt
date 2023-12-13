@@ -55,12 +55,7 @@ class Playlist : Panel, MultiSelectableEditor {
     override val name = "Playlist"
     override val direction = PanelDirection.Horizontal
     val selectedClips = mutableStateSetOf<TrackClip<*>>()
-    var noteWidth
-        get() = _noteWidth
-        set(value) {
-            _noteWidth = value
-        }
-    var _noteWidth = mutableStateOf(0.2.dp)
+    var noteWidth = mutableStateOf(0.2.dp)
     var trackHeight by mutableStateOf(50.dp)
     val verticalScrollState = ScrollState(0)
     val horizontalScrollState = ScrollState(0).apply {

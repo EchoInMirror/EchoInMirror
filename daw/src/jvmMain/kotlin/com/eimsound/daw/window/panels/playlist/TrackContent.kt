@@ -46,8 +46,10 @@ import com.eimsound.daw.utils.fitInUnit
 import com.eimsound.daw.utils.fitInUnitFloor
 import com.eimsound.daw.utils.isCrossPlatformCtrlPressed
 import kotlin.math.absoluteValue
+import kotlin.math.roundToInt
 
-private val RESIZE_HAND_MODIFIER = Modifier.width(4.dp).fillMaxHeight()
+private const val RESIZE_HAND_WIDTH = 4
+private val RESIZE_HAND_MODIFIER = Modifier.width(RESIZE_HAND_WIDTH.dp).fillMaxHeight()
     .pointerHoverIcon(PointerIcon.HorizontalResize)
 
 internal var resizeDirectionRight = false
@@ -113,10 +115,10 @@ private suspend fun AwaitPointerEventScope.handleDragEvent(
             var allowExpandableLeft = Int.MIN_VALUE
             var allowExpandableRight = Int.MAX_VALUE
             if (event.buttons.isPrimaryPressed) {
-                val fourDp = 4 * density
-                val rdr = change.position.x > size.width - fourDp
+                val resizeHandWidth = (RESIZE_HAND_WIDTH * density).roundToInt()
+                val rdr = change.position.x >= size.width - resizeHandWidth
                 resizeDirectionRight = rdr
-                action = if (change.position.x < fourDp || rdr) {
+                action = if (change.position.x <= resizeHandWidth || rdr) {
                     selectedClips.forEach {
                         val left = it.time
                         if (left < selectedClipsLeft) selectedClipsLeft = left
@@ -175,6 +177,7 @@ private suspend fun AwaitPointerEventScope.handleDragEvent(
                         EchoInMirror.selectedTrack = trackHeights[(index + y).coerceAtMost(trackHeights.size - 1)].track
                     }
                     trackHeights.clear()
+                    action = EditAction.NONE
                 }
                 EditAction.RESIZE -> {
                     change.consume()
@@ -198,6 +201,7 @@ private suspend fun AwaitPointerEventScope.handleDragEvent(
                         if (resizeDirectionRight) selectedClips.toList().doClipsEditActionAction(deltaDuration = x)
                         else selectedClips.toList().doClipsEditActionAction(x, -x, x)
                     }
+                    action = EditAction.NONE
                 }
                 else -> { }
             }

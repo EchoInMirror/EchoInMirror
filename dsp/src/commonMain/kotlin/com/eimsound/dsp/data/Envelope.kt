@@ -142,8 +142,10 @@ class DefaultEnvelopePointList : EnvelopePointList, ArrayList<EnvelopePoint>() {
         if (size == 1) return this[0].value
         if (position < this[0].time) return this[0].value
         if (position > this[size - 1].time) return this[size - 1].value
-        if (currentIndex == -1 || currentIndex >= size || this[currentIndex].time > position)
-            currentIndex = (lowerBound { it.time <= position } - 1).coerceAtLeast(0)
+        if (currentIndex == -1 || currentIndex >= size || this[currentIndex].time > position){
+            val findPosition = position - 1
+            currentIndex = (lowerBound { it.time <= findPosition } - 1).coerceAtLeast(0)
+        }
         while (currentIndex < size - 1 && this[currentIndex + 1].time <= position) currentIndex++
         val cur = this[currentIndex]
         if (currentIndex >= size - 1) return cur.value

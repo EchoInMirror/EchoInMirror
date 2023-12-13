@@ -121,7 +121,8 @@ private fun Density.getSelectedPoint(
     if (points.isEmpty()) return -1 to -1
     val noteWidthPx = noteWidth.value.toPx()
     val targetX = start + position.x / noteWidthPx
-    val pointIndex = points.lowerBound { it.time <= targetX }
+    val findTargetX = targetX - 1
+    val pointIndex = points.lowerBound { it.time <= findTargetX }
     val point = points[pointIndex]
     fun checkIsSelectedPoint(point: EnvelopePoint?) = point != null && (point.time - targetX).absoluteValue < 8F / noteWidthPx &&
             (height * (1 - point.value.coerceIn(valueRange) / valueRange.range) - position.y).absoluteValue < 8 * density
@@ -365,7 +366,8 @@ class EnvelopeEditor(
 
                     EditAction.BRUSH -> {
                         val cur = (startValue + x / noteWidth.value.toPx()).fitInUnit(editUnitValue)
-                        val curIndex = tempAddPoints.lowerBound { p -> p.time < cur }
+                        val findCur = cur - 1
+                        val curIndex = tempAddPoints.lowerBound { p -> p.time < findCur }
                         val curObj = tempAddPoints.getOrNull(curIndex)
                         val value = (1 - y / size.height) * valueRange.range + valueRange.start
                         if (curObj == null || curObj.time != cur) {
@@ -526,7 +528,8 @@ class EnvelopeEditor(
                     drawLine(if (isFirstSelected) primaryColor else color, topLeft, Offset(x, y), strokeWidth)
                 }
 
-                val tmpStartIndex = (movingPoints.lowerBound { it.time < start } - 1).coerceAtLeast(0)
+                val findStart = start - 1
+                val tmpStartIndex = (movingPoints.lowerBound { it.time < findStart } - 1).coerceAtLeast(0)
                 for (i in tmpStartIndex until points.size) {
                     val cur = movingPoints[i]
                     val isSelected = selectedPoints.contains(cur)
@@ -577,7 +580,8 @@ class EnvelopeEditor(
             } else {
                 modification
                 val points = if (action == EditAction.BRUSH && tempAddPoints.isNotEmpty()) tempAddPoints else points
-                startIndex = (points.lowerBound { it.time < start } - 1).coerceAtLeast(0)
+                val findStart = start - 1
+                startIndex = (points.lowerBound { it.time < findStart } - 1).coerceAtLeast(0)
 
                 val first = points.firstOrNull()
                 if (first == null || first.time > start) {

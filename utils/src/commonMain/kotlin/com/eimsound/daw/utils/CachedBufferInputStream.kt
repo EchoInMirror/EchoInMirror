@@ -12,15 +12,13 @@ class CachedBufferInputStream(
 
     override fun read() = if (cursor < length) {
         val pos = (cursor % cacheSize).toInt()
-        if (pos == 0) {
-            fn(buffer)
-        }
+        if (pos == 0) fn(buffer)
         cursor++
         buffer[pos].toInt()
     } else -1
 
     override fun read(b: ByteArray, off: Int, len: Int): Int {
-        if (cursor >= length) return 0
+        if (cursor >= length) return -1
         val pos = (cursor % cacheSize).toInt()
         if (pos == 0) fn(buffer)
         val size = len.coerceAtMost(cacheSize - pos)

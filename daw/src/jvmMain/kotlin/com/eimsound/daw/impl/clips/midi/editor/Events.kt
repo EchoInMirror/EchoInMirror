@@ -40,6 +40,7 @@ private fun stopAllNotes(editor: DefaultMidiClipEditor) {
     }
 }
 
+private const val RESIZE_HAND_WIDTH = 4
 @Suppress("DuplicatedCode")
 internal suspend fun PointerInputScope.handleMouseEvent(
     coroutineScope: CoroutineScope, editor: DefaultMidiClipEditor, floatingLayerProvider: FloatingLayerProvider
@@ -61,8 +62,9 @@ internal suspend fun PointerInputScope.handleMouseEvent(
                             val startX = startTime * noteWidth.value.toPx() - horizontalScrollState.value
                             val endX =
                                 (startTime + it.duration) * noteWidth.value.toPx() - horizontalScrollState.value
-                            cursor0 = if ((event.x < startX + 4 && event.x > startX - 4) ||
-                                (event.x < endX + 4 && event.x > endX - 4)
+                            val resizeHandWidth = RESIZE_HAND_WIDTH * density
+                            cursor0 = if ((event.x < startX + resizeHandWidth && event.x > startX - resizeHandWidth) ||
+                                (event.x < endX + resizeHandWidth && event.x > endX - resizeHandWidth)
                             ) PointerIcon.HorizontalResize
                             else PointerIcon.Move
                         }
@@ -117,13 +119,13 @@ internal suspend fun PointerInputScope.handleMouseEvent(
                                         val startX = curTrueStartTime * noteWidth.value.toPx() - horizontalScrollState.value
                                         val endX = (curTrueStartTime + currentSelectNote.duration) * noteWidth.value.toPx() -
                                                 horizontalScrollState.value
-                                        val fourDp = 4 * density
+                                        val resizeHandWidth = RESIZE_HAND_WIDTH * density
 
-                                        if (event.x < startX + fourDp && event.x > startX - fourDp) {
+                                        if (event.x < startX + resizeHandWidth && event.x > startX - resizeHandWidth) {
                                             resizeDirectionRight = false
                                             action = EditAction.RESIZE
                                             break
-                                        } else if (event.x < endX + fourDp && event.x > endX - fourDp) {
+                                        } else if (event.x < endX + resizeHandWidth && event.x > endX - resizeHandWidth) {
                                             resizeDirectionRight = true
                                             action = EditAction.RESIZE
                                         } else action = EditAction.MOVE

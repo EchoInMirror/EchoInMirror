@@ -144,6 +144,7 @@ class JvmRenderer(private val renderTarget: Renderable) : Renderer {
     }
 
     private fun processNextBlock(position: RenderPosition, range: IntRange, callback: (Float) -> Unit) {
+//        println(position.timeInSamples)
         position.timeInSamples += position.bufferSize
         position.timeInSeconds = position.timeInSamples.toDouble() / position.sampleRate
         position.ppqPosition = position.timeInSeconds / 60.0 * position.bpm

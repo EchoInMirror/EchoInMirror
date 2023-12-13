@@ -229,7 +229,8 @@ private fun MidiClipContents(
         val noteWidthPx = noteWidth.value.toPx()
         val trackHeightPx = size.height - density * 4F
         val height = (trackHeightPx / 128).coerceAtLeast(density * 1.5F)
-        var startId = notes.lowerBound { it.time <= startPPQ }
+        val findStartPPQ = startPPQ - 1
+        var startId = notes.lowerBound { it.time <= findStartPPQ }
         if (startId > 0) startId--
         val endTime = startPPQ + widthPPQ
         val noteHeight = trackHeightPx / (top - bottom + 2)
