@@ -14,7 +14,7 @@ class PlayPositionImpl(
 ): MutablePlayPosition {
     override var bpm by mutableStateOf(140.0)
     override var timeInSeconds by mutableStateOf(0.0)
-    override var ppq by mutableStateOf(96)
+    override val ppq = 96
     override var bufferSize = 1024
     override var sampleRate = 44100
     override var timeToPause = 0

@@ -37,7 +37,7 @@ object AudioSourceManager {
     fun createMemorySource(source: AudioSource) = DefaultMemoryAudioSource(source)
 
     fun createCachedFileSource(file: Path, factory: String? = null): FileAudioSource {
-        var cached = fileSourcesCache[file]?.get()
+        var cached = synchronized(fileSourcesCache) { fileSourcesCache[file]?.get() }
         if (cached == null) {
             val source = createFileAudioSource(file, factory)
 
@@ -45,14 +45,14 @@ object AudioSourceManager {
             if ((cachedFileSize > 0 && fileSize < cachedFileSize) ||
                 (!source.isRandomAccessible && fileSize < maxNotRandomAccessableFileCacheSize)) {
                 cached = createMemorySource(source)
-                fileSourcesCache[file] = WeakReference(cached)
+                synchronized(fileSourcesCache) { fileSourcesCache[file] = WeakReference(cached) }
             } else return source
         }
         return ProxyFileAudioSource(file, cached)
     }
 
     fun createProxyFileSource(file: Path, factory: String? = null): FileAudioSource {
-        val cached = fileSourcesCache[file]?.get()
+        val cached = synchronized(fileSourcesCache) { fileSourcesCache[file]?.get() }
         if (cached != null) return ProxyFileAudioSource(file, cached)
         val source = createFileAudioSource(file, factory)
         if (!source.isRandomAccessible && source.fileSize < maxNotRandomAccessableFileCacheSize)

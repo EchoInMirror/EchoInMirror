@@ -265,7 +265,6 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
 
             if (clips.isNotEmpty()) {
                 val clipsDir = path.resolve("clips")
-                if (!Files.exists(clipsDir)) Files.createDirectory(clipsDir)
                 clips.fastMap {
                     launch {
                         @Suppress("TYPE_MISMATCH")

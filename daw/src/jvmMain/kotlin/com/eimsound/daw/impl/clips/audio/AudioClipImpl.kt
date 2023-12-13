@@ -177,8 +177,8 @@ class AudioClipImpl(
         val tr = stretcher
         if (playTime < 0) {
             target.position = 0
-            offset = (pos.bufferSize + playTime).coerceAtLeast(0).toInt()
-        } else if (pos.timeInSamples != lastPos + bufferSize) {
+            offset = (-playTime).toInt().coerceIn(0, bufferSize)
+        } else if (playTime == 0L || pos.timeInSamples != lastPos + bufferSize) {
             target.position = if (tr == null || tr.isDefaultParams) playTime
             else {
                 fifo.clear()
@@ -189,7 +189,7 @@ class AudioClipImpl(
         lastPos = pos.timeInSamples
 
         if (tr == null || tr.isDefaultParams) {
-            target.nextBlock(buffers, bufferSize, offset)
+            target.nextBlock(buffers, bufferSize.coerceAtMost(bufferSize - offset), offset)
             pauseProcessor.processPause(buffers, offset, bufferSize, pos.timeToPause)
             return
         }

@@ -32,7 +32,6 @@ interface PlayPosition {
 interface MutablePlayPosition : PlayPosition {
     override var timeInSamples: Long
     override var timeInSeconds: Double
-    override var ppq: Int
     override var timeInPPQ: Int
     override var ppqPosition: Double
     override var bufferSize: Int
@@ -44,7 +43,7 @@ interface MutablePlayPosition : PlayPosition {
     override var timeToPause: Int
 }
 
-fun PlayPosition.convertPPQToSamples(ppq: Int) = (ppq.toDouble() / this.ppq / bpm * 60.0 * sampleRate).roundToLong()
+fun PlayPosition.convertPPQToSamples(ppq: Int) = (ppq.toDouble() / this.ppq.toDouble() / bpm * 60.0 * sampleRate.toDouble()).roundToLong()
 fun PlayPosition.convertSamplesToPPQ(samples: Long) = (samples.toDouble() / sampleRate * bpm / 60.0 * this.ppq).roundToInt()
 fun PlayPosition.convertPPQToSeconds(ppq: Float) = ppq.toDouble() / this.ppq / bpm * 60.0
 fun PlayPosition.convertSecondsToPPQ(seconds: Float) = seconds * bpm * this.ppq / 60.0

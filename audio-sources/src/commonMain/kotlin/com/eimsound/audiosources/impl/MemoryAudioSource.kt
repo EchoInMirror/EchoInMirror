@@ -27,17 +27,16 @@ class DefaultMemoryAudioSource(
     override fun getSamples(buffers: Array<FloatArray>, start: Int, length: Int, offset: Int): Int {
         val len = this.length
         if (isClosed || len < 1 || length < 1 || start > len - 1) return 0
-        val destLen = length.coerceAtMost(buffers.firstOrNull()?.size ?: 0)
-        if (offset > destLen) return 0
+        val arrLen = buffers.firstOrNull()?.size ?: 0
+        val destLen = length.coerceAtMost(arrLen)
+        if (offset > arrLen) return 0
         val startIndex = start.coerceAtLeast(0)
-        val consumed = destLen.coerceAtMost((len - startIndex).toInt()).coerceAtMost(destLen - offset)
+        val consumed = destLen.coerceAtMost((len - startIndex).toInt()).coerceAtMost(arrLen - offset)
         if (consumed < 1) return 0
         val end = startIndex + consumed
 
-//        println("$offset $startIndex $end")
-
-        for (i in 0 until channels.coerceAtMost(buffers.size)) {
-            samplesBuffer[i].copyInto(buffers[i], offset, startIndex, end)
+        repeat(channels.coerceAtMost(buffers.size)) {
+            samplesBuffer[it].copyInto(buffers[it], offset, startIndex, end)
         }
         return consumed
     }
