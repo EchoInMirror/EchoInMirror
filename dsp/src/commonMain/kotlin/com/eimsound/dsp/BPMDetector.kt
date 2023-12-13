@@ -32,16 +32,18 @@ private fun findPeaks(data: LowPassedAudioSource): List<Long> {
 
 private fun findPeaksAtThreshold(data: LowPassedAudioSource, threshold: Double): List<Long> {
     val peaks = mutableListOf<Long>()
-    while (data.target.position < data.length) {
+    var pos = data.target.position
+    while (pos < data.length) {
         var i = 0
         data.process()
         while (i < data.bufferSize) {
             if (data.data[i] > threshold) {
-                peaks.add(data.target.position + i)
+                peaks.add(pos + i)
                 i += (data.sampleRate / 4).roundToInt()
             }
             i++
         }
+        pos += i
         data.target.position += i
     }
     return peaks

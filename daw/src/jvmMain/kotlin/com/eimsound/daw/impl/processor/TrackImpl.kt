@@ -121,7 +121,8 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         levelMeter.right = levelMeter.right.update(rightPeak)
         lastUpdateTime += (1000.0 * position.bufferSize / position.sampleRate).toLong()
         if (lastUpdateTime > 300) {
-            levelMeter.cachedMaxLevelString = levelMeter.maxLevel.toString()
+            val max = levelMeter.maxLevel
+            levelMeter.cachedMaxLevelString = if (max <= -60F) "inf" else max.toString()
             lastUpdateTime = 0
         }
     }
