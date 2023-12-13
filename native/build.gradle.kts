@@ -31,7 +31,17 @@ kotlin {
                 implementation("org.apache.commons:commons-lang3:${extra["eim.dependencies.commons.lang"]}")
                 implementation("org.slf4j:slf4j-api:${extra["eim.dependencies.slf4j"]}")
                 implementation("com.github.ShirasawaSama:JavaSharedMemory:0.2.0")
-                implementation("com.github.EchoInMirror:EIMTimeStretchers:0.1.3")
+                implementation("com.github.EchoInMirror.EIMTimeStretchers:common:0.2.0")
+
+                val os = org.gradle.nativeplatform.platform.internal.DefaultNativePlatform.getCurrentOperatingSystem()
+                implementation("com.github.EchoInMirror.EIMTimeStretchers:${
+                    when {
+                        os.isWindows -> "windows"
+                        os.isLinux -> "linux"
+                        os.isMacOsX -> "macos"
+                        else -> "common" // Fall back to common
+                    }
+                }:0.2.0")
 
                 compileOnly(compose.material3)
                 compileOnly(compose.materialIconsExtended)

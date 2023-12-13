@@ -43,7 +43,7 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: daw/build/libs/daw.jar
           asset_name: EchoInMirror-win64.jar
-          tag: ${{ github.ref }}
+          tag: ${{ github.event.release.tag_name }}
 
       - name: Copy files
         shell: bash
@@ -80,7 +80,7 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: EchoInMirror.zip
           asset_name: EchoInMirror-win64.zip
-          tag: ${{ github.ref }}
+          tag: ${{ github.event.release.tag_name }}
 
       - name: Stop gradle
         shell: bash
