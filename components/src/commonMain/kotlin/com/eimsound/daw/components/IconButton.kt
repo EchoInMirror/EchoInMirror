@@ -35,11 +35,32 @@ fun IconButton(
     content: @Composable () -> Unit
 ) {
     Box(
-        modifier =
-        modifier
+        modifier = modifier
             .size(size)
             .background(color = colors.containerColor(enabled).value)
             .clickableWithIcon(enabled, role = Role.Button, indication = rememberRipple(false, size / 2), onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        val contentColor = colors.contentColor(enabled).value
+        CompositionLocalProvider(LocalContentColor provides contentColor, content = content)
+    }
+}
+
+@Composable
+fun RectIconButton(
+    onClick: () -> Unit,
+    width: Dp = IconButtonTokens.StateLayerSize,
+    height: Dp = width,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    colors: IconButtonColors = IconButtonDefaults.iconButtonColors(),
+    content: @Composable () -> Unit
+) {
+    Box(
+        modifier = modifier
+            .size(width, height)
+            .background(color = colors.containerColor(enabled).value)
+            .clickableWithIcon(enabled, role = Role.Button, indication = rememberRipple(), onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         val contentColor = colors.contentColor(enabled).value

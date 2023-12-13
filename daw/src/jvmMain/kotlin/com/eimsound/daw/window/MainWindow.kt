@@ -35,18 +35,18 @@ import kotlinx.coroutines.runBlocking
 import org.apache.commons.lang3.SystemUtils
 
 @Composable
-private fun MainWindowContent(window: ComposeWindow) {
+private fun FrameWindowScope.MainWindowContent(window: ComposeWindow) {
     Row {
         SideBar()
         val density = LocalDensity.current.density
         val dropParent = remember(density) { PlatformDropTargetModifier(density, window) }
         Scaffold(
             Modifier.then(dropParent),
-            topBar = { EimAppBar() },
             snackbarHost = { SnackbarHost(LocalSnackbarHost.current) },
             content = {
                 Column {
-                    Box(Modifier.weight(1F).padding(top = APP_BAR_HEIGHT)) {
+                    EimAppBar()
+                    Box(Modifier.weight(1F)) {
                         HorizontalSplitPane(splitPaneState = sideBarWidthState) {
                             first(0.dp) { SideBarContent() }
                             second(400.dp) {
@@ -117,17 +117,20 @@ private val logger = KotlinLogging.logger("MainWindow")
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun MainWindow() {
-    Window({
-        EchoInMirror.windowManager.closeMainWindow()
-    }, mainWindowState, icon = Logo, title = "Echo In Mirror (v$VERSION)", onKeyEvent = {
-        if (it.type != KeyEventType.KeyUp || checkHasFocus()) return@Window false
-        var keys = (if (it.key == Key.Backspace) Key.Delete.keyCode else it.key.keyCode).toString()
-        if (it.isCrossPlatformCtrlPressed) keys = "${Key.CtrlLeft.keyCode} $keys"
-        if (it.isShiftPressed) keys = "${Key.ShiftLeft.keyCode} $keys"
-        if (it.isCrossPlatformAltPressed) keys = "${Key.AltLeft.keyCode} $keys"
-        EchoInMirror.commandManager.executeCommand(keys)
-        false
-    }) {
+    Window(
+        { EchoInMirror.windowManager.closeMainWindow() },
+        mainWindowState, icon = Logo, title = "Echo In Mirror (v$VERSION)", undecorated = shouldBeUndecorated,
+        resizable = !SystemUtils.IS_OS_WINDOWS || mainWindowState.placement == WindowPlacement.Floating,
+        onKeyEvent = {
+            if (it.type != KeyEventType.KeyUp || checkHasFocus()) return@Window false
+            var keys = (if (it.key == Key.Backspace) Key.Delete.keyCode else it.key.keyCode).toString()
+            if (it.isCrossPlatformCtrlPressed) keys = "${Key.CtrlLeft.keyCode} $keys"
+            if (it.isShiftPressed) keys = "${Key.ShiftLeft.keyCode} $keys"
+            if (it.isCrossPlatformAltPressed) keys = "${Key.AltLeft.keyCode} $keys"
+            EchoInMirror.commandManager.executeCommand(keys)
+            false
+        }
+    ) {
         val focusManager = LocalFocusManager.current
         remember(focusManager) {
             checkHasFocus = {

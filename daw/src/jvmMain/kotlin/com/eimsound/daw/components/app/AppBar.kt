@@ -15,6 +15,7 @@ import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.FrameWindowScope
 import com.eimsound.audioprocessor.data.QUANTIFICATION_UNITS
 import com.eimsound.audioprocessor.data.getEditUnit
 import com.eimsound.daw.Configuration
@@ -227,33 +228,34 @@ private val RightContent: @Composable RowScope.() -> Unit = {
     }
 }
 
-val APP_BAR_HEIGHT = 60.dp
-
 @Composable
-internal fun EimAppBar() {
-    Surface(modifier = Modifier.fillMaxWidth().height(APP_BAR_HEIGHT), shadowElevation = 2.dp, tonalElevation = 2.dp) {
-        Layout(
-            {
-                Row(verticalAlignment = Alignment.CenterVertically, content = LeftContent)
-                Row(verticalAlignment = Alignment.CenterVertically, content = CenterContent)
-                Row(verticalAlignment = Alignment.CenterVertically, content = RightContent)
-            },
-            Modifier.padding(horizontal = 10.dp)
-        ) { (left, center, right), constraints ->
-            var width = constraints.maxWidth
-            val centerPlaceable = center.measure(constraints.copy(0))
-            width -= centerPlaceable.width
-            val rightPlaceable = if (width > 0) right.measure(constraints.copy(0, width)) else null
-            width -= rightPlaceable?.width ?: 0
-            val leftPlaceable = if (width > 0) left.measure(constraints.copy(0, width)) else null
-            var mid = constraints.maxWidth / 2
-            val rightX = constraints.maxWidth - (rightPlaceable?.width ?: 0)
-            if (mid + centerPlaceable.width / 2 > rightX) mid = rightX - centerPlaceable.width / 2
+internal fun FrameWindowScope.EimAppBar() {
+    Surface(modifier = Modifier.fillMaxWidth(), shadowElevation = 2.dp, tonalElevation = 2.dp) {
+        Column(Modifier.fillMaxWidth()) {
+            TitleBar()
+            Layout(
+                {
+                    Row(verticalAlignment = Alignment.CenterVertically, content = LeftContent)
+                    Row(verticalAlignment = Alignment.CenterVertically, content = CenterContent)
+                    Row(verticalAlignment = Alignment.CenterVertically, content = RightContent)
+                },
+                Modifier.height(52.dp).padding(horizontal = 10.dp)
+            ) { (left, center, right), constraints ->
+                var width = constraints.maxWidth
+                val centerPlaceable = center.measure(constraints.copy(0))
+                width -= centerPlaceable.width
+                val rightPlaceable = if (width > 0) right.measure(constraints.copy(0, width)) else null
+                width -= rightPlaceable?.width ?: 0
+                val leftPlaceable = if (width > 0) left.measure(constraints.copy(0, width)) else null
+                var mid = constraints.maxWidth / 2
+                val rightX = constraints.maxWidth - (rightPlaceable?.width ?: 0)
+                if (mid + centerPlaceable.width / 2 > rightX) mid = rightX - centerPlaceable.width / 2
 
-            layout(constraints.maxWidth, constraints.maxHeight) {
-                rightPlaceable?.place(rightX, 0)
-                leftPlaceable?.place(0, 0)
-                centerPlaceable.place(mid - centerPlaceable.width / 2, 0)
+                layout(constraints.maxWidth, constraints.maxHeight) {
+                    rightPlaceable?.place(rightX, 0)
+                    leftPlaceable?.place(0, 0)
+                    centerPlaceable.place(mid - centerPlaceable.width / 2, 0)
+                }
             }
         }
     }

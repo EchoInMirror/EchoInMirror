@@ -21,6 +21,8 @@ class DefaultUndoManager: UndoManager {
     override var cursor by mutableStateOf(0)
     override val errorHandlers = mutableSetOf<(UndoableActionExecuteException) -> Unit>()
     override val cursorChangeHandlers = mutableSetOf<() -> Unit>()
+    override val canRedo get() = cursor < actions.size
+    override val canUndo get() = cursor > 0
 
     private suspend fun tryRun(block: suspend () -> Boolean) = try {
         block()

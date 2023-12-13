@@ -53,6 +53,7 @@ kotlin {
                 implementation("org.jetbrains.compose.ui:ui-util:${ComposeBuildConfig.composeVersion}")
                 implementation("com.github.Apisium:appcenter-sdk-jvm:1.0.6")
                 implementation("com.github.Dansoftowner:jSystemThemeDetector:61d9025a31")
+                implementation("net.java.dev.jna:jna-platform:5.12.1")
             }
         }
     }

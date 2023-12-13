@@ -3,8 +3,7 @@ package com.eimsound.daw.dawutils
 import androidx.compose.foundation.ScrollState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.surfaceColorAtElevation
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
@@ -146,20 +145,38 @@ fun formatDuration(time: Long): String = DURATION_PRETTIER.formatDuration(Date(t
 
 fun randomColor() = com.eimsound.daw.components.utils.randomColor(!EchoInMirror.windowManager.isDarkTheme)
 
+@Suppress("unused")
 fun Panel.isActive() = EchoInMirror.windowManager.activePanel == this
 
 val SHOULD_ZOOM_REVERSE = SystemUtils.IS_OS_MAC_OSX
 
+var shouldBeUndecorated by mutableStateOf(SystemUtils.IS_OS_WINDOWS)
+    private set
 @Composable
 fun FrameWindowScope.initWindowDecoration() {
     if (SystemUtils.IS_OS_WINDOWS) {
         val outlineColor = MaterialTheme.colorScheme.outlineVariant
         val titleColor = MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp)
         val textColor = MaterialTheme.colorScheme.onSurface.compositeOver(titleColor)
+        window.background = java.awt.Color(0, 0, 0, 255)
+
+        LaunchedEffect(window.windowHandle) {
+            try {
+                windowsDecorateWindow(window.windowHandle)
+            } catch (e: Throwable) {
+                shouldBeUndecorated = true
+                e.printStackTrace()
+            }
+        }
+
         LaunchedEffect(window.windowHandle, titleColor, outlineColor, textColor) {
-            windowsSetWindowColor(window.windowHandle, titleColor)
-            windowsSetWindowColor(window.windowHandle, outlineColor, WindowColorType.BORDER)
-            windowsSetWindowColor(window.windowHandle, textColor, WindowColorType.TEXT)
+            try {
+                windowsSetWindowColor(window.windowHandle, titleColor)
+                windowsSetWindowColor(window.windowHandle, outlineColor, WindowColorType.BORDER)
+                windowsSetWindowColor(window.windowHandle, textColor, WindowColorType.TEXT)
+            } catch (e: Throwable) {
+                e.printStackTrace()
+            }
         }
     }
 }
