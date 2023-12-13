@@ -171,12 +171,11 @@ class AudioClipImpl(
     }
 
     private val pauseProcessor = PauseProcessor()
-    internal fun processBlock(pos: PlayPosition, playTime: Long, buffers: Array<FloatArray>) {
-        var bufferSize = buffers[0].size
+    internal fun processBlock(pos: PlayPosition, playTime: Long, len: Int, buffers: Array<FloatArray>) {
+        var bufferSize = (buffers[0].size).coerceAtMost(len)
         var offset = 0
         val tr = stretcher
         if (playTime < 0) {
-            lastPos = 0
             target.position = 0
             offset = (pos.bufferSize + playTime).coerceAtLeast(0).toInt()
         } else if (pos.timeInSamples != lastPos + bufferSize) {
@@ -187,13 +186,13 @@ class AudioClipImpl(
                 (playTime * tr.speedRatio).roundToLong()
             }
         }
+        lastPos = pos.timeInSamples
 
         if (tr == null || tr.isDefaultParams) {
             target.nextBlock(buffers, bufferSize, offset)
             pauseProcessor.processPause(buffers, offset, bufferSize, pos.timeToPause)
             return
         }
-        lastPos = pos.timeInSamples
         val channels = buffers.size
         if (tempOutBuffers.size != channels || tempOutBuffers[0].size < bufferSize)
             tempOutBuffers = Array(channels) { FloatArray(bufferSize) }
@@ -250,9 +249,11 @@ class AudioClipFactoryImpl: AudioClipFactory {
     ) {
         val c = clip.clip as? AudioClipImpl ?: return
         val clipTime = clip.time - clip.start
-        val playTime = position.timeInSamples - position.convertPPQToSamples(clipTime)
-        if (playTime < 0) return
-        c.processBlock(position, playTime, buffers)
+        c.processBlock(
+            position,
+            position.timeInSamples - position.convertPPQToSamples(clipTime),
+            position.bufferSize, buffers
+        )
         val volume = clip.clip.volumeEnvelope.getValue(position.timeInPPQ - clipTime, 1F)
         repeat(buffers.size) { i ->
             repeat(buffers[i].size) { j ->
