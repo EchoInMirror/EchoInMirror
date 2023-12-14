@@ -249,45 +249,43 @@ open class ProcessAudioProcessorImpl(
         return@coroutineScope res
     }
 
-    private suspend fun readInitInformation(input: ByteBufInputStream) {
-        withContext(Dispatchers.IO) {
-            inputChannelsCount = input.read()
-            outputChannelsCount = input.read()
-            latency = input.readInt()
-            val len = input.readVarInt()
+    private fun readInitInformation(input: ByteBufInputStream) {
+        inputChannelsCount = input.read()
+        outputChannelsCount = input.read()
+        latency = input.readInt()
+        val len = input.readVarInt()
 
-            val newList = List(len) {
-                val flags = input.read()
-                val value = input.readFloat()
-                val initialValue = input.readFloat()
-                input.readInt() // category
-                val steps = input.readInt().coerceAtMost(65536)
-                val name = input.readString()
-                val label = input.readString()
-                var valueStrings = input.readStringArray()
-                if (valueStrings.isEmpty() && flags and PARAMETER_IS_DISCRETE != 0) {
-                    valueStrings = Array(steps) { s -> "${(s.toFloat() / steps * 100).toInt()}%" }
-                }
-
-                val isAutomatable = flags and PARAMETER_IS_AUTOMATABLE != 0
-                val id = it.toString()
-
-                if (flags and PARAMETER_IS_BOOLEAN != 0) {
-                    audioProcessorParameterOf(id, name, initialValue != 0F, isAutomatable = isAutomatable,
-                        onChange = ::handleParameterChange)
-                } else if (flags and PARAMETER_IS_DISCRETE != 0) {
-                    audioProcessorParameterOf(id, name, valueStrings, label = label, isAutomatable = isAutomatable,
-                        onChange = ::handleParameterChange)
-                } else {
-                    audioProcessorParameterOf(id, name, initialValue = initialValue, label = label,
-                        isAutomatable = isAutomatable, onChange = ::handleParameterChange)
-                }.apply {
-                    setValue(value, false)
-                }
+        val newList = List(len) {
+            val flags = input.read()
+            val value = input.readFloat()
+            val initialValue = input.readFloat()
+            input.readInt() // category
+            val steps = input.readInt().coerceAtMost(65536)
+            val name = input.readString()
+            val label = input.readString()
+            var valueStrings = input.readStringArray()
+            if (valueStrings.isEmpty() && flags and PARAMETER_IS_DISCRETE != 0) {
+                valueStrings = Array(steps) { s -> "${(s.toFloat() / steps * 100).toInt()}%" }
             }
 
-            if (parameters.isEmpty()) parameters = newList // TODO: replace this in the future
+            val isAutomatable = flags and PARAMETER_IS_AUTOMATABLE != 0
+            val id = it.toString()
+
+            if (flags and PARAMETER_IS_BOOLEAN != 0) {
+                audioProcessorParameterOf(id, name, initialValue != 0F, isAutomatable = isAutomatable,
+                    onChange = ::handleParameterChange)
+            } else if (flags and PARAMETER_IS_DISCRETE != 0) {
+                audioProcessorParameterOf(id, name, valueStrings, label = label, isAutomatable = isAutomatable,
+                    onChange = ::handleParameterChange)
+            } else {
+                audioProcessorParameterOf(id, name, initialValue = initialValue, label = label,
+                    isAutomatable = isAutomatable, onChange = ::handleParameterChange)
+            }.apply {
+                setValue(value, false)
+            }
         }
+
+        if (parameters.isEmpty()) parameters = newList // TODO: replace this in the future
     }
 
     override fun close() {
@@ -325,6 +323,7 @@ open class ProcessAudioProcessorImpl(
     private fun handleInput(id: Int, position: PlayPosition) {
         val input = inputStream!!
         when (id) {
+            0 -> readInitInformation(input) // init
             2 -> position.isPlaying = input.readBoolean() // transport play
             3 -> { // parameter change
                 val list = mutableListOf<Pair<AudioProcessorParameter, Float>>()

@@ -19,6 +19,7 @@ val IS_SHM_SUPPORTED by lazy {
     try {
         SharedMemory.isSupported()
     } catch (e: Throwable) {
+        e.printStackTrace()
         false
     }
 }
