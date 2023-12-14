@@ -18,6 +18,7 @@ import java.nio.file.StandardOpenOption
 import java.nio.file.attribute.BasicFileAttributes
 import java.util.Comparator
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.concurrent.thread
 import kotlin.math.ceil
 import kotlin.math.roundToInt
 
@@ -263,14 +264,18 @@ class AudioThumbnailCache(
         map.clear()
         if (!Files.exists(dir)) return
         try {
-            Files.list(dir)
-                .sorted(Comparator.comparingLong {
-                    Files.readAttributes(it, BasicFileAttributes::class.java).lastAccessTime().toMillis()
-                })
-                .limit(200)
-                .forEach { Files.delete(it) }
+            val list = Files.list(dir).toList()
+            if (list.size <= 200) return
+            list.sortWith(Comparator.comparingLong {
+                Files.readAttributes(it, BasicFileAttributes::class.java).lastAccessTime().toMillis()
+            })
+            list.subList(0, list.size - 100).forEach(Files::delete)
         } catch (e: Throwable) {
             e.printStackTrace()
         }
+    }
+
+    init {
+        Runtime.getRuntime().addShutdownHook(thread(false) { close() })
     }
 }

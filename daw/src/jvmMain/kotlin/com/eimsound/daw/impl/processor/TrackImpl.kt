@@ -81,7 +81,8 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
         if (position.isPlaying) processClips(position, buffers, midiBuffer)
         var tempLatency = 0
         preProcessorsChain.fastForEach {
-            if (!it.processor.isDisabled) {
+            if (it.processor.isDisabled) it.processor.processBlockBypass(position)
+            else {
                 it.processor.processBlock(buffers, position, midiBuffer)
                 tempLatency += it.processor.latency
             }
@@ -95,7 +96,8 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
             }
         }
         postProcessorsChain.fastForEach {
-            if (!it.processor.isDisabled) {
+            if (it.processor.isDisabled) it.processor.processBlockBypass(position)
+            else {
                 it.processor.processBlock(buffers, position, midiBuffer)
                 tempLatency += it.processor.latency
             }

@@ -113,17 +113,9 @@ open class ProcessAudioProcessorImpl(
                 output.flush()
                 midiBuffer.clear()
 
-                val input = inputStream!!
-                do {
-                    val id = input.read()
-                    if (id == -1) {
-                        close()
-                        logger.warn { "Native audio plugin $description has been closed" }
-                        return@withContext
-                    }
-                    handleInput(id, position)
-                } while (id != 1)
+                if (handleInputLoop(position)) return@withContext
                 if (bf == null) {
+                    val input = inputStream!!
                     repeat(outputChannels) { i ->
                         repeat(bufferSize) { j -> buffers[i][j] = input.readFloat() }
                     }
@@ -317,6 +309,19 @@ open class ProcessAudioProcessorImpl(
         }
     }
 
+    private fun handleInputLoop(position: PlayPosition): Boolean {
+        val input = inputStream!!
+        do {
+            val id = input.read()
+            if (id == -1) {
+                close()
+                logger.warn { "Native audio plugin $description has been closed" }
+                return true
+            }
+            handleInput(id, position)
+        } while (id != 1)
+        return false
+    }
     private fun handleInput(id: Int, position: PlayPosition) {
         val input = inputStream!!
         when (id) {
@@ -335,6 +340,20 @@ open class ProcessAudioProcessorImpl(
                 list.doChangeAction(false)
             }
             4 -> latency = input.readInt() // latency
+            5 -> isDisabled = input.readBoolean() // is disabled
+        }
+    }
+
+    override suspend fun processBlockBypass(position: PlayPosition) {
+        withContext(Dispatchers.IO) {
+            val output = outputStream
+            if (!isLaunched || output == null) return@withContext
+            if (!prepared) prepareToPlay(position.sampleRate, position.bufferSize)
+            writeMutex.withLock {
+                output.write(5) // action
+                output.flush()
+                handleInputLoop(position)
+            }
         }
     }
 

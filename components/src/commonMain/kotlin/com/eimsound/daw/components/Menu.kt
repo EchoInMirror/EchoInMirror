@@ -281,7 +281,7 @@ fun MenuHeader(
     titleContent: @Composable (RowScope.() -> Unit)? = null, content: (@Composable ColumnScope.() -> Unit)? = null
 ) {
     Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min).ifNotNull(color) { background(it.copy(0.1F)) }) {
-        if (color != null) {
+        if (color == null) Spacer(Modifier.width(8.dp).fillMaxHeight()) else {
             val floatingLayerProvider = LocalFloatingLayerProvider.current
             Spacer(Modifier.width(8.dp).fillMaxHeight().background(color).ifNotNull(onColorChange) {
                 clickableWithIcon {
