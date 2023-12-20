@@ -144,7 +144,7 @@ class AudioThumbnail private constructor(
     }
 
     inline fun query(
-        widthInPx: Double, startTimeSeconds: Double = 0.0,
+        widthInPx: Float, startTimeSeconds: Double = 0.0,
         endTimeSeconds: Double = lengthInSamples / sampleRate.toDouble(),
         stepInPx: Float = 1F,
         callback: (x: Float, channel: Int, min: Float, max: Float) -> Unit

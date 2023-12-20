@@ -42,8 +42,12 @@ class SnapshotStateSet<T> private constructor(
     override fun add(element: T): Boolean =
         delegateSnapshotStateMap.put(element, Unit) == null
 
-    override fun addAll(elements: Collection<T>): Boolean =
-        elements.map(::add).any()
+    override fun addAll(elements: Collection<T>): Boolean {
+        delegateSnapshotStateMap.putAll(mutableMapOf<T, Unit>().apply {
+            elements.forEach { put(it, Unit) }
+        })
+        return true
+    }
 }
 
 /**

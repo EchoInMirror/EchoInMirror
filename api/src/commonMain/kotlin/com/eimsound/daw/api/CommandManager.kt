@@ -6,10 +6,10 @@ import androidx.compose.ui.input.key.Key
 interface Command {
     val name: String
     val displayName: String
-    fun execute() {}
     val keyBindings: Array<Key>
     val icon: ImageVector?
     val activeWhen: Array<String>?
+    fun execute()
 }
 
 abstract class AbstractCommand(

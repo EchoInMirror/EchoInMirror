@@ -2,32 +2,34 @@
 
 package com.eimsound.daw.components
 
-import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.*
+import androidx.compose.ui.layout.onPlaced
+import androidx.compose.ui.unit.IntSize
 import com.eimsound.audioprocessor.PlayPosition
 import com.eimsound.audioprocessor.convertPPQToSeconds
 import com.eimsound.dsp.data.AudioThumbnail
 import com.eimsound.dsp.data.EnvelopePointList
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlin.math.absoluteValue
 
 private const val STEP_IN_PX = 0.5F
 private const val WAVEFORM_DAMPING = 0.93F
 
-private fun DrawScope.drawMinAndMax(
+private fun Canvas.drawMinAndMax(
     thumbnail: AudioThumbnail, startSeconds: Double, endSeconds: Double,
     channelHeight: Float, halfChannelHeight: Float, drawHalfChannelHeight: Float,
-    color: Color
+    paint: Paint, width: Float
 ) {
     var min = 0F
     var max = 0F
-    thumbnail.query(size.width.toDouble(), startSeconds, endSeconds, STEP_IN_PX) { x, ch, min0, max0 ->
+    thumbnail.query(width, startSeconds, endSeconds, STEP_IN_PX) { x, ch, min0, max0 ->
         val y = 2 + channelHeight * ch + halfChannelHeight
         val curMax = max0.absoluteValue.coerceAtMost(1F) * drawHalfChannelHeight
         val curMin = min0.absoluteValue.coerceAtMost(1F) * drawHalfChannelHeight
@@ -36,35 +38,25 @@ private fun DrawScope.drawMinAndMax(
         if (curMax > max) max = curMax
         else max *= WAVEFORM_DAMPING
         if (min + max < 0.3F) {
-            drawLine(color, Offset(x, y), Offset(x + STEP_IN_PX, y), STEP_IN_PX)
+            drawRect(x, y,x + STEP_IN_PX, y, paint)
             return@query
         }
-        drawLine(
-            color,
-            Offset(x, y - max),
-            Offset(x, y + min),
-            0.5F
-        )
+        drawRect(x, y - max, x + STEP_IN_PX, y + min, paint)
     }
 }
-private fun DrawScope.drawDefault(
+private fun Canvas.drawDefault(
     thumbnail: AudioThumbnail, startSeconds: Double, endSeconds: Double,
     channelHeight: Float, halfChannelHeight: Float, drawHalfChannelHeight: Float,
-    color: Color
+    paint: Paint, width: Float
 ) {
-    thumbnail.query(size.width.toDouble(), startSeconds, endSeconds, STEP_IN_PX) { x, ch, min, max ->
+    thumbnail.query(width, startSeconds, endSeconds, STEP_IN_PX) { x, ch, min, max ->
         val v = (if (max.absoluteValue > min.absoluteValue) max else min).coerceIn(-1F, 1F) * drawHalfChannelHeight
         val y = 2 + channelHeight * ch + halfChannelHeight
         if (v.absoluteValue < 0.3F) {
-            drawLine(color, Offset(x, y), Offset(x + STEP_IN_PX, y), STEP_IN_PX)
+            drawRect(x, y, x + STEP_IN_PX, y, paint)
             return@query
         }
-        drawLine(
-            color,
-            Offset(x, y),
-            Offset(x, y - v),
-            STEP_IN_PX
-        )
+        drawRect(x, y, x + STEP_IN_PX, y - v, paint)
     }
 }
 
@@ -77,33 +69,50 @@ fun Waveform(
     isDrawMinAndMax: Boolean = true,
     modifier: Modifier = Modifier
 ) {
-    thumbnail.read()
-    Canvas(modifier.fillMaxSize().graphicsLayer { }) {
-        val channelHeight = (size.height / thumbnail.channels) - 2
-        val halfChannelHeight = channelHeight / 2
-        val drawHalfChannelHeight = halfChannelHeight - 1
-        if (isDrawMinAndMax) {
-            drawMinAndMax(
-                thumbnail, startSeconds, endSeconds, channelHeight, halfChannelHeight,
-                drawHalfChannelHeight, color
-            )
-        } else {
-            drawDefault(
-                thumbnail, startSeconds, endSeconds, channelHeight, halfChannelHeight,
-                drawHalfChannelHeight, color
-            )
+    var size: IntSize? by remember { mutableStateOf(null) }
+    Box(Modifier.fillMaxSize().onPlaced { size = it.size }) {
+        val image by produceState<ImageBitmap?>(
+            null, size, thumbnail, thumbnail.read(), startSeconds, endSeconds, isDrawMinAndMax
+        ) {
+            val curSize = size
+            if (curSize == null) {
+                value = null
+                return@produceState
+            }
+            withContext(Dispatchers.Default) {
+                val bitmap = ImageBitmap(curSize.width, curSize.height)
+                val paint = Paint()
+                Canvas(bitmap).apply {
+                    val channelHeight = (curSize.height.toFloat() / thumbnail.channels) - 2
+                    val halfChannelHeight = channelHeight / 2
+                    val drawHalfChannelHeight = halfChannelHeight - 1
+                    if (isDrawMinAndMax) {
+                        drawMinAndMax(
+                            thumbnail, startSeconds, endSeconds, channelHeight, halfChannelHeight,
+                            drawHalfChannelHeight, paint, curSize.width.toFloat()
+                        )
+                    } else {
+                        drawDefault(
+                            thumbnail, startSeconds, endSeconds, channelHeight, halfChannelHeight,
+                            drawHalfChannelHeight, paint, curSize.width.toFloat()
+                        )
+                    }
+                }
+                value = bitmap
+            }
         }
+        image?.let { Image(it, "Waveform", modifier, colorFilter = ColorFilter.tint(color)) }
     }
 }
 
-private fun DrawScope.drawMinAndMax(
+private fun Canvas.drawMinAndMax(
     thumbnail: AudioThumbnail, startPPQ: Float, startSeconds: Double,
     endSeconds: Double, channelHeight: Float, halfChannelHeight: Float, drawHalfChannelHeight: Float,
-    stepPPQ: Float, color: Color, volumeEnvelope: EnvelopePointList?
+    stepPPQ: Float, volumeEnvelope: EnvelopePointList?, paint: Paint, width: Float
 ) {
     var min = 0F
     var max = 0F
-    thumbnail.query(size.width.toDouble(), startSeconds, endSeconds, STEP_IN_PX) { x, ch, min0, max0 ->
+    thumbnail.query(width, startSeconds, endSeconds, STEP_IN_PX) { x, ch, min0, max0 ->
         val y = 2 + channelHeight * ch + halfChannelHeight
         val volume = volumeEnvelope?.getValue((startPPQ + x * stepPPQ).toInt(), 1F) ?: 1F
         val curMin = (min0.absoluteValue * volume).coerceAtMost(1F) * drawHalfChannelHeight
@@ -113,37 +122,27 @@ private fun DrawScope.drawMinAndMax(
         if (curMax > max) max = curMax
         else max *= WAVEFORM_DAMPING
         if (min + max < 0.3F) {
-            drawLine(color, Offset(x, y), Offset(x + STEP_IN_PX, y), STEP_IN_PX)
+            drawRect(x, y, x + STEP_IN_PX, y, paint)
             return@query
         }
-        drawLine(
-            color,
-            Offset(x, y - max),
-            Offset(x, y + min),
-            0.5F
-        )
+        drawRect(x, y - max, x + STEP_IN_PX, y + min, paint)
     }
 }
-private fun DrawScope.drawDefault(
+private fun Canvas.drawDefault(
     thumbnail: AudioThumbnail, startPPQ: Float, startSeconds: Double,
     endSeconds: Double, channelHeight: Float, halfChannelHeight: Float, drawHalfChannelHeight: Float,
-    stepPPQ: Float, color: Color, volumeEnvelope: EnvelopePointList?
+    stepPPQ: Float, volumeEnvelope: EnvelopePointList?, paint: Paint, width: Float
 ) {
-    thumbnail.query(size.width.toDouble(), startSeconds, endSeconds, STEP_IN_PX) { x, ch, min, max ->
+    thumbnail.query(width, startSeconds, endSeconds, STEP_IN_PX) { x, ch, min, max ->
         val v = ((if (max.absoluteValue > min.absoluteValue) max else min) *
                 (volumeEnvelope?.getValue((startPPQ + x * stepPPQ).toInt(), 1F) ?: 1F))
             .coerceIn(-1F, 1F) * drawHalfChannelHeight
         val y = 2 + channelHeight * ch + halfChannelHeight
         if (v.absoluteValue < 0.3F) {
-            drawLine(color, Offset(x, y), Offset(x + STEP_IN_PX, y), STEP_IN_PX)
+            drawRect(x, y, x + STEP_IN_PX, y, paint)
             return@query
         }
-        drawLine(
-            color,
-            Offset(x, y),
-            Offset(x, y - v),
-            STEP_IN_PX
-        )
+        drawRect(x, y, x + STEP_IN_PX, y - v, paint)
     }
 }
 
@@ -156,26 +155,42 @@ fun Waveform(
     isDrawMinAndMax: Boolean = true,
     modifier: Modifier = Modifier
 ) {
-    thumbnail.read()
-    val factor = (thumbnail.sampleRate / position.sampleRate) * timeScale
-    val startSeconds = position.convertPPQToSeconds(startPPQ) / factor
-    val endSeconds = position.convertPPQToSeconds(startPPQ + widthPPQ) / factor
-    Canvas(modifier.fillMaxSize().graphicsLayer { }) {
-        val channelHeight = (size.height / thumbnail.channels) - 2
-        val halfChannelHeight = channelHeight / 2
-        val drawHalfChannelHeight = halfChannelHeight - 1
-        val stepPPQ = widthPPQ / size.width
-        volumeEnvelope?.read()
-        if (isDrawMinAndMax) {
-            drawMinAndMax(
-                thumbnail, startPPQ, startSeconds, endSeconds, channelHeight, halfChannelHeight,
-                drawHalfChannelHeight, stepPPQ, color, volumeEnvelope
-            )
-        } else {
-            drawDefault(
-                thumbnail, startPPQ, startSeconds, endSeconds, channelHeight, halfChannelHeight,
-                drawHalfChannelHeight, stepPPQ, color, volumeEnvelope
-            )
+    var size: IntSize? by remember { mutableStateOf(null) }
+    Box(modifier.fillMaxSize().onPlaced { size = it.size }) {
+        val factor = (thumbnail.sampleRate / position.sampleRate) * timeScale
+        val startSeconds = position.convertPPQToSeconds(startPPQ) / factor
+        val endSeconds = position.convertPPQToSeconds(startPPQ + widthPPQ) / factor
+        val image by produceState<ImageBitmap?>(
+            null, size, thumbnail, thumbnail.read(), startSeconds, endSeconds, volumeEnvelope, isDrawMinAndMax
+        ) {
+            val curSize = size
+            if (curSize == null) {
+                value = null
+                return@produceState
+            }
+            withContext(Dispatchers.Default) {
+                val bitmap = ImageBitmap(curSize.width, curSize.height)
+                val paint = Paint()
+                val channelHeight = (curSize.height / thumbnail.channels) - 2F
+                val halfChannelHeight = channelHeight / 2
+                val drawHalfChannelHeight = halfChannelHeight - 1
+                val stepPPQ = widthPPQ / curSize.width
+                Canvas(bitmap).apply {
+                    if (isDrawMinAndMax) {
+                        drawMinAndMax(
+                            thumbnail, startPPQ, startSeconds, endSeconds, channelHeight, halfChannelHeight,
+                            drawHalfChannelHeight, stepPPQ, volumeEnvelope, paint, curSize.width.toFloat()
+                        )
+                    } else {
+                        drawDefault(
+                            thumbnail, startPPQ, startSeconds, endSeconds, channelHeight, halfChannelHeight,
+                            drawHalfChannelHeight, stepPPQ, volumeEnvelope, paint, curSize.width.toFloat()
+                        )
+                    }
+                }
+                value = bitmap
+            }
         }
+        image?.let { Image(it, "Waveform", Modifier.fillMaxSize(), colorFilter = ColorFilter.tint(color)) }
     }
 }

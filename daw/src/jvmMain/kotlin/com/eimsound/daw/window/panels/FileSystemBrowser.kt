@@ -24,7 +24,7 @@ import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -113,7 +113,7 @@ object FileSystemBrowser : Panel {
     @Composable
     private fun Previewer() {
         val width = remember { intArrayOf(1) }
-        Surface(Modifier.fillMaxWidth().height(40.dp).onGloballyPositioned { width[0] = it.size.width }, tonalElevation = 3.dp) {
+        Surface(Modifier.fillMaxWidth().height(40.dp).onPlaced { width[0] = it.size.width }, tonalElevation = 3.dp) {
             @OptIn(ExperimentalFoundationApi::class)
             DropdownMenu({ close ->
                 MenuItem({

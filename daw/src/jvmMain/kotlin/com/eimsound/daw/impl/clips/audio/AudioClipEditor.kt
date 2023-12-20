@@ -11,7 +11,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
@@ -73,7 +73,7 @@ class AudioClipEditor(private val clip: TrackClip<AudioClip>) : ClipEditor {
             var contentWidth by remember { mutableStateOf(0) }
             val density = LocalDensity.current
             Box(
-                Modifier.fillMaxSize().onGloballyPositioned { contentWidth = it.size.width }
+                Modifier.fillMaxSize().onPlaced { contentWidth = it.size.width }
                     .scrollable(horizontalScrollState, Orientation.Horizontal, reverseDirection = true)
                     .scalableNoteWidth(noteWidth, horizontalScrollState)
             ) {

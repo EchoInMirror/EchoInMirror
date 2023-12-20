@@ -8,6 +8,7 @@ interface BasicEditor {
         delete()
     }
     fun paste() { }
+    fun duplicate() { }
     val hasSelected get() = true
     val canPaste get() = true
     val canDelete get() = true

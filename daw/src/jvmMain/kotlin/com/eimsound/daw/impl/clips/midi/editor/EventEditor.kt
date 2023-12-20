@@ -147,6 +147,7 @@ class CCEvent(private val editor: MidiClipEditor, eventId: Int, points: Envelope
     override fun pasteFromString(value: String) { envEditor.pasteFromString(value) }
     override fun delete() { envEditor.delete() }
     override fun selectAll() { envEditor.selectAll() }
+    override fun duplicate() { envEditor.duplicate() }
 }
 
 private val defaultCCEvents = sortedMapOf(

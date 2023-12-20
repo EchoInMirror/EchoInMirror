@@ -15,7 +15,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.input.pointer.*
-import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
@@ -158,6 +158,24 @@ class Playlist : Panel, MultiSelectableEditor {
 
     override fun selectAll() { EchoInMirror.bus!!.subTracks.forEach(::selectAllClipsInTrack) }
 
+    override fun duplicate() {
+        if (selectedClips.isEmpty()) return
+        val new = selectedClips.groupBy { it.track }.flatMap { (_, clips0) ->
+            val clips = clips0.sorted()
+            val first = clips.first()
+            val firstStart = first.time
+            var betweenTime = clips.getOrNull(1)?.time
+            betweenTime = if (betweenTime == null) 0 else (betweenTime - (firstStart + first.duration)).coerceAtLeast(0)
+            var startTime = clips.maxOf { it.time + it.duration } + betweenTime
+            startTime = startTime.fitInUnitCeil(EchoInMirror.editUnit)
+            val newClips = clips.map { it.copy(time = it.time + startTime - firstStart) }
+            newClips.doClipsAmountAction(false)
+            newClips
+        }
+        selectedClips.clear()
+        selectedClips.addAll(new)
+    }
+
     private fun selectAllClipsInTrack(track: Track) {
         selectedClips.addAll(track.clips)
         track.subTracks.forEach(::selectAllClipsInTrack)
@@ -177,7 +195,7 @@ class Playlist : Panel, MultiSelectableEditor {
                 val coroutineScope = rememberCoroutineScope()
                 Box(Modifier.weight(1f).pointerInput(coroutineScope) {
                     handleMouseEvent(this@Playlist, coroutineScope)
-                }.onGloballyPositioned { with(localDensity) { contentWidth = it.size.width.toDp() } }) {
+                }.onPlaced { with(localDensity) { contentWidth = it.size.width.toDp() } }) {
                     EchoInMirror.currentPosition.apply {
                         EditorGrid(noteWidth, horizontalScrollState, projectRange, ppq, timeSigDenominator, timeSigNumerator)
                     }

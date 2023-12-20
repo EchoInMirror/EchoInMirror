@@ -11,7 +11,7 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.boundsInRoot
-import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.layout.positionInRoot
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
@@ -72,7 +72,7 @@ fun GlobalDraggable(
         }
     }
     val contentColor = LocalContentColor.current
-    Box(modifier.onGloballyPositioned { currentPos[0] = it.positionInRoot() }.onDrag(onDragStart = {
+    Box(modifier.onPlaced { currentPos[0] = it.positionInRoot() }.onDrag(onDragStart = {
         GlobalScope.launch {
             val data = onDragStart() ?: return@launch
             isCurrent = true
@@ -92,7 +92,7 @@ fun GlobalDraggable(
 @Composable
 fun GlobalDropTarget(onDrop: ((Any, Offset) -> Unit)?, modifier: Modifier = Modifier, content: @Composable (Offset?) -> Unit) {
     var currentPos by remember { mutableStateOf(Rect.Zero) }
-    Box(modifier.onGloballyPositioned { currentPos = it.boundsInRoot() }) {
+    Box(modifier.onPlaced { currentPos = it.boundsInRoot() }) {
         val globalDragAndDrop = LocalGlobalDragAndDrop.current
         if (globalDragAndDrop.dataTransfer != null && currentPos.contains(globalDragAndDrop.currentPosition)) {
             globalDragAndDrop.dropCallback = onDrop?.let {

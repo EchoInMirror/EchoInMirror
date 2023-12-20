@@ -15,7 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEachReversed
@@ -58,7 +58,7 @@ private fun SnackbarAnim(snackbar: Snackbar) {
         spring(stiffness = Spring.StiffnessMediumLow)
     )
     AnimatedVisibility(snackbar.isVisible,
-        Modifier.onGloballyPositioned { if (it.size.height > height[0]) height[0] = it.size.height }
+        Modifier.onPlaced { if (it.size.height > height[0]) height[0] = it.size.height }
             .run { if (height[0] > 0) height(LocalDensity.current.run { (height[0] * anim).toDp() }) else this },
         enter = slideInHorizontally { it },
         exit = slideOutHorizontally { it }

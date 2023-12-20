@@ -9,10 +9,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerIcon
-import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.zIndex
 import com.eimsound.audioprocessor.oneBarPPQ
 import com.eimsound.audioprocessor.projectDisplayPPQ
@@ -60,7 +61,7 @@ private fun EditorContent(editor: DefaultMidiClipEditor) {
                         clip.duration = it.range
                         clip.track?.clips?.update()
                     }
-                    Box(Modifier.weight(1F).onGloballyPositioned {
+                    Box(Modifier.weight(1F).onPlaced {
                         with(localDensity) { contentWidth = it.size.width.toDp() }
                     }) {
                         Row(Modifier.fillMaxSize().zIndex(-1F)) {
@@ -170,7 +171,7 @@ class DefaultMidiClipEditor(override val clip: TrackClip<MidiClip>) : MidiClipEd
 
     private fun copyAsObject(): List<NoteMessage> {
         val startTime = selectedNotes.minOf { it.time }
-        return selectedNotes.map { it.copy(it.time - startTime) }
+        return selectedNotes.map { it.copy(time = it.time - startTime) }
     }
 
     override fun copy() {
@@ -181,9 +182,9 @@ class DefaultMidiClipEditor(override val clip: TrackClip<MidiClip>) : MidiClipEd
     override fun paste() {
         if (isEventPanelActive) selectedEvent?.paste()
         else {
-            if (copiedNotes?.isEmpty() == true) return
+            if (copiedNotes.isNullOrEmpty()) return
             val startTime = EchoInMirror.currentPosition.timeInPPQ.fitInUnitCeil(EchoInMirror.editUnit)
-            val notes = copiedNotes!!.map { it.copy(time = it.time + startTime) }
+            val notes = copiedNotes!!.fastMap { it.copy(time = it.time + startTime) }
             clip.doNoteAmountAction(notes, false)
             selectedNotes.clear()
             selectedNotes.addAll(notes)
@@ -222,6 +223,16 @@ class DefaultMidiClipEditor(override val clip: TrackClip<MidiClip>) : MidiClipEd
             selectedNotes.clear()
             selectedNotes.addAll(clip.clip.notes)
         }
+    }
+
+    override fun duplicate() {
+        if (selectedNotes.isEmpty()) return
+        val startTime = EchoInMirror.editUnit.fitInUnitCeil(selectedNotes.maxOf { it.time + it.duration })
+        val firstTime = selectedNotes.minOf { it.time }
+        val notes = selectedNotes.map { it.copy(time = it.time - firstTime + startTime) }
+        clip.doNoteAmountAction(notes, false)
+        selectedNotes.clear()
+        selectedNotes.addAll(notes)
     }
 
     internal var currentX = 0

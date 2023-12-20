@@ -56,4 +56,5 @@ object Editor: Panel, MultiSelectableEditor {
     override fun cut() { editor?.cut() }
     override fun delete() { editor?.delete() }
     override fun selectAll() { editor?.selectAll() }
+    override fun duplicate() { editor?.duplicate() }
 }

@@ -19,7 +19,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.*
-import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.drawText
@@ -472,7 +472,7 @@ class EnvelopeEditor(
 
 //        if (hoveredIndex == -1 && action == EditAction.RESIZE) modifier = modifier.pointerHoverIcon(PointerIconDefaults.VerticalResize)
 
-        Canvas(Modifier.fillMaxSize().graphicsLayer { }.onGloballyPositioned { positionInRoot = it.positionInRoot() }.run {
+        Canvas(Modifier.fillMaxSize().graphicsLayer { }.onPlaced { positionInRoot = it.positionInRoot() }.run {
             if (eventHandler == null) this else pointerInput(Unit) {
                 detectTapGestures(onDoubleTap = {
                     if (

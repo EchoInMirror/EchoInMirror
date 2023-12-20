@@ -17,7 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.layout.Layout
-import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.unit.*
 import androidx.compose.ui.util.fastForEach
@@ -144,7 +144,7 @@ fun FloatingLayer(
     } }
     val offset = remember { arrayOf(Offset.Zero) }
     val size = remember { arrayOf(Size.Zero) }
-    Box((if (isCentral) modifier else modifier.onGloballyPositioned {
+    Box((if (isCentral) modifier else modifier.onPlaced {
         offset[0] = it.positionInRoot()
         size[0] = it.size.toSize()
     }).let { if (enabled) it.pointerHoverIcon(PointerIcon.Hand) else it }

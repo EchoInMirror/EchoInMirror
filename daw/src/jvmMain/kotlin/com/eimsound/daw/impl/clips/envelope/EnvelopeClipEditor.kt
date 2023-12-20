@@ -11,7 +11,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
@@ -63,7 +63,7 @@ class EnvelopeClipEditor(private val clip: TrackClip<EnvelopeClip>) : ClipEditor
                 clip.track?.clips?.update()
             }
             var contentWidth by remember { mutableStateOf(0.dp) }
-            Box(Modifier.fillMaxSize().onGloballyPositioned { contentWidth = it.size.width.dp }
+            Box(Modifier.fillMaxSize().onPlaced { contentWidth = it.size.width.dp }
                 .scrollable(horizontalScrollState, Orientation.Horizontal, reverseDirection = true)
             ) {
                 EchoInMirror.currentPosition.apply {

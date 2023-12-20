@@ -21,7 +21,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.*
@@ -105,7 +105,7 @@ internal fun NotesEditorCanvas(editor: DefaultMidiClipEditor) {
         Box(
             Modifier.fillMaxSize().clipToBounds().background(MaterialTheme.colorScheme.background)
                 .scrollable(verticalScrollState, Orientation.Vertical, reverseDirection = true)
-                .onGloballyPositioned { offsetOfRoot = it.positionInRoot() }
+                .onPlaced { offsetOfRoot = it.positionInRoot() }
                 .pointerInput(coroutineScope, editor) {
                     handleMouseEvent(coroutineScope, editor, floatingLayerProvider)
                 }

@@ -17,49 +17,42 @@ import kotlinx.coroutines.launch
 
 object DeleteCommand : AbstractCommand("EIM:Delete", "删除", arrayOf(Key.Delete), Icons.Filled.DeleteForever) {
     override fun execute() {
-        super.execute()
         val panel = EchoInMirror.windowManager.activePanel
         if (panel is BasicEditor && panel.canDelete) panel.delete()
     }
 }
 object CopyCommand : AbstractCommand("EIM:Copy", "复制", arrayOf(Key.CtrlLeft, Key.C), Icons.Filled.ContentCopy) {
     override fun execute() {
-        super.execute()
         val panel = EchoInMirror.windowManager.activePanel
         if (panel is BasicEditor) panel.copy()
     }
 }
 object CopyToClipboard : AbstractCommand("EIM:CopyToClipboard", "复制到剪辑版", arrayOf(Key.CtrlLeft, Key.ShiftLeft, Key.C)) {
     override fun execute() {
-        super.execute()
         val panel = EchoInMirror.windowManager.activePanel
         if (panel is SerializableEditor) CLIPBOARD_MANAGER?.setText(AnnotatedString(panel.copyAsString()))
     }
 }
 object CutCommand : AbstractCommand("EIM:Cut", "剪切", arrayOf(Key.CtrlLeft, Key.X), Icons.Filled.ContentCut) {
     override fun execute() {
-        super.execute()
         val panel = EchoInMirror.windowManager.activePanel
         if (panel is BasicEditor) panel.cut()
     }
 }
 object PasteCommand : AbstractCommand("EIM:Paste", "粘贴", arrayOf(Key.CtrlLeft, Key.V), Icons.Filled.ContentPaste) {
     override fun execute() {
-        super.execute()
         val panel = EchoInMirror.windowManager.activePanel
         if (panel is BasicEditor) panel.paste()
     }
 }
 object PasteFromClipboard : AbstractCommand("EIM:PasteFromClipboard", "从剪辑版粘贴", arrayOf(Key.CtrlLeft, Key.ShiftLeft, Key.V)) {
     override fun execute() {
-        super.execute()
         val panel = EchoInMirror.windowManager.activePanel
         if (panel is SerializableEditor) panel.pasteFromString(CLIPBOARD_MANAGER?.getText()?.text ?: return)
     }
 }
 object SelectAllCommand : AbstractCommand("EIM:Select All", "选择全部", arrayOf(Key.CtrlLeft, Key.A), Icons.Filled.SelectAll) {
     override fun execute() {
-        super.execute()
         val panel = EchoInMirror.windowManager.activePanel
         if (panel is MultiSelectableEditor) panel.selectAll()
     }
@@ -86,6 +79,13 @@ object RedoCommand : AbstractCommand("EIM:Redo", "重做", arrayOf(Key.CtrlLeft,
     }
 }
 
+object DuplicateCommand : AbstractCommand("EIM:Duplicate", "复制", arrayOf(Key.CtrlLeft, Key.D), Icons.Filled.ContentCopy) {
+    override fun execute() {
+        val panel = EchoInMirror.windowManager.activePanel
+        if (panel is BasicEditor) panel.duplicate()
+    }
+}
+
 fun CommandManager.registerAllEditCommands() {
     registerCommand(DeleteCommand)
     registerCommand(CopyCommand)
@@ -97,4 +97,5 @@ fun CommandManager.registerAllEditCommands() {
     registerCommand(SaveCommand)
     registerCommand(UndoCommand)
     registerCommand(RedoCommand)
+    registerCommand(DuplicateCommand)
 }
