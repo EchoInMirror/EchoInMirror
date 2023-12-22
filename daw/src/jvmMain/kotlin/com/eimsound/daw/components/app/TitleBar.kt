@@ -113,6 +113,21 @@ private fun UndoRedoButtons() {
     }
 }
 
+@OptIn(DelicateCoroutinesApi::class)
+@Composable
+private fun SaveButton() {
+    val bus = EchoInMirror.bus
+    IconButton({
+        GlobalScope.launch { bus?.save() }
+    }, 26.dp, enabled = bus?.project?.saved == false) {
+        Icon(
+            imageVector = Icons.Filled.Save,
+            contentDescription = "Save",
+            Modifier.size(15.dp)
+        )
+    }
+}
+
 private var lock by mutableStateOf(false)
 @OptIn(DelicateCoroutinesApi::class)
 @Composable
@@ -147,9 +162,11 @@ private fun TitleBarContent() {
             }
         }) {
         val color = LocalContentColor.current.copy(0.4F)
-        Row(Modifier.align(Alignment.Center).padding(12.dp, 4.dp, 12.dp).offset((-30).dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.align(Alignment.Center).padding(12.dp, 4.dp, 12.dp).offset((-12).dp), verticalAlignment = Alignment.CenterVertically) {
             UndoRedoButtons()
             Search(color)
+            Gap(4)
+            SaveButton()
         }
         CompositionLocalProvider(LocalContentColor.provides(color)) {
             if (SystemUtils.IS_OS_WINDOWS) TitleButtons(Modifier.align(Alignment.CenterEnd))
