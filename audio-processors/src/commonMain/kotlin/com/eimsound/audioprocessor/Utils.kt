@@ -26,6 +26,14 @@ fun Array<FloatArray>.mixWith(source: Array<FloatArray>, volume: Float, limit: F
     }
 }
 
+fun Array<FloatArray>.mixWith(source: Array<FloatArray>, volume: Float, limit: Float, length: Int) {
+    for (i in 0 until size.coerceAtMost(source.size)) {
+        for (j in 0 until length.coerceAtMost(this[i].size.coerceAtMost(source[i].size))) {
+            this[i][j] += source[i][j].coerceIn(-limit, limit) * volume
+        }
+    }
+}
+
 fun Array<FloatArray>.clear() { repeat(size) { this[it].fill(0F) } }
 
 class PauseProcessor {

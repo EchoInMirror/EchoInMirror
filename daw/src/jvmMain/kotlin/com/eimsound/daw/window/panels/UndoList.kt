@@ -17,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.window.Panel
@@ -48,7 +49,9 @@ private fun UndoItem(index: Int, it: UndoableAction) {
             it.name,
             color = color,
             style = MaterialTheme.typography.labelLarge,
-            fontStyle = fontStyle
+            fontStyle = fontStyle,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }

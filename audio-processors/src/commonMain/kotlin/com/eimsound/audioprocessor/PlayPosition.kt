@@ -41,6 +41,7 @@ interface MutablePlayPosition : PlayPosition {
     override var projectRange: IntRange
     override var loopingRange: IntRange
     override var timeToPause: Int
+    fun stopNow()
 }
 
 fun PlayPosition.convertPPQToSamples(ppq: Int) = (ppq.toDouble() / this.ppq.toDouble() / bpm * 60.0 * sampleRate.toDouble()).roundToLong()

@@ -43,7 +43,7 @@ class DefaultFileAudioSource(override val file: Path) : FileAudioSource {
         get() = _position
         set(value) {
             if (_position == value || !isRandomAccessible) return
-            _position = value.coerceIn(0, length - 1)
+            _position = value.coerceIn(0, length)
 
             if (isFlac) {
                 flacDecoder?.let { synchronized(it) { it.seek(_position) } }
@@ -154,7 +154,7 @@ class DefaultFileAudioSource(override val file: Path) : FileAudioSource {
 
     override fun nextBlock(buffers: Array<FloatArray>, length: Int, offset: Int): Int {
         var sampleCount = length.coerceAtMost(buffers.firstOrNull()?.size ?: 0)
-        if (_position > this.length) return 0
+        if (_position >= this.length) return 0
         else if (_position + sampleCount > this.length) sampleCount = (this.length - _position).toInt()
         // read into temporary byte buffer
         var byteBufferSize = sampleCount * frameSize

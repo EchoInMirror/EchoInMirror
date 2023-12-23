@@ -170,7 +170,7 @@ private suspend fun AwaitPointerEventScope.handleDragEvent(
                             else try {
                                 selectedClips.map { trackHeights[trackToIndex!![it.track]!! + y].track }
                             } catch (e: Throwable) {
-                                e.printStackTrace()
+                                if (e !is IndexOutOfBoundsException) e.printStackTrace()
                                 null
                             }
                         )

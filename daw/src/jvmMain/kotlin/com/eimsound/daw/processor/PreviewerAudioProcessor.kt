@@ -7,6 +7,7 @@ import com.eimsound.dsp.data.midi.*
 import com.eimsound.daw.impl.PlayPositionImpl
 import com.eimsound.daw.impl.processor.eimAudioProcessorFactory
 import com.eimsound.daw.processor.synthesizer.SineWaveSynthesizer
+import kotlin.math.roundToLong
 
 val PreviewerDescription = DefaultAudioProcessorDescription(
     "Previewer",
@@ -53,9 +54,10 @@ class PreviewerAudioProcessor(factory: AudioProcessorFactory<*>) : AbstractAudio
             sineWaveSynthesizer.processBlock(buffers, this.position, midiBuffer2)
             this.position.timeInSamples += position.bufferSize
         } else if (audio != null) {
-            audio.factor = position.sampleRate.toDouble() / fileSampleRate
-            audio.nextBlock(tempBuffers, this.position.bufferSize)
-            buffers.mixWith(tempBuffers, volume, 1F)
+            if (audio.position < audio.length) {
+                audio.factor = position.sampleRate.toDouble() / fileSampleRate
+                buffers.mixWith(tempBuffers, volume, 1F, audio.nextBlock(tempBuffers, this.position.bufferSize))
+            }
             this.position.timeInSamples += position.bufferSize
         }
     }
@@ -87,6 +89,7 @@ class PreviewerAudioProcessor(factory: AudioProcessorFactory<*>) : AbstractAudio
         position.projectRange = 0..target.maxOf { it.time + it.duration }
     }
     fun setPreviewTarget(target: AudioSource) {
+        position.stopNow()
         position.timeInPPQ = 0
         midiPreviewTarget = null
         audioPreviewTarget?.close()
@@ -95,7 +98,7 @@ class PreviewerAudioProcessor(factory: AudioProcessorFactory<*>) : AbstractAudio
         audioPreviewTarget = AudioSourceManager.createResampledSource(target).apply {
             this.factor = factor
         }
-        position.projectRange = 0..position.convertSamplesToPPQ((target.length * factor).toLong())
+        position.projectRange = 0..position.convertSamplesToPPQ((target.length * factor).roundToLong())
     }
     fun clear() {
         midiPreviewTarget = null

@@ -21,6 +21,7 @@ import kotlinx.coroutines.*
 import kotlin.math.absoluteValue
 
 private const val STEP_IN_PX = 0.5F
+private const val HALF_STEP_IN_PX = STEP_IN_PX / 2
 private const val WAVEFORM_DAMPING = 0.93F
 
 private fun Canvas.drawMinAndMax(
@@ -40,7 +41,7 @@ private fun Canvas.drawMinAndMax(
         if (curMax > max) max = curMax
         else max *= WAVEFORM_DAMPING
         if (min + max < 0.3F) {
-            drawRect(x, y,x + STEP_IN_PX, y, paint)
+            drawRect(x, y - HALF_STEP_IN_PX,x + STEP_IN_PX, y + HALF_STEP_IN_PX, paint)
             return@query
         }
         drawRect(x, y - max, x + STEP_IN_PX, y + min, paint)
@@ -56,10 +57,11 @@ private fun Canvas.drawDefault(
         val v = (if (max.absoluteValue > min.absoluteValue) max else min).coerceIn(-1F, 1F) * drawHalfChannelHeight
         val y = 2 + channelHeight * ch + halfChannelHeight
         if (v.absoluteValue < 0.3F) {
-            drawRect(x, y, x + STEP_IN_PX, y, paint)
+            drawRect(x, y - HALF_STEP_IN_PX, x + STEP_IN_PX, y + HALF_STEP_IN_PX, paint)
             return@query
         }
-        drawRect(x, y, x + STEP_IN_PX, y - v, paint)
+        if (v > 0) drawRect(x, y - v, x + STEP_IN_PX, y, paint)
+        else drawRect(x, y, x + STEP_IN_PX, y - v, paint)
     }
 }
 
@@ -128,7 +130,7 @@ private fun Canvas.drawMinAndMax(
         if (curMax > max) max = curMax
         else max *= WAVEFORM_DAMPING
         if (min + max < 0.3F) {
-            drawRect(x, y - 0.25F, x + STEP_IN_PX, y + 0.25F, paint)
+            drawRect(x, y - HALF_STEP_IN_PX, x + STEP_IN_PX, y + HALF_STEP_IN_PX, paint)
             return@query
         }
         drawRect(x, y - max, x + STEP_IN_PX, y + min, paint)
@@ -146,10 +148,11 @@ private fun Canvas.drawDefault(
             .coerceIn(-1F, 1F) * drawHalfChannelHeight
         val y = 2 + channelHeight * ch + halfChannelHeight
         if (v.absoluteValue < 0.3F) {
-            drawRect(x, y - 0.25F, x + STEP_IN_PX, y + 0.25F, paint)
+            drawRect(x, y - HALF_STEP_IN_PX, x + STEP_IN_PX, y + HALF_STEP_IN_PX, paint)
             return@query
         }
-        drawRect(x, y, x + STEP_IN_PX, y - v, paint)
+        if (v > 0) drawRect(x, y - v, x + STEP_IN_PX, y, paint)
+        else drawRect(x, y, x + STEP_IN_PX, y - v, paint)
     }
 }
 

@@ -13,7 +13,7 @@ class DefaultMemoryAudioSource(
     override val isRandomAccessible = true
     override val channels get() = samplesBuffer.size
     override var position = 0L
-        set(value) { field = value.coerceIn(0, length - 1) }
+        set(value) { field = value.coerceIn(0, length) }
 
     constructor(source: AudioSource):
             this(source.run {
@@ -26,7 +26,7 @@ class DefaultMemoryAudioSource(
 
     override fun getSamples(buffers: Array<FloatArray>, start: Int, length: Int, offset: Int): Int {
         val len = this.length
-        if (isClosed || len < 1 || length < 1 || start > len - 1) return 0
+        if (isClosed || len < 1 || length < 1 || start >= len) return 0
         val arrLen = buffers.firstOrNull()?.size ?: 0
         val destLen = length.coerceAtMost(arrLen)
         if (offset > arrLen) return 0

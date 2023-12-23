@@ -14,8 +14,9 @@ class ProxyFileAudioSource (
     override val channels = memoryAudioSource?.channels ?: 0
     override val length = memoryAudioSource?.length ?: 0L
     override val isRandomAccessible = true
-    override var position = 0L
-        set(value) { field = value.coerceIn(0, length - 1) }
+    override var position
+        get() = memoryAudioSource?.position ?: 0L
+        set(value) { memoryAudioSource?.position = value }
 
     override fun getSamples(buffers: Array<FloatArray>, start: Int, length: Int, offset: Int) =
         memoryAudioSource?.getSamples(buffers, start, length, offset) ?: 0

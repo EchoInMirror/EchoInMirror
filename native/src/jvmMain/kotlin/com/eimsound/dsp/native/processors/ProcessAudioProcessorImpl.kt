@@ -210,7 +210,6 @@ open class ProcessAudioProcessorImpl(
                         if (id == 127) {
                             throw FailedToLoadAudioPluginException(input.readString())
                         }
-                        println(execFile)
                         if (id != 0) {
                             p.destroy()
                             throw FailedToLoadAudioPluginException("Failed to load plugin")

@@ -20,16 +20,13 @@ class DefaultResampledAudioSource(val source: AudioSource, override var factor: 
     private var sourceBuffers = Array(channels) { FloatArray(1024) }
 
     override fun nextBlock(buffers: Array<FloatArray>, length: Int, offset: Int): Int {
-        val len = length.coerceAtMost(buffers.firstOrNull()?.size ?: 0)
-        if (factor == 1.0) {
-            source.nextBlock(buffers, len, offset)
-            return buffers[0].size
-        }
+        var len = length.coerceAtMost(buffers.firstOrNull()?.size ?: 0)
+        if (factor == 1.0) return source.nextBlock(buffers, len, offset)
         val sourceLength = (len / factor).roundToInt()
         val ch = channels.coerceAtMost(buffers.size)
         if (sourceBuffers[0].size < sourceLength || sourceBuffers.size < ch)
             sourceBuffers = Array(ch) { FloatArray(sourceLength) }
-        source.nextBlock(sourceBuffers, sourceLength)
+        len = source.nextBlock(sourceBuffers, sourceLength)
         var consumed = 0
         val isLast = source.position + sourceLength >= source.length
         repeat(ch) {

@@ -88,8 +88,14 @@ class PlayPositionImpl(
                 _timeInPPQ = projectRange.first
             } else {
                 isPlaying = false
-                _timeInPPQ = projectRange.last
+//                _timeInPPQ = projectRange.last
             }
         }
+    }
+
+    override fun stopNow() {
+        lastTime = 0
+        timeToPause = 0
+        _isPlaying = false
     }
 }
