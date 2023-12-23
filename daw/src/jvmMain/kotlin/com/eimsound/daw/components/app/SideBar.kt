@@ -86,6 +86,7 @@ internal val bottomBarHeightState = object : SplitPaneState(0.5F) {
     }
 }
 
+val SIDE_BAR_WIDTH = 74.dp
 @Composable
 internal fun SideBar() {
     val lineColor = MaterialTheme.colorScheme.surfaceVariant
@@ -93,7 +94,7 @@ internal fun SideBar() {
         drawContent()
         drawLine(lineColor, Offset(size.width - 0.3f, 0F), Offset(size.width - 0.3f, size.height), 0.6f)
     }, tonalElevation = 2.dp) {
-        NavigationRail {
+        NavigationRail(Modifier.width(SIDE_BAR_WIDTH)) {
             Spacer(Modifier.height(16.dp).width(IntrinsicSize.Max))
             val floatingLayerProvider = LocalFloatingLayerProvider.current
             val density = LocalDensity.current.density

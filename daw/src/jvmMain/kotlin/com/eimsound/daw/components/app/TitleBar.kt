@@ -1,8 +1,6 @@
 package com.eimsound.daw.components.app
 
-import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.window.WindowDraggableArea
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.Icon
@@ -12,14 +10,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onPlaced
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.FrameWindowScope
 import androidx.compose.ui.window.WindowPlacement
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.components.*
+import com.eimsound.daw.dawutils.maximize
+import com.eimsound.daw.dawutils.minimize
+import com.eimsound.daw.dawutils.restore
 import com.eimsound.daw.window.mainWindowState
 import kotlinx.coroutines.*
 import org.apache.commons.lang3.SystemUtils
@@ -27,22 +27,32 @@ import org.apache.commons.lang3.SystemUtils
 @Composable
 private fun TitleButtons(modifier: Modifier) {
     Row(modifier) {
-        RectIconButton({ mainWindowState.isMinimized = !mainWindowState.isMinimized }, 32.dp, 26.dp) {
+        RectIconButton({
+            if (SystemUtils.IS_OS_WINDOWS) EchoInMirror.windowManager.mainWindow?.let {
+                if (mainWindowState.isMinimized) it.restore() else it.minimize()
+                return@RectIconButton
+            }
+            mainWindowState.isMinimized = !mainWindowState.isMinimized
+        }, 32.dp, 26.dp) {
             Icon(
                 imageVector = Icons.Filled.Minimize,
-                contentDescription = "Exit",
+                contentDescription = if (mainWindowState.isMinimized) "Restore" else "Minimize",
                 Modifier.size(18.dp).offset(y = (-2).dp)
             )
         }
         RectIconButton({
+            if (SystemUtils.IS_OS_WINDOWS) EchoInMirror.windowManager.mainWindow?.let {
+                if (mainWindowState.placement == WindowPlacement.Floating) it.maximize() else it.restore()
+                return@RectIconButton
+            }
             mainWindowState.placement = if (mainWindowState.placement == WindowPlacement.Floating) WindowPlacement.Maximized
             else WindowPlacement.Floating
         }, 32.dp, 26.dp) {
             Icon(
                 imageVector = if (mainWindowState.placement == WindowPlacement.Floating) Icons.Filled.CheckBoxOutlineBlank
                 else Icons.Filled.FilterNone,
-                contentDescription = "Exit",
-                Modifier.size(16.dp)
+                contentDescription = if (mainWindowState.placement == WindowPlacement.Floating) "Maximize" else "Restore",
+                Modifier.size(14.dp)
             )
         }
         RectIconButton({ EchoInMirror.windowManager.closeMainWindow() }, 32.dp, 26.dp) {
@@ -128,55 +138,26 @@ private fun SaveButton() {
     }
 }
 
-private var lock by mutableStateOf(false)
-@OptIn(DelicateCoroutinesApi::class)
+var actionButtonsSize = IntSize.Zero
+var titleBarContentSize = IntSize.Zero
+
 @Composable
-private fun TitleBarContent() {
+fun TitleBar() {
     Box(Modifier.fillMaxWidth()
-        .pointerInput(Unit) { // Double click
-            awaitPointerEventScope {
-                var time = 0L
-                var lastPos: Offset? = null
-                while (true) {
-                    val event = awaitFirstDown(false)
-                    if (lastPos != null && (event.position - lastPos).getDistanceSquared() > 20 * density * density) {
-                        time = 0
-                        lastPos = null
-                        continue
-                    }
-                    time = if (event.previousUptimeMillis - time < viewConfiguration.longPressTimeoutMillis) {
-                        GlobalScope.launch {
-                            lock = true
-                            delay(120)
-                            mainWindowState.placement = if (mainWindowState.placement == WindowPlacement.Floating) WindowPlacement.Maximized
-                            else WindowPlacement.Floating
-                            lock = false
-                        }
-                        lastPos = null
-                        0L
-                    } else {
-                        lastPos = event.position
-                        event.previousUptimeMillis
-                    }
-                }
-            }
-        }) {
+        .padding(top = if (SystemUtils.IS_OS_WINDOWS && mainWindowState.placement != WindowPlacement.Floating) 8.dp else 0.dp)
+    ) {
         val color = LocalContentColor.current.copy(0.4F)
-        Row(Modifier.align(Alignment.Center).padding(12.dp, 4.dp, 12.dp).offset((-12).dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            Modifier.align(Alignment.Center).padding(12.dp, 4.dp, 12.dp).offset(-SIDE_BAR_WIDTH / 2).onPlaced { titleBarContentSize = it.size },
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             UndoRedoButtons()
             Search(color)
             Gap(4)
             SaveButton()
         }
-        CompositionLocalProvider(LocalContentColor.provides(color)) {
-            if (SystemUtils.IS_OS_WINDOWS) TitleButtons(Modifier.align(Alignment.CenterEnd))
+        if (SystemUtils.IS_OS_WINDOWS) CompositionLocalProvider(LocalContentColor.provides(color)) {
+            TitleButtons(Modifier.align(Alignment.CenterEnd).onPlaced { actionButtonsSize = it.size })
         }
     }
-}
-
-@Composable
-internal fun FrameWindowScope.TitleBar() {
-    if (SystemUtils.IS_OS_WINDOWS && mainWindowState.placement == WindowPlacement.Floating && !lock) WindowDraggableArea {
-        TitleBarContent()
-    } else TitleBarContent()
 }

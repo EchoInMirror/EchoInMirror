@@ -21,6 +21,7 @@ import com.eimsound.daw.components.SettingTab
 import com.eimsound.daw.dawutils.EIMChan
 import com.eimsound.daw.impl.clips.midi.editor.DefaultMidiClipEditor
 import com.eimsound.daw.utils.openInBrowser
+import com.eimsound.daw.window.isFPSMeasurerEnabled
 import com.eimsound.daw.window.panels.playlist.Playlist
 import org.apache.commons.lang3.SystemUtils
 import java.net.URI
@@ -75,6 +76,11 @@ internal object AboutPanel: SettingTab {
                 Text("系统版本: ${SystemUtils.OS_NAME} (${SystemUtils.OS_VERSION}, ${SystemUtils.OS_ARCH})", style = bodySmall)
                 Text("Java 版本: ${SystemUtils.JAVA_VM_NAME} (${SystemUtils.JAVA_VM_VERSION}, ${SystemUtils.JAVA_VENDOR})", style = bodySmall)
                 Gap(16)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("显示帧率", style = bodySmall)
+                    Gap(8)
+                    Switch(isFPSMeasurerEnabled, { isFPSMeasurerEnabled = it })
+                }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("编辑器中 EIM 娘的不透明度: ", style = bodySmall)
                     Slider(EditorEIMChan.alpha, {

@@ -30,7 +30,7 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${extra["eim.dependencies.kotlinx.coroutines"]}")
                 implementation("org.apache.commons:commons-lang3:${extra["eim.dependencies.commons.lang"]}")
                 implementation("org.slf4j:slf4j-api:${extra["eim.dependencies.slf4j"]}")
-                implementation("com.github.ShirasawaSama:JavaSharedMemory:0.2.0")
+                implementation("com.github.ShirasawaSama:JavaSharedMemory:0.2.1")
                 implementation("com.github.EchoInMirror.EIMTimeStretchers:common:0.2.0")
 
                 val os = org.gradle.nativeplatform.platform.internal.DefaultNativePlatform.getCurrentOperatingSystem()

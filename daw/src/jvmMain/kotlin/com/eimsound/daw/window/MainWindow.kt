@@ -24,6 +24,7 @@ import com.eimsound.daw.components.dragdrop.LocalGlobalDragAndDrop
 import com.eimsound.daw.components.dragdrop.PlatformDropTargetModifier
 import com.eimsound.daw.components.splitpane.HorizontalSplitPane
 import com.eimsound.daw.components.splitpane.VerticalSplitPane
+import com.eimsound.daw.components.utils.FPSMeasurer
 import com.eimsound.daw.dawutils.*
 import com.eimsound.daw.impl.WindowManagerImpl
 import com.eimsound.daw.utils.isCrossPlatformAltPressed
@@ -111,6 +112,7 @@ private fun SaveProjectWarningDialog() {
 }
 
 val mainWindowState = WindowState()
+var isFPSMeasurerEnabled by mutableStateOf(false)
 private var checkHasFocus = { false }
 
 private val logger = KotlinLogging.logger("MainWindow")
@@ -119,8 +121,7 @@ private val logger = KotlinLogging.logger("MainWindow")
 fun MainWindow() {
     Window(
         { EchoInMirror.windowManager.closeMainWindow() },
-        mainWindowState, icon = Logo, title = "Echo In Mirror (v$VERSION)", undecorated = shouldBeUndecorated,
-        resizable = !SystemUtils.IS_OS_WINDOWS || mainWindowState.placement == WindowPlacement.Floating,
+        mainWindowState, icon = Logo, title = "Echo In Mirror (v$VERSION)",
         onKeyEvent = {
             if (it.type != KeyEventType.KeyUp || checkHasFocus()) return@Window false
             var keys = (if (it.key == Key.Backspace) Key.Delete.keyCode else it.key.keyCode).toString()
@@ -160,6 +161,7 @@ fun MainWindow() {
 
         Box {
             MainWindowContent(window)
+            if (isFPSMeasurerEnabled) FPSMeasurer(Modifier.align(Alignment.TopEnd).padding(end = 30.dp, top = 30.dp))
 
             LocalFloatingLayerProvider.current.FloatingLayers()
             LocalGlobalDragAndDrop.current.DraggingComponent()

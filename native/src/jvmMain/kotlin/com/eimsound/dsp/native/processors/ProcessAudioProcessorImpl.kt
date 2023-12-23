@@ -199,17 +199,18 @@ open class ProcessAudioProcessorImpl(
                         val flag1 = p.inputStream.read() == 1
                         val flag2 = p.inputStream.read() == 2
                         val isBigEndian = flag1 && flag2
-                        val input = ByteBufInputStream(isBigEndian, p.inputStream)
                         val output = ByteBufOutputStream(isBigEndian, p.outputStream)
 
                         output.writeString(Json.encodeToString(description))
                         if (preset != null) output.writeString(preset)
                         output.flush()
 
+                        val input = ByteBufInputStream(isBigEndian, p.inputStream)
                         val id = input.read()
                         if (id == 127) {
                             throw FailedToLoadAudioPluginException(input.readString())
                         }
+                        println(execFile)
                         if (id != 0) {
                             p.destroy()
                             throw FailedToLoadAudioPluginException("Failed to load plugin")

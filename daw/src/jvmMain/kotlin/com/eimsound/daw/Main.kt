@@ -5,7 +5,7 @@ import androidx.compose.foundation.LocalScrollbarStyle
 import androidx.compose.foundation.ScrollbarStyle
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
-import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.application
 import com.eimsound.audioprocessor.oneBarPPQ
@@ -56,6 +56,7 @@ fun main() {
         System.setProperty("apple.awt.enableTemplateImages", "true")
         System.setProperty("com.apple.mrj.application.apple.menu.about.name", "EchoInMirror")
     }
+    System.setProperty("skiko.vsync.enabled", "false")
 
     UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
     if (Taskbar.isTaskbarSupported() && Taskbar.getTaskbar().isSupported(Taskbar.Feature.ICON_IMAGE)) {
