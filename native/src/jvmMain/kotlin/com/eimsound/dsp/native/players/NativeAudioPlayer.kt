@@ -7,6 +7,7 @@ import cn.apisium.shm.SharedMemory
 import com.eimsound.audioprocessor.*
 import com.eimsound.daw.utils.ByteBufInputStream
 import com.eimsound.daw.utils.ByteBufOutputStream
+import com.eimsound.daw.utils.randomId
 import com.eimsound.dsp.native.IS_SHM_SUPPORTED
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
@@ -17,7 +18,6 @@ import kotlinx.serialization.json.Json
 import java.io.EOFException
 import java.nio.ByteBuffer
 import java.nio.file.Files
-import java.util.*
 import kotlin.io.path.Path
 
 private val logger = KotlinLogging.logger {  }
@@ -46,14 +46,14 @@ class NativeAudioPlayer(
     override lateinit var availableSampleRates: List<Int>
     override lateinit var availableBufferSizes: List<Int>
     override var name = super.name
+    private val shmName = if (enabledSharedMemory) "EIM-${randomId()}${randomId()}" else ""
 
     init {
         try {
             if (enabledSharedMemory && IS_SHM_SUPPORTED) try {
-                sharedMemory = SharedMemory.create("EIM-NativePlayer-${UUID.randomUUID()}",
-                    currentPosition.bufferSize * channels * 4)
+                sharedMemory = SharedMemory.create(shmName, currentPosition.bufferSize * channels * 4)
                 byteBuffer = sharedMemory!!.toByteBuffer()
-            } catch (ignored: Throwable) { }
+            } catch (e: Throwable) { e.printStackTrace() }
             logger.info { "Opening audio player: $name" }
             val pb = ProcessBuilder(arrayListOf(execFile).apply {
                 addAll(commands)
@@ -69,7 +69,7 @@ class NativeAudioPlayer(
                 add(preferredSampleRate.toString())
                 sharedMemory?.let {
                     add("-M")
-                    add(it.name)
+                    add(shmName)
                     add("-MS")
                     add(it.size.toString())
                 }
@@ -218,13 +218,13 @@ class NativeAudioPlayerFactory : AudioPlayerFactory {
             NativeAudioPlayer(this,
                 it.groupValues[1],
                 name.substring(it.range.last + 1),
-                currentPosition, processor, preferredSampleRate, preferredBufferSize, execFile
+                currentPosition, processor, preferredSampleRate, preferredBufferSize, execFile, enabledSharedMemory = false
             )
         }
     } catch (e: Throwable) {
         e.printStackTrace()
         null
     } ?: NativeAudioPlayer(this, "", "",
-        currentPosition, processor, preferredSampleRate, preferredBufferSize, execFile
+        currentPosition, processor, preferredSampleRate, preferredBufferSize, execFile, enabledSharedMemory = false
     )
 }

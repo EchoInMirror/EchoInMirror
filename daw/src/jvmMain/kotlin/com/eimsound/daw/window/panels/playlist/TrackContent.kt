@@ -88,6 +88,7 @@ private suspend fun AwaitPointerEventScope.handleDragEvent(
                             continue
                         }
                         else -> {
+                            isCurrentCursorSelected = true
                             EchoInMirror.selectedClip = clip
                             if (!selectedClips.contains(clip)) {
                                 selectedClips.clear()
@@ -363,6 +364,7 @@ private fun Density.createNewClip(
     listOf(newClip).doClipsAmountAction(false)
     playlist.selectedClips.clear()
     playlist.selectedClips.add(newClip)
+    playlist.isCurrentCursorSelected = true
 }
 private fun Density.dupeClip(playlist: Playlist, track: Track, x: Float, clip: TrackClip<*>) {
     createNewClip(playlist, track, x, clip.clip.copy(), EchoInMirror.editUnit, clip.duration, clip.start)

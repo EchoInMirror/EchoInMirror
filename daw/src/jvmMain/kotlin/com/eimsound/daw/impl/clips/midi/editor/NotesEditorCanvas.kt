@@ -161,7 +161,7 @@ internal fun NotesEditorCanvas(editor: DefaultMidiClipEditor) {
             DefaultMidiClipEditor.notesEditorExtensions.EditorExtensions(true)
 
             val trackColor = clip.track?.color ?: primaryColor
-            val defaultNoteBorderColor = trackColor.saturate(0F)
+            val defaultNoteBorderColor = trackColor.saturate(0.08F)
             val keyNameTextColor = trackColor.toOnSurfaceColor().copy(0.9F)
             val disabledKeyNameTextStyle = labelMediumStyle.copy(textDecoration = TextDecoration.LineThrough)
             remember(localDensity) {
@@ -289,9 +289,11 @@ internal fun NotesEditorCanvas(editor: DefaultMidiClipEditor) {
                         ), offset, size, borderCornerRadius2PX)
                         drawRoundRect(primaryColor, offset, size, borderCornerRadius2PX, stroke2PX)
                         if (shouldDrawNoteName && size.width > MIN_NOTE_WIDTH_WITH_KEY_NAME) {
-                            drawText(it.getLayoutResult(
-                                localDensity, measurer, labelMediumStyle, disabledKeyNameTextStyle, offsetNote
-                            ), keyNameTextColor, Offset(offset.x + 3 * density, y))
+                            drawText(
+                                it.getLayoutResult(localDensity, measurer, labelMediumStyle, disabledKeyNameTextStyle, offsetNote),
+                                keyNameTextColor, Offset(offset.x + 3 * density, y - density * 0.4F),
+                                textDecoration = TextDecoration.Underline
+                            )
                         }
                     }
                 }

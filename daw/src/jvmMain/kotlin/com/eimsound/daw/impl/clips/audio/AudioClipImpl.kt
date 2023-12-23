@@ -26,6 +26,8 @@ import com.eimsound.dsp.timestretcher.TimeStretcher
 import com.eimsound.dsp.timestretcher.TimeStretcherManager
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
@@ -96,12 +98,17 @@ class AudioClipImpl(
     private var _thumbnail by mutableStateOf<AudioThumbnail?>(null)
     override val thumbnail get() = _thumbnail ?: throw IllegalStateException("Thumbnail is not set")
     override val volumeEnvelope = DefaultEnvelopePointList()
-    override fun copy() = AudioClipImpl(factory, target.copy()).also {
-        it.volumeEnvelope.addAll(volumeEnvelope.copy())
-        it.bpm = bpm
-        it.speedRatio = speedRatio
-        it.semitones = semitones
-        it.timeStretcher = timeStretcher
+    private val mutex = Mutex()
+    override fun copy() = runBlocking { // TODO: remove this to optimize
+        mutex.withLock {
+            AudioClipImpl(factory, target.copy()).also {
+                it.volumeEnvelope.addAll(volumeEnvelope.copy())
+                it.bpm = bpm
+                it.speedRatio = speedRatio
+                it.semitones = semitones
+                it.timeStretcher = timeStretcher
+            }
+        }
     }
 
     override val icon = Icons.Outlined.GraphicEq

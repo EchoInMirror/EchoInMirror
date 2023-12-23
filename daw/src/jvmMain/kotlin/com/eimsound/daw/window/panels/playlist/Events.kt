@@ -50,6 +50,7 @@ internal suspend fun PointerInputScope.handleMouseEvent(playlist: Playlist, scop
                                 break
                             }
                             when (EchoInMirror.editorTool) {
+                                EditorTool.CURSOR -> isCurrentCursorSelected = false
                                 EditorTool.ERASER -> {
                                     selectedClips.clear()
                                     action = EditAction.DELETE
@@ -84,7 +85,10 @@ internal suspend fun PointerInputScope.handleMouseEvent(playlist: Playlist, scop
                 drag = awaitPointerSlopOrCancellation(down.id, down.type,
                     triggerOnMainAxisSlop = false) { change, _ -> change.consume() }
             } while (drag != null && !drag.isConsumed)
-            if (drag == null) return@awaitEachGesture
+            if (drag == null) {
+                if (!isCurrentCursorSelected && EchoInMirror.editorTool == EditorTool.CURSOR) selectedClips.clear()
+                return@awaitEachGesture
+            }
 
             when (action) {
                 EditAction.SELECT -> {

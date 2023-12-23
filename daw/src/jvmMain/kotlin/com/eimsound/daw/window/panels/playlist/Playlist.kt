@@ -74,6 +74,7 @@ class Playlist : Panel, MultiSelectableEditor {
     internal val deletionList = mutableStateSetOf<TrackClip<*>>()
     internal val disableList = mutableStateSetOf<TrackClip<*>>()
     internal val trackMovingFlags = WeakHashMap<Track, TrackMoveFlags>()
+    internal var isCurrentCursorSelected = false
 
     companion object {
         var copiedClips: List<TrackClip<*>>? = null

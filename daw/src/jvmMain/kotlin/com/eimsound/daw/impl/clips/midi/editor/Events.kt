@@ -102,6 +102,7 @@ internal suspend fun PointerInputScope.handleMouseEvent(
                                     var currentSelectNote = getClickedNotes(event.changes[0].position)
                                     if (currentSelectNote == null) {
                                         if (EchoInMirror.editorTool == EditorTool.PENCIL) currentSelectNote = createNewNote()
+                                        else selectedNotes.clear()
                                     } else if (!selectedNotes.contains(currentSelectNote)) {
                                         selectedNotes.clear()
                                         selectedNotes.add(currentSelectNote)
