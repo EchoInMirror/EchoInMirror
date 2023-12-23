@@ -54,6 +54,7 @@ class PreviewerAudioProcessor(factory: AudioProcessorFactory<*>) : AbstractAudio
             sineWaveSynthesizer.processBlock(buffers, this.position, midiBuffer2)
             this.position.timeInSamples += position.bufferSize
         } else if (audio != null) {
+            if (this.position.timeInSamples == 0L) audio.position = 0
             if (audio.position < audio.length) {
                 audio.factor = position.sampleRate.toDouble() / fileSampleRate
                 buffers.mixWith(tempBuffers, volume, 1F, audio.nextBlock(tempBuffers, this.position.bufferSize))

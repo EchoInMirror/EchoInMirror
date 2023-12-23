@@ -84,12 +84,8 @@ class PlayPositionImpl(
             if (timeToPause <= 0) _isPlaying = false
             lastTime = _timeInPPQ
         } else if (_timeInPPQ !in projectRange) {
-            if (isProjectLooping) {
-                _timeInPPQ = projectRange.first
-            } else {
-                isPlaying = false
-//                _timeInPPQ = projectRange.last
-            }
+            if (isProjectLooping) timeInPPQ = projectRange.first
+            else isPlaying = false
         }
     }
 
