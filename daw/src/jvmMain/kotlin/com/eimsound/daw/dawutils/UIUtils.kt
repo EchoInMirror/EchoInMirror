@@ -150,8 +150,6 @@ fun Panel.isActive() = EchoInMirror.windowManager.activePanel == this
 
 val SHOULD_ZOOM_REVERSE = SystemUtils.IS_OS_MAC_OSX
 
-var shouldBeUndecorated by mutableStateOf(SystemUtils.IS_OS_WINDOWS)
-    private set
 @Composable
 fun FrameWindowScope.initWindowDecoration() {
     if (SystemUtils.IS_OS_WINDOWS) {
@@ -164,7 +162,6 @@ fun FrameWindowScope.initWindowDecoration() {
             try {
                 windowsDecorateWindow(window.windowHandle)
             } catch (e: Throwable) {
-                shouldBeUndecorated = true
                 e.printStackTrace()
             }
         }
