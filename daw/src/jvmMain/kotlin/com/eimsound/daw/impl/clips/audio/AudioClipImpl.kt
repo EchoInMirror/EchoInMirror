@@ -26,8 +26,6 @@ import com.eimsound.dsp.timestretcher.TimeStretcher
 import com.eimsound.dsp.timestretcher.TimeStretcherManager
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
@@ -39,19 +37,19 @@ import kotlin.math.roundToInt
 import kotlin.math.roundToLong
 
 class AudioClipImpl(
-    factory: ClipFactory<AudioClip>, target: FileAudioSource? = null
+    factory: ClipFactory<AudioClip>, target: FileAudioSource? = null,
+    audioThumbnail: AudioThumbnail? = null
 ): AbstractClip<AudioClip>(factory), AudioClip {
-    private var _target: FileAudioSource? = null
     private lateinit var fifo: AudioBufferQueue
-    override var target: FileAudioSource
-        get() = _target ?: throw IllegalStateException("Target is not set")
+    override var target = target
         set(value) {
-            if (_target == value) return
+            if (field == value) return
             close()
-            _target = value
-            _thumbnail = AudioThumbnail(value)
-            fifo = AudioBufferQueue(value.channels, 20480)
-            stretcher?.initialise(value.sampleRate, EchoInMirror.currentPosition.bufferSize, value.channels)
+            field = value
+            if (value != null) {
+                fifo = AudioBufferQueue(value.channels, 20480)
+                stretcher?.initialise(value.sampleRate, EchoInMirror.currentPosition.bufferSize, value.channels)
+            }
         }
     private var stretcher: TimeStretcher? = null
         set(value) {
@@ -61,13 +59,15 @@ class AudioClipImpl(
                 field = null
                 return
             }
-            value.initialise(target.sampleRate, EchoInMirror.currentPosition.bufferSize, target.channels)
-            value.semitones = semitones
-            value.speedRatio = speedRatio
+            target?.apply {
+                value.initialise(sampleRate, EchoInMirror.currentPosition.bufferSize, channels)
+                value.semitones = semitones
+                value.speedRatio = speedRatio
+            }
             field = value
         }
     override val timeInSeconds: Float
-        get() = target.timeInSeconds * (stretcher?.speedRatio ?: 1F)
+        get() = target?.let { it.timeInSeconds * (stretcher?.speedRatio ?: 1F) } ?: 0F
     override var speedRatio by observableMutableStateOf(1F) {
         stretcher?.speedRatio = it
     }
@@ -92,34 +92,33 @@ class AudioClipImpl(
             }
         }
     override var bpm = 0F
-    override val defaultDuration get() = EchoInMirror.currentPosition
-        .convertSamplesToPPQ((target.length * (stretcher?.speedRatio ?: 1F)).roundToLong())
+    override val defaultDuration get() = target?.let {
+        EchoInMirror.currentPosition.convertSamplesToPPQ((it.length * (stretcher?.speedRatio ?: 1F)).roundToLong())
+    } ?: 0
     override val maxDuration get() = defaultDuration
-    private var _thumbnail by mutableStateOf<AudioThumbnail?>(null)
-    override val thumbnail get() = _thumbnail ?: throw IllegalStateException("Thumbnail is not set")
+    override var thumbnail by mutableStateOf(audioThumbnail)
+        private set
     override val volumeEnvelope = DefaultEnvelopePointList()
-    private val mutex = Mutex()
-    override fun copy() = runBlocking { // TODO: remove this to optimize
-        mutex.withLock {
-            AudioClipImpl(factory, target.copy()).also {
-                it.volumeEnvelope.addAll(volumeEnvelope.copy())
-                it.bpm = bpm
-                it.speedRatio = speedRatio
-                it.semitones = semitones
-                it.timeStretcher = timeStretcher
-            }
-        }
+    override fun copy() = AudioClipImpl(factory, target?.copy(), thumbnail).also {
+        it.volumeEnvelope.addAll(volumeEnvelope.copy())
+        it.bpm = bpm
+        it.speedRatio = speedRatio
+        it.semitones = semitones
+        it.timeStretcher = timeStretcher
     }
 
     override val icon = Icons.Outlined.GraphicEq
-    override val name get() = target.file.name
+    override val name get() = target?.file?.name ?: "没有音频"
 
     init {
-        if (target != null) this.target = target
+        if (target != null) {
+            this.target = target
+            if (audioThumbnail == null) EchoInMirror.audioThumbnailCache.get(target.file) { it, _ -> thumbnail = it }
+        }
     }
 
     override fun close() {
-        _target?.close()
+        target?.close()
         stretcher?.close()
         stretcher = null
     }
@@ -127,7 +126,7 @@ class AudioClipImpl(
     override fun toJson() = buildJsonObject {
         put("id", id)
         put("factory", factory.name)
-        put("file", target.file.toString())
+        putNotDefault("file", target?.file?.toString())
         putNotDefault("timeStretcher", timeStretcher)
         putNotDefault("speedRatio", speedRatio, 1F)
         putNotDefault("semitones", semitones)
@@ -138,7 +137,11 @@ class AudioClipImpl(
     override fun fromJson(json: JsonElement) {
         super.fromJson(json)
         json as JsonObject
-        json["file"]?.let { target = AudioSourceManager.createCachedFileSource(Path(it.asString())) }
+        json["file"]?.let {
+            val target = AudioSourceManager.createCachedFileSource(Path(it.asString()))
+            this.target = target
+            EchoInMirror.audioThumbnailCache.get(target.file) { t, _ -> thumbnail = t }
+        }
         json["volumeEnvelope"]?.let { volumeEnvelope.fromJson(it) }
         json["bpm"]?.let { bpm = it.asFloat() }
         json["timeStretcher"]?.let {
@@ -159,6 +162,7 @@ class AudioClipImpl(
     private var tempOutBuffers: Array<FloatArray> = emptyArray()
     private var lastPos = -1L
     private fun fillNextBlock(channels: Int): Boolean {
+        val target = this.target ?: return true
         val tr = stretcher ?: return true
         val needed = tr.framesNeeded
         var read = 0
@@ -179,6 +183,7 @@ class AudioClipImpl(
 
     private val pauseProcessor = PauseProcessor()
     internal fun processBlock(pos: PlayPosition, playTime: Long, len: Int, buffers: Array<FloatArray>) {
+        val target = this.target ?: return
         var bufferSize = (buffers[0].size).coerceAtMost(len)
         var offset = 0
         val tr = stretcher
@@ -211,7 +216,7 @@ class AudioClipImpl(
     }
 
     suspend fun detectBPM(snackbarProvider: SnackbarProvider? = null): Int = withContext(Dispatchers.IO) {
-        val bpm = detectBPM(target.copy())
+        val bpm = detectBPM((target ?: return@withContext -1).copy())
         if (bpm.isEmpty()) {
             snackbarProvider?.enqueueSnackbar("采样时间过短!", SnackbarType.Error)
             return@withContext -1
@@ -276,11 +281,13 @@ class AudioClipFactoryImpl: AudioClipFactory {
     ) {
         val isDrawMinAndMax = noteWidth.value.value < LocalDensity.current.density
         Box {
-            Waveform(
-                clip.clip.thumbnail, EchoInMirror.currentPosition, startPPQ, widthPPQ,
-                clip.clip.speedRatio,
-                clip.clip.volumeEnvelope, contentColor, isDrawMinAndMax
-            )
+            clip.clip.thumbnail?.let {
+                Waveform(
+                    it, EchoInMirror.currentPosition, startPPQ, widthPPQ,
+                    clip.clip.speedRatio,
+                    clip.clip.volumeEnvelope, contentColor, isDrawMinAndMax
+                )
+            }
             remember(clip) {
                 EnvelopeEditor(clip.clip.volumeEnvelope, VOLUME_RANGE, 1F, true)
             }.Editor(startPPQ, contentColor, noteWidth, false, clipStartTime = clip.start, stroke = 0.5F, drawGradient = false)

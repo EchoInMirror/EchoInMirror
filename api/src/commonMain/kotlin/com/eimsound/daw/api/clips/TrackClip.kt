@@ -38,9 +38,9 @@ interface TrackClipList : MutableList<TrackClip<*>>, IManualState
 
 class DefaultTrackClipList(private val track: Track) : TrackClipList, ArrayList<TrackClip<*>>() {
     @Transient
-    private var modification = mutableStateOf(0)
+    private var modification = mutableStateOf<Byte>(0)
     override fun update() { modification.value++ }
-    override fun read() { modification.value }
+    override fun read() = modification.value
     override fun add(element: TrackClip<*>): Boolean {
         val r = super.add(element)
         element.track = track

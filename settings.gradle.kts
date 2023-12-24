@@ -28,3 +28,7 @@ include(
     ":api",
     ":daw"
 )
+
+includeBuild(
+    "builtin"
+)

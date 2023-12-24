@@ -1,0 +1,3 @@
+include(
+    ":chord-analyzer"
+)

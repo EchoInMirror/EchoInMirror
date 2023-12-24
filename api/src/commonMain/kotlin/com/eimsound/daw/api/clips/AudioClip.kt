@@ -10,14 +10,14 @@ import java.nio.file.Path
  * @see com.eimsound.daw.impl.clips.audio.AudioClipImpl
  */
 interface AudioClip : Clip, AutoCloseable {
-    var target: FileAudioSource
+    var target: FileAudioSource?
     val timeInSeconds: Float
     var speedRatio: Float
     var semitones: Float
     var timeStretcher: String
     var bpm: Float
     @Transient
-    val thumbnail: AudioThumbnail
+    val thumbnail: AudioThumbnail?
     val volumeEnvelope: EnvelopePointList
     override fun copy(): AudioClip
 }

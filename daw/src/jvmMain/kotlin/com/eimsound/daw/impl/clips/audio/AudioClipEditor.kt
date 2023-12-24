@@ -58,7 +58,7 @@ class AudioClipEditor(private val clip: TrackClip<AudioClip>) : ClipEditor {
             clip.track?.clips?.read()
             val range = remember(clip.start, clip.duration) { clip.start..(clip.start + clip.duration) }
             val timeScaleFactor = remember { arrayOf(0F) }.apply {
-                this[0] = clip.clip.target.sampleRate / EchoInMirror.currentPosition.sampleRate
+                this[0] = clip.clip.target?.let { it.sampleRate / EchoInMirror.currentPosition.sampleRate } ?: 0F
             }
             Timeline(Modifier.zIndex(3F), noteWidth, horizontalScrollState, range, 0.dp,
                 EchoInMirror.editUnit, EchoInMirror.currentPosition.oneBarPPQ,
@@ -92,14 +92,16 @@ class AudioClipEditor(private val clip: TrackClip<AudioClip>) : ClipEditor {
                         EditorGrid(noteWidth, horizontalScrollState, range, ppq, timeSigDenominator, timeSigNumerator)
                     }
                     val color = clip.track?.color ?: MaterialTheme.colorScheme.primary
-                    Waveform(
-                        clip.clip.thumbnail,
-                        EchoInMirror.currentPosition,
-                        scrollXPPQ, widthPPQ,
-                        clip.clip.speedRatio,
-                        clip.clip.volumeEnvelope,
-                        color, modifier = Modifier.width(noteWidthValue * widthPPQ)
-                    )
+                    clip.clip.thumbnail?.let {
+                        Waveform(
+                            it,
+                            EchoInMirror.currentPosition,
+                            scrollXPPQ, widthPPQ,
+                            clip.clip.speedRatio,
+                            clip.clip.volumeEnvelope,
+                            color, modifier = Modifier.width(noteWidthValue * widthPPQ)
+                        )
+                    }
                     envelopeEditor.Editor(
                         scrollXPPQ, color, noteWidth, true, clipStartTime = clip.start, drawGradient = false
                     )

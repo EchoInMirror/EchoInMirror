@@ -132,7 +132,7 @@ private inline fun <T> List<T>.lowerBound(comparator: (T) -> Boolean): Int {
 
 class DefaultEnvelopePointList : EnvelopePointList, ArrayList<EnvelopePoint>() {
     @Transient
-    private var modification = mutableStateOf(0)
+    private var modification = mutableStateOf<Byte>(0)
     @Transient
     private var currentIndex = -1
 
@@ -182,7 +182,7 @@ class DefaultEnvelopePointList : EnvelopePointList, ArrayList<EnvelopePoint>() {
     }
 
     override fun update() { modification.value++ }
-    override fun read() { modification.value }
+    override fun read() = modification.value
 
     override fun fromJson(json: JsonElement) { fromJson(json.jsonArray) { EnvelopePoint() } }
     override fun toJson() = toJsonArray()

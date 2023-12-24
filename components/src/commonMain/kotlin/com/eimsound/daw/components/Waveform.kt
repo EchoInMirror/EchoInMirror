@@ -169,7 +169,7 @@ fun Waveform(
     Box(modifier.fillMaxSize().onPlaced { size = it.size }) {
         val task = remember<Array<Job?>> { arrayOf(null) }
         val image by produceState<ImageBitmap?>(
-            null, size, thumbnail, thumbnail.read(), timeScale, startPPQ, widthPPQ, volumeEnvelope, isDrawMinAndMax
+            null, size, thumbnail, thumbnail.read(), timeScale, startPPQ, widthPPQ, volumeEnvelope?.read(), isDrawMinAndMax
         ) {
             val curSize = size
             if (curSize == null) {

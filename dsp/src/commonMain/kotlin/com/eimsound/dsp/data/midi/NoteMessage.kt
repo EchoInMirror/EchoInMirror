@@ -97,8 +97,8 @@ interface NoteMessageList : MutableList<NoteMessage>, IManualState {
 
 open class DefaultNoteMessageList : NoteMessageList, ArrayList<NoteMessage>() {
     @Transient
-    private var modification = mutableStateOf(0)
+    private var modification = mutableStateOf<Byte>(0)
     override fun update() { modification.value++ }
-    override fun read() { modification.value }
+    override fun read() = modification.value
     override fun copy() = DefaultNoteMessageList().apply { this@DefaultNoteMessageList.forEach { add(it.copy()) } }
 }

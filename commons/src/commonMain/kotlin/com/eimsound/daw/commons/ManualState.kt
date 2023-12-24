@@ -7,13 +7,13 @@ import kotlin.reflect.KProperty
 
 interface IManualState {
     fun update()
-    fun read()
+    fun read(): Byte
 }
 
 open class ManualState : IManualState {
     @Transient private var modification = mutableStateOf<Byte>(0)
     override fun update() { modification.value++ }
-    override fun read() { modification.value }
+    override fun read() = modification.value
 }
 
 interface IManualStateValue <T> : IManualState {
