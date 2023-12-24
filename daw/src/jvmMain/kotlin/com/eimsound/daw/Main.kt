@@ -56,7 +56,6 @@ fun main() {
         System.setProperty("apple.awt.enableTemplateImages", "true")
         System.setProperty("com.apple.mrj.application.apple.menu.about.name", "EchoInMirror")
     }
-    System.setProperty("skiko.vsync.enabled", "false")
 
     UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
     if (Taskbar.isTaskbarSupported() && Taskbar.getTaskbar().isSupported(Taskbar.Feature.ICON_IMAGE)) {

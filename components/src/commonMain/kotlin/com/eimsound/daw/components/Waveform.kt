@@ -4,25 +4,30 @@ package com.eimsound.daw.components
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.*
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.unit.IntSize
 import com.eimsound.audioprocessor.PlayPosition
 import com.eimsound.audioprocessor.convertPPQToSeconds
+import com.eimsound.daw.components.utils.drawRectNative
 import com.eimsound.dsp.data.AudioThumbnail
 import com.eimsound.dsp.data.EnvelopePointList
 import kotlinx.coroutines.*
 import kotlin.math.absoluteValue
+import kotlin.time.measureTime
 
 private const val STEP_IN_PX = 0.5F
 private const val HALF_STEP_IN_PX = STEP_IN_PX / 2
 private const val WAVEFORM_DAMPING = 0.93F
+
+
 
 private fun Canvas.drawMinAndMax(
     thumbnail: AudioThumbnail, startSeconds: Double, endSeconds: Double,
@@ -112,15 +117,15 @@ fun Waveform(
     }
 }
 
-private fun Canvas.drawMinAndMax(
+private fun org.jetbrains.skia.Canvas.drawMinAndMax(
     thumbnail: AudioThumbnail, startPPQ: Float, startSeconds: Double,
     endSeconds: Double, channelHeight: Float, halfChannelHeight: Float, drawHalfChannelHeight: Float,
-    stepPPQ: Float, volumeEnvelope: EnvelopePointList?, paint: Paint, width: Float, scope: CoroutineScope
-) {
+    stepPPQ: Float, volumeEnvelope: EnvelopePointList?, width: Float, paint: org.jetbrains.skia.Paint
+): Float {
     var min = 0F
     var max = 0F
     thumbnail.query(width, startSeconds, endSeconds, STEP_IN_PX) { x, ch, min0, max0 ->
-        if (!scope.isActive) return@drawMinAndMax
+//        if (!scope.isActive) return@drawMinAndMax x
         val y = 2 + channelHeight * ch + halfChannelHeight
         val volume = volumeEnvelope?.getValue((startPPQ + x * stepPPQ).toInt(), 1F) ?: 1F
         val curMin = (min0.absoluteValue * volume).coerceAtMost(1F) * drawHalfChannelHeight
@@ -130,30 +135,32 @@ private fun Canvas.drawMinAndMax(
         if (curMax > max) max = curMax
         else max *= WAVEFORM_DAMPING
         if (min + max < 0.3F) {
-            drawRect(x, y - HALF_STEP_IN_PX, x + STEP_IN_PX, y + HALF_STEP_IN_PX, paint)
+            drawRectNative(x, y - HALF_STEP_IN_PX, x + STEP_IN_PX, y + HALF_STEP_IN_PX, paint)
             return@query
         }
-        drawRect(x, y - max, x + STEP_IN_PX, y + min, paint)
+        drawRectNative(x, y - max, x + STEP_IN_PX, y + min, paint)
     }
+    return width
 }
-private fun Canvas.drawDefault(
+private fun org.jetbrains.skia.Canvas.drawDefault(
     thumbnail: AudioThumbnail, startPPQ: Float, startSeconds: Double,
     endSeconds: Double, channelHeight: Float, halfChannelHeight: Float, drawHalfChannelHeight: Float,
-    stepPPQ: Float, volumeEnvelope: EnvelopePointList?, paint: Paint, width: Float, scope: CoroutineScope
-) {
+    stepPPQ: Float, volumeEnvelope: EnvelopePointList?, width: Float, paint: org.jetbrains.skia.Paint
+): Float {
     thumbnail.query(width, startSeconds, endSeconds, STEP_IN_PX) { x, ch, min, max ->
-        if (!scope.isActive) return@drawDefault
+//        if (!scope.isActive) return@drawDefault x
         val v = ((if (max.absoluteValue > min.absoluteValue) max else min) *
                 (volumeEnvelope?.getValue((startPPQ + x * stepPPQ).toInt(), 1F) ?: 1F))
             .coerceIn(-1F, 1F) * drawHalfChannelHeight
         val y = 2 + channelHeight * ch + halfChannelHeight
         if (v.absoluteValue < 0.3F) {
-            drawRect(x, y - HALF_STEP_IN_PX, x + STEP_IN_PX, y + HALF_STEP_IN_PX, paint)
+            drawRectNative(x, y - HALF_STEP_IN_PX, x + STEP_IN_PX, y + HALF_STEP_IN_PX, paint)
             return@query
         }
-        if (v > 0) drawRect(x, y - v, x + STEP_IN_PX, y, paint)
-        else drawRect(x, y, x + STEP_IN_PX, y - v, paint)
+        if (v > 0) drawRectNative(x, y - v, x + STEP_IN_PX, y, paint)
+        else drawRectNative(x, y, x + STEP_IN_PX, y - v, paint)
     }
+    return width
 }
 
 @Composable
@@ -165,49 +172,31 @@ fun Waveform(
     isDrawMinAndMax: Boolean = true,
     modifier: Modifier = Modifier
 ) {
-    var size: IntSize? by remember { mutableStateOf(null) }
-    Box(modifier.fillMaxSize().onPlaced { size = it.size }) {
-        val task = remember<Array<Job?>> { arrayOf(null) }
-        val image by produceState<ImageBitmap?>(
-            null, size, thumbnail, thumbnail.read(), timeScale, startPPQ, widthPPQ, volumeEnvelope?.read(), isDrawMinAndMax
-        ) {
-            val curSize = size
-            if (curSize == null) {
-                value = null
-                return@produceState
-            }
-            task[0]?.cancel()
-            task[0] = launch(Dispatchers.Default) {
-                val bitmap = ImageBitmap(curSize.width, curSize.height)
-                val paint = Paint()
-                val channelHeight = (curSize.height / thumbnail.channels) - 2F
-                val halfChannelHeight = channelHeight / 2
-                val drawHalfChannelHeight = halfChannelHeight - 1
-                val stepPPQ = widthPPQ / curSize.width
-                val factor = (thumbnail.sampleRate / position.sampleRate) * timeScale
-                val startSeconds = position.convertPPQToSeconds(startPPQ) / factor
-                val endSeconds = position.convertPPQToSeconds(startPPQ + widthPPQ) / factor
-                Canvas(bitmap).apply {
+    Spacer(modifier.fillMaxSize().drawBehind {
+        drawIntoCanvas {
+            val channelHeight = (size.height / thumbnail.channels) - 2F
+            val halfChannelHeight = channelHeight / 2
+            val drawHalfChannelHeight = halfChannelHeight - 1
+            val stepPPQ = widthPPQ / size.width
+            val factor = (thumbnail.sampleRate / position.sampleRate) * timeScale
+            val startSeconds = position.convertPPQToSeconds(startPPQ) / factor
+            val endSeconds = position.convertPPQToSeconds(startPPQ + widthPPQ) / factor
+            val paint = org.jetbrains.skia.Paint().apply { this.color = color.toArgb() }
+            println(measureTime {
+                it.nativeCanvas.apply {
                     if (isDrawMinAndMax) {
                         drawMinAndMax(
                             thumbnail, startPPQ, startSeconds, endSeconds, channelHeight, halfChannelHeight,
-                            drawHalfChannelHeight, stepPPQ, volumeEnvelope, paint, curSize.width.toFloat(), this@launch
+                            drawHalfChannelHeight, stepPPQ, volumeEnvelope, size.width, paint
                         )
                     } else {
                         drawDefault(
                             thumbnail, startPPQ, startSeconds, endSeconds, channelHeight, halfChannelHeight,
-                            drawHalfChannelHeight, stepPPQ, volumeEnvelope, paint, curSize.width.toFloat(), this@launch
+                            drawHalfChannelHeight, stepPPQ, volumeEnvelope, size.width, paint
                         )
                     }
                 }
-                value = bitmap
-            }
+            })
         }
-        image?.let {
-            Image(
-                it, "Waveform", Modifier.fillMaxSize(),
-                Alignment.CenterStart, ContentScale.None, colorFilter = ColorFilter.tint(color)
-            )
-        }
-    }
+    })
 }
