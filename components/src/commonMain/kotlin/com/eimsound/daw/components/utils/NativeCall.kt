@@ -9,8 +9,10 @@ import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
 import org.jetbrains.skia.*
+import org.jetbrains.skia.BlendMode
 import org.jetbrains.skia.Canvas
 import org.jetbrains.skia.Paint
+import org.jetbrains.skia.VertexMode
 import org.jetbrains.skiko.context.*
 import org.jetbrains.skia.impl.NativePointer
 import java.awt.Window
@@ -30,12 +32,50 @@ private val nDrawRect: MethodHandle? = try {
     null
 }
 
+/*
+    ptr: NativePointer,
+    verticesMode: Int,
+    vertexCount: Int,
+    cubics: InteropPointer,
+    colors: InteropPointer,
+    texCoords: InteropPointer,
+    indexCount: Int,
+    indices: InteropPointer,
+    blendMode: Int,
+    paintPtr: NativePointer
+ */
+private val nDrawVertices: MethodHandle? = try {
+    MethodHandles.lookup().unreflect(Class.forName("org.jetbrains.skia.CanvasKt")
+        .getDeclaredMethod("_nDrawVertices", NativePointer::class.java, Int::class.java,
+            Int::class.java, Any::class.java, Any::class.java, Any::class.java, Int::class.java,
+            Any::class.java, Int::class.java, NativePointer::class.java)
+        .apply { isAccessible = true })
+} catch (e: Exception) {
+    e.printStackTrace()
+    null
+}
+
+@Suppress("unused")
 fun Canvas.drawRectNative(left: Float, top: Float, right: Float, bottom: Float, paint: Paint) {
     val f = nDrawRect
     if (f == null) drawRect(Rect(left, top, right, bottom), paint)
     else {
         @Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
         f.invokeExact(_ptr, left, top, right, bottom, paint._ptr)
+    }
+}
+
+fun Canvas.drawVerticesNative(
+    positions: FloatArray, paint: Paint, pointCount: Int = positions.size / 2
+) {
+    val f = nDrawVertices
+    if (f == null) drawVertices(VertexMode.TRIANGLES, positions.let {
+        if (it.size == pointCount * 2) it
+        else it.copyOf(pointCount * 2)
+    }, null, null, null, BlendMode.SRC, paint)
+    else {
+        @Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
+        f.invokeExact(_ptr, 0, pointCount, positions as Any, null as Any?, null as Any?, 0, null as Any?, 1, paint._ptr)
     }
 }
 
@@ -89,9 +129,12 @@ fun NativePainter(modifier: Modifier, block: Canvas.(size: Size) -> Unit) {
             }
         }
         onDrawBehind {
-            image?.apply {
-                drawContext.canvas.nativeCanvas.drawImage(this, 0F, 0F)
-                if (!isClosed) close()
+            val img = image
+            if (img == null) {
+                if (size.width != 0F && size.height != 0F) drawContext.canvas.nativeCanvas.block(size)
+            } else {
+                drawContext.canvas.nativeCanvas.drawImage(img, 0F, 0F)
+                if (!img.isClosed) img.close()
             }
         }
     })

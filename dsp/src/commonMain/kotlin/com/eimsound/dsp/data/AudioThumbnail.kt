@@ -108,6 +108,27 @@ class AudioThumbnail private constructor(
 
     fun read() { modification }
 
+    @Suppress("DuplicatedCode")
+    fun query(channel:Int, x: Int, y: Int): FloatArray {
+        @Suppress("NAME_SHADOWING") var y = y
+        var min: Byte = 127
+        var max: Byte = -128
+        while (y >= x) {
+            if (minTree[channel][y] < min) min = minTree[channel][y]
+            if (maxTree[channel][y] > max) max = maxTree[channel][y]
+            y--
+            while(y - y.takeLowestOneBit() >= x) {
+                if (minTree[channel][y] < min) min = minTree[channel][y]
+                if (maxTree[channel][y] > max) max = maxTree[channel][y]
+                y -= y.takeLowestOneBit()
+            }
+        }
+        tempArray[0] = min / 127F
+        tempArray[1] = max / 127F
+        return tempArray
+    }
+
+    @Suppress("DuplicatedCode")
     fun query(x: Int, y: Int): FloatArray {
         repeat(channels) {
             @Suppress("NAME_SHADOWING") var y = y
@@ -129,36 +150,60 @@ class AudioThumbnail private constructor(
         return tempArray
     }
 
+    // 树状数组初始化
     private fun buildTree() {
         repeat(channels) {
             val minT = minTree[it]
             val maxT = maxTree[it]
-            for (k in 1..size) {
-                val j = k + k.takeLowestOneBit()
-                if (j <= size) {
-                    if (minT[k] < minT[k]) minT[k] = minT[k]
-                    if (maxT[k] > maxT[k]) maxT[k] = maxT[k]
+            for (i in 1..size) {
+                var j = i
+                while (j <= size) {
+                    if (minT[i] < minT[j]) minT[j] = minT[i]
+                    if (maxT[i] > maxT[j]) maxT[j] = maxT[i]
+                    j += j.takeLowestOneBit()
                 }
             }
         }
     }
 
+    @Suppress("DuplicatedCode", "unused")
     inline fun query(
-        widthInPx: Float, startTimeSeconds: Double = 0.0,
-        endTimeSeconds: Double = lengthInSamples / sampleRate.toDouble(),
+        widthInPx: Float, startTimeSeconds: Float = 0F,
+        endTimeSeconds: Float = lengthInSamples / sampleRate,
         stepInPx: Float = 1F,
         callback: (x: Float, channel: Int, min: Float, max: Float) -> Unit
     ) {
         var x = startTimeSeconds * sampleRate / samplesPerThumbSample + 1
-        val end = (endTimeSeconds * sampleRate / samplesPerThumbSample + 1).coerceAtMost(size.toDouble())
+        val end = (endTimeSeconds * sampleRate / samplesPerThumbSample + 1).coerceAtMost(size.toFloat())
         val step = (end - x) / widthInPx * stepInPx
-        if (x == end || step == 0.0 || step.isNaN()) return
+        if (x == end || step == 0F || step.isNaN()) return
         var i = 0
         while (x <= end) {
             val y = x + step
             if (y > end) return
             val minMax = query(x.toInt(), y.toInt())
             repeat(channels) { ch -> callback(i * stepInPx, ch, minMax[ch * 2], minMax[ch * 2 + 1]) }
+            i++
+            x = y
+        }
+    }
+
+    @Suppress("DuplicatedCode")
+    inline fun query(
+        channel: Int, widthInPx: Float, startTimeSeconds: Float = 0F,
+        endTimeSeconds: Float = lengthInSamples / sampleRate,
+        stepInPx: Float = 1F,
+        callback: (x: Float, min: Float, max: Float) -> Unit
+    ) {
+        var x = startTimeSeconds * sampleRate / samplesPerThumbSample + 1
+        val end = (endTimeSeconds * sampleRate / samplesPerThumbSample + 1).coerceAtMost(size.toFloat())
+        val step = (end - x) / widthInPx * stepInPx
+        if (x == end || step == 0F || step.isNaN()) return
+        var i = 0
+        while (x <= end) {
+            val y = x + step
+            val minMax = query(channel, x.roundToInt(), y.roundToInt())
+            callback(i * stepInPx, minMax[0], minMax[1])
             i++
             x = y
         }
