@@ -150,7 +150,6 @@ class AudioThumbnail private constructor(
         return tempArray
     }
 
-    // 树状数组初始化
     private fun buildTree() {
         repeat(channels) {
             val minT = minTree[it]

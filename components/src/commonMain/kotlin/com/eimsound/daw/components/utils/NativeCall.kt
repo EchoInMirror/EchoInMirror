@@ -32,18 +32,6 @@ private val nDrawRect: MethodHandle? = try {
     null
 }
 
-/*
-    ptr: NativePointer,
-    verticesMode: Int,
-    vertexCount: Int,
-    cubics: InteropPointer,
-    colors: InteropPointer,
-    texCoords: InteropPointer,
-    indexCount: Int,
-    indices: InteropPointer,
-    blendMode: Int,
-    paintPtr: NativePointer
- */
 private val nDrawVertices: MethodHandle? = try {
     MethodHandles.lookup().unreflect(Class.forName("org.jetbrains.skia.CanvasKt")
         .getDeclaredMethod("_nDrawVertices", NativePointer::class.java, Int::class.java,
@@ -130,11 +118,11 @@ fun NativePainter(modifier: Modifier, block: Canvas.(size: Size) -> Unit) {
         }
         onDrawBehind {
             val img = image
-            if (img == null) {
+            if (img == null || img.isClosed) {
                 if (size.width != 0F && size.height != 0F) drawContext.canvas.nativeCanvas.block(size)
             } else {
                 drawContext.canvas.nativeCanvas.drawImage(img, 0F, 0F)
-                if (!img.isClosed) img.close()
+                img.close()
             }
         }
     })
