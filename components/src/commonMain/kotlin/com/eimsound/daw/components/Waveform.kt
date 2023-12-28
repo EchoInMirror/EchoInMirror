@@ -2,36 +2,94 @@
 
 package com.eimsound.daw.components
 
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import com.eimsound.audioprocessor.PlayPosition
 import com.eimsound.audioprocessor.convertPPQToSeconds
-import com.eimsound.daw.components.utils.NativePainter
-import com.eimsound.daw.components.utils.drawVerticesNative
 import com.eimsound.dsp.data.AudioThumbnail
 import com.eimsound.dsp.data.EnvelopePointList
 import org.jetbrains.skia.*
 import kotlin.math.absoluteValue
 import kotlin.math.ceil
-import kotlin.time.measureTime
 
 private const val STEP_IN_PX = 1F
 private const val HALF_STEP_IN_PX = STEP_IN_PX / 2
 private const val WAVEFORM_DAMPING = 0.94F
+private const val REDUNDANT = 50
 
-private var buffer = FloatArray(0)
-private fun checkBufferSize(size: Int) { if (buffer.size < size) buffer = FloatArray(size) }
+private fun drawZero(x: Float, y: Float, buffer: FloatArray, offset: Int) {
+    var i = offset
+    buffer[i++] = x
+    buffer[i++] = y + HALF_STEP_IN_PX
+    buffer[i++] = x + HALF_STEP_IN_PX
+    buffer[i++] = y - HALF_STEP_IN_PX
+    buffer[i++] = x + STEP_IN_PX
+    buffer[i++] = y + HALF_STEP_IN_PX
+
+    buffer[i++] = x
+    buffer[i++] = y + HALF_STEP_IN_PX
+    buffer[i++] = x + STEP_IN_PX
+    buffer[i++] = y + HALF_STEP_IN_PX
+    buffer[i++] = x + HALF_STEP_IN_PX
+    buffer[i] = y - HALF_STEP_IN_PX
+}
+
+private fun drawMinAndMax(x: Float, y: Float, min: Float, max: Float, buffer: FloatArray, offset: Int) {
+    if (min + max < STEP_IN_PX) {
+        drawZero(x, y, buffer, offset)
+        return
+    }
+    var i = offset
+    buffer[i++] = x
+    buffer[i++] = y - max
+    buffer[i++] = x
+    buffer[i++] = y + min
+    buffer[i++] = x + STEP_IN_PX
+    buffer[i++] = y + min
+
+    buffer[i++] = x
+    buffer[i++] = y - max
+    buffer[i++] = x + STEP_IN_PX
+    buffer[i++] = y - max
+    buffer[i++] = x + STEP_IN_PX
+    buffer[i] = y + min
+}
+
+private fun drawDefault(x: Float, y: Float, v: Float, buffer: FloatArray, offset: Int) {
+    if (v.absoluteValue < STEP_IN_PX) {
+        drawZero(x, y, buffer, offset)
+        return
+    }
+    var i = offset
+    buffer[i++] = x
+    buffer[i++] = y - v
+    buffer[i++] = x
+    buffer[i++] = y + HALF_STEP_IN_PX
+    buffer[i++] = x + STEP_IN_PX
+    buffer[i++] = y + HALF_STEP_IN_PX
+
+    buffer[i++] = x
+    buffer[i++] = y - v
+    buffer[i++] = x + STEP_IN_PX
+    buffer[i++] = y + HALF_STEP_IN_PX
+    buffer[i++] = x + STEP_IN_PX
+    buffer[i] = y - v
+}
 
 private fun Canvas.drawMinAndMax(
     thumbnail: AudioThumbnail, startSeconds: Float, endSeconds: Float,
     channelHeight: Float, halfChannelHeight: Float, drawHalfChannelHeight: Float,
     paint: Paint, width: Float
 ) {
-    checkBufferSize(ceil(width / STEP_IN_PX + 100).toInt() * 12)
+    val buffer = FloatArray(ceil(width / STEP_IN_PX + REDUNDANT).toInt() * 12)
     repeat(thumbnail.channels) { ch ->
         var min = 0F
         var max = 0F
@@ -44,30 +102,10 @@ private fun Canvas.drawMinAndMax(
             else min *= WAVEFORM_DAMPING
             if (curMax > max) max = curMax
             else max *= WAVEFORM_DAMPING
-            if (min + max < 0.3F) {
-                buffer[i++] = x
-                buffer[i++] = y + HALF_STEP_IN_PX
-                buffer[i++] = x + HALF_STEP_IN_PX
-                buffer[i++] = y - HALF_STEP_IN_PX
-                buffer[i++] = x + STEP_IN_PX
-                buffer[i++] = y + HALF_STEP_IN_PX
-                return@query
-            }
-            buffer[i++] = x
-            buffer[i++] = y - max
-            buffer[i++] = x
-            buffer[i++] = y + min
-            buffer[i++] = x + STEP_IN_PX
-            buffer[i++] = y + min
-
-            buffer[i++] = x
-            buffer[i++] = y - max
-            buffer[i++] = x + STEP_IN_PX
-            buffer[i++] = y - max
-            buffer[i++] = x + STEP_IN_PX
-            buffer[i++] = y + min
+            drawMinAndMax(x, y, min, max, buffer, i)
+            i += 12
         }
-        drawVerticesNative(buffer, paint, i / 2)
+        drawVertices(VertexMode.TRIANGLES, buffer, null, null, null, BlendMode.SRC, paint)
     }
 }
 private fun Canvas.drawDefault(
@@ -75,36 +113,16 @@ private fun Canvas.drawDefault(
     channelHeight: Float, halfChannelHeight: Float, drawHalfChannelHeight: Float,
     paint: Paint, width: Float
 ) {
-    checkBufferSize(ceil(width / STEP_IN_PX + 100).toInt() * 12)
+    val buffer = FloatArray(ceil(width / STEP_IN_PX + REDUNDANT).toInt() * 12)
     repeat(thumbnail.channels) { ch ->
         var i = 0
         thumbnail.query(ch, width, startSeconds, endSeconds, STEP_IN_PX) { x, min, max ->
             val v = (if (max.absoluteValue > min.absoluteValue) max else min).coerceIn(-1F, 1F) * drawHalfChannelHeight
             val y = 2 + channelHeight * ch + halfChannelHeight
-            if (v.absoluteValue < 0.3F) {
-                buffer[i++] = x
-                buffer[i++] = y + HALF_STEP_IN_PX
-                buffer[i++] = x + HALF_STEP_IN_PX
-                buffer[i++] = y - HALF_STEP_IN_PX
-                buffer[i++] = x + STEP_IN_PX
-                buffer[i++] = y + HALF_STEP_IN_PX
-                return@query
-            }
-            buffer[i++] = x
-            buffer[i++] = y - v
-            buffer[i++] = x
-            buffer[i++] = y + HALF_STEP_IN_PX
-            buffer[i++] = x + STEP_IN_PX
-            buffer[i++] = y + HALF_STEP_IN_PX
-
-            buffer[i++] = x
-            buffer[i++] = y - v
-            buffer[i++] = x + STEP_IN_PX
-            buffer[i++] = y + HALF_STEP_IN_PX
-            buffer[i++] = x + STEP_IN_PX
-            buffer[i++] = y - v
+            drawDefault(x, y, v, buffer, i)
+            i += 12
         }
-        drawVerticesNative(buffer, paint, i / 2)
+        drawVertices(VertexMode.TRIANGLES, buffer, null, null, null, BlendMode.SRC, paint)
     }
 }
 
@@ -120,22 +138,22 @@ fun Waveform(
     thumbnail.read()
     val paint = remember { Paint() }
     remember(color) { paint.colorFilter = ColorFilter.makeBlend(color.toArgb(), BlendMode.SRC_IN) }
-    NativePainter(modifier.fillMaxSize()) { size ->
+    Spacer(modifier.fillMaxSize().drawBehind {
         val channelHeight = (size.height / thumbnail.channels) - 2
         val halfChannelHeight = channelHeight / 2
         val drawHalfChannelHeight = halfChannelHeight - 1
         if (isDrawMinAndMax) {
-            drawMinAndMax(
+            drawContext.canvas.nativeCanvas.drawMinAndMax(
                 thumbnail, startSeconds, endSeconds, channelHeight, halfChannelHeight,
                 drawHalfChannelHeight, paint, size.width
             )
         } else {
-            drawDefault(
+            drawContext.canvas.nativeCanvas.drawDefault(
                 thumbnail, startSeconds, endSeconds, channelHeight, halfChannelHeight,
                 drawHalfChannelHeight, paint, size.width
             )
         }
-    }
+    }.graphicsLayer {  })
 }
 
 private fun Canvas.drawMinAndMax(
@@ -143,7 +161,7 @@ private fun Canvas.drawMinAndMax(
     endSeconds: Float, channelHeight: Float, halfChannelHeight: Float, drawHalfChannelHeight: Float,
     stepPPQ: Float, volumeEnvelope: EnvelopePointList?, width: Float, paint: Paint
 ) {
-    checkBufferSize(ceil(width / STEP_IN_PX + 100).toInt() * 12)
+    val buffer = FloatArray(ceil(width / STEP_IN_PX + REDUNDANT).toInt() * 12)
     repeat(thumbnail.channels) { ch ->
         var min = 0F
         var max = 0F
@@ -157,30 +175,10 @@ private fun Canvas.drawMinAndMax(
             else min *= WAVEFORM_DAMPING
             if (curMax > max) max = curMax
             else max *= WAVEFORM_DAMPING
-            if (min + max < 0.3F) {
-                buffer[i++] = x
-                buffer[i++] = y + HALF_STEP_IN_PX
-                buffer[i++] = x + HALF_STEP_IN_PX
-                buffer[i++] = y - HALF_STEP_IN_PX
-                buffer[i++] = x + STEP_IN_PX
-                buffer[i++] = y + HALF_STEP_IN_PX
-                return@query
-            }
-            buffer[i++] = x
-            buffer[i++] = y - max
-            buffer[i++] = x
-            buffer[i++] = y + min
-            buffer[i++] = x + STEP_IN_PX
-            buffer[i++] = y + min
-
-            buffer[i++] = x
-            buffer[i++] = y - max
-            buffer[i++] = x + STEP_IN_PX
-            buffer[i++] = y - max
-            buffer[i++] = x + STEP_IN_PX
-            buffer[i++] = y + min
+            drawMinAndMax(x, y, min, max, buffer, i)
+            i += 12
         }
-        drawVerticesNative(buffer, paint, i / 2)
+        drawVertices(VertexMode.TRIANGLES, buffer, null, null, null, BlendMode.SRC, paint)
     }
 }
 private fun Canvas.drawDefault(
@@ -188,7 +186,7 @@ private fun Canvas.drawDefault(
     endSeconds: Float, channelHeight: Float, halfChannelHeight: Float, drawHalfChannelHeight: Float,
     stepPPQ: Float, volumeEnvelope: EnvelopePointList?, width: Float, paint: Paint
 ) {
-    checkBufferSize(ceil(width / STEP_IN_PX + 100).toInt() * 12)
+    val buffer = FloatArray(ceil(width / STEP_IN_PX + REDUNDANT).toInt() * 12)
     repeat(thumbnail.channels) { ch ->
         var i = 0
         thumbnail.query(ch, width, startSeconds, endSeconds, STEP_IN_PX) { x, min, max ->
@@ -196,30 +194,10 @@ private fun Canvas.drawDefault(
                     (volumeEnvelope?.getValue((startPPQ + x * stepPPQ).toInt(), 1F) ?: 1F))
                 .coerceIn(-1F, 1F) * drawHalfChannelHeight
             val y = 2 + channelHeight * ch + halfChannelHeight
-            if (v.absoluteValue < 0.3F) {
-                buffer[i++] = x
-                buffer[i++] = y + HALF_STEP_IN_PX
-                buffer[i++] = x + HALF_STEP_IN_PX
-                buffer[i++] = y - HALF_STEP_IN_PX
-                buffer[i++] = x + STEP_IN_PX
-                buffer[i++] = y + HALF_STEP_IN_PX
-                return@query
-            }
-            buffer[i++] = x
-            buffer[i++] = y - v
-            buffer[i++] = x
-            buffer[i++] = y + HALF_STEP_IN_PX
-            buffer[i++] = x + STEP_IN_PX
-            buffer[i++] = y + HALF_STEP_IN_PX
-
-            buffer[i++] = x
-            buffer[i++] = y - v
-            buffer[i++] = x + STEP_IN_PX
-            buffer[i++] = y + HALF_STEP_IN_PX
-            buffer[i++] = x + STEP_IN_PX
-            buffer[i++] = y - v
+            drawDefault(x, y, v, buffer, i)
+            i += 12
         }
-        drawVerticesNative(buffer, paint, i / 2)
+        drawVertices(VertexMode.TRIANGLES, buffer, null, null, null, BlendMode.SRC, paint)
     }
 }
 
@@ -236,7 +214,7 @@ fun Waveform(
     thumbnail.read()
     val paint = remember { Paint() }
     remember(color) { paint.colorFilter = ColorFilter.makeBlend(color.toArgb(), BlendMode.SRC_IN) }
-    NativePainter(modifier.fillMaxSize()) { size ->
+    Spacer(modifier.fillMaxSize().drawBehind {
         val channelHeight = (size.height / thumbnail.channels) - 2F
         val halfChannelHeight = channelHeight / 2
         val drawHalfChannelHeight = halfChannelHeight - 1
@@ -244,18 +222,16 @@ fun Waveform(
         val factor = (thumbnail.sampleRate / position.sampleRate) * timeScale
         val startSeconds = (position.convertPPQToSeconds(startPPQ) / factor).toFloat()
         val endSeconds = (position.convertPPQToSeconds(startPPQ + widthPPQ) / factor).toFloat()
-        println(measureTime {
-            if (isDrawMinAndMax) {
-                drawMinAndMax(
-                    thumbnail, startPPQ, startSeconds, endSeconds, channelHeight, halfChannelHeight,
-                    drawHalfChannelHeight, stepPPQ, volumeEnvelope, size.width, paint
-                )
-            } else {
-                drawDefault(
-                    thumbnail, startPPQ, startSeconds, endSeconds, channelHeight, halfChannelHeight,
-                    drawHalfChannelHeight, stepPPQ, volumeEnvelope, size.width, paint
-                )
-            }
-        })
-    }
+        if (isDrawMinAndMax) {
+            drawContext.canvas.nativeCanvas.drawMinAndMax(
+                thumbnail, startPPQ, startSeconds, endSeconds, channelHeight, halfChannelHeight,
+                drawHalfChannelHeight, stepPPQ, volumeEnvelope, size.width, paint
+            )
+        } else {
+            drawContext.canvas.nativeCanvas.drawDefault(
+                thumbnail, startPPQ, startSeconds, endSeconds, channelHeight, halfChannelHeight,
+                drawHalfChannelHeight, stepPPQ, volumeEnvelope, size.width, paint
+            )
+        }
+    }.graphicsLayer {  })
 }

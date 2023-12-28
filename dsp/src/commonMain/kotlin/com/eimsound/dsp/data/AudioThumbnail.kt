@@ -37,6 +37,10 @@ class AudioThumbnail private constructor(
     private val maxTree = Array(channels) { ByteArray(this.size * 4 + 1) }
     private val tempArray = FloatArray(channels * 2)
     private var modification by mutableStateOf<Byte>(0)
+    @Deprecated("Use query(x, y) instead")
+    var tmpMax = 0F
+    @Deprecated("Use query(x, y) instead")
+    var tmpMin = 0F
 
     constructor(
         channels: Int, lengthInSamples: Long, sampleRate: Float, samplesPerThumbSample: Int = DEFAULT_SAMPLES_PRE_THUMB_SAMPLE
@@ -108,8 +112,8 @@ class AudioThumbnail private constructor(
 
     fun read() { modification }
 
-    @Suppress("DuplicatedCode")
-    fun query(channel:Int, x: Int, y: Int): FloatArray {
+    @Suppress("DuplicatedCode", "DEPRECATION")
+    fun query(channel: Int, x: Int, y: Int) {
         @Suppress("NAME_SHADOWING") var y = y
         var min: Byte = 127
         var max: Byte = -128
@@ -123,9 +127,8 @@ class AudioThumbnail private constructor(
                 y -= y.takeLowestOneBit()
             }
         }
-        tempArray[0] = min / 127F
-        tempArray[1] = max / 127F
-        return tempArray
+        tmpMin = min / 127F
+        tmpMax = max / 127F
     }
 
     @Suppress("DuplicatedCode")
@@ -187,7 +190,7 @@ class AudioThumbnail private constructor(
         }
     }
 
-    @Suppress("DuplicatedCode")
+    @Suppress("DuplicatedCode", "DEPRECATION")
     inline fun query(
         channel: Int, widthInPx: Float, startTimeSeconds: Float = 0F,
         endTimeSeconds: Float = lengthInSamples / sampleRate,
@@ -201,8 +204,9 @@ class AudioThumbnail private constructor(
         var i = 0
         while (x <= end) {
             val y = x + step
-            val minMax = query(channel, x.roundToInt(), y.roundToInt())
-            callback(i * stepInPx, minMax[0], minMax[1])
+            if (y > end) return
+            query(channel, x.roundToInt(), y.roundToInt())
+            callback(i * stepInPx, tmpMin, tmpMax)
             i++
             x = y
         }
