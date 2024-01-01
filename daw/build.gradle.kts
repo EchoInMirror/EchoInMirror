@@ -85,8 +85,8 @@ fun downloadFileFromGithub(repo: String, destName: String, sourceName: String = 
 val isArm by lazy { System.getProperty("os.arch") == "aarch64" }
 
 project(":daw") {
+    val os = org.gradle.nativeplatform.platform.internal.DefaultNativePlatform.getCurrentOperatingSystem()
     task<Copy>("downloadEIMHost") {
-        val os = org.gradle.nativeplatform.platform.internal.DefaultNativePlatform.getCurrentOperatingSystem()
         if (os.isWindows) {
             downloadFileFromGithub("EIMHost", "EIMHost.exe", "EIMHost-x64.exe")
 //            downloadFileFromGithub("EIMHost", "EIMHost-x86.exe", "EIMHost-x86.exe")
@@ -97,6 +97,24 @@ project(":daw") {
             }
         } else {
             downloadFileFromGithub("EIMHost", "EIMHost", "EIMHost-Linux")
+        }
+    }
+
+    task<Copy>("downloadEIMUtils") {
+        if (os.isWindows) {
+            if (downloadFileFromGithub("EIMUtils", "EIMUtils-Windows.zip", "EIMUtils-Windows.zip")) {
+                from(zipTree(File("EIMUtils-Windows.zip"))).into(".")
+            }
+        } else if (os.isMacOsX) {
+            if (downloadFileFromGithub("EIMUtils", "EIMUtils-MacOS.zip",
+                    if (isArm) "EIMUtils-MacOS.zip" else "EIMUtils-MacOS-x86_64.zip")) {
+                from(zipTree(File("EIMUtils-MacOS.zip"))).into(".")
+                println(233333)
+            }
+        } else {
+            if (downloadFileFromGithub("EIMUtils", "EIMUtils", "EIMUtils-Linux.zip")) {
+                from(zipTree(File("EIMUtils-Linux.zip"))).into(".")
+            }
         }
     }
 }
@@ -135,5 +153,5 @@ tasks.withType<JavaExec> {
 // Run before build
 tasks.withType<GradleBuild> {
     dependsOn(":downloadEIMHost")
-    dependsOn(":downloadTimeStretcher")
+    dependsOn(":downloadEIMUtils")
 }

@@ -24,6 +24,8 @@ import com.eimsound.daw.api.clips.MidiClipEditor
 import com.eimsound.daw.api.clips.TrackClip
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.api.window.EditorExtension
+import com.eimsound.daw.builtin.chordanalyzer.Chords
+import com.eimsound.daw.builtin.chordanalyzer.chordAnalyzer
 import com.eimsound.daw.commons.IManualStateValue
 import com.eimsound.daw.commons.ManualStateValue
 import com.eimsound.daw.commons.json.JsonIgnoreDefaults
@@ -37,9 +39,14 @@ import com.eimsound.daw.utils.*
 import com.eimsound.daw.window.panels.playlist.playlistTrackControllerMinWidth
 import com.eimsound.daw.window.panels.playlist.Playlist
 import com.eimsound.dsp.data.midi.*
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.util.*
+import kotlin.collections.ArrayList
 import kotlin.math.roundToInt
 
 // Focusable
@@ -267,5 +274,24 @@ class DefaultMidiClipEditor(override val clip: TrackClip<MidiClip>) : MidiClipEd
         selectedNotes.clear()
         selectedNotes.add(newNote)
         return newNote
+    }
+
+    var chords by mutableStateOf(Chords(emptyList(), emptyList()))
+    @OptIn(DelicateCoroutinesApi::class)
+    fun detectChords() {
+        val list = ArrayList(clip.clip.notes)
+        GlobalScope.launch(Dispatchers.IO) {
+            list.sortBy { it.time }
+            var pre = 0
+            chords = chordAnalyzer.analyze(
+                list.map { getNoteName(it.note) },
+                list.map { it.duration },
+                list.map {
+                    val result = it.time - pre
+                    pre = it.time
+                    result
+                }
+            )
+        }
     }
 }

@@ -14,6 +14,8 @@ import com.eimsound.daw.api.clips.ClipManager
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.controllers.DefaultParameterControllerFactory
 import com.eimsound.daw.api.clips.defaultEnvelopeClipFactory
+import com.eimsound.daw.builtin.chordanalyzer.chordAnalyzer
+import com.eimsound.daw.builtin.chordanalyzer.chordAnalyzerInitialized
 import com.eimsound.daw.commons.ExperimentalEIMApi
 import com.eimsound.daw.components.app.EIMTray
 import com.eimsound.daw.components.controllers.parameterControllerCreateClipHandler
@@ -65,6 +67,7 @@ fun main() {
     }
     val windowManager = EchoInMirror.windowManager
     Runtime.getRuntime().addShutdownHook(thread(false) {
+        if (chordAnalyzerInitialized) chordAnalyzer.close()
         androidApplication?.close()
         EchoInMirror.close()
     })

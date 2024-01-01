@@ -67,7 +67,39 @@ private fun TrackItem(track: Track, backingTracks: IManualStateValue<WeakHashMap
 }
 
 @Composable
-internal fun EditorControls(editor: DefaultMidiClipEditor) {
+private fun NoteVelocityComponets(editor: DefaultMidiClipEditor) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        editor.clip.clip.notes.read()
+        var delta by remember { mutableStateOf(0) }
+        val cur = editor.currentSelectedNote
+        val velocity = if (editor.selectedNotes.isEmpty()) DefaultMidiClipEditor.defaultVelocity else
+            (cur ?: editor.selectedNotes.first()).velocity
+        val trueValue = velocity + (if (editor.selectedNotes.isEmpty()) 0 else delta)
+        CustomOutlinedTextField(
+            trueValue.toString(), { str ->
+                val v = str.toIntOrNull()?.coerceIn(0, 127) ?: return@CustomOutlinedTextField
+                if (editor.selectedNotes.isEmpty()) DefaultMidiClipEditor.defaultVelocity = v
+                else editor.clip.clip.doNoteVelocityAction(editor.selectedNotes.toTypedArray(), v - velocity)
+            },
+            Modifier.width(60.dp).padding(end = 10.dp),
+            label = { Text("力度") },
+            singleLine = true,
+        )
+        Slider(trueValue.toFloat() / 127,
+            {
+                if (editor.selectedNotes.isEmpty()) DefaultMidiClipEditor.defaultVelocity = (it * 127).roundToInt()
+                else delta = (it * 127).roundToInt() - velocity
+            }, Modifier.weight(1f), onValueChangeFinished = {
+                if (editor.selectedNotes.isNotEmpty()) editor.clip.clip
+                    .doNoteVelocityAction(editor.selectedNotes.toTypedArray(), delta)
+                delta = 0
+            }
+        )
+    }
+}
+
+@Composable
+private fun TrackSelector(editor: DefaultMidiClipEditor) {
     val track = EchoInMirror.selectedTrack
     FloatingLayer({ size, _ ->
         Surface(Modifier.width(IntrinsicSize.Max).widthIn(min = size.width), shape = MaterialTheme.shapes.extraSmall,
@@ -99,54 +131,34 @@ internal fun EditorControls(editor: DefaultMidiClipEditor) {
             }
         }
     }
+}
+
+@Composable
+internal fun EditorControls(editor: DefaultMidiClipEditor) {
+    TrackSelector(editor)
     Column(Modifier.padding(10.dp)) {
         NoteWidthSlider(editor.noteWidth)
 
-        editor.apply {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("试听音符", Modifier.weight(1f), style = MaterialTheme.typography.labelLarge)
-                Checkbox(DefaultMidiClipEditor.playOnEdit, { DefaultMidiClipEditor.playOnEdit = !DefaultMidiClipEditor.playOnEdit })
-            }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("试听音符", Modifier.weight(1f), style = MaterialTheme.typography.labelLarge)
+            Checkbox(DefaultMidiClipEditor.playOnEdit, { DefaultMidiClipEditor.playOnEdit = !DefaultMidiClipEditor.playOnEdit })
+        }
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                editor.clip.clip.notes.read()
-                var delta by remember { mutableStateOf(0) }
-                val cur = currentSelectedNote
-                val velocity = if (editor.selectedNotes.isEmpty()) DefaultMidiClipEditor.defaultVelocity else
-                        (cur ?: editor.selectedNotes.first()).velocity
-                val trueValue = velocity + (if (editor.selectedNotes.isEmpty()) 0 else delta)
-                CustomOutlinedTextField(
-                    trueValue.toString(), { str ->
-                        val v = str.toIntOrNull()?.coerceIn(0, 127) ?: return@CustomOutlinedTextField
-                        if (editor.selectedNotes.isEmpty()) DefaultMidiClipEditor.defaultVelocity = v
-                        else editor.clip.clip.doNoteVelocityAction(editor.selectedNotes.toTypedArray(), v - velocity)
-                    },
-                    Modifier.width(60.dp).padding(end = 10.dp),
-                    label = { Text("力度") },
-                    singleLine = true,
-                )
-                Slider(trueValue.toFloat() / 127,
-                    {
-                        if (editor.selectedNotes.isEmpty()) DefaultMidiClipEditor.defaultVelocity = (it * 127).roundToInt()
-                        else delta = (it * 127).roundToInt() - velocity
-                    }, Modifier.weight(1f), onValueChangeFinished = {
-                        if (editor.selectedNotes.isNotEmpty()) editor.clip.clip
-                            .doNoteVelocityAction(editor.selectedNotes.toTypedArray(), delta)
-                        delta = 0
-                    }
-                )
-            }
+        NoteVelocityComponets(editor)
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                editor.clip.clip.notes.read()
-                Text("启用", Modifier.weight(1f), style = MaterialTheme.typography.labelLarge)
-                val cur = currentSelectedNote ?: editor.selectedNotes.firstOrNull()
-                val curState = cur?.isDisabled ?: false
-                Checkbox(!curState, {
-                    if (cur == null) return@Checkbox
-                    editor.clip.clip.doNoteDisabledAction(editor.selectedNotes.toList(), !curState)
-                })
-            }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            editor.clip.clip.notes.read()
+            Text("启用", Modifier.weight(1f), style = MaterialTheme.typography.labelLarge)
+            val cur = editor.currentSelectedNote ?: editor.selectedNotes.firstOrNull()
+            val curState = cur?.isDisabled ?: false
+            Checkbox(!curState, {
+                if (cur == null) return@Checkbox
+                editor.clip.clip.doNoteDisabledAction(editor.selectedNotes.toList(), !curState)
+            })
+        }
+
+        Button({ editor.detectChords() }) {
+            Text("分析和弦")
         }
     }
 }

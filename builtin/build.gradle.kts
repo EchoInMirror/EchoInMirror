@@ -1,5 +1,5 @@
 plugins {
-    java
+    kotlin("jvm") version "1.9.21"
 }
 
 repositories {
@@ -7,5 +7,5 @@ repositories {
 }
 
 dependencies {
-    implementation(project(":chord-analyzer"))
+    api(project(":chord-analyzer"))
 }

@@ -88,7 +88,9 @@ object Configuration : JsonSerializable {
                 else "EIMHost"
             )
         }
+        var execExt = ""
         val x86Host = if (SystemUtils.IS_OS_WINDOWS) {
+            execExt = ".exe"
             nativeHostPath.absolute().parent.resolve(nativeHostPath.name.removeSuffix(".exe") + "-x86.exe")
         } else nativeHostPath
 
@@ -98,6 +100,7 @@ object Configuration : JsonSerializable {
         System.setProperty("eim.dsp.nativeaudioplugins.host", nativeHostPath.absolutePathString())
         System.setProperty("eim.dsp.nativeaudioplugins.host.x86", (if (Files.exists(x86Host)) x86Host else nativeHostPath).absolutePathString())
         System.setProperty("eim.dsp.nativeaudioplayer.file", nativeHostPath.absolutePathString())
+        System.setProperty("eim.eimutils.file", Path("EIMUtils/EIMUtils$execExt").absolutePathString())
         System.setProperty("eim.tempfiles.prefix", "EchoInMirror")
 
         val libraryExt = if (SystemUtils.IS_OS_WINDOWS) "dll" else if (SystemUtils.IS_OS_MAC) "dylib" else "so"

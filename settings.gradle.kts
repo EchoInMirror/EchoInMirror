@@ -29,6 +29,4 @@ include(
     ":daw"
 )
 
-includeBuild(
-    "builtin"
-)
+includeBuild("builtin")
