@@ -1,5 +1,6 @@
 package com.eimsound.daw.window.dialogs.settings
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
@@ -90,19 +91,30 @@ internal object ShortcutKeySettings : SettingTab {
                         commandManager.saveCustomShortcutKeys()
                     }
 
-                    CustomOutlinedTextField(
-                        keyCompose.sortedKeys().joinToString(separator = "+") {
-                        var cur = it
-                        when (it) {
-                            Key.MetaLeft, Key.MetaRight -> if (SystemUtils.IS_OS_MAC) cur = Key.CtrlLeft
-                            Key.CtrlLeft, Key.CtrlRight -> if (SystemUtils.IS_OS_MAC) cur = Key.MetaLeft
-                        }
-                        KeyEvent.getKeyText(cur.nativeKeyCode)
-                    },
-                        {
-                            EchoInMirror.currentPosition.bpm = it.toDoubleOrNull()?.coerceIn(1.0, 600.0) ?: return@CustomOutlinedTextField
-                        },
-                        Modifier.width(256.dp).height(36.dp)
+                    Box {
+                        CustomOutlinedTextField(
+                            keyCompose.sortedKeys().joinToString(separator = "+") {
+                                var cur = it
+                                when (it) {
+                                    Key.MetaLeft, Key.MetaRight -> if (SystemUtils.IS_OS_MAC) cur = Key.CtrlLeft
+                                    Key.CtrlLeft, Key.CtrlRight -> if (SystemUtils.IS_OS_MAC) cur = Key.MetaLeft
+                                }
+                                KeyEvent.getKeyText(cur.nativeKeyCode)
+                            },
+                            {
+                                EchoInMirror.currentPosition.bpm = it.toDoubleOrNull()?.coerceIn(1.0, 600.0) ?: return@CustomOutlinedTextField
+                            },
+                            Modifier.width(256.dp).height(36.dp),
+                            singleLine = true,
+                            textStyle = MaterialTheme.typography.labelLarge.copy(LocalContentColor.current),
+                            colors = TextFieldDefaults.colors(
+                                unfocusedIndicatorColor = MaterialTheme.colorScheme.outlineVariant,
+                                focusedIndicatorColor = MaterialTheme.colorScheme.outlineVariant,
+                            ),
+                            keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
+                            paddingValues = TextFieldDefaults.contentPaddingWithLabel(6.dp, 6.dp, 3.dp, 4.dp)
+                        )
+                        Box(modifier = Modifier.matchParentSize()
                             .onFocusChanged {
                                 if (!it.isFocused && selectKey == curKey) done()
                             }
@@ -140,16 +152,9 @@ internal object ShortcutKeySettings : SettingTab {
                                     if (keyDown.isEmpty()) done()
                                 }
                                 true
-                            },
-                        singleLine = true,
-                        textStyle = MaterialTheme.typography.labelLarge.copy(LocalContentColor.current),
-                        colors = TextFieldDefaults.colors(
-                            unfocusedIndicatorColor = MaterialTheme.colorScheme.outlineVariant,
-                            focusedIndicatorColor = MaterialTheme.colorScheme.outlineVariant,
-                        ),
-                        keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
-                        paddingValues = TextFieldDefaults.contentPaddingWithLabel(6.dp, 6.dp, 3.dp, 4.dp)
-                    )
+                            })
+                    }
+
                 }
             }
         }
