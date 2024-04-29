@@ -41,6 +41,7 @@ import com.eimsound.daw.components.icons.Crown
 import com.eimsound.daw.components.menus.openTrackMenu
 import com.eimsound.daw.components.openColorPicker
 import com.eimsound.daw.components.utils.*
+import com.eimsound.daw.language.langs
 import com.eimsound.daw.utils.isCrossPlatformAltPressed
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -284,7 +285,7 @@ private fun TrackItemsContent(playlist: Playlist) {
             EchoInMirror.bus!!.subTracks.doAddOrRemoveTrackAction(TrackManager.instance.createTrack())
         }
     }, Modifier.fillMaxWidth()) {
-        Text("创建轨道")
+        Text(langs.createTrack)
     }
 }
 @Composable

@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.eimsound.audioprocessor.*
 import com.eimsound.daw.commons.json.*
+import com.eimsound.daw.language.langs
 import com.eimsound.daw.utils.mutableStateSetOf
 import com.eimsound.dsp.native.isX86PEFile
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -30,7 +31,7 @@ private val logger = KotlinLogging.logger {  }
 class NativeAudioPluginFactoryImpl: NativeAudioPluginFactory {
     private val configFile get() = Paths.get(System.getProperty("eim.dsp.nativeaudioplugins.list", "nativeAudioPlugins.json"))
     override val name = "NativeAudioPluginFactory"
-    override val displayName = "原生"
+    override val displayName get() = langs.audioProcessorLangs.native
 
     override val pluginIsFile = SystemUtils.IS_OS_WINDOWS || SystemUtils.IS_OS_LINUX
     override val pluginExtensions = if (SystemUtils.IS_OS_WINDOWS) setOf("dll", "vst", "vst3")

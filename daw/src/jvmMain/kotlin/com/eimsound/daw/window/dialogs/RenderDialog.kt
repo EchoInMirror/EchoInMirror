@@ -14,6 +14,7 @@ import com.eimsound.audioprocessor.convertPPQToSamples
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.processor.ChannelType
 import com.eimsound.daw.components.*
+import com.eimsound.daw.language.langs
 import com.eimsound.daw.utils.range
 import com.eimsound.dsp.native.JvmRenderer
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -39,7 +40,7 @@ private val floatingLayerProvider = FloatingLayerProvider()
 
 @OptIn(DelicateCoroutinesApi::class)
 val ExportDialog = @Composable {
-    DialogWindow(::closeQuickLoadWindow, title = "导出") {
+    DialogWindow(::closeQuickLoadWindow, title = langs.renderLangs.render) {
         remember { EchoInMirror.currentPosition.isPlaying = false }
         window.minimumSize = Dimension(300, 500)
 
@@ -66,14 +67,14 @@ val ExportDialog = @Composable {
 
                         if (!isRendering) {
                             Row {
-                                Text("长度: ")
+                                Text(langs.renderLangs.length + ": ")
                                 Text(
-                                    "${endPPQ / position.ppq / position.timeSigNumerator + 1}节",
+                                    "${endPPQ / position.ppq / position.timeSigNumerator + 1}${langs.beats}",
                                     color = Color.Black.copy(0.5f)
                                 )
                                 Spacer(Modifier.width(10.dp))
                                 Text(
-                                    "总时间: "
+                                    langs.renderLangs.totalTime + ": "
                                 )
                                 Text(
                                     "${
@@ -91,7 +92,7 @@ val ExportDialog = @Composable {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text("文件名:    ")
+                                Text(langs.renderLangs.fileName + ": ")
                                 TextField(filename, { filename = it }, modifier = Modifier.width(200.dp))
                             }
                             Spacer(Modifier.height(5.dp))
@@ -101,7 +102,7 @@ val ExportDialog = @Composable {
                                     Modifier.weight(1F),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text("导出格式: ")
+                                    Text(langs.renderLangs.format + ": ")
                                     Menu({ close ->
                                         RenderFormat.entries.forEach {
                                             MenuItem(
@@ -149,10 +150,10 @@ val ExportDialog = @Composable {
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.Center
                                 ) {
-                                    Text("位深: ", Modifier.width(80.dp))
+                                    Text(langs.renderLangs.bitDepth + ": ", Modifier.width(80.dp))
                                     arrayOf(16, 24, 32).map {
                                         RadioButton(bits == it, { bits = it })
-                                        Text("${it}位")
+                                        Text("${it}${langs.renderLangs.bits}")
 
                                     }
                                 }
@@ -164,7 +165,7 @@ val ExportDialog = @Composable {
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.Center
                                 ) {
-                                    Text("比特率: ", Modifier.width(80.dp))
+                                    Text(langs.renderLangs.bitRate + ": ", Modifier.width(80.dp))
                                     Menu({ close ->
                                         Column {
                                             arrayOf(128, 192, 256, 320).map {
@@ -189,7 +190,7 @@ val ExportDialog = @Composable {
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.Center
                                 ) {
-                                    Text("flac压缩: ", Modifier.width(80.dp))
+                                    Text(langs.renderLangs.flacCompression + ": ", Modifier.width(80.dp))
                                     Slider(
                                         compressionLevel.toFloat(),
                                         { compressionLevel = it.toInt() },
@@ -212,10 +213,10 @@ val ExportDialog = @Composable {
                         var renderBlockSize: Int
                         if (isRendering) {
                             Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("已用时: ${formatSecondTime((System.currentTimeMillis() - renderStartTime) / 1000F)}")
-                                Text("剩余: ${formatSecondTime(timeInSecond * (1 - renderProcess) / renderRate)}")
-                                Text("已渲染: ${formatSecondTime(timeInSecond * renderProcess)}")
-                                Text("%.1f 倍快于实时".format(renderRate))
+                                Text(langs.renderLangs.timeUsed + ": ${formatSecondTime((System.currentTimeMillis() - renderStartTime) / 1000F)}")
+                                Text(langs.renderLangs.timeRemaining + ": ${formatSecondTime(timeInSecond * (1 - renderProcess) / renderRate)}")
+                                Text(langs.renderLangs.estimatedTime + ": ${formatSecondTime(timeInSecond * renderProcess)}")
+                                Text(langs.renderLangs.fasterThanRealTime.format(renderRate))
                                 Text("${(renderProcess * 100).toInt()}%")
                                 Box(Modifier.padding(horizontal = 20.dp, vertical = 10.dp)) {
                                     LinearProgressIndicator(renderProcess, Modifier.fillMaxWidth())
@@ -271,9 +272,9 @@ val ExportDialog = @Composable {
                             }
                         }, Modifier.zIndex(-10f).fillMaxWidth()) {
                             Row {
-                                if (isRendering && renderProcess < 1f) Text("取消")
-                                else if (isRendering && renderProcess >= 1f) Text("确认")
-                                else Text("导出到 $filename.${renderFormat.extension}")
+                                if (isRendering && renderProcess < 1f) Text(langs.cancel)
+                                else if (isRendering && renderProcess >= 1f) Text(langs.ok)
+                                else Text("${langs.renderLangs.exportTo} $filename.${renderFormat.extension}")
                             }
                         }
                     }

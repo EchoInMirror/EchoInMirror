@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.eimsound.daw.language.langs
 
 
 private val EXPANDER_PADDING_VERTICAL = 8.dp
@@ -59,7 +60,7 @@ fun SettingsCard(
 @Composable
 fun <T> SettingsListManager(
     list: Collection<T>,
-    addButtonText: String? = "添加路径",
+    addButtonText: String? = langs.addPath,
     onAddButtonClick: (() -> Unit)? = null,
     onDelete: ((T) -> Unit)? = null,
 ) {
@@ -69,7 +70,7 @@ fun <T> SettingsListManager(
             if (list.isEmpty()) {
                 MenuItem(modifier = modifier) {
                     Filled()
-                    Text("暂无...",
+                    Text(langs.none + "...",
                         color = MaterialTheme.colorScheme.onSurface.copy(0.5F),
                         style = LocalTextStyle.current.copy(fontSize = 14.sp, fontStyle = FontStyle.Italic)
                     )
@@ -84,7 +85,7 @@ fun <T> SettingsListManager(
                                 Gap(16)
                                 onDelete?.let { delete ->
                                     IconButton(onClick = { delete(it) }) {
-                                        Icon(Icons.Filled.Delete, "删除")
+                                        Icon(Icons.Filled.Delete, langs.delete)
 
                                     }
                                 }

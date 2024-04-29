@@ -11,6 +11,7 @@ import com.eimsound.daw.components.SettingTab
 import com.eimsound.daw.components.SettingsSection
 import com.eimsound.daw.components.SettingsCard
 import com.eimsound.daw.components.SettingsListManager
+import com.eimsound.daw.language.langs
 import com.eimsound.daw.utils.CurrentWindow
 import com.eimsound.daw.utils.openFolderBrowser
 
@@ -18,7 +19,7 @@ import com.eimsound.daw.utils.openFolderBrowser
 internal object FileBrowserSettings : SettingTab {
     @Composable
     override fun label() {
-        Text("文件")
+        Text(langs.file)
     }
 
     @Composable

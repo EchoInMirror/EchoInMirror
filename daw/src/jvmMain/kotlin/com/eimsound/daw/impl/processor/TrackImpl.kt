@@ -17,6 +17,7 @@ import com.eimsound.daw.api.processor.*
 import com.eimsound.daw.commons.json.*
 import com.eimsound.daw.components.utils.randomColor
 import com.eimsound.daw.dawutils.buffer.TrackBuffers
+import com.eimsound.daw.language.langs
 import com.eimsound.daw.utils.*
 import com.eimsound.dsp.data.midi.MidiNoteTimeRecorder
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -56,8 +57,8 @@ open class TrackImpl(description: AudioProcessorDescription, factory: TrackFacto
     override var isDisabled by observableMutableStateOf(false, ::stateChange)
     override var isSolo by observableMutableStateOf(false, ::stateChange)
 
-    private val panParameter = audioProcessorParameterOf("pan", "声相", PAN_RANGE, 0F)
-    private val volumeParameter = audioProcessorParameterOf("volume", "电平", VOLUME_RANGE, 1F)
+    private val panParameter = audioProcessorParameterOf("pan", langs.ccEvents.pan, PAN_RANGE, 0F)
+    private val volumeParameter = audioProcessorParameterOf("volume", langs.ccEvents.volume, VOLUME_RANGE, 1F)
     private var asyncJobs: Array<Job?> = emptyArray()
     override val pannerRule get() = EchoInMirror.bus?.project?.pannerRule ?: PannerRule.SINE3DB
     override var pan by panParameter

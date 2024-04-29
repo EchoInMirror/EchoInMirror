@@ -32,7 +32,9 @@ class CommandManagerImpl : CommandManager {
         registerAllUICommands()
         registerAllEditorToolCommands()
 
-        registerCommand(object : AbstractCommand("EIM:Temp", "Temp", arrayOf(Key.CtrlLeft, Key.R)) {
+        registerCommand(object : AbstractCommand("EIM:Temp", arrayOf(Key.CtrlLeft, Key.R)) {
+            override val displayName = "Temp"
+
             override fun execute() {
                 val tm = TrackManager.instance
                 runBlocking {

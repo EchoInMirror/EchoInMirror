@@ -20,6 +20,7 @@ import com.eimsound.daw.components.splitpane.SplitPaneState
 import com.eimsound.daw.dawutils.Border
 import com.eimsound.daw.dawutils.border
 import com.eimsound.daw.impl.WindowManagerImpl
+import com.eimsound.daw.language.langs
 import com.eimsound.daw.window.dialogs.openQuickLoadDialog
 
 //    SideBarItem("Favorite", "收藏") { Icon(Icons.Default.Favorite, "Favorite") },
@@ -99,8 +100,8 @@ internal fun SideBar() {
             val floatingLayerProvider = LocalFloatingLayerProvider.current
             val density = LocalDensity.current.density
             NavigationRailItem(
-                icon = { Icon(EIMLogo, "QuickLand") },
-                label = { Text("快速加载") },
+                icon = { Icon(EIMLogo, langs.quickLoad) },
+                label = { Text(langs.quickLoad) },
                 selected = false,
                 onClick = { floatingLayerProvider.openQuickLoadDialog() }
             )

@@ -10,6 +10,7 @@ import androidx.compose.ui.unit.dp
 import com.eimsound.daw.api.clips.AudioClip
 import com.eimsound.daw.api.clips.TrackClip
 import com.eimsound.daw.components.*
+import com.eimsound.daw.language.langs
 import com.eimsound.dsp.timestretcher.TimeStretcherManager
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
@@ -25,7 +26,7 @@ internal fun EditorControls(clip: TrackClip<AudioClip>) {
             CustomOutlinedTextField(
                 if (c.bpm <= 0) "" else "%.2f".format(c.bpm), { c.bpm = it.toFloatOrNull() ?: 0F },
                 Modifier.weight(1F).height(40.dp),
-                label = { Text("文件速度") },
+                label = { Text(langs.audioClipLangs.fileBPM) },
                 singleLine = true
             )
             TextButton(onClick = {
@@ -35,7 +36,7 @@ internal fun EditorControls(clip: TrackClip<AudioClip>) {
                     if (bpm > 0) c2.bpm = bpm.toFloat()
                 }
             }) {
-                Text("检测速度")
+                Text(langs.audioClipLangs.detectBPM)
             }
         }
         val timeStretchers = TimeStretcherManager.timeStretchers
@@ -46,7 +47,7 @@ internal fun EditorControls(clip: TrackClip<AudioClip>) {
                     c.timeStretcher.ifEmpty { c.timeStretcher = timeStretchers.firstOrNull() ?: "" }
                     c.speedRatio = it.toFloatOrNull() ?: 1F
                 },
-                Modifier.height(40.dp).weight(1F), label = { Text("变速") },
+                Modifier.height(40.dp).weight(1F), label = { Text(langs.audioClipLangs.changeSpeed) },
                 singleLine = true
             )
             Gap(8)
@@ -56,17 +57,17 @@ internal fun EditorControls(clip: TrackClip<AudioClip>) {
                     c.timeStretcher.ifEmpty { c.timeStretcher = timeStretchers.firstOrNull() ?: "" }
                     c.semitones = it.toFloatOrNull() ?: 0F
                 },
-                Modifier.height(40.dp).weight(1F), label = { Text("变调") },
+                Modifier.height(40.dp).weight(1F), label = { Text(langs.audioClipLangs.changePitch) },
                 singleLine = true
             )
             TextButton(onClick = { }) {
-                Text("变调到...")
+                Text(langs.audioClipLangs.pitchTo)
             }
         }
         OutlinedDropdownSelector(
             { c.timeStretcher = it },
             timeStretchers, c.timeStretcher.ifEmpty { timeStretchers.firstOrNull() },
-            Modifier.height(40.dp).fillMaxWidth(), label = "变速算法"
+            Modifier.height(40.dp).fillMaxWidth(), label = langs.audioClipLangs.timeStretcher
         )
     }
 }

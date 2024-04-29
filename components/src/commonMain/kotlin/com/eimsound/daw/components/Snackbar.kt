@@ -20,6 +20,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEachReversed
 import com.eimsound.daw.components.utils.*
+import com.eimsound.daw.language.langs
 import kotlinx.coroutines.delay
 
 enum class SnackbarType(val icon: ImageVector) {
@@ -91,7 +92,7 @@ class SnackbarProvider {
     }
 
     fun enqueueSnackbar(error: Throwable, duration: Int = DEFAULT_DURATION) {
-        snackbars += Snackbar(SnackbarType.Error, duration) { Text("发生错误: ${error.message}") }
+        snackbars += Snackbar(SnackbarType.Error, duration) { Text("${langs.errorOccurred}: ${error.message}") }
     }
 
     @Composable

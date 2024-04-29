@@ -25,6 +25,7 @@ kotlin {
         named("jvmMain") {
             dependencies {
                 compileOnly(project(":dsp"))
+                compileOnly(project(":langs"))
                 implementation(project(":utils"))
                 implementation(compose.runtime)
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${extra["eim.dependencies.kotlinx.coroutines"]}")

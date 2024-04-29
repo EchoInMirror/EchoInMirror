@@ -22,6 +22,7 @@ import com.eimsound.daw.components.SettingsCard
 import com.eimsound.daw.components.SettingsSection
 import com.eimsound.daw.components.utils.clickableWithIcon
 import com.eimsound.daw.impl.CommandManagerImpl
+import com.eimsound.daw.language.langs
 import com.eimsound.daw.utils.mutableStateSetOf
 import com.eimsound.daw.utils.toMutableStateSet
 import org.apache.commons.lang3.SystemUtils
@@ -30,7 +31,7 @@ import java.awt.event.KeyEvent
 internal object ShortcutKeySettings : SettingTab {
     @Composable
     override fun label() {
-        Text("快捷键")
+        Text(langs.shortcutKey)
     }
 
     @Composable
@@ -49,7 +50,7 @@ internal object ShortcutKeySettings : SettingTab {
         commandManager.customCommands.forEach { (key, commandName) ->
             commands[commandManager.commandsMap[commandName]!!] = key
         }
-        SettingsSection("快捷键设置") {
+        SettingsSection(langs.shortcutKey) {
             commands.forEach { (command, key) ->
                 SettingsCard(command.displayName){
                     var curKey by remember { mutableStateOf(key) }

@@ -24,6 +24,7 @@ import com.eimsound.daw.utils.lowerBound
 import com.eimsound.daw.commons.json.putNotDefault
 import com.eimsound.daw.components.trees.MidiNode
 import com.eimsound.daw.dawutils.processMIDIBuffer
+import com.eimsound.daw.language.langs
 import com.eimsound.dsp.data.*
 import com.eimsound.dsp.data.midi.*
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -34,7 +35,7 @@ import java.nio.file.Path
 import javax.sound.midi.MidiSystem
 
 class MidiClipImpl(factory: ClipFactory<MidiClip>) : AbstractClip<MidiClip>(factory), MidiClip {
-    override val name = "MIDI 片段"
+    override val name = langs.midiClip
     override val icon = Icons.Outlined.Piano
     override val notes = DefaultNoteMessageList()
     override val events: MutableMidiCCEvents = mutableStateMapOf()

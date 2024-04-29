@@ -32,7 +32,7 @@ fun openFolderBrowser(parent: Component? = null, callback: (File?) -> Unit) {
                     arrayOf(
                         "/usr/bin/osascript",
                         "-e",
-                        "set selectedFolder to choose folder with prompt \"请选择文件夹\"\nreturn POSIX path of selectedFolder"
+                        "set selectedFolder to choose folder with prompt \"Select Folder\"\nreturn POSIX path of selectedFolder"
                     )
                 )
                 val result = process.waitFor()
@@ -46,7 +46,7 @@ fun openFolderBrowser(parent: Component? = null, callback: (File?) -> Unit) {
             callback(null)
         }
     } else JFileChooser().run {
-        dialogTitle = "请选择文件夹"
+        dialogTitle = "Select Folder"
         fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
         callback(if (showOpenDialog(parent) == JFileChooser.APPROVE_OPTION) selectedFile else null)
     }

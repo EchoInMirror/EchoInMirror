@@ -14,6 +14,7 @@ import com.eimsound.audioprocessor.AudioPlayerManager
 import com.eimsound.daw.Configuration
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.components.*
+import com.eimsound.daw.language.langs
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -26,7 +27,7 @@ private fun Latency(title: String, latency: Int) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(title, Modifier.weight(1f))
         Text(
-            "${(latency * 1000.0 / EchoInMirror.currentPosition.sampleRate).roundToInt()} 毫秒 / $latency 个采样",
+            "${(latency * 1000.0 / EchoInMirror.currentPosition.sampleRate).roundToInt()} ${langs.ms} / $latency ${langs.sample}",
             Modifier.weight(1f)
         )
     }
@@ -43,20 +44,20 @@ private fun reopenAudioDevice() {
 internal object AudioSettings : SettingTab {
     @Composable
     override fun label() {
-        Text("音频")
+        Text(langs.audio)
     }
 
     @Composable
     override fun icon() {
-        Icon(Icons.Filled.SettingsInputComponent, "Audio Settings")
+        Icon(Icons.Filled.SettingsInputComponent, langs.audioSettingsLang.name)
     }
 
     @Composable
     override fun content() {
         val colors = textFieldGrayColors()
         Column {
-            SettingsSection("设备与音频设置") {
-                SettingsCard("音频工厂") {
+            SettingsSection(langs.audioSettingsLang.name) {
+                SettingsCard(langs.audioSettingsLang.audioFactory) {
                     AutoWidthOutlinedDropdownSelector(
                         {
                             if (Configuration.audioDeviceFactoryName == it) return@AutoWidthOutlinedDropdownSelector
@@ -70,7 +71,7 @@ internal object AudioSettings : SettingTab {
                         colors = colors
                     )
                 }
-                SettingsCard("音频设备") {
+                SettingsCard(langs.audioSettingsLang.audioDevice) {
                     var playerNames by remember { mutableStateOf(emptyList<String>()) }
                     LaunchedEffect(Configuration.audioDeviceName) {
                         playerNames = AudioPlayerManager.instance.factories[Configuration.audioDeviceFactoryName]!!.getPlayers()
@@ -87,7 +88,7 @@ internal object AudioSettings : SettingTab {
                         colors = colors
                     )
                 }
-                SettingsCard("缓冲区大小") {
+                SettingsCard(langs.audioSettingsLang.bufferSize) {
                     AutoWidthOutlinedDropdownSelector(
                         {
                             EchoInMirror.player?.close()
@@ -100,7 +101,7 @@ internal object AudioSettings : SettingTab {
                         colors = colors
                     )
                 }
-                SettingsCard("采样率") {
+                SettingsCard(langs.sampleRate) {
                     AutoWidthOutlinedDropdownSelector(
                         {
                             EchoInMirror.player?.close()
@@ -113,7 +114,7 @@ internal object AudioSettings : SettingTab {
                         colors = colors
                     )
                 }
-                if (SystemUtils.IS_OS_WINDOWS) SettingsCard("后台共享音频设备") {
+                if (SystemUtils.IS_OS_WINDOWS) SettingsCard(langs.audioSettingsLang.sharedAudioDevice) {
                     Switch(
                         Configuration.stopAudioOutputOnBlur,
                         {
@@ -122,7 +123,7 @@ internal object AudioSettings : SettingTab {
                         }
                     )
                 }
-                SettingsCard("对超过 0db 的音频进行削波") {
+                SettingsCard(langs.audioSettingsLang.clipAudio) {
                     Switch(
                         Configuration.autoCutOver0db,
                         {
@@ -133,8 +134,8 @@ internal object AudioSettings : SettingTab {
                 }
             }
             Gap(8)
-            Latency("输入延迟", EchoInMirror.player?.inputLatency ?: 0)
-            Latency("输出延迟", EchoInMirror.player?.outputLatency ?: 0)
+            Latency(langs.audioSettingsLang.inputLatency, EchoInMirror.player?.inputLatency ?: 0)
+            Latency(langs.audioSettingsLang.outputLatency, EchoInMirror.player?.outputLatency ?: 0)
             Gap(8)
             EchoInMirror.player?.Controls()
         }

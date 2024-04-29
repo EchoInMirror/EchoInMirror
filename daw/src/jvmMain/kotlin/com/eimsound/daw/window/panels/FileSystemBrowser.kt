@@ -42,6 +42,7 @@ import com.eimsound.daw.components.trees.FileNode
 import com.eimsound.daw.components.trees.Tree
 import com.eimsound.daw.components.utils.HorizontalResize
 import com.eimsound.daw.impl.processor.eimAudioProcessorFactory
+import com.eimsound.daw.language.langs
 import com.eimsound.daw.processor.PreviewerAudioProcessor
 import kotlinx.coroutines.*
 import org.apache.commons.lang3.SystemUtils
@@ -56,7 +57,7 @@ import kotlin.io.path.name
 val fileBrowserPreviewer = PreviewerAudioProcessor(AudioProcessorManager.instance.eimAudioProcessorFactory)
 
 object FileSystemBrowser : Panel {
-    override val name = "文件浏览"
+    override val name get() = langs.fileBrowser
     override val direction = PanelDirection.Vertical
     private val roots by mutableStateOf(run {
         val roots = File.listRoots().toMutableList()
@@ -121,11 +122,11 @@ object FileSystemBrowser : Panel {
                     fileBrowserPreviewer.position.isPlaying = autoPlay
                     close()
                 }) {
-                    Text("自动播放")
+                    Text(langs.autoPlay)
                     Filled()
                     Icon(
                         if (autoPlay) Icons.Outlined.CheckBox
-                        else Icons.Outlined.CheckBoxOutlineBlank, "自动播放"
+                        else Icons.Outlined.CheckBoxOutlineBlank, langs.autoPlay
                     )
                 }
                 MenuItem({
@@ -146,12 +147,12 @@ object FileSystemBrowser : Panel {
                 }
                 Divider()
                 MenuItem(close, enabled = false, modifier = Modifier.fillMaxSize()) {
-                    Text(nodeName ?: "请选择文件...", overflow = TextOverflow.Ellipsis, maxLines = 1)
+                    Text(nodeName ?: langs.pleaseSelectFile, overflow = TextOverflow.Ellipsis, maxLines = 1)
                 }
             }, enabled = false, matcher = PointerMatcher.mouse(PointerButton.Secondary)) {
                 val c = component
                 if (c == null) Box(Modifier.fillMaxSize(), Alignment.Center) {
-                    Text("请选择文件...", style = MaterialTheme.typography.labelMedium)
+                    Text(langs.pleaseSelectFile, style = MaterialTheme.typography.labelMedium)
                 } else Box {
                     val draggableState = remember {
                         DraggableState { fileBrowserPreviewer.playPosition += it / width[0].toDouble() }

@@ -7,6 +7,7 @@ import com.eimsound.daw.components.CommandMenuItem
 import com.eimsound.daw.components.FloatingLayerProvider
 import com.eimsound.daw.components.MenuHeader
 import com.eimsound.daw.components.openEditorMenu
+import com.eimsound.daw.language.langs
 
 internal fun FloatingLayerProvider.openPlaylistMenu(pos: Offset, clips: List<TrackClip<*>>, playlist: Playlist) {
     openEditorMenu(pos, playlist, footer = { close ->
@@ -15,7 +16,7 @@ internal fun FloatingLayerProvider.openPlaylistMenu(pos: Offset, clips: List<Tra
             close()
             playlist.mergeSelectedClips()
         }, enabled = canBeMergedSelectedClips > 1) {
-            Text("合并片段${if (canBeMergedSelectedClips > 1) " ($canBeMergedSelectedClips)" else ""}")
+            Text("${langs.mergeClips}${if (canBeMergedSelectedClips > 1) " ($canBeMergedSelectedClips)" else ""}")
         }
     }) { close ->
         val clip = clips.firstOrNull() ?: return@openEditorMenu

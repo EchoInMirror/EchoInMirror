@@ -27,18 +27,18 @@ import com.eimsound.daw.components.icons.Magnet
 import com.eimsound.daw.components.icons.MetronomeTick
 import com.eimsound.daw.components.utils.absoluteError
 import com.eimsound.daw.dawutils.EDITOR_TOOL_ICONS
-
-private val TIME_VALUES = listOf("时间", "拍")
+import com.eimsound.daw.language.langs
 
 @Composable
 private fun CurrentTime() {
+    val timeValues = listOf(langs.time, langs.beats)
     DropdownSelector(
         {
-            Configuration.isTimeDisplayInBeats = it == TIME_VALUES[1]
+            Configuration.isTimeDisplayInBeats = it == timeValues[1]
             Configuration.save()
         },
-        TIME_VALUES,
-        TIME_VALUES[if (Configuration.isTimeDisplayInBeats) 1 else 0]
+        timeValues,
+        timeValues[if (Configuration.isTimeDisplayInBeats) 1 else 0]
     ) {
         val a: String
         val b: String
@@ -80,7 +80,7 @@ private fun Quantification() {
     ) {
         CustomOutlinedTextField(
             EchoInMirror.quantification.name, { },
-            Modifier.width(100.dp),
+            Modifier.width(110.dp),
             readOnly = true,
             singleLine = true,
             textStyle = MaterialTheme.typography.labelLarge.copy(LocalContentColor.current),

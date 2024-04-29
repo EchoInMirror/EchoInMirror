@@ -45,6 +45,7 @@ import com.eimsound.daw.components.utils.clickableWithIcon
 import com.eimsound.daw.utils.FloatRange
 import com.eimsound.daw.commons.MultiSelectableEditor
 import com.eimsound.daw.commons.SerializableEditor
+import com.eimsound.daw.language.langs
 import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
 
@@ -58,7 +59,7 @@ interface EventType : MultiSelectableEditor {
 
 class VelocityEvent(private val editor: MidiClipEditor) : EventType {
     override val range get() = MIDI_CC_RANGE
-    override val name = "力度"
+    override val name get() = langs.velocity
     override val isInteger = true
 
     @Composable
@@ -150,21 +151,21 @@ class CCEvent(private val editor: MidiClipEditor, eventId: Int, points: Envelope
     override fun duplicate() { envEditor.duplicate() }
 }
 
-private val defaultCCEvents = sortedMapOf(
-    1 to "调制",
-    7 to "音量",
-    10 to "声相",
-    11 to "表情",
-    64 to "延音踏板",
-)
-
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 private fun FloatingLayerProvider.openEventSelectorDialog(events: MutableMidiCCEvents) {
     val key = Any()
     val close: () -> Unit = { closeFloatingLayer(key) }
+
+    val defaultCCEvents = sortedMapOf(
+        1 to langs.ccEvents.modulation,
+        7 to langs.ccEvents.volume,
+        10 to langs.ccEvents.pan,
+        11 to langs.ccEvents.expression,
+        64 to langs.ccEvents.sustain,
+    )
     openFloatingLayer(::closeFloatingLayer, key = key, hasOverlay = true) {
         Dialog(close, modifier = Modifier.widthIn(max = 460.dp)) {
-            Text("选择 CC 事件", style = MaterialTheme.typography.titleMedium)
+            Text(langs.audioClipLangs.selectCCEvents, style = MaterialTheme.typography.titleMedium)
             val keys = events.keys
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 keys.sorted().forEach {
@@ -172,7 +173,7 @@ private fun FloatingLayerProvider.openEventSelectorDialog(events: MutableMidiCCE
                     InputChip(true, {
                         events.doAddOrRemoveMidiCCEventAction(it)
                     }, { Text(if (name == null) "CC $it" else "CC $it ($name)") },
-                        trailingIcon = { Icon(Icons.Filled.Close, contentDescription = "删除") },
+                        trailingIcon = { Icon(Icons.Filled.Close, contentDescription = langs.delete) },
                     )
                 }
             }
@@ -183,7 +184,7 @@ private fun FloatingLayerProvider.openEventSelectorDialog(events: MutableMidiCCE
                     InputChip(false, {
                         events.doAddOrRemoveMidiCCEventAction(id, DefaultEnvelopePointList())
                     }, { Text("CC $id ($name)") },
-                        trailingIcon = { Icon(Icons.Filled.Add, contentDescription = "添加") },
+                        trailingIcon = { Icon(Icons.Filled.Add, contentDescription = langs.add) },
                     )
                 }
                 Box {
@@ -199,7 +200,7 @@ private fun FloatingLayerProvider.openEventSelectorDialog(events: MutableMidiCCE
                             IconButton({
                                 events.doAddOrRemoveMidiCCEventAction(cc, DefaultEnvelopePointList())
                             }, enabled = cc !in keys) {
-                                Icon(Icons.Filled.Add, contentDescription = "添加")
+                                Icon(Icons.Filled.Add, contentDescription = langs.add)
                             }
                         }
                     )
@@ -245,7 +246,8 @@ private fun EventHints(editor: DefaultMidiClipEditor) {
 private fun EventsList(editor: DefaultMidiClipEditor) {
     Surface(Modifier.fillMaxWidth().height(eventSelectorHeight).zIndex(2f), shadowElevation = 5.dp) {
         Row {
-            Text("力度", (
+            Text(
+                langs.velocity, (
                     if (editor.selectedEvent is VelocityEvent) Modifier.background(MaterialTheme.colorScheme.primary.copy(0.2F))
                     else Modifier)
                 .height(eventSelectorHeight)
@@ -266,7 +268,7 @@ private fun EventsList(editor: DefaultMidiClipEditor) {
             Box(Modifier.size(eventSelectorHeight).clickableWithIcon {
                 floatingLayerProvider.openEventSelectorDialog(editor.clip.clip.events)
             }) {
-                Icon(Icons.Default.Add, "添加", Modifier.padding(2.dp).align(Alignment.Center))
+                Icon(Icons.Default.Add, langs.add, Modifier.padding(2.dp).align(Alignment.Center))
             }
         }
     }

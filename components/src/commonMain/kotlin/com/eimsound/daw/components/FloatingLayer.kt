@@ -22,6 +22,7 @@ import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.unit.*
 import androidx.compose.ui.util.fastForEach
 import com.eimsound.daw.commons.BasicEditor
+import com.eimsound.daw.language.langs
 
 private data class FloatingLayer(
     val key: Any, val onClose: ((Any) -> Unit)?, val position: Offset?,
@@ -177,9 +178,9 @@ fun Dialog(
             if (onCancel != null) {
                 TextButton(onCancel,
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.secondary)
-                ) { Text("取消") }
+                ) { Text(langs.cancel) }
             }
-            if (onOk != null) TextButton(onOk) { Text("确认") }
+            if (onOk != null) TextButton(onOk) { Text(langs.ok) }
         }
     }
 }

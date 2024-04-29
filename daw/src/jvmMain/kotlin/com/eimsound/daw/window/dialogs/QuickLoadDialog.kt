@@ -28,6 +28,7 @@ import com.eimsound.daw.components.utils.warning
 import com.eimsound.daw.commons.IDisplayName
 import com.eimsound.daw.utils.mutableStateSetOf
 import com.eimsound.daw.commons.json.toJson
+import com.eimsound.daw.language.langs
 import kotlinx.coroutines.*
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
@@ -48,8 +49,6 @@ private var selectedInstrument by mutableStateOf<Boolean?>(null)
 private val favoriteAudioProcessors = mutableStateSetOf<Pair<String, String>>()
 private var favoriteAudioProcessorsLoaded = false
 private var favoriteAudioProcessorsActuallyLoaded by mutableStateOf(false)
-
-private const val FAVORITE_TITLE = "已收藏"
 
 @OptIn(DelicateCoroutinesApi::class)
 private fun loadFavoriteAudioProcessors() {
@@ -100,9 +99,9 @@ fun FloatingLayerProvider.openQuickLoadDialog(onClose: ((AudioProcessorDescripti
             val descriptions = arrayListOf<AudioProcessorDescription>()
             val descriptionsToFactory = hashMapOf<AudioProcessorDescription, AudioProcessorFactory<*>>()
             val favorites = hashSetOf<AudioProcessorDescription>()
-            val factories = arrayListOf<Any>(FAVORITE_TITLE)
+            val factories = arrayListOf<Any>(langs.audioProcessorLangs.favorite)
             val factoriesCountMap = hashMapOf<Any, Int>()
-            factoriesCountMap[FAVORITE_TITLE] = favoriteAudioProcessors.size
+            factoriesCountMap[langs.audioProcessorLangs.favorite] = favoriteAudioProcessors.size
             AudioProcessorManager.instance.factories.values.forEach {
                 factories.add(it)
                 factoriesCountMap[it] = it.descriptions.size
@@ -129,7 +128,7 @@ fun FloatingLayerProvider.openQuickLoadDialog(onClose: ((AudioProcessorDescripti
             val selectedCategory0 = selectedCategory
             val selectedInstrument0 = selectedInstrument
             val selectedFactory0 = selectedFactory
-            val isFavorite = selectedFactory0 == FAVORITE_TITLE
+            val isFavorite = selectedFactory0 == langs.audioProcessorLangs.favorite
             descriptions.forEach {
                 if (!it.name.contains(searchText, true)) return@forEach
                 val isCurrentManufacturer = selectedManufacturer0 == null || it.manufacturerName == selectedManufacturer0
@@ -160,7 +159,7 @@ fun FloatingLayerProvider.openQuickLoadDialog(onClose: ((AudioProcessorDescripti
                 }
                 // 计算乐器和效果器的插件数量
                 if (isCurrentManufacturer && isCurrentCategory && isCurrentFactory) {
-                    val key = if (it.isInstrument) "乐器" else "效果器"
+                    val key = if (it.isInstrument) langs.audioProcessorLangs.instrument else langs.audioProcessorLangs.effect
                     instrumentCountMap[key] = (instrumentCountMap[key] ?: 0) + 1
                     instrumentAllCount++
                 }
@@ -190,30 +189,34 @@ fun FloatingLayerProvider.openQuickLoadDialog(onClose: ((AudioProcessorDescripti
                                 Column(Modifier.weight(1f).fillMaxHeight()) {
                                     DescList(
                                         Modifier.weight(5f).padding(SUB_PADDING),
-                                        listOf("乐器", "效果器"),
-                                        if (selectedInstrument0 == true) "乐器" else if (selectedInstrument0 == false) "效果器" else null,
-                                        "所有类型", "类型",
+                                        listOf(langs.audioProcessorLangs.instrument, langs.audioProcessorLangs.effect),
+                                        when (selectedInstrument0) {
+                                            true -> langs.audioProcessorLangs.instrument
+                                            false -> langs.audioProcessorLangs.effect
+                                            else -> null
+                                        },
+                                        langs.audioProcessorLangs.allKind, langs.audioProcessorLangs.kind,
                                         countMap = instrumentCountMap,
                                         allCount = instrumentAllCount
-                                    ) { selectedInstrument = if (it == null) null else it == "乐器" }
+                                    ) { selectedInstrument = if (it == null) null else it == langs.audioProcessorLangs.instrument }
                                     DescList(
                                         Modifier.weight(5f).padding(SUB_PADDING),
                                         factories,
                                         selectedFactory0,
-                                        "所有",
+                                        langs.all,
                                         countMap = factoriesCountMap
                                     ) { selectedFactory = it }
                                 }
                             }
                             DescList(
                                 Modifier.weight(1f).padding(SUB_PADDING), categoryList.sorted(),
-                                selectedCategory0, "所有类别", "类别",
+                                selectedCategory0, langs.audioProcessorLangs.allCategory, langs.audioProcessorLangs.category,
                                 countMap = categoryCountMap,
                                 allCount = categoryAllCount
                             ) { selectedCategory = it }
                             DescList(
                                 Modifier.weight(1f).padding(SUB_PADDING), factoryList.sorted(),
-                                selectedManufacturer0, "所有厂商", "厂商",
+                                selectedManufacturer0, langs.audioProcessorLangs.allManufacturer, langs.audioProcessorLangs.manufacturer,
                                 countMap = manufacturerCountMap,
                                 allCount = manufacturerAllCount
                             ) { selectedManufacturer = it }
@@ -227,7 +230,7 @@ fun FloatingLayerProvider.openQuickLoadDialog(onClose: ((AudioProcessorDescripti
                                             if (!favoriteAudioProcessors.remove(pair)) favoriteAudioProcessors.add(pair)
                                             saveFavoriteAudioProcessors()
                                         }, 20.dp, colors = favoriteIconColors) {
-                                            Icon(Icons.Filled.Star, "收藏", Modifier.size(16.dp))
+                                            Icon(Icons.Filled.Star, langs.audioProcessorLangs.addFavorite, Modifier.size(16.dp))
                                         }
                                     }
                                 }, onDragStart = {
@@ -258,7 +261,7 @@ fun FloatingLayerProvider.openQuickLoadDialog(onClose: ((AudioProcessorDescripti
                             closeFloatingLayer(KEY)
                             onClose?.invoke(null)
                         }) {
-                            Text("取消")
+                            Text(langs.cancel)
                         }
                         if (onClose != null) Button({
                             closeFloatingLayer(KEY)
@@ -267,7 +270,7 @@ fun FloatingLayerProvider.openQuickLoadDialog(onClose: ((AudioProcessorDescripti
                             onClose(if (desc == null || factory == null) null
                                     else AudioProcessorDescriptionAndFactory(desc, factory))
                         }, Modifier.padding(horizontal = 5.dp), selectedDescription != null) {
-                            Text("确定")
+                            Text(langs.ok)
                         }
                     }
                 }

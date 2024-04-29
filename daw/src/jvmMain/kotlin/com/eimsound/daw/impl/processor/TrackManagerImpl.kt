@@ -6,6 +6,7 @@ import com.eimsound.daw.api.ProjectInformation
 import com.eimsound.daw.api.processor.*
 import com.eimsound.daw.commons.NoSuchFactoryException
 import com.eimsound.daw.commons.json.*
+import com.eimsound.daw.language.langs
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -59,7 +60,7 @@ private val defaultTrackLogger = KotlinLogging.logger {  }
 class DefaultTrackFactory : TrackFactory<Track> {
     override val canCreateBus = true
     override val name = "DefaultTrackFactory"
-    override val displayName = "默认"
+    override val displayName get() = langs.default
     override val descriptions = setOf(DefaultTrackDescription)
     override val isEnabled = true
 

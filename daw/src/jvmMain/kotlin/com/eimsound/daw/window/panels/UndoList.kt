@@ -24,6 +24,7 @@ import com.eimsound.daw.api.window.Panel
 import com.eimsound.daw.api.window.PanelDirection
 import com.eimsound.daw.components.utils.clickableWithIcon
 import com.eimsound.daw.commons.actions.UndoableAction
+import com.eimsound.daw.language.langs
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -57,7 +58,7 @@ private fun UndoItem(index: Int, it: UndoableAction) {
 }
 
 object UndoList: Panel {
-    override val name = "历史操作"
+    override val name get() = langs.history
     override val direction = PanelDirection.Vertical
 
     @Composable
@@ -76,7 +77,7 @@ object UndoList: Panel {
                         GlobalScope.launch { EchoInMirror.undoManager.reset() }
                     }, verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Outlined.RestartAlt, "undo", ICON_SIZE)
-                        Text("初始状态", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                        Text(langs.initialState, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
                     }
                 }
                 itemsIndexed(EchoInMirror.undoManager.actions, { _, it -> it }) { i, it -> UndoItem(i, it) }

@@ -5,6 +5,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import cn.apisium.shm.SharedMemory
 import com.eimsound.audioprocessor.*
+import com.eimsound.daw.language.langs
 import com.eimsound.daw.utils.ByteBufInputStream
 import com.eimsound.daw.utils.ByteBufOutputStream
 import com.eimsound.daw.utils.randomId
@@ -130,7 +131,7 @@ class NativeAudioPlayer(
                     }
                 }
             }) {
-                Text("打开控制面板")
+                Text(langs.audioProcessorLangs.openControlPanel)
             }
         }
     }

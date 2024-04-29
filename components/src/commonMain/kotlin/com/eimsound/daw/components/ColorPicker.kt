@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.eimsound.daw.components.utils.HsvColor
 import com.eimsound.daw.components.utils.randomColor
+import com.eimsound.daw.language.langs
 import java.lang.Double.min
 import kotlin.math.*
 
@@ -354,10 +355,10 @@ fun FloatingLayerProvider.openColorPicker(
                 TextButton({
                     closeFloatingLayer(KEY)
                     onCancel?.invoke()
-                }) { Text("取消") }
+                }) { Text(langs.cancel) }
                 TextButton({
                     closeFloatingLayer(KEY)
-                }) { Text("确认") }
+                }) { Text(langs.ok) }
             }
         }
     }

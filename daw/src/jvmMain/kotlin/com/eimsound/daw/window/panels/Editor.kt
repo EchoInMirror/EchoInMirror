@@ -19,9 +19,10 @@ import com.eimsound.daw.api.window.Panel
 import com.eimsound.daw.api.window.PanelDirection
 import com.eimsound.daw.components.Gap
 import com.eimsound.daw.commons.MultiSelectableEditor
+import com.eimsound.daw.language.langs
 
 object Editor: Panel, MultiSelectableEditor {
-    override val name = "编辑器"
+    override val name get() = langs.editor
     override val direction = PanelDirection.Horizontal
     private var editor: ClipEditor? = null
 
@@ -46,7 +47,7 @@ object Editor: Panel, MultiSelectableEditor {
             if (editor == null) Row(Modifier.fillMaxSize(), Arrangement.Center, Alignment.CenterVertically) {
                 Icon(Icons.Outlined.Report, null, Modifier.size(22.dp))
                 Gap(4)
-                Text("请先选择一个 Clip.", fontWeight = FontWeight.Bold)
+                Text(langs.pleaseSelectClip, fontWeight = FontWeight.Bold)
             } else editor.Editor()
         }
     }

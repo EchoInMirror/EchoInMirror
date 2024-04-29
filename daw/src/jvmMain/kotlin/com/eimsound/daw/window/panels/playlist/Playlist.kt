@@ -44,6 +44,7 @@ import com.eimsound.daw.components.utils.EditAction
 import com.eimsound.daw.components.utils.toOnSurfaceColor
 import com.eimsound.daw.dawutils.editorToolHoverIcon
 import com.eimsound.daw.dawutils.openMaxValue
+import com.eimsound.daw.language.langs
 import com.eimsound.daw.utils.*
 import kotlinx.coroutines.*
 import java.nio.file.Path
@@ -314,7 +315,7 @@ class Playlist : Panel, MultiSelectableEditor {
                 key(it) { i += TrackContent(this@Playlist, it, i) }
             }
 
-            TextButton({ }, Modifier.fillMaxWidth().alpha(0F), enabled = false) { Text("创建轨道") }
+            TextButton({ }, Modifier.fillMaxWidth().alpha(0F), enabled = false) { Text(langs.createTrack) }
         }
     }
 

@@ -20,6 +20,7 @@ import com.eimsound.daw.components.Gap
 import com.eimsound.daw.components.SettingTab
 import com.eimsound.daw.components.SettingsListManager
 import com.eimsound.daw.components.SettingsSection
+import com.eimsound.daw.language.langs
 import com.eimsound.daw.utils.CurrentWindow
 import com.eimsound.daw.utils.openFolderBrowser
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -38,7 +39,7 @@ private var scanningJob by mutableStateOf<Job?>(null)
 class NativeAudioPluginSettings: SettingTab {
     @Composable
     override fun label() {
-        Text("原生音频插件")
+        Text(langs.audioProcessorLangs.nativeAudioProcessor)
     }
 
     @Composable
@@ -65,7 +66,7 @@ class NativeAudioPluginSettings: SettingTab {
                 list.forEach { it.value.destroy() }
                 list.clear()
             }
-        }) { Text(if (scanningJob == null) "搜索" else "取消") }
+        }) { Text(if (scanningJob == null) langs.search else langs.cancel) }
     }
 
     @Composable
@@ -74,7 +75,7 @@ class NativeAudioPluginSettings: SettingTab {
             val window = CurrentWindow.current
             val apm = NativeAudioPluginFactoryImpl.instance!!
 
-            SettingsSection("搜索路径") {
+            SettingsSection(langs.audioProcessorLangs.searchPath) {
                 SettingsListManager(
                     list = apm.scanPaths,
                     onAddButtonClick = {
@@ -93,7 +94,7 @@ class NativeAudioPluginSettings: SettingTab {
 
             Gap(8)
 
-            SettingsSection("排除路径") {
+            SettingsSection(langs.audioProcessorLangs.excludePath) {
                 SettingsListManager(
                     list = apm.skipList,
                     onAddButtonClick = {
@@ -118,7 +119,7 @@ class NativeAudioPluginSettings: SettingTab {
 
             if (scanningJob != null) {
                 Gap(8)
-                SettingsSection("正在搜索... (${apm.scannedCount}/${apm.allScanCount})") {
+                SettingsSection("${langs.audioProcessorLangs.searching} (${apm.scannedCount}/${apm.allScanCount})") {
                     if (apm.allScanCount != 0) LinearProgressIndicator(
                         modifier = Modifier.padding(vertical = 4.dp).fillMaxWidth(),
                         progress = apm.scannedCount.toFloat() / apm.allScanCount,

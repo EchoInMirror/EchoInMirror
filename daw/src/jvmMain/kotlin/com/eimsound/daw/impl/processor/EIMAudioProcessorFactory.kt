@@ -8,6 +8,7 @@ import com.eimsound.daw.processor.synthesizer.SineWaveSynthesizer
 import com.eimsound.daw.processor.synthesizer.SineWaveSynthesizerDescription
 import com.eimsound.daw.commons.json.asString
 import com.eimsound.daw.commons.json.toJsonElement
+import com.eimsound.daw.language.langs
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.json.JsonObject
 import java.nio.file.Path
@@ -21,7 +22,7 @@ val AudioProcessorManager.eimAudioProcessorFactory get() = factories[EIMAudioPro
 private val logger = KotlinLogging.logger { }
 class EIMAudioProcessorFactory : AudioProcessorFactory<AudioProcessor> {
     override val name = EIMAudioProcessorFactoryName
-    override val displayName = "内置"
+    override val displayName get() = langs.builtin
     override val descriptions = setOf(KarplusStrongSynthesizerDescription)
     override val isEnabled = true
     private val audioProcessors = descriptions.associateBy { it.name }

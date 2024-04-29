@@ -1,6 +1,7 @@
 package com.eimsound.audioprocessor
 
 import com.eimsound.daw.commons.json.JsonSerializable
+import com.eimsound.daw.language.langs
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 
@@ -26,7 +27,7 @@ data class NativeAudioPluginDescription(
     @Transient
     override val isDeprecated = isX86 || pluginFormatName == "VST"
     @Transient
-    override val displayName = name + (if (pluginFormatName == "VST") " (VST2)" else "") + (if (isX86) " (32位)" else "")
+    override val displayName = name + (if (pluginFormatName == "VST") " (VST2)" else "") + (if (isX86) " (${langs.x86Bits})" else "")
 }
 
 class FailedToLoadAudioPluginException(message: String) : RuntimeException(message)

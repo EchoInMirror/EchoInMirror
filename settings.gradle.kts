@@ -26,7 +26,8 @@ include(
     ":audio-processors",
     ":native",
     ":api",
-    ":daw"
+    ":daw",
+    ":langs"
 )
 
 includeBuild("builtin")

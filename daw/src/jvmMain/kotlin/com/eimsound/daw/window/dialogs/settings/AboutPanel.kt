@@ -20,6 +20,7 @@ import com.eimsound.daw.components.Gap
 import com.eimsound.daw.components.SettingTab
 import com.eimsound.daw.dawutils.EIMChan
 import com.eimsound.daw.impl.clips.midi.editor.DefaultMidiClipEditor
+import com.eimsound.daw.language.langs
 import com.eimsound.daw.utils.openInBrowser
 import com.eimsound.daw.window.isFPSMeasurerEnabled
 import com.eimsound.daw.window.panels.playlist.Playlist
@@ -43,7 +44,7 @@ object EditorEIMChan : EditorExtension {
 internal object AboutPanel: SettingTab {
     @Composable
     override fun label() {
-        Text("关于")
+        Text(langs.about)
     }
 
     @Composable

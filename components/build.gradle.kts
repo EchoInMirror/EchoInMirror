@@ -21,6 +21,7 @@ kotlin {
                 compileOnly(project(":audio-processors"))
                 compileOnly(project(":api"))
                 compileOnly(project(":commons"))
+                compileOnly(project(":langs"))
                 compileOnly(compose.runtime)
                 compileOnly(compose.preview)
                 compileOnly(compose.ui)

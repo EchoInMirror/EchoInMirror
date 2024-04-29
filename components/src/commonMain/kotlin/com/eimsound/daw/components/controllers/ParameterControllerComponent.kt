@@ -23,6 +23,7 @@ import com.eimsound.daw.commons.ExperimentalEIMApi
 import com.eimsound.daw.components.*
 import com.eimsound.daw.components.silder.Slider
 import com.eimsound.daw.components.utils.onRightClickOrLongPress
+import com.eimsound.daw.language.langs
 import com.eimsound.daw.utils.range
 import java.util.UUID
 
@@ -56,7 +57,7 @@ fun FloatingLayerProvider.openParameterControllerMenu(
             close()
             parameterControllerCreateClipHandler(p, uuid)
         }, enabled = EchoInMirror.selectedTrack != null) {
-            Text("创建包络剪辑")
+            Text(langs.createEnvelopeClip)
         }
     }) { close ->
         Row(
@@ -81,7 +82,7 @@ fun FloatingLayerProvider.openParameterControllerMenu(
             close()
             p.doChangeAction(p.initialValue)
         }) {
-            Text("重置")
+            Text(langs.reset)
         }
     }
 }

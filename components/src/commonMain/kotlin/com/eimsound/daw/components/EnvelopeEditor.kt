@@ -39,6 +39,7 @@ import com.eimsound.daw.commons.json.fromJsonString
 import com.eimsound.daw.commons.json.toJsonString
 import com.eimsound.daw.components.utils.EditAction
 import com.eimsound.daw.components.utils.calculateContrastRatio
+import com.eimsound.daw.language.langs
 import com.eimsound.daw.utils.*
 import com.eimsound.dsp.data.*
 import kotlinx.coroutines.CoroutineScope
@@ -670,7 +671,7 @@ class EnvelopeEditor(
                         (if (isFloat) value else round(value)) - currentPoint.value)
                 },
                 Modifier.fillMaxWidth().padding(16.dp, 16.dp, 16.dp, 4.dp),
-                label = { Text("值") },
+                label = { Text(langs.value) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 singleLine = true
             )

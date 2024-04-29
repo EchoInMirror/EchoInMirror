@@ -12,6 +12,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogWindow
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.components.*
+import com.eimsound.daw.language.langs
 import java.awt.Dimension
 import java.util.*
 
@@ -36,7 +37,7 @@ val SettingsWindow: @Composable () -> Unit = @Composable {
                 Row(Modifier.padding(14.dp, 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Filled()
                     it?.buttons()
-                    Button(::closeSettingWindow) { Text("确认") }
+                    Button(::closeSettingWindow) { Text(langs.ok) }
                 }
             }
         }

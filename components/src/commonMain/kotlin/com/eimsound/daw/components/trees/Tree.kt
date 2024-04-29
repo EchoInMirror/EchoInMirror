@@ -22,6 +22,7 @@ import com.eimsound.dsp.data.midi.toMidiTracks
 import com.eimsound.daw.api.FileExtensionManager
 import com.eimsound.daw.components.dragdrop.FileDraggable
 import com.eimsound.daw.components.dragdrop.GlobalDraggable
+import com.eimsound.daw.language.langs
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.nio.file.Files
@@ -71,7 +72,7 @@ fun TreeItem(
         Row(Modifier.padding(start = 8.dp * depth, top = 1.dp, bottom = 1.dp), verticalAlignment = Alignment.CenterVertically) {
             if (expanded != null) Icon(
                 if (expanded) Icons.Filled.ExpandMore else Icons.Filled.ExpandLess,
-                if (expanded) "收起" else "展开",
+                if (expanded) langs.collapse else langs.expand,
                 expandIconModifier
             ) else Spacer(expandIconModifier)
             if (icon != null) Icon(icon, text, iconModifier)
@@ -100,8 +101,8 @@ fun DictionaryNode(file: Path, depth: Int = 0, showSupFormatOnly: Boolean = fals
         file.name.ifEmpty {
             if (depth == 0) {
                 val str = file.pathString
-                if (str == "/") "根目录" else str
-            } else "未命名"
+                if (str == "/") langs.rootPath else str
+            } else langs.untitled
         },
         file,
         if (expanded) Icons.Filled.FolderOpen else Icons.Outlined.Folder,
@@ -133,7 +134,7 @@ fun MidiNode(file: Path, depth: Int) {
         midiTracks?.fastForEachIndexed { index, midiTrack ->
             GlobalDraggable({ file to index }) {
                 TreeItem(
-                    midiTrack.name ?: "轨道 $index",
+                    midiTrack.name ?: "${langs.track} $index",
                     midiTrack,
                     midiTrackIcon,
                     depth = depth + 1

@@ -31,6 +31,7 @@ import com.eimsound.daw.components.CustomCheckbox
 import com.eimsound.daw.components.TIMELINE_HEIGHT
 import com.eimsound.daw.components.utils.clickableWithIcon
 import com.eimsound.daw.components.utils.toOnSurfaceColor
+import com.eimsound.daw.language.langs
 
 @Composable
 private fun CardHeader(p: TrackAudioProcessorWrapper, index: Int) {
@@ -66,7 +67,7 @@ private fun AudioProcessorEditor(index: Int, p: TrackAudioProcessorWrapper) {
             Divider()
             if (p is AudioProcessorEditor) p.Editor()
             else if (p.processor.parameters.isNotEmpty()) BasicAudioParameterView(p)
-            else Text("未知的处理器: ${p.processor.name}", Modifier.padding(16.dp, 50.dp), textAlign = TextAlign.Center)
+            else Text("${langs.unknownAudioProcessor}: ${p.processor.name}", Modifier.padding(16.dp, 50.dp), textAlign = TextAlign.Center)
         }
     }
 //    }
@@ -79,7 +80,7 @@ private fun TrackName() {
         else track?.color ?: MaterialTheme.colorScheme.surface, tween(100))
     Surface(shadowElevation = 2.dp, tonalElevation = 4.dp, color = color) {
         Box(Modifier.fillMaxWidth().height(TIMELINE_HEIGHT)) {
-            Text(track?.name ?: "未选择", color = color.toOnSurfaceColor(), style = MaterialTheme.typography.labelLarge,
+            Text(track?.name ?: langs.unselected, color = color.toOnSurfaceColor(), style = MaterialTheme.typography.labelLarge,
                 maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(8.dp, 0.dp).align(Alignment.Center),
                 textAlign = TextAlign.Center)
         }
@@ -87,7 +88,7 @@ private fun TrackName() {
 }
 
 object TrackView : Panel {
-    override val name = "轨道视图"
+    override val name get() = langs.trackView
     override val direction = PanelDirection.Vertical
 
     @Composable

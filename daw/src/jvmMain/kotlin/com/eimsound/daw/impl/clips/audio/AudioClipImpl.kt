@@ -18,6 +18,7 @@ import com.eimsound.daw.commons.json.asFloat
 import com.eimsound.daw.commons.json.asString
 import com.eimsound.daw.commons.json.putNotDefault
 import com.eimsound.daw.components.*
+import com.eimsound.daw.language.langs
 import com.eimsound.daw.utils.observableMutableStateOf
 import com.eimsound.dsp.data.*
 import com.eimsound.dsp.data.midi.MidiNoteTimeRecorder
@@ -108,7 +109,7 @@ class AudioClipImpl(
     }
 
     override val icon = Icons.Outlined.GraphicEq
-    override val name get() = target?.file?.name ?: "没有音频"
+    override val name get() = target?.file?.name ?: langs.audioClipLangs.noAudio
 
     init {
         if (target != null) {
@@ -218,7 +219,7 @@ class AudioClipImpl(
     suspend fun detectBPM(snackbarProvider: SnackbarProvider? = null): Int = withContext(Dispatchers.IO) {
         val bpm = detectBPM((target ?: return@withContext -1).copy())
         if (bpm.isEmpty()) {
-            snackbarProvider?.enqueueSnackbar("采样时间过短!", SnackbarType.Error)
+            snackbarProvider?.enqueueSnackbar(langs.audioClipLangs.sampleTimeTooShort, SnackbarType.Error)
             return@withContext -1
         }
         snackbarProvider?.enqueueSnackbar {

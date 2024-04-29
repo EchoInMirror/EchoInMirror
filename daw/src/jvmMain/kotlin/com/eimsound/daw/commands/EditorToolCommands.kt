@@ -5,32 +5,43 @@ import com.eimsound.daw.api.AbstractCommand
 import com.eimsound.daw.api.CommandManager
 import com.eimsound.daw.api.EchoInMirror
 import com.eimsound.daw.api.EditorTool
+import com.eimsound.daw.language.langs
 
-object CursorToolCommand : AbstractCommand("EIM:CursorTool", "光标工具", arrayOf(Key.One)) {
+object CursorToolCommand : AbstractCommand("EIM:CursorTool", arrayOf(Key.One)) {
+    override val displayName get() = langs.editorToolsLangs.cursor
+
     override fun execute() {
         EchoInMirror.editorTool = EditorTool.CURSOR
     }
 }
 
-object PencilToolCommand : AbstractCommand("EIM:PencilTool", "铅笔工具", arrayOf(Key.Two)) {
+object PencilToolCommand : AbstractCommand("EIM:PencilTool", arrayOf(Key.Two)) {
+    override val displayName get() = langs.editorToolsLangs.pencil
+
     override fun execute() {
         EchoInMirror.editorTool = EditorTool.PENCIL
     }
 }
 
-object EraserToolCommand : AbstractCommand("EIM:EraserTool", "橡皮擦工具", arrayOf(Key.Three)) {
+object EraserToolCommand : AbstractCommand("EIM:EraserTool", arrayOf(Key.Three)) {
+    override val displayName get() = langs.editorToolsLangs.eraser
+
     override fun execute() {
         EchoInMirror.editorTool = EditorTool.ERASER
     }
 }
 
-object MuteToolCommand : AbstractCommand("EIM:MuteTool", "静音工具", arrayOf(Key.Four)) {
+object MuteToolCommand : AbstractCommand("EIM:MuteTool", arrayOf(Key.Four)) {
+    override val displayName get() = langs.editorToolsLangs.mute
+
     override fun execute() {
         EchoInMirror.editorTool = EditorTool.MUTE
     }
 }
 
-object CutToolCommand : AbstractCommand("EIM:CutTool", "刀片工具", arrayOf(Key.Five)) {
+object CutToolCommand : AbstractCommand("EIM:CutTool", arrayOf(Key.Five)) {
+    override val displayName get() = langs.editorToolsLangs.cut
+
     override fun execute() {
         EchoInMirror.editorTool = EditorTool.CUT
     }

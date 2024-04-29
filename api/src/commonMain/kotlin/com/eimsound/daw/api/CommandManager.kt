@@ -14,7 +14,6 @@ interface Command {
 
 abstract class AbstractCommand(
     override val name: String,
-    override val displayName: String,
     override val keyBindings: Array<Key>,
     override val icon: ImageVector? = null,
     override val activeWhen: Array<String>? = null,

@@ -26,6 +26,7 @@ import com.eimsound.daw.components.*
 import com.eimsound.daw.components.silder.Slider
 import com.eimsound.daw.components.utils.toOnSurfaceColor
 import com.eimsound.daw.commons.IManualStateValue
+import com.eimsound.daw.language.langs
 import java.util.*
 import kotlin.math.roundToInt
 
@@ -82,7 +83,7 @@ private fun NoteVelocityComponets(editor: DefaultMidiClipEditor) {
                 else editor.clip.clip.doNoteVelocityAction(editor.selectedNotes.toTypedArray(), v - velocity)
             },
             Modifier.width(60.dp).padding(end = 10.dp),
-            label = { Text("力度") },
+            label = { Text(langs.velocity) },
             singleLine = true,
         )
         Slider(trueValue.toFloat() / 127,
@@ -125,7 +126,7 @@ private fun TrackSelector(editor: DefaultMidiClipEditor) {
                     fontWeight = FontWeight.Bold,
                     fontSize = MaterialTheme.typography.labelLarge.fontSize
                 )
-                Text(track?.name ?: "未选择", Modifier.weight(1f), textColor, style = MaterialTheme.typography.labelLarge,
+                Text(track?.name ?: langs.unselected, Modifier.weight(1f), textColor, style = MaterialTheme.typography.labelLarge,
                     maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Icon(Icons.Filled.ExpandMore, null, Modifier.padding(horizontal = 8.dp), textColor)
             }
@@ -140,7 +141,7 @@ internal fun EditorControls(editor: DefaultMidiClipEditor) {
         NoteWidthSlider(editor.noteWidth)
 
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("试听音符", Modifier.weight(1f), style = MaterialTheme.typography.labelLarge)
+            Text(langs.audioClipLangs.previewNote, Modifier.weight(1f), style = MaterialTheme.typography.labelLarge)
             Checkbox(DefaultMidiClipEditor.playOnEdit, { DefaultMidiClipEditor.playOnEdit = !DefaultMidiClipEditor.playOnEdit })
         }
 
@@ -148,7 +149,7 @@ internal fun EditorControls(editor: DefaultMidiClipEditor) {
 
         Row(verticalAlignment = Alignment.CenterVertically) {
             editor.clip.clip.notes.read()
-            Text("启用", Modifier.weight(1f), style = MaterialTheme.typography.labelLarge)
+            Text(langs.enabled, Modifier.weight(1f), style = MaterialTheme.typography.labelLarge)
             val cur = editor.currentSelectedNote ?: editor.selectedNotes.firstOrNull()
             val curState = cur?.isDisabled ?: false
             Checkbox(!curState, {
@@ -158,7 +159,7 @@ internal fun EditorControls(editor: DefaultMidiClipEditor) {
         }
 
         Button({ editor.detectChords() }) {
-            Text("分析和弦")
+            Text(langs.audioClipLangs.analyzeChords)
         }
     }
 }

@@ -1,6 +1,5 @@
 plugins {
     kotlin("multiplatform")
-    kotlin("plugin.serialization") version System.getProperty("kotlin.version")
     id("org.jetbrains.compose")
 }
 
@@ -11,21 +10,15 @@ kotlin {
         compilations.all {
             kotlinOptions.jvmTarget = jvmVersion
         }
+        withJava()
     }
     sourceSets {
         named("commonMain") {
             dependencies {
-                api(project(":commons"))
-                api(project(":dsp"))
-                api(project(":utils"))
-                compileOnly(project(":langs"))
                 compileOnly(compose.runtime)
             }
         }
         named("jvmMain") {
-            dependencies {
-                implementation("com.google.guava:guava:31.1-jre")
-            }
         }
     }
 }

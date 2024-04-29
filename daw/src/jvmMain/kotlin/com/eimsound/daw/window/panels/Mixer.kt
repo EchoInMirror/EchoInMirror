@@ -50,6 +50,7 @@ import com.eimsound.daw.components.silder.Slider
 import com.eimsound.daw.components.utils.clickableWithIcon
 import com.eimsound.daw.components.utils.onRightClickOrLongPress
 import com.eimsound.daw.components.utils.toOnSurfaceColor
+import com.eimsound.daw.language.langs
 import com.eimsound.daw.utils.isCrossPlatformAltPressed
 import com.eimsound.daw.window.dialogs.openQuickLoadDialog
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -163,7 +164,7 @@ private fun MixerProcessorButton(isLoading: MutableState<Boolean>, list: Mutable
                     )
                 }
             }
-        } else Text(if (wrapper == null) "添加" else "替换", Modifier.align(Alignment.Center),
+        } else Text(if (wrapper == null) langs.add else langs.replace, Modifier.align(Alignment.Center),
             style = MaterialTheme.typography.labelMedium)
     }
 }
@@ -361,7 +362,7 @@ private fun MixerTrack(
 }
 
 object Mixer: Panel {
-    override val name = "混音台"
+    override val name get() = langs.mixer
     override val direction = PanelDirection.Horizontal
 
     @Composable

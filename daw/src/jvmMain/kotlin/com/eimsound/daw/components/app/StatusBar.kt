@@ -24,6 +24,7 @@ import com.eimsound.daw.components.utils.warning
 import com.eimsound.daw.dawutils.Border
 import com.eimsound.daw.dawutils.border
 import com.eimsound.daw.dawutils.formatDuration
+import com.eimsound.daw.language.langs
 import com.eimsound.daw.utils.openInExplorer
 import com.eimsound.daw.window.dialogs.ExportDialog
 import com.eimsound.daw.window.dialogs.settings.SettingsWindow
@@ -115,7 +116,7 @@ private fun AudioDevice() {
             else if (sampleRateEqual) null else MaterialTheme.colorScheme.warning,
         onClick = { EchoInMirror.windowManager.dialogs[SettingsWindow] = true }
     ) {
-        if (player != null) Text((if (sampleRateEqual) "" else "采样率不匹配: ") + player.name,
+        if (player != null) Text((if (sampleRateEqual) "" else langs.audioSettingsLang.sampleRateMismatch + ": ") + player.name,
             color = if (sampleRateEqual) Color.Unspecified else MaterialTheme.colorScheme.warning)
     }
 }

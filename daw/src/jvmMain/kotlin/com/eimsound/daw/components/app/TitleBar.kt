@@ -17,6 +17,7 @@ import com.eimsound.daw.components.*
 import com.eimsound.daw.dawutils.maximize
 import com.eimsound.daw.dawutils.minimize
 import com.eimsound.daw.dawutils.restore
+import com.eimsound.daw.language.langs
 import com.eimsound.daw.window.mainWindowState
 import kotlinx.coroutines.*
 import org.apache.commons.lang3.SystemUtils
@@ -84,7 +85,7 @@ private fun Search(color: Color) {
                         Modifier.size(16.dp),
                         color
                     )
-                    Text("搜索...", style = MaterialTheme.typography.labelSmall.copy(color))
+                    Text("${langs.search}...", style = MaterialTheme.typography.labelSmall.copy(color))
                 }
             }
         },

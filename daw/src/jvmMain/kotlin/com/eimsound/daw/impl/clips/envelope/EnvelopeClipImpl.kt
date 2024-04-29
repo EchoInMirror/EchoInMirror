@@ -17,6 +17,7 @@ import com.eimsound.daw.api.controllers.ParameterController
 import com.eimsound.daw.api.processor.Track
 import com.eimsound.daw.commons.json.putNotDefault
 import com.eimsound.daw.components.EnvelopeEditor
+import com.eimsound.daw.language.langs
 import com.eimsound.dsp.data.*
 import com.eimsound.dsp.data.midi.MidiNoteTimeRecorder
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -25,7 +26,7 @@ import java.nio.file.Path
 
 class EnvelopeClipImpl(factory: ClipFactory<EnvelopeClip>): AbstractClip<EnvelopeClip>(factory), EnvelopeClip {
     override val name
-        get() = "包络 (${if (controllers.size > 4) "${controllers.size}个控制器"
+        get() = "${langs.envelope} (${if (controllers.size > 4) "${controllers.size}${langs.controller}"
             else controllers.joinToString(", ") { it.parameter.name }})"
     override val envelope = DefaultEnvelopePointList()
     override val controllers = mutableStateListOf<ParameterController>()

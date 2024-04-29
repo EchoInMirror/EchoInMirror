@@ -27,6 +27,7 @@ import com.eimsound.daw.components.splitpane.VerticalSplitPane
 import com.eimsound.daw.components.utils.FPSMeasurer
 import com.eimsound.daw.dawutils.*
 import com.eimsound.daw.impl.WindowManagerImpl
+import com.eimsound.daw.language.langs
 import com.eimsound.daw.utils.isCrossPlatformAltPressed
 import com.eimsound.daw.utils.isCrossPlatformCtrlPressed
 import com.eimsound.daw.window.panels.playlist.mainPlaylist
@@ -79,22 +80,22 @@ private fun SaveProjectWarningDialog() {
     val windowManager = EchoInMirror.windowManager
     if (windowManager.isSaveProjectWarningDialogOpened) DialogWindow({
         windowManager.isSaveProjectWarningDialogOpened = false
-    }, windowState, title = "是否保存项目并退出?"
+    }, windowState, title = langs.saveProjectTitle
     ) {
         Surface(Modifier.fillMaxSize(), tonalElevation = 4.dp) {
             Column(Modifier.padding(20.dp)) {
-                Text("当前还没有保存项目, 是否需要保存项目并退出?", Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+                Text(langs.saveProjectPrompt, Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
                 Gap(20)
                 Row {
                     TextButton(
                         windowManager::exitApplication,
                         colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
                     ) {
-                        Text("不保存")
+                        Text(langs.dontSave)
                     }
                     Filled()
                     TextButton({ windowManager.isSaveProjectWarningDialogOpened = false }) {
-                        Text("取消")
+                        Text(langs.cancel)
                     }
                     Gap(4)
                     Button({
@@ -103,7 +104,7 @@ private fun SaveProjectWarningDialog() {
                             windowManager.exitApplication()
                         }
                     }) {
-                        Text("保存并退出")
+                        Text(langs.saveAndExit)
                     }
                 }
             }
