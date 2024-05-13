@@ -15,6 +15,7 @@ import com.eimsound.audioprocessor.AudioProcessorParameter
 import com.eimsound.daw.api.processor.DefaultHandledParameter
 import com.eimsound.daw.api.processor.TrackAudioProcessorWrapper
 import com.eimsound.daw.components.controllers.ParameterControllerComponent
+import com.eimsound.daw.language.langs
 import java.util.UUID
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -43,7 +44,7 @@ private fun FloatingLayerProvider.openParameterSelector(processor: TrackAudioPro
                 }
             }
         }, close, modifier = Modifier.widthIn(300.dp, 800.dp)) {
-            Text("选择参数", style = MaterialTheme.typography.titleMedium)
+            Text(langs.audioProcessorLangs.selectParameter, style = MaterialTheme.typography.titleMedium)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 processor.handledParameters.fastForEach {
                     key(it.parameter) {
@@ -51,7 +52,7 @@ private fun FloatingLayerProvider.openParameterSelector(processor: TrackAudioPro
                             // TODO: convert to action
                             processor.handledParameters = processor.handledParameters.filter { p -> p != it }
                         }, { Text(it.parameter.name) },
-                            trailingIcon = { Icon(Icons.Filled.Close, "删除") },
+                            trailingIcon = { Icon(Icons.Filled.Close, langs.delete) },
                         )
                     }
                 }
@@ -95,7 +96,7 @@ fun BasicAudioParameterView(processor: TrackAudioProcessorWrapper) {
         CustomButton({
             floatingLayerProvider.openParameterSelector(processor)
         }, Modifier.padding(bottom = 4.dp)) {
-            Text("选择参数")
+            Text(langs.audioProcessorLangs.selectParameter)
         }
     }
 }

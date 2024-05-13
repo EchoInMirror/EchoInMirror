@@ -6,7 +6,9 @@ import com.eimsound.dsp.timestretchers.NativeTimeStretcher
 
 class EIMNativeTimeStretcher private constructor(private val instance: NativeTimeStretcher) : TimeStretcher {
     override val name by instance::name
-    override var speedRatio by instance::speedRatio
+    override var speedRatio
+        get() = 1F / instance.speedRatio
+        set(value) { instance.speedRatio = 1F / value }
     override var semitones by instance::semitones
     override val maxFramesNeeded by instance::maxFramesNeeded
     override val framesNeeded by instance::framesNeeded

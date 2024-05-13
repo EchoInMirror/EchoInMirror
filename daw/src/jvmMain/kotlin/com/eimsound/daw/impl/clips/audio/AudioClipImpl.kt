@@ -42,7 +42,7 @@ class AudioClipImpl(
     audioThumbnail: AudioThumbnail? = null
 ): AbstractClip<AudioClip>(factory), AudioClip {
     private lateinit var fifo: AudioBufferQueue
-    override var target = target
+    override var target: FileAudioSource? = null
         set(value) {
             if (field == value) return
             close()

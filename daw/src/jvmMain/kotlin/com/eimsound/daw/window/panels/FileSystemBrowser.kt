@@ -121,7 +121,7 @@ object FileSystemBrowser : Panel {
                     autoPlay = !autoPlay
                     fileBrowserPreviewer.position.isPlaying = autoPlay
                     close()
-                }) {
+                }, modifier = Modifier.fillMaxWidth()) {
                     Text(langs.autoPlay)
                     Filled()
                     Icon(
@@ -132,16 +132,16 @@ object FileSystemBrowser : Panel {
                 MenuItem({
                     fileBrowserPreviewer.position.isProjectLooping = !fileBrowserPreviewer.position.isProjectLooping
                     close()
-                }) {
-                    Text("循环播放")
+                }, modifier = Modifier.fillMaxWidth()) {
+                    Text(langs.loopPlay)
                     Filled()
                     Icon(
                         if (fileBrowserPreviewer.position.isProjectLooping) Icons.Outlined.CheckBox
-                        else Icons.Outlined.CheckBoxOutlineBlank, "循环播放"
+                        else Icons.Outlined.CheckBoxOutlineBlank, langs.loopPlay
                     )
                 }
-                MenuItem {
-                    Text("音量")
+                MenuItem(modifier = Modifier.fillMaxWidth()) {
+                    Text(langs.ccEvents.volume)
                     Filled()
                     Slider(fileBrowserPreviewer.volume, { fileBrowserPreviewer.volume = it }, Modifier.width(140.dp))
                 }

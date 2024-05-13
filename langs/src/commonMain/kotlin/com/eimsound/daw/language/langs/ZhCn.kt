@@ -29,6 +29,7 @@ open class AudioProcessorLangs(
     val searchPath: String = "搜索路径",
     val excludePath: String = "排除路径",
     val searching: String = "搜索中...",
+    val selectParameter: String = "选择参数",
 
     val favorite: String = "已收藏",
     val addFavorite: String = "收藏",
@@ -145,6 +146,7 @@ open class StringsBase(
     val quickLoad: String = "快速加载",
     val unknownAudioProcessor: String = "未知的音频处理器",
     val autoPlay: String = "自动播放",
+    val loopPlay: String = "循环播放",
     val shortcutKey: String = "快捷键",
 
     val openSetting: String = "打开设置",
