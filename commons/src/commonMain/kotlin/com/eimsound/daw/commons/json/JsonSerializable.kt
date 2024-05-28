@@ -22,9 +22,9 @@ inline fun JsonElement.asDouble() = jsonPrimitive.double
 inline fun JsonElement.asBoolean() = jsonPrimitive.boolean
 inline fun JsonElement.asFloat() = jsonPrimitive.float
 inline fun JsonElement.asColor() = Color(jsonPrimitive.long.toULong())
-val JsonIgnoreDefaults = Json { ignoreUnknownKeys = true; encodeDefaults = false }
+val JsonIgnoreDefaults get() = Json { ignoreUnknownKeys = true; encodeDefaults = false }
 @OptIn(ExperimentalSerializationApi::class)
-val JsonPrettier = Json { ignoreUnknownKeys = true; encodeDefaults = false; prettyPrint = true; prettyPrintIndent = "" }
+val JsonPrettier get() = Json { ignoreUnknownKeys = true; encodeDefaults = false; prettyPrint = true; prettyPrintIndent = "" }
 
 interface JsonSerializable {
     fun toJson(): JsonElement

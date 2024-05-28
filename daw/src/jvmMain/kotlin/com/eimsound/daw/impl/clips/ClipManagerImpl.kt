@@ -36,5 +36,5 @@ class ClipManagerImpl : ClipManager {
         TrackClipImpl(clip, time, duration, start, track)
     override suspend fun createTrackClip(path: Path, json: JsonObject) =
         TrackClipImpl(createClip(path, json["clip"] as JsonObject), json["time"]?.asInt() ?: 0,
-            json["duration"]?.asInt() ?: 0)
+            json["duration"]?.asInt() ?: 0, json["start"]?.asInt() ?: 0)
 }
