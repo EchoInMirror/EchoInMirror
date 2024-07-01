@@ -1,5 +1,6 @@
 package com.eimsound.daw.window.dialogs.settings
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
@@ -50,12 +51,13 @@ internal object ShortcutKeySettings : SettingTab {
         commandManager.customCommands.forEach { (key, commandName) ->
             commands[commandManager.commandsMap[commandName]!!] = key
         }
+        val refreshState = remember { mutableStateOf(0) }
         SettingsSection(langs.shortcutKey) {
+            val refresh = refreshState.value
             commands.forEach { (command, key) ->
                 SettingsCard(command.displayName){
-                    var curKey by remember { mutableStateOf(key) }
                     val keyCompose = remember { key.split(" ").map { Key(it.toLong()) }.toMutableStateSet() }
-                    val keyDown = remember { mutableStateSetOf<Key>() }
+                    val pressedKeySet = remember { mutableStateSetOf<Key>() }
                     val preKeyCompose = remember { mutableStateListOf<Key>() }
 
                     fun cancel() {
@@ -66,59 +68,65 @@ internal object ShortcutKeySettings : SettingTab {
                         }
                     }
 
-                    fun done() {
+                    fun done(keyStr: String) {
                         selectKey = ""
-                        val keyStr = keyCompose.sortedKeys().joinToString(separator = " ") {
-                            it.keyCode.toString()
-                        }
-                        if (keyStr.isEmpty() || keyStr in commandManager.commands || keyStr in commandManager.customCommands) {
+                        if (keyStr.isEmpty()) {
                             cancel()
                             return
                         }
-                        if (curKey !in commandManager.commands && curKey !in commandManager.customCommands) {
-                            cancel()
-                            return
-                        }
-                        val commandTar: String
-                        if (curKey in commandManager.customCommands) {
-                            commandTar = commandManager.customCommands[curKey]!!
-                            commandManager.customCommands -= curKey
+                        if (keyStr in commandManager.commands && commandManager.commands[keyStr]!!.name == command.name) {
+                            if (command.name in commandManager.customCommands.values) {
+                                commandManager.customCommands -= commandManager.customCommands.filterValues { it == command.name }.keys
+                            }
                         } else {
-                            commandTar = commandManager.commands[curKey]!!.name
+                            commandManager.customCommands[keyStr] = command.name
                         }
-                        commandManager.customCommands[keyStr] = commandTar
-                        curKey = keyStr
+                        commands[command] = keyStr
                         commandManager.saveCustomShortcutKeys()
+                        refreshState.value = refreshState.value xor 1
                     }
 
-                    CustomOutlinedTextField(
-                        keyCompose.sortedKeys().joinToString(separator = "+") {
-                        var cur = it
-                        when (it) {
-                            Key.MetaLeft, Key.MetaRight -> if (SystemUtils.IS_OS_MAC) cur = Key.CtrlLeft
-                            Key.CtrlLeft, Key.CtrlRight -> if (SystemUtils.IS_OS_MAC) cur = Key.MetaLeft
+                    Box {
+                        val sortedKeyString = keyCompose.sortedKeys().joinToString(separator = " ") {
+                            it.keyCode.toString()
                         }
-                        KeyEvent.getKeyText(cur.nativeKeyCode)
-                    },
-                        {
-                            EchoInMirror.currentPosition.bpm = it.toDoubleOrNull()?.coerceIn(1.0, 600.0) ?: return@CustomOutlinedTextField
-                        },
-                        Modifier.width(256.dp).height(36.dp)
+                        CustomOutlinedTextField(
+                            keyCompose.sortedKeys().joinToString(separator = "+") {
+                                var cur = it
+                                when (it) {
+                                    Key.MetaLeft, Key.MetaRight -> if (SystemUtils.IS_OS_MAC) cur = Key.CtrlLeft
+                                    Key.CtrlLeft, Key.CtrlRight -> if (SystemUtils.IS_OS_MAC) cur = Key.MetaLeft
+                                }
+                                KeyEvent.getKeyText(cur.nativeKeyCode)
+                            },
+                            { },
+                            Modifier.width(256.dp).height(36.dp),
+                            singleLine = true,
+                            textStyle = MaterialTheme.typography.labelLarge.copy(LocalContentColor.current),
+                            colors = TextFieldDefaults.colors(
+                                unfocusedIndicatorColor = MaterialTheme.colorScheme.outlineVariant,
+                                focusedIndicatorColor = MaterialTheme.colorScheme.outlineVariant,
+                            ),
+                            isError = commands.count { it.value == key } > 1,
+                            keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
+                            paddingValues = TextFieldDefaults.contentPaddingWithLabel(6.dp, 6.dp, 3.dp, 4.dp)
+                        )
+                        Box(modifier = Modifier.matchParentSize()
                             .onFocusChanged {
-                                if (!it.isFocused && selectKey == curKey) done()
+                                if (!it.isFocused && selectKey == key) done(sortedKeyString)
                             }
                             .clickableWithIcon {
-                                if (selectKey == curKey) {
-                                    done()
+                                if (selectKey == key) {
+                                    done(sortedKeyString)
                                 } else {
-                                    selectKey = curKey
+                                    selectKey = key
                                     preKeyCompose.clear()
-                                    keyDown.clear()
+                                    pressedKeySet.clear()
                                     preKeyCompose.addAll(keyCompose)
                                     keyCompose.clear()
                                 }
                             }.onKeyEvent {
-                                if (selectKey != curKey) return@onKeyEvent false
+                                if (selectKey != key) return@onKeyEvent false
                                 var pressKey = it.key
                                 when (pressKey) {
                                     Key.MetaLeft, Key.MetaRight -> if (SystemUtils.IS_OS_MAC) pressKey = Key.CtrlLeft
@@ -132,25 +140,18 @@ internal object ShortcutKeySettings : SettingTab {
                                         Key.Escape -> cancel()
                                         Key.Enter -> return@onKeyEvent false
                                         else -> {
-                                            keyDown.add(pressKey)
+                                            pressedKeySet.add(pressKey)
                                             keyCompose.add(pressKey)
                                         }
                                     }
                                 } else if (it.type == KeyEventType.KeyUp) {
-                                    keyDown.remove(pressKey)
-                                    if (keyDown.isEmpty()) done()
+                                    pressedKeySet.remove(pressKey)
+                                    if (pressedKeySet.isEmpty()) done(sortedKeyString)
                                 }
                                 true
-                            },
-                        singleLine = true,
-                        textStyle = MaterialTheme.typography.labelLarge.copy(LocalContentColor.current),
-                        colors = TextFieldDefaults.colors(
-                            unfocusedIndicatorColor = MaterialTheme.colorScheme.outlineVariant,
-                            focusedIndicatorColor = MaterialTheme.colorScheme.outlineVariant,
-                        ),
-                        keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
-                        paddingValues = TextFieldDefaults.contentPaddingWithLabel(6.dp, 6.dp, 3.dp, 4.dp)
-                    )
+                            }
+                        )
+                    }
                 }
             }
         }
